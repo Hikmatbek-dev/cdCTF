@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_ISSUER = "cdctf-api";
 const JWT_AUDIENCE = "cdctf-web";
+export const AUTH_COOKIE_NAME = "cdctf_session";
 
 if (!JWT_SECRET) {
   if (process.env.NODE_ENV === "production") {
@@ -30,11 +31,10 @@ declare global {
 }
 
 export function authenticateToken(req: Request, res: Response, next: NextFunction) {
-  const auth = req.headers.authorization;
-  if (!auth?.startsWith("Bearer ")) {
+  const token = getRequestToken(req);
+  if (!token) {
     return res.status(401).json({ error: "Unauthorized" });
   }
-  const token = auth.slice(7);
   try {
     const payload = jwt.verify(token, effectiveJwtSecret, {
       algorithms: ["HS256"],
@@ -52,9 +52,8 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
 }
 
 export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
-  const auth = req.headers.authorization;
-  if (auth?.startsWith("Bearer ")) {
-    const token = auth.slice(7);
+  const token = getRequestToken(req);
+  if (token) {
     try {
       const payload = jwt.verify(token, effectiveJwtSecret, {
         algorithms: ["HS256"],
@@ -85,4 +84,11 @@ export function generateToken(userId: number, role: string): string {
     expiresIn: "12h",
     issuer: JWT_ISSUER,
   });
+}
+
+function getRequestToken(req: Request) {
+  const auth = req.headers.authorization;
+  if (auth?.startsWith("Bearer ")) return auth.slice(7);
+  const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
+  return typeof cookieToken === "string" && cookieToken ? cookieToken : null;
 }

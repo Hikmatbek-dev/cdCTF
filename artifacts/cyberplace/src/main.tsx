@@ -1,11 +1,9 @@
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { setAuthTokenGetter } from "@workspace/api-client-react";
 import App from "./App";
 import { setupFrontendMonitoring } from "./lib/monitoring";
 import "./index.css";
 
-setAuthTokenGetter(() => localStorage.getItem("cdctf_token"));
 setupFrontendMonitoring();
 
 const queryClient = new QueryClient({

@@ -16,22 +16,20 @@ type DashboardResponse = {
   titles: Array<{ id: number | null; name: string | null; category: string | null; earnedAt: string | null }>;
 };
 
-async function fetchDashboard(token: string) {
-  const response = await fetch("/api/users/me/dashboard", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+async function fetchDashboard() {
+  const response = await fetch("/api/users/me/dashboard");
   if (!response.ok) throw new Error("Failed to load dashboard");
   return response.json() as Promise<DashboardResponse>;
 }
 
 export default function DashboardPage() {
   const { t } = useLang();
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   const { data, isLoading } = useQuery({
     queryKey: ["user-dashboard"],
-    queryFn: () => fetchDashboard(token!),
-    enabled: Boolean(token),
+    queryFn: fetchDashboard,
+    enabled: isAuthenticated,
   });
 
   if (isLoading) {

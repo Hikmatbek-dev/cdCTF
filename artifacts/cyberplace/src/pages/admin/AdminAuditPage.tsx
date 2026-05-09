@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ShieldCheck } from "lucide-react";
 import { AdminSidebar } from "@/components/AdminSidebar";
+import { useLang } from "@/lib/LanguageContext";
 
 type AuditLog = {
   id: number;
@@ -14,15 +15,13 @@ type AuditLog = {
 };
 
 async function fetchAuditLogs() {
-  const token = localStorage.getItem("cdctf_token");
-  const response = await fetch("/api/admin/audit-logs", {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
+  const response = await fetch("/api/admin/audit-logs");
   if (!response.ok) throw new Error("Failed to load audit logs");
   return response.json() as Promise<{ logs: AuditLog[] }>;
 }
 
 export default function AdminAuditPage() {
+  const { t } = useLang();
   const { data, isLoading } = useQuery({ queryKey: ["admin-audit-logs"], queryFn: fetchAuditLogs });
 
   return (
@@ -31,23 +30,23 @@ export default function AdminAuditPage() {
       <main className="flex-1 p-6">
         <div className="flex items-center gap-2 mb-6">
           <ShieldCheck className="w-5 h-5 text-primary" />
-          <h1 className="text-xl font-bold">Audit Logs</h1>
+          <h1 className="text-xl font-bold">{t("Audit Logs", "Audit jurnali", "Журнал аудита")}</h1>
         </div>
 
         <div className="rounded-xl border border-border overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 border-b border-border">
               <tr>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Time</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Actor</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Action</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Target</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Time", "Vaqt", "Время")}</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Actor", "Bajaruvchi", "Исполнитель")}</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Action", "Amal", "Действие")}</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Target", "Nishon", "Цель")}</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">IP</th>
               </tr>
             </thead>
             <tbody className="bg-card divide-y divide-border">
               {isLoading && (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Loading...</td></tr>
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">{t("Loading...", "Yuklanmoqda...", "Загрузка...")}</td></tr>
               )}
               {data?.logs.map(log => (
                 <tr key={log.id}>
@@ -59,7 +58,7 @@ export default function AdminAuditPage() {
                 </tr>
               ))}
               {!isLoading && data?.logs.length === 0 && (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">No audit logs yet</td></tr>
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">{t("No audit logs yet", "Hali audit yozuvlari yo'q", "Журнал аудита пока пуст")}</td></tr>
               )}
             </tbody>
           </table>

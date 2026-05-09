@@ -70,12 +70,12 @@ export default function AdminCtfPage() {
     if (editingId) {
       updateCtf.mutate({ id: editingId, data: payload }, {
         onSuccess: () => { toast({ title: t("CTF updated!", "CTF yangilandi!", "CTF обновлён!") }); invalidate(); },
-        onError: () => toast({ title: "Error", variant: "destructive" }),
+        onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
       });
     } else {
       createCtf.mutate({ data: payload }, {
         onSuccess: () => { toast({ title: t("CTF created!", "CTF yaratildi!", "CTF создан!") }); invalidate(); },
-        onError: () => toast({ title: "Error", variant: "destructive" }),
+        onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
       });
     }
   };
@@ -84,32 +84,25 @@ export default function AdminCtfPage() {
     if (!confirm(t("Delete this challenge?", "O'chirish?", "Удалить?"))) return;
     deleteCtf.mutate({ id }, {
       onSuccess: () => { toast({ title: t("Deleted", "O'chirildi", "Удалено") }); qc.invalidateQueries({ queryKey: getListCtfChallengesQueryKey({}) }); },
-      onError: () => toast({ title: "Error", variant: "destructive" }),
+      onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
     });
   };
 
   const handleChallengeFileUpload = async (file: File) => {
-    const token = localStorage.getItem("cdctf_token");
-    if (!token) {
-      toast({ title: "Unauthorized", variant: "destructive" });
-      return;
-    }
-
     const body = new FormData();
     body.append("file", file);
     setUploadingFile(true);
     try {
       const response = await fetch("/api/uploads/ctf-file", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
         body,
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : "Upload failed");
+      if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : t("Upload failed", "Yuklash muvaffaqiyatsiz", "Ошибка загрузки"));
       form.setValue("fileUrl", data.fileUrl, { shouldDirty: true, shouldValidate: true });
       toast({ title: t("File uploaded!", "Fayl yuklandi!", "Файл загружен!") });
     } catch (error) {
-      toast({ title: error instanceof Error ? error.message : "Upload failed", variant: "destructive" });
+      toast({ title: error instanceof Error ? error.message : t("Upload failed", "Yuklash muvaffaqiyatsiz", "Ошибка загрузки"), variant: "destructive" });
     } finally {
       setUploadingFile(false);
     }
@@ -136,22 +129,22 @@ export default function AdminCtfPage() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="name" render={({ field }) => (
-                  <FormItem><FormLabel>Name (EN)</FormLabel><FormControl><Input {...field} data-testid="input-ctf-name" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>{t("Name (EN)", "Nomi (EN)", "Название (EN)")}</FormLabel><FormControl><Input {...field} data-testid="input-ctf-name" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="flag" render={({ field }) => (
-                  <FormItem><FormLabel>Flag</FormLabel><FormControl><Input {...field} placeholder="Flag{...}" className="font-mono" data-testid="input-ctf-flag" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>{t("Flag", "Flag", "Флаг")}</FormLabel><FormControl><Input {...field} placeholder="Flag{...}" className="font-mono" data-testid="input-ctf-flag" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="nameUz" render={({ field }) => (
-                  <FormItem><FormLabel>Name (UZ)</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                  <FormItem><FormLabel>{t("Name (UZ)", "Nomi (UZ)", "Название (UZ)")}</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="nameRu" render={({ field }) => (
-                  <FormItem><FormLabel>Name (RU)</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                  <FormItem><FormLabel>{t("Name (RU)", "Nomi (RU)", "Название (RU)")}</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="description" render={({ field }) => (
-                  <FormItem className="col-span-2"><FormLabel>Description (EN)</FormLabel><FormControl><Textarea {...field} rows={3} data-testid="input-ctf-description" /></FormControl><FormMessage /></FormItem>
+                  <FormItem className="col-span-2"><FormLabel>{t("Description (EN)", "Tavsif (EN)", "Описание (EN)")}</FormLabel><FormControl><Textarea {...field} rows={3} data-testid="input-ctf-description" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="category" render={({ field }) => (
-                  <FormItem><FormLabel>Category</FormLabel>
+                  <FormItem><FormLabel>{t("Category", "Kategoriya", "Категория")}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl><SelectTrigger data-testid="select-ctf-category"><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
@@ -159,7 +152,7 @@ export default function AdminCtfPage() {
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="difficulty" render={({ field }) => (
-                  <FormItem><FormLabel>Difficulty</FormLabel>
+                  <FormItem><FormLabel>{t("Difficulty", "Qiyinlik", "Сложность")}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl><SelectTrigger data-testid="select-ctf-difficulty"><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>
@@ -169,20 +162,20 @@ export default function AdminCtfPage() {
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="points" render={({ field }) => (
-                  <FormItem><FormLabel>Points</FormLabel><FormControl><Input {...field} type="number" data-testid="input-ctf-points" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>{t("Points", "Ball", "Очки")}</FormLabel><FormControl><Input {...field} type="number" data-testid="input-ctf-points" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="hint" render={({ field }) => (
-                  <FormItem><FormLabel>Hint (optional)</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                  <FormItem><FormLabel>{t("Hint (optional)", "Yordam (ixtiyoriy)", "Подсказка (необязательно)")}</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="fileUrl" render={({ field }) => (
                   <FormItem className="col-span-2">
-                    <FormLabel>File URL (optional)</FormLabel>
+                    <FormLabel>{t("File URL (optional)", "Fayl URL (ixtiyoriy)", "URL файла (необязательно)")}</FormLabel>
                     <FormControl><Input {...field} placeholder="https://..." /></FormControl>
                     <div className="flex items-center gap-2 pt-2">
                       <Button type="button" size="sm" variant="outline" onClick={() => fileRef.current?.click()} disabled={uploadingFile}>
-                        <Upload className="w-4 h-4" /> {uploadingFile ? "Uploading..." : "Upload challenge file"}
+                        <Upload className="w-4 h-4" /> {uploadingFile ? t("Uploading...", "Yuklanmoqda...", "Загрузка...") : t("Upload challenge file", "Topshiriq faylini yuklash", "Загрузить файл задания")}
                       </Button>
-                      <span className="text-xs text-muted-foreground">Max 25MB</span>
+                      <span className="text-xs text-muted-foreground">{t("Max 25MB", "Maks 25MB", "Макс. 25МБ")}</span>
                     </div>
                     <input
                       ref={fileRef}
@@ -214,12 +207,12 @@ export default function AdminCtfPage() {
             <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b border-border">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Name</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Category</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Difficulty</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Points</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Solves</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Actions</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Name", "Nomi", "Название")}</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Category", "Kategoriya", "Категория")}</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Difficulty", "Qiyinlik", "Сложность")}</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Points", "Ball", "Очки")}</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Solves", "Yechimlar", "Решения")}</th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Actions", "Amallar", "Действия")}</th>
                 </tr>
               </thead>
               <tbody className="bg-card divide-y divide-border">

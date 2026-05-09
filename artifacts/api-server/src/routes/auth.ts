@@ -4,12 +4,24 @@ import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
-import { generateToken, authenticateToken } from "../middleware/auth";
+import { AUTH_COOKIE_NAME, generateToken, authenticateToken, optionalAuth } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/security";
 import { sendVerificationEmail, verifyTurnstileToken } from "../lib/integrations";
 
 const router = Router();
 const authRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20, keyPrefix: "auth" });
+const emailDeliveryRequired = process.env.NODE_ENV === "production" || process.env.EMAIL_VERIFICATION_REQUIRED === "true";
+
+function authCookieOptions() {
+  const secure = process.env.NODE_ENV === "production";
+  return {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure,
+    maxAge: 12 * 60 * 60 * 1000,
+    path: "/",
+  };
+}
 
 function normalizeNickname(nickname: string) {
   return nickname.trim();
@@ -76,20 +88,27 @@ router.post("/register", authRateLimit, async (req, res) => {
 
   const passwordHash = await bcrypt.hash(password, 12);
   const emailVerificationToken = randomUUID();
-
-  const count = await db.select().from(usersTable);
-  const role = count.length === 0 ? "admin" : "user";
+  const role = "user";
 
   const [user] = await db.insert(usersTable).values({ nickname, email, passwordHash, role, emailVerificationToken }).returning();
-  await sendVerificationEmail(user.email, emailVerificationToken);
+  const emailResult = await sendVerificationEmail(user.email, emailVerificationToken);
+  if (!emailResult.ok) {
+    if (emailDeliveryRequired) {
+      await db.delete(usersTable).where(eq(usersTable.id, user.id));
+      return res.status(503).json({ error: emailResult.reason || "Verification email could not be sent" });
+    }
+    await db.update(usersTable)
+      .set({ emailVerified: true, emailVerificationToken: null })
+      .where(eq(usersTable.id, user.id));
+  }
 
   res.status(201).json({
     user: {
       id: user.id, nickname: user.nickname, email: user.email, avatarUrl: user.avatarUrl,
-      points: user.points, role: user.role, emailVerified: user.emailVerified,
+      points: user.points, role: user.role, emailVerified: emailResult.ok ? user.emailVerified : true,
       isBlocked: user.isBlocked, createdAt: user.createdAt,
     },
-    requiresEmailVerification: true,
+    requiresEmailVerification: emailResult.ok,
   });
 });
 
@@ -110,6 +129,7 @@ router.post("/login", authRateLimit, async (req, res) => {
   if (!valid) return res.status(401).json({ error: "Invalid credentials" });
 
   const token = generateToken(user.id, user.role);
+  res.cookie(AUTH_COOKIE_NAME, token, authCookieOptions());
   res.json({
     token,
     user: { id: user.id, nickname: user.nickname, email: user.email, avatarUrl: user.avatarUrl, points: user.points, role: user.role, emailVerified: user.emailVerified, isBlocked: user.isBlocked, createdAt: user.createdAt },
@@ -117,7 +137,29 @@ router.post("/login", authRateLimit, async (req, res) => {
 });
 
 router.post("/logout", authenticateToken, (_req, res) => {
+  res.clearCookie(AUTH_COOKIE_NAME, { path: "/" });
   res.json({ success: true, message: "Logged out" });
+});
+
+router.get("/session", optionalAuth, async (req, res) => {
+  if (!req.user) return res.json({ user: null });
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.user.userId)).limit(1);
+  if (!user || user.isBlocked) return res.json({ user: null });
+
+  res.json({
+    user: {
+      id: user.id,
+      nickname: user.nickname,
+      email: user.email,
+      avatarUrl: user.avatarUrl,
+      points: user.points,
+      role: user.role,
+      emailVerified: user.emailVerified,
+      isBlocked: user.isBlocked,
+      createdAt: user.createdAt,
+    },
+  });
 });
 
 router.get("/me", authenticateToken, async (req, res) => {
@@ -150,7 +192,10 @@ router.post("/resend-verification", authRateLimit, async (req, res) => {
 
   const token = randomUUID();
   await db.update(usersTable).set({ emailVerificationToken: token }).where(eq(usersTable.id, user.id));
-  await sendVerificationEmail(user.email, token);
+  const emailResult = await sendVerificationEmail(user.email, token);
+  if (!emailResult.ok) {
+    return res.status(503).json({ error: emailResult.reason || "Verification email could not be sent" });
+  }
 
   res.json({ success: true, message: "Verification email sent" });
 });

@@ -24,7 +24,7 @@ export default function CompetitionCtfPage() {
   const { t } = useLang();
   const { toast } = useToast();
   const qc = useQueryClient();
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [flag, setFlag] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -37,15 +37,12 @@ export default function CompetitionCtfPage() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!token || !flag.trim()) return;
+    if (!isAuthenticated || !flag.trim()) return;
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/competitions/${competitionId}/ctf/${ctfId}/submit`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ flag: flag.trim() }),
       });
       const data = await response.json().catch(() => ({}));

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { useLocation } from "wouter";
 
 export interface User {
@@ -30,14 +30,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem("cdctf_user");
     return saved ? JSON.parse(saved) : null;
   });
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem("cdctf_token"));
+  const [token, setToken] = useState<string | null>(null);
   const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch("/api/auth/session")
+      .then(response => response.ok ? response.json() : { user: null })
+      .then((session: { user: User | null }) => {
+        if (cancelled) return;
+        if (session.user) {
+          setUser(session.user);
+          localStorage.setItem("cdctf_user", JSON.stringify(session.user));
+        } else {
+          setUser(null);
+          localStorage.removeItem("cdctf_user");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setUser(null);
+          localStorage.removeItem("cdctf_user");
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const login = (newUser: User, newToken: string) => {
     setUser(newUser);
-    setToken(newToken);
+    setToken(newToken || null);
     localStorage.setItem("cdctf_user", JSON.stringify(newUser));
-    localStorage.setItem("cdctf_token", newToken);
+    localStorage.removeItem("cdctf_token");
   };
 
   const updateUser = (updatedUser: User) => {
@@ -46,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    void fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
     setUser(null);
     setToken(null);
     localStorage.removeItem("cdctf_user");
@@ -61,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         updateUser,
-        isAuthenticated: !!token,
+        isAuthenticated: !!user,
         isAdmin: user?.role === "admin",
       }}
     >

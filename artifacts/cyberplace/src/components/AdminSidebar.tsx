@@ -14,13 +14,13 @@ const ADMIN_LINKS = [
 
 export function AdminSidebar() {
   const [location] = useLocation();
-  const { lang } = useLang();
+  const { lang, t } = useLang();
 
   return (
     <aside className="w-56 flex-shrink-0 border-r border-border bg-card min-h-screen pt-14">
       <div className="p-4">
         <Link href="/" className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-6">
-          <ChevronLeft className="w-3 h-3" /> Back to site
+          <ChevronLeft className="w-3 h-3" /> {t("Back to site", "Saytga qaytish", "Назад на сайт")}
         </Link>
         <nav className="space-y-0.5">
           {ADMIN_LINKS.map(link => {

@@ -1,5 +1,6 @@
 import express, { type Express, type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { reportErrorToSentry } from "./lib/integrations";
@@ -33,6 +34,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use(securityHeaders);
 app.use(cors(corsOptions));
 app.use(createRateLimiter({ windowMs: 15 * 60 * 1000, max: 600, keyPrefix: "global" }));
+app.use(cookieParser());
 app.use(express.json({ limit: "100kb" }));
 app.use(express.urlencoded({ extended: true, limit: "100kb" }));
 

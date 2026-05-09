@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/LanguageContext";
+import { TurnstileWidget } from "@/components/TurnstileWidget";
 
 const schema = z.object({
   nickname: z.string().min(3, "Min 3 chars").max(32, "Max 32 chars").regex(/^[A-Za-z0-9_]+$/, "Only letters, numbers, and underscores"),
@@ -28,6 +29,7 @@ export default function RegisterPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -40,7 +42,7 @@ export default function RegisterPage() {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, captchaToken }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -107,6 +109,16 @@ export default function RegisterPage() {
                   <FormMessage />
                 </FormItem>
               )} />
+              <TurnstileWidget
+                onTokenChange={setCaptchaToken}
+                onError={() => {
+                  setCaptchaToken("");
+                  toast({
+                    title: t("Captcha failed", "Captcha ishlamadi", "Ошибка captcha"),
+                    variant: "destructive",
+                  });
+                }}
+              />
               <Button type="submit" className="w-full" disabled={isSubmitting} data-testid="button-submit-register">
                 {isSubmitting ? t("Creating...", "Yaratilmoqda...", "Создание...") : t("Create Account", "Hisob Yaratish", "Создать аккаунт")}
               </Button>

@@ -19,14 +19,14 @@ export default function AdminBlockedPage() {
   const handleUnblockCtf = (ctfId: number, userId: number) => {
     unblockCtfUser.mutate({ id: ctfId, userId }, {
       onSuccess: () => { toast({ title: t("Unblocked!", "Blokdan chiqdi!", "Разблокировано!") }); qc.invalidateQueries({ queryKey: getAdminGetBlockedTasksQueryKey() }); },
-      onError: () => toast({ title: "Error", variant: "destructive" }),
+      onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
     });
   };
 
   const handleUnblockLesson = (lessonId: number, userId: number) => {
     unblockTask.mutate({ type: "lesson", taskId: lessonId, userId }, {
       onSuccess: () => { toast({ title: t("Unblocked!", "Blokdan chiqdi!", "Разблокировано!") }); qc.invalidateQueries({ queryKey: getAdminGetBlockedTasksQueryKey() }); },
-      onError: () => toast({ title: "Error", variant: "destructive" }),
+      onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
     });
   };
 
@@ -52,11 +52,11 @@ export default function AdminBlockedPage() {
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50 border-b border-border">
                       <tr>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">User</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("User", "Foydalanuvchi", "Пользователь")}</th>
                         <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">CTF</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Reason</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Date</th>
-                        <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Action</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Reason", "Sabab", "Причина")}</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Date", "Sana", "Дата")}</th>
+                        <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Action", "Amal", "Действие")}</th>
                       </tr>
                     </thead>
                     <tbody className="bg-card divide-y divide-border">
@@ -91,11 +91,11 @@ export default function AdminBlockedPage() {
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50 border-b border-border">
                       <tr>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">User</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Lesson</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Reason</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Date</th>
-                        <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Action</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("User", "Foydalanuvchi", "Пользователь")}</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Lesson", "Dars", "Урок")}</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Reason", "Sabab", "Причина")}</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Date", "Sana", "Дата")}</th>
+                        <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Action", "Amal", "Действие")}</th>
                       </tr>
                     </thead>
                     <tbody className="bg-card divide-y divide-border">

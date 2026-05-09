@@ -26,14 +26,14 @@ export default function AdminUsersPage() {
   const handleBlock = (id: number) => {
     blockUser.mutate({ id }, {
       onSuccess: () => { toast({ title: t("User blocked", "Foydalanuvchi bloklandi", "Пользователь заблокирован") }); qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey({}) }); },
-      onError: () => toast({ title: "Error", variant: "destructive" }),
+      onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
     });
   };
 
   const handleUnblock = (id: number) => {
     unblockUser.mutate({ id }, {
       onSuccess: () => { toast({ title: t("User unblocked", "Foydalanuvchi blokdan chiqdi", "Пользователь разблокирован") }); qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey({}) }); },
-      onError: () => toast({ title: "Error", variant: "destructive" }),
+      onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
     });
   };
 

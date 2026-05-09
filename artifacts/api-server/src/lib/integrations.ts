@@ -31,6 +31,7 @@ function parseSentryDsn(dsn: string): SentryConfig | null {
 function buildBaseUrl() {
   if (process.env.APP_BASE_URL) return process.env.APP_BASE_URL.replace(/\/+$/, "");
   if (process.env.REPLIT_DEV_DOMAIN) return `https://${process.env.REPLIT_DEV_DOMAIN}`;
+  if (process.env.NODE_ENV === "production") return null;
   return `http://localhost:${process.env.PORT || 8080}`;
 }
 
@@ -63,12 +64,17 @@ export async function verifyTurnstileToken(token: string, ip?: string) {
 
 export async function sendVerificationEmail(email: string, token: string) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+  const from = process.env.RESEND_FROM_EMAIL;
   if (!apiKey || !from) {
     return { ok: false, reason: "Resend is not configured" };
   }
 
-  const verifyUrl = `${buildBaseUrl()}/verify-email?token=${encodeURIComponent(token)}`;
+  const baseUrl = buildBaseUrl();
+  if (!baseUrl) {
+    return { ok: false, reason: "APP_BASE_URL is not configured" };
+  }
+
+  const verifyUrl = `${baseUrl}/verify-email?token=${encodeURIComponent(token)}`;
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {

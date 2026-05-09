@@ -16,7 +16,7 @@ export default function CompetitionDetailPage() {
   const id = Number(params?.id);
   const { t } = useLang();
   const { toast } = useToast();
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const qc = useQueryClient();
   const [inviteCode, setInviteCode] = useState("");
   const [isJoining, setIsJoining] = useState(false);
@@ -30,15 +30,12 @@ export default function CompetitionDetailPage() {
   });
 
   const handleJoin = async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     setIsJoining(true);
     try {
       const response = await fetch(`/api/competitions/${id}/join`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(comp?.type === "private" ? { inviteCode: inviteCode.trim() } : {}),
       });
       const data = await response.json().catch(() => ({}));

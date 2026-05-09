@@ -51,7 +51,7 @@ export default function AdminCompetitionsPage() {
   const onSubmit = (data: FormData) => {
     createComp.mutate({ data: { ...data, ctfIds: selectedCtfs, description: data.description || null, startTime: new Date(data.startTime).toISOString(), endTime: new Date(data.endTime).toISOString() } }, {
       onSuccess: () => { toast({ title: t("Competition created!", "Musobaqa yaratildi!", "Соревнование создано!") }); qc.invalidateQueries({ queryKey: getListCompetitionsQueryKey() }); setShowForm(false); setSelectedCtfs([]); },
-      onError: () => toast({ title: "Error", variant: "destructive" }),
+      onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
     });
   };
 
@@ -77,30 +77,32 @@ export default function AdminCompetitionsPage() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="name" render={({ field }) => (
-                  <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} data-testid="input-comp-name" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>{t("Name", "Nomi", "Название")}</FormLabel><FormControl><Input {...field} data-testid="input-comp-name" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="type" render={({ field }) => (
-                  <FormItem><FormLabel>Type</FormLabel>
+                  <FormItem><FormLabel>{t("Type", "Turi", "Тип")}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl><SelectTrigger data-testid="select-comp-type"><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>
-                        <SelectItem value="public">Public</SelectItem>
-                        <SelectItem value="private">Private</SelectItem>
+                        <SelectItem value="public">{t("Public", "Ochiq", "Публичный")}</SelectItem>
+                        <SelectItem value="private">{t("Private", "Yopiq", "Приватный")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="description" render={({ field }) => (
-                  <FormItem className="col-span-2"><FormLabel>Description</FormLabel><FormControl><Textarea {...field} rows={2} /></FormControl></FormItem>
+                  <FormItem className="col-span-2"><FormLabel>{t("Description", "Tavsif", "Описание")}</FormLabel><FormControl><Textarea {...field} rows={2} /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="startTime" render={({ field }) => (
-                  <FormItem><FormLabel>Start Time</FormLabel><FormControl><Input {...field} type="datetime-local" data-testid="input-comp-start" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>{t("Start Time", "Boshlanish vaqti", "Время начала")}</FormLabel><FormControl><Input {...field} type="datetime-local" data-testid="input-comp-start" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="endTime" render={({ field }) => (
-                  <FormItem><FormLabel>End Time</FormLabel><FormControl><Input {...field} type="datetime-local" data-testid="input-comp-end" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>{t("End Time", "Tugash vaqti", "Время окончания")}</FormLabel><FormControl><Input {...field} type="datetime-local" data-testid="input-comp-end" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <div className="col-span-2">
-                  <label className="text-sm font-medium mb-2 block">CTF Challenges ({selectedCtfs.length} selected)</label>
+                  <label className="text-sm font-medium mb-2 block">
+                    {t("CTF Challenges", "CTF topshiriqlari", "CTF задания")} ({selectedCtfs.length} {t("selected", "tanlandi", "выбрано")})
+                  </label>
                   <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto p-2 bg-muted/20 rounded border border-border">
                     {ctfs?.map(ch => (
                       <button key={ch.id} type="button" onClick={() => toggleCtf(ch.id)} className={`text-left px-2.5 py-1.5 rounded text-xs transition-colors ${selectedCtfs.includes(ch.id) ? "bg-primary/20 text-primary border border-primary/30" : "hover:bg-muted border border-transparent"}`} data-testid={`button-ctf-select-${ch.id}`}>
@@ -135,7 +137,7 @@ export default function AdminCompetitionsPage() {
                       <span>{comp.type}</span>
                       <span>{formatDate(comp.startTime)} — {formatDate(comp.endTime)}</span>
                       <span>{comp.participantCount} {t("participants", "qatnashchi", "участников")}</span>
-                      <span>{comp.ctfCount} CTFs</span>
+                      <span>{comp.ctfCount} CTF</span>
                     </div>
                   </div>
                 </div>

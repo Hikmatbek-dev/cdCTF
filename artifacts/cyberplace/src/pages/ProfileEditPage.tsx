@@ -69,10 +69,8 @@ export default function ProfileEditPage() {
     formData.append("avatar", file);
     setUploading(true);
     try {
-      const token = localStorage.getItem("cdctf_token");
       const res = await fetch(`/api/users/${user.id}/avatar`, {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
       const data = await res.json();
