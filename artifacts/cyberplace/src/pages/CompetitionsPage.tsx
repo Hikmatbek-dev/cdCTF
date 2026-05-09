@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Trophy, Clock, Users, Lock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
+import { normalizeCompetitions } from "@/lib/api-shapes";
 import { useListCompetitions, getListCompetitionsQueryKey } from "@workspace/api-client-react";
 
 function StatusBadge({ status }: { status: string }) {
@@ -22,6 +23,7 @@ export default function CompetitionsPage() {
   const { data: competitions, isLoading } = useListCompetitions({
     query: { queryKey: getListCompetitionsQueryKey() },
   });
+  const competitionList = normalizeCompetitions(competitions);
 
   const formatDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
@@ -40,14 +42,14 @@ export default function CompetitionsPage() {
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-lg" />)}
           </div>
-        ) : competitions?.length === 0 ? (
+        ) : competitionList.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <Trophy className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p>{t("No competitions yet", "Musobaqalar yo'q", "Нет соревнований")}</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {competitions?.map(comp => (
+            {competitionList.map(comp => (
               <Link href={`/competitions/${comp.id}`} key={comp.id}>
                 <div
                   className="p-5 rounded-xl border border-border bg-card hover:border-primary/40 transition-all cursor-pointer group"

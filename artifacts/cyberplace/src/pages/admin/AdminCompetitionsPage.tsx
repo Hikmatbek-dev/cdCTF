@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { useLang } from "@/lib/LanguageContext";
-import { normalizeCtfChallenges } from "@/lib/api-shapes";
+import { normalizeCompetitions, normalizeCtfChallenges } from "@/lib/api-shapes";
 import { useListCompetitions, getListCompetitionsQueryKey, useAdminCreateCompetition, useListCtfChallenges, getListCtfChallengesQueryKey } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -36,6 +36,7 @@ export default function AdminCompetitionsPage() {
 
   const { data: competitions, isLoading } = useListCompetitions({ query: { queryKey: getListCompetitionsQueryKey() } });
   const { data: ctfs } = useListCtfChallenges({}, { query: { queryKey: getListCtfChallengesQueryKey({}) } });
+  const competitionList = normalizeCompetitions(competitions);
   const ctfList = normalizeCtfChallenges(ctfs);
   const createComp = useAdminCreateCompetition();
 
@@ -129,7 +130,7 @@ export default function AdminCompetitionsPage() {
           <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}</div>
         ) : (
           <div className="space-y-3">
-            {competitions?.map(comp => (
+            {competitionList.map(comp => (
               <div key={comp.id} className="p-4 rounded-xl border border-border bg-card" data-testid={`card-competition-admin-${comp.id}`}>
                 <div className="flex items-start justify-between">
                   <div>

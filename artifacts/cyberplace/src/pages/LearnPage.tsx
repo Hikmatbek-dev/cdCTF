@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { BookOpen, CheckCircle2, Lock, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
+import { normalizeLearnCategories, normalizeLessons } from "@/lib/api-shapes";
 import { useListLearnCategories, getListLearnCategoriesQueryKey, useListLessons, getListLessonsQueryKey } from "@workspace/api-client-react";
 
 export default function LearnPage() {
@@ -17,6 +18,8 @@ export default function LearnPage() {
     selectedCategory ? { category: selectedCategory } : {},
     { query: { queryKey: getListLessonsQueryKey({ category: selectedCategory ?? undefined }) } }
   );
+  const categoryList = normalizeLearnCategories(categories);
+  const lessonList = normalizeLessons(lessons);
 
   return (
     <div className="min-h-screen bg-background pt-14">
@@ -43,7 +46,7 @@ export default function LearnPage() {
                 >
                   {t("All", "Barchasi", "Все")}
                 </button>
-                {categories?.map(cat => (
+                {categoryList.map(cat => (
                   <button
                     key={cat.id}
                     onClick={() => setSelectedCategory(cat.name)}
@@ -66,14 +69,14 @@ export default function LearnPage() {
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
               </div>
-            ) : lessons?.length === 0 ? (
+            ) : lessonList.length === 0 ? (
               <div className="text-center py-20 text-muted-foreground">
                 <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-30" />
                 <p>{t("No lessons in this category", "Bu kategoriyada darslar yo'q", "В этой категории нет уроков")}</p>
               </div>
             ) : (
               <div className="space-y-2">
-                {lessons?.map(lesson => (
+                {lessonList.map(lesson => (
                   <Link href={`/learn/${lesson.id}`} key={lesson.id}>
                     <div
                       className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-all group ${

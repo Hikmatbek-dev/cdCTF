@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { useLang } from "@/lib/LanguageContext";
+import { normalizeLearnCategories, normalizeLessons } from "@/lib/api-shapes";
 import { useListLessons, getListLessonsQueryKey, useListLearnCategories, getListLearnCategoriesQueryKey, useAdminCreateLesson, useAdminUpdateLesson, useAdminDeleteLesson } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -44,6 +45,8 @@ export default function AdminLessonsPage() {
 
   const { data: lessons, isLoading } = useListLessons({}, { query: { queryKey: getListLessonsQueryKey({}) } });
   const { data: categories } = useListLearnCategories({ query: { queryKey: getListLearnCategoriesQueryKey() } });
+  const lessonList = normalizeLessons(lessons);
+  const categoryList = normalizeLearnCategories(categories);
 
   const createLesson = useAdminCreateLesson();
   const updateLesson = useAdminUpdateLesson();
@@ -59,7 +62,7 @@ export default function AdminLessonsPage() {
 
   const { fields, append, remove } = useFieldArray({ control: form.control, name: "questions" });
 
-  const openCreate = () => { setEditingId(null); form.reset({ title: "", content: "", categoryId: categories?.[0]?.id ?? 1, points: 50, questions: [{ question: "", options: ["", "", "", ""], correctOption: 0 }] }); setShowForm(true); };
+  const openCreate = () => { setEditingId(null); form.reset({ title: "", content: "", categoryId: categoryList[0]?.id ?? 1, points: 50, questions: [{ question: "", options: ["", "", "", ""], correctOption: 0 }] }); setShowForm(true); };
 
   const onSubmit = (data: FormData) => {
     const invalidate = () => { qc.invalidateQueries({ queryKey: getListLessonsQueryKey({}) }); setShowForm(false); };
@@ -119,7 +122,7 @@ export default function AdminLessonsPage() {
                     <FormItem><FormLabel>{t("Category", "Kategoriya", "Категория")}</FormLabel>
                       <Select onValueChange={v => field.onChange(Number(v))} defaultValue={String(field.value)}>
                         <FormControl><SelectTrigger data-testid="select-lesson-category"><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent>{categories?.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
+	                        <SelectContent>{categoryList.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
                       </Select>
                     </FormItem>
                   )} />
@@ -195,7 +198,7 @@ export default function AdminLessonsPage() {
                 </tr>
               </thead>
               <tbody className="bg-card divide-y divide-border">
-                {lessons?.map(lesson => (
+                {lessonList.map(lesson => (
                   <tr key={lesson.id} className="hover:bg-muted/20 transition-colors" data-testid={`row-lesson-admin-${lesson.id}`}>
                     <td className="px-4 py-3 font-medium">{lesson.title}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{lesson.categoryName}</td>
