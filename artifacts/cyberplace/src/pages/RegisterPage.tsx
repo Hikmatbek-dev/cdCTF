@@ -31,7 +31,9 @@ export default function RegisterPage() {
   const [captchaToken, setCaptchaToken] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [captchaUnavailable, setCaptchaUnavailable] = useState(false);
+  const [captchaReady, setCaptchaReady] = useState(false);
   const isLocalDev = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  const hasTurnstileSiteKey = Boolean(import.meta.env.VITE_TURNSTILE_SITE_KEY);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -117,14 +119,45 @@ export default function RegisterPage() {
                 </FormItem>
               )} />
               <div className="space-y-2">
-                <TurnstileWidget onTokenChange={setCaptchaToken} onError={() => setCaptchaUnavailable(true)} />
-                {!captchaToken && !captchaUnavailable && <p className="text-xs text-muted-foreground">{t("Complete the captcha to continue", "Davom etish uchun captcha ni bajaring", "Пройдите captcha для продолжения")}</p>}
+                <TurnstileWidget
+                  onTokenChange={setCaptchaToken}
+                  onError={() => setCaptchaUnavailable(true)}
+                  onReadyChange={setCaptchaReady}
+                />
+                {!hasTurnstileSiteKey && (
+                  <p className="text-xs text-amber-600">
+                    {t(
+                      "Turnstile site key is not configured in the frontend environment.",
+                      "Frontend muhitida Turnstile site key sozlanmagan.",
+                      "В среде frontend не настроен site key Turnstile."
+                    )}
+                  </p>
+                )}
+                {hasTurnstileSiteKey && !captchaReady && !captchaUnavailable && (
+                  <p className="text-xs text-muted-foreground">
+                    {t(
+                      "Loading captcha verification...",
+                      "Captcha tekshiruvi yuklanmoqda...",
+                      "Загрузка captcha..."
+                    )}
+                  </p>
+                )}
+                {!captchaToken && captchaReady && !captchaUnavailable && <p className="text-xs text-muted-foreground">{t("Complete the captcha to continue", "Davom etish uchun captcha ni bajaring", "Пройдите captcha для продолжения")}</p>}
                 {captchaUnavailable && isLocalDev && (
                   <p className="text-xs text-amber-600">
                     {t(
                       "Turnstile is unavailable on this local environment. Registration can continue in development mode.",
                       "Bu lokal muhitda Turnstile ishlamayapti. Development rejimida ro'yxatdan o'tish davom etadi.",
                       "Turnstile недоступен в локальной среде. В режиме разработки регистрацию можно продолжить."
+                    )}
+                  </p>
+                )}
+                {captchaUnavailable && !isLocalDev && (
+                  <p className="text-xs text-amber-600">
+                    {t(
+                      "Captcha could not be loaded. Check the Turnstile site key and allowed domains in Cloudflare.",
+                      "Captcha yuklanmadi. Cloudflare ichida Turnstile site key va ruxsat etilgan domenlarni tekshiring.",
+                      "Captcha не загрузилась. Проверьте site key Turnstile и разрешённые домены в Cloudflare."
                     )}
                   </p>
                 )}
