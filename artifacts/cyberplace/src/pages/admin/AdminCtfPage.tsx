@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 import { useLang } from "@/lib/LanguageContext";
+import { normalizeCtfChallenges } from "@/lib/api-shapes";
 import { useListCtfChallenges, getListCtfChallengesQueryKey, useAdminCreateCtf, useAdminUpdateCtf, useAdminDeleteCtf } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -47,6 +48,7 @@ export default function AdminCtfPage() {
   const { data: challenges, isLoading } = useListCtfChallenges({}, {
     query: { queryKey: getListCtfChallengesQueryKey({}) },
   });
+  const challengeList = normalizeCtfChallenges(challenges);
 
   const createCtf = useAdminCreateCtf();
   const updateCtf = useAdminUpdateCtf();
@@ -88,7 +90,7 @@ export default function AdminCtfPage() {
     });
     setShowForm(true);
   };
-  const openEdit = (ch: NonNullable<typeof challenges>[0] & { description?: string; flag?: string }) => {
+  const openEdit = (ch: NonNullable<typeof challengeList>[0] & { description?: string; flag?: string }) => {
     setEditingId(ch.id);
     form.reset({
       name: ch.name,
@@ -259,7 +261,7 @@ export default function AdminCtfPage() {
                 </tr>
               </thead>
               <tbody className="bg-card divide-y divide-border">
-                {challenges?.map(ch => (
+                {challengeList.map(ch => (
                   <tr key={ch.id} className="hover:bg-muted/20 transition-colors" data-testid={`row-ctf-${ch.id}`}>
                     <td className="px-4 py-3 font-medium">{ch.name}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs font-mono">{ch.category}</td>

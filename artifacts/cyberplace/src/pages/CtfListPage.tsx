@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 import { useLang } from "@/lib/LanguageContext";
 import { useListCtfChallenges, getListCtfChallengesQueryKey } from "@workspace/api-client-react";
+import { normalizeCtfChallenges } from "@/lib/api-shapes";
 
 const CATEGORIES = ["All", "Web", "Crypto", "Reverse", "Forensics", "Pwn", "OSINT", "Steganography", "Others"];
 const DIFFICULTIES = ["All", "easy", "medium", "hard", "insane"];
@@ -30,7 +31,7 @@ export default function CtfListPage() {
     { query: { queryKey: getListCtfChallengesQueryKey(queryParams) } }
   );
 
-  const filtered = challenges ?? [];
+  const filtered = normalizeCtfChallenges(challenges);
 
   return (
     <div className="min-h-screen bg-background pt-14">

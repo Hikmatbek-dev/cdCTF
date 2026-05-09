@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { useLang } from "@/lib/LanguageContext";
+import { normalizeCtfChallenges } from "@/lib/api-shapes";
 import { useListCompetitions, getListCompetitionsQueryKey, useAdminCreateCompetition, useListCtfChallenges, getListCtfChallengesQueryKey } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -35,6 +36,7 @@ export default function AdminCompetitionsPage() {
 
   const { data: competitions, isLoading } = useListCompetitions({ query: { queryKey: getListCompetitionsQueryKey() } });
   const { data: ctfs } = useListCtfChallenges({}, { query: { queryKey: getListCtfChallengesQueryKey({}) } });
+  const ctfList = normalizeCtfChallenges(ctfs);
   const createComp = useAdminCreateCompetition();
 
   const form = useForm<FormData>({
@@ -104,7 +106,7 @@ export default function AdminCompetitionsPage() {
                     {t("CTF Challenges", "CTF topshiriqlari", "CTF задания")} ({selectedCtfs.length} {t("selected", "tanlandi", "выбрано")})
                   </label>
                   <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto p-2 bg-muted/20 rounded border border-border">
-                    {ctfs?.map(ch => (
+                    {ctfList.map(ch => (
                       <button key={ch.id} type="button" onClick={() => toggleCtf(ch.id)} className={`text-left px-2.5 py-1.5 rounded text-xs transition-colors ${selectedCtfs.includes(ch.id) ? "bg-primary/20 text-primary border border-primary/30" : "hover:bg-muted border border-transparent"}`} data-testid={`button-ctf-select-${ch.id}`}>
                         {ch.name}
                       </button>
