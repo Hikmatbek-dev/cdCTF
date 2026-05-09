@@ -82,9 +82,9 @@ export function TurnstileWidget({ onTokenChange, onError, onReadyChange }: Props
     widgetIdRef.current = window.turnstile.render(document.getElementById(containerId) as HTMLElement, {
       sitekey: siteKey,
       theme: "auto",
-      retry: "never",
+      retry: "auto",
       "retry-interval": 8000,
-      "refresh-timeout": "manual",
+      "refresh-timeout": "auto",
       callback: (token) => {
         onReadyChange?.(true);
         onTokenChange(token);
