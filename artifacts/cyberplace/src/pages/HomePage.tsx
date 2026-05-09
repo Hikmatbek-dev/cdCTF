@@ -8,6 +8,9 @@ export default function HomePage() {
   const { t } = useLang();
   const { data: stats } = useGetCtfStats();
   const { data: scoreboard } = useGetScoreboard({ limit: 5 });
+  const categoryCounts = stats?.categoryCounts ?? [];
+  const mostSolved = stats?.mostSolved ?? [];
+  const scoreboardEntries = scoreboard?.entries ?? [];
 
   const features = [
     {
@@ -86,7 +89,7 @@ export default function HomePage() {
                 <div className="text-sm text-muted-foreground mt-1">{t("CTF Challenges", "CTF Topshiriqlari", "CTF Задания")}</div>
               </div>
               <div>
-                <div className="text-3xl font-bold font-mono text-primary" data-testid="stat-categories">{stats.categoryCounts.length}</div>
+                <div className="text-3xl font-bold font-mono text-primary" data-testid="stat-categories">{categoryCounts.length}</div>
                 <div className="text-sm text-muted-foreground mt-1">{t("Categories", "Kategoriyalar", "Категории")}</div>
               </div>
               <div>
@@ -94,7 +97,7 @@ export default function HomePage() {
                 <div className="text-sm text-muted-foreground mt-1">{t("Players", "O'yinchilar", "Игроков")}</div>
               </div>
               <div>
-                <div className="text-3xl font-bold font-mono text-primary" data-testid="stat-most-solved">{stats.mostSolved.length > 0 ? stats.mostSolved[0].solvedCount : 0}</div>
+                <div className="text-3xl font-bold font-mono text-primary" data-testid="stat-most-solved">{mostSolved.length > 0 ? mostSolved[0].solvedCount : 0}</div>
                 <div className="text-sm text-muted-foreground mt-1">{t("Most Solved", "Ko'p Yechilgan", "Наибольшее решений")}</div>
               </div>
             </div>
@@ -144,7 +147,7 @@ export default function HomePage() {
       </section>
 
       {/* Top Players */}
-      {scoreboard && scoreboard.entries.length > 0 && (
+      {scoreboard && scoreboardEntries.length > 0 && (
         <section className="py-16 px-4">
           <div className="max-w-3xl mx-auto">
             <div className="flex items-center justify-between mb-6">
@@ -156,7 +159,7 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="space-y-2">
-              {scoreboard.entries.map((entry, i) => (
+              {scoreboardEntries.map((entry, i) => (
                 <Link href={`/profile/${entry.userId}`} key={entry.userId}>
                   <div className="flex items-center gap-4 p-3 rounded-lg border border-border bg-card hover:border-primary/30 transition-colors cursor-pointer" data-testid={`row-top-player-${i}`}>
                     <span className="w-6 text-center font-mono text-sm font-bold text-muted-foreground">
