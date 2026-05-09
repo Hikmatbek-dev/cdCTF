@@ -55,13 +55,14 @@ router.post("/register", authRateLimit, async (req, res) => {
   const body = req.body as { nickname: string; email: string; password: string; captchaToken?: string };
   const bypassLocalCaptcha = process.env.TURNSTILE_BYPASS_LOCALHOST === "true"
     && (req.ip === "::1" || req.ip === "127.0.0.1" || req.ip?.startsWith("::ffff:127.0.0.1"));
+  const enforceTurnstile = process.env.TURNSTILE_ENFORCE === "true";
 
-  if (!bypassLocalCaptcha && (typeof body.captchaToken !== "string" || !body.captchaToken.trim())) {
+  if (enforceTurnstile && !bypassLocalCaptcha && (typeof body.captchaToken !== "string" || !body.captchaToken.trim())) {
     return res.status(400).json({ error: "Captcha is required" });
   }
-  if (!bypassLocalCaptcha) {
+  if (!bypassLocalCaptcha && typeof body.captchaToken === "string" && body.captchaToken.trim()) {
     const captchaResult = await verifyTurnstileToken(body.captchaToken!, req.ip);
-    if (!captchaResult.ok) return res.status(400).json({ error: "Captcha verification failed" });
+    if (enforceTurnstile && !captchaResult.ok) return res.status(400).json({ error: "Captcha verification failed" });
   }
 
   const nickname = normalizeNickname(body.nickname);

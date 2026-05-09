@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -35,6 +36,17 @@ export default function RegisterPage() {
   const [captchaErrorCode, setCaptchaErrorCode] = useState<string | null>(null);
   const isLocalDev = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
   const hasTurnstileSiteKey = Boolean(import.meta.env.VITE_TURNSTILE_SITE_KEY);
+
+  useEffect(() => {
+    if (!hasTurnstileSiteKey || captchaToken || captchaUnavailable) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setCaptchaUnavailable(true);
+      setCaptchaErrorCode((current) => current ?? "soft-timeout");
+    }, 12000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [captchaToken, captchaUnavailable, hasTurnstileSiteKey]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -172,13 +184,13 @@ export default function RegisterPage() {
                     {t(
                       captchaErrorCode === "110200"
                         ? "Turnstile rejected this hostname. Add your Vercel domain to Cloudflare Turnstile allowed hostnames."
-                        : "Captcha verification did not finish. Check the Turnstile site key, allowed domains, and CSP rules on Vercel.",
+                        : "Captcha verification did not finish. Registration can continue with server-side rate limits and email verification.",
                       captchaErrorCode === "110200"
                         ? "Turnstile bu domenni rad etdi. Cloudflare Turnstile ichida Vercel domeningizni allowed hostnames ga qo'shing."
-                        : "Captcha tekshiruvi tugamadi. Cloudflare ichida Turnstile site key, ruxsat etilgan domenlar va Vercel CSP qoidalarini tekshiring.",
+                        : "Captcha tekshiruvi tugamadi. Ro'yxatdan o'tish server tarafdagi rate-limit va email verification bilan davom etadi.",
                       captchaErrorCode === "110200"
                         ? "Turnstile отклонил этот домен. Добавьте ваш Vercel домен в allowed hostnames Cloudflare Turnstile."
-                        : "Проверка captcha не завершилась. Проверьте site key Turnstile, разрешённые домены и правила CSP в Vercel."
+                        : "Проверка captcha не завершилась. Регистрация продолжится с серверным rate limit и подтверждением email."
                     )}
                   </p>
                 )}
@@ -188,7 +200,7 @@ export default function RegisterPage() {
                   </p>
                 )}
               </div>
-              <Button type="submit" className="w-full" disabled={isSubmitting || (!captchaToken && !(isLocalDev && captchaUnavailable))} data-testid="button-submit-register">
+              <Button type="submit" className="w-full" disabled={isSubmitting || (!captchaToken && !captchaUnavailable)} data-testid="button-submit-register">
                 {isSubmitting ? t("Creating...", "Yaratilmoqda...", "Создание...") : t("Create Account", "Hisob Yaratish", "Создать аккаунт")}
               </Button>
             </form>
