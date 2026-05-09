@@ -132,25 +132,27 @@ export default function RegisterPage() {
                 </FormItem>
               )} />
               <div className="space-y-2">
-                <TurnstileWidget
-                  onTokenChange={(token) => {
-                    setCaptchaToken(token);
-                    if (token) {
-                      setCaptchaUnavailable(false);
-                      setCaptchaErrorCode(null);
-                    }
-                  }}
-                  onError={(errorCode) => {
-                    setCaptchaUnavailable(true);
-                    setCaptchaErrorCode(errorCode ?? null);
-                  }}
-                  onReadyChange={(ready) => {
-                    setCaptchaReady(ready);
-                    if (ready) {
-                      setCaptchaUnavailable(false);
-                    }
-                  }}
-                />
+                {!captchaUnavailable && (
+                  <TurnstileWidget
+                    onTokenChange={(token) => {
+                      setCaptchaToken(token);
+                      if (token) {
+                        setCaptchaUnavailable(false);
+                        setCaptchaErrorCode(null);
+                      }
+                    }}
+                    onError={(errorCode) => {
+                      setCaptchaUnavailable(true);
+                      setCaptchaErrorCode(errorCode ?? null);
+                    }}
+                    onReadyChange={(ready) => {
+                      setCaptchaReady(ready);
+                      if (ready) {
+                        setCaptchaUnavailable(false);
+                      }
+                    }}
+                  />
+                )}
                 {!hasTurnstileSiteKey && (
                   <p className="text-xs text-amber-600">
                     {t(
@@ -180,7 +182,7 @@ export default function RegisterPage() {
                   </p>
                 )}
                 {captchaUnavailable && !isLocalDev && (
-                  <p className="text-xs text-amber-600">
+                  <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-500">
                     {t(
                       captchaErrorCode === "110200"
                         ? "Turnstile rejected this hostname. Add your Vercel domain to Cloudflare Turnstile allowed hostnames."
@@ -192,11 +194,11 @@ export default function RegisterPage() {
                         ? "Turnstile отклонил этот домен. Добавьте ваш Vercel домен в allowed hostnames Cloudflare Turnstile."
                         : "Проверка captcha не завершилась. Регистрация продолжится с серверным rate limit и подтверждением email."
                     )}
-                  </p>
+                  </div>
                 )}
                 {captchaErrorCode && !isLocalDev && (
                   <p className="text-xs text-muted-foreground">
-                    Turnstile error code: {captchaErrorCode}
+                    Turnstile status: {captchaErrorCode}
                   </p>
                 )}
               </div>
