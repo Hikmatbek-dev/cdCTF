@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useLocation } from "wouter";
 import { Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { TurnstileWidget } from "@/components/TurnstileWidget";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
@@ -29,24 +27,7 @@ export default function RegisterPage() {
   const { t } = useLang();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [captchaToken, setCaptchaToken] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [captchaUnavailable, setCaptchaUnavailable] = useState(false);
-  const [captchaReady, setCaptchaReady] = useState(false);
-  const [captchaErrorCode, setCaptchaErrorCode] = useState<string | null>(null);
-  const isLocalDev = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-  const hasTurnstileSiteKey = Boolean(import.meta.env.VITE_TURNSTILE_SITE_KEY);
-
-  useEffect(() => {
-    if (!hasTurnstileSiteKey || captchaToken || captchaUnavailable) return;
-
-    const timeoutId = window.setTimeout(() => {
-      setCaptchaUnavailable(true);
-      setCaptchaErrorCode((current) => current ?? "soft-timeout");
-    }, 12000);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [captchaToken, captchaUnavailable, hasTurnstileSiteKey]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -54,17 +35,12 @@ export default function RegisterPage() {
   });
 
   const onSubmit = async (data: FormData) => {
-    if (!captchaToken && !(isLocalDev && captchaUnavailable)) {
-      toast({ title: t("Captcha required", "Captcha kerak", "Нужна captcha"), variant: "destructive" });
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, captchaToken: captchaToken || undefined }),
+        body: JSON.stringify(data),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -131,78 +107,7 @@ export default function RegisterPage() {
                   <FormMessage />
                 </FormItem>
               )} />
-              <div className="space-y-2">
-                {!captchaUnavailable && (
-                  <TurnstileWidget
-                    onTokenChange={(token) => {
-                      setCaptchaToken(token);
-                      if (token) {
-                        setCaptchaUnavailable(false);
-                        setCaptchaErrorCode(null);
-                      }
-                    }}
-                    onError={(errorCode) => {
-                      setCaptchaUnavailable(true);
-                      setCaptchaErrorCode(errorCode ?? null);
-                    }}
-                    onReadyChange={(ready) => {
-                      setCaptchaReady(ready);
-                      if (ready) {
-                        setCaptchaUnavailable(false);
-                      }
-                    }}
-                  />
-                )}
-                {!hasTurnstileSiteKey && (
-                  <p className="text-xs text-amber-600">
-                    {t(
-                      "Turnstile site key is not configured in the frontend environment.",
-                      "Frontend muhitida Turnstile site key sozlanmagan.",
-                      "В среде frontend не настроен site key Turnstile."
-                    )}
-                  </p>
-                )}
-                {hasTurnstileSiteKey && !captchaReady && !captchaUnavailable && (
-                  <p className="text-xs text-muted-foreground">
-                    {t(
-                      "Loading captcha verification...",
-                      "Captcha tekshiruvi yuklanmoqda...",
-                      "Загрузка captcha..."
-                    )}
-                  </p>
-                )}
-                {!captchaToken && captchaReady && !captchaUnavailable && <p className="text-xs text-muted-foreground">{t("Complete the captcha to continue", "Davom etish uchun captcha ni bajaring", "Пройдите captcha для продолжения")}</p>}
-                {captchaUnavailable && isLocalDev && (
-                  <p className="text-xs text-amber-600">
-                    {t(
-                      "Turnstile is unavailable on this local environment. Registration can continue in development mode.",
-                      "Bu lokal muhitda Turnstile ishlamayapti. Development rejimida ro'yxatdan o'tish davom etadi.",
-                      "Turnstile недоступен в локальной среде. В режиме разработки регистрацию можно продолжить."
-                    )}
-                  </p>
-                )}
-                {captchaUnavailable && !isLocalDev && (
-                  <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-500">
-                    {t(
-                      captchaErrorCode === "110200"
-                        ? "Turnstile rejected this hostname. Add your Vercel domain to Cloudflare Turnstile allowed hostnames."
-                        : "Captcha verification did not finish. Registration can continue with server-side rate limits and email verification.",
-                      captchaErrorCode === "110200"
-                        ? "Turnstile bu domenni rad etdi. Cloudflare Turnstile ichida Vercel domeningizni allowed hostnames ga qo'shing."
-                        : "Captcha tekshiruvi tugamadi. Ro'yxatdan o'tish server tarafdagi rate-limit va email verification bilan davom etadi.",
-                      captchaErrorCode === "110200"
-                        ? "Turnstile отклонил этот домен. Добавьте ваш Vercel домен в allowed hostnames Cloudflare Turnstile."
-                        : "Проверка captcha не завершилась. Регистрация продолжится с серверным rate limit и подтверждением email."
-                    )}
-                  </div>
-                )}
-                {captchaErrorCode && !isLocalDev && (
-                  <p className="text-xs text-muted-foreground">
-                    Turnstile status: {captchaErrorCode}
-                  </p>
-                )}
-              </div>
-              <Button type="submit" className="w-full" disabled={isSubmitting || (!captchaToken && !captchaUnavailable)} data-testid="button-submit-register">
+              <Button type="submit" className="w-full" disabled={isSubmitting} data-testid="button-submit-register">
                 {isSubmitting ? t("Creating...", "Yaratilmoqda...", "Создание...") : t("Create Account", "Hisob Yaratish", "Создать аккаунт")}
               </Button>
             </form>
