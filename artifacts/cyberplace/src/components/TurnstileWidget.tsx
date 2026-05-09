@@ -6,19 +6,23 @@ declare global {
       render: (container: string | HTMLElement, options: {
         sitekey: string;
         callback?: (token: string) => void;
+        "timeout-callback"?: () => void;
         "expired-callback"?: () => void;
-        "error-callback"?: () => void;
+        "error-callback"?: (errorCode?: string) => void;
+        retry?: "auto" | "never";
+        "retry-interval"?: number;
+        "refresh-timeout"?: "auto" | "manual" | "never";
         theme?: "light" | "dark" | "auto";
       }) => string;
       remove?: (widgetId: string) => void;
-      reset?: (widgetId: string) => void;
+      reset?: (widgetId: string | HTMLElement) => void;
     };
   }
 }
 
 type Props = {
   onTokenChange: (token: string) => void;
-  onError?: () => void;
+  onError?: (errorCode?: string) => void;
   onReadyChange?: (ready: boolean) => void;
 };
 
@@ -75,35 +79,37 @@ export function TurnstileWidget({ onTokenChange, onError, onReadyChange }: Props
 
   useEffect(() => {
     if (!siteKey || !scriptReady || !window.turnstile || widgetIdRef.current) return;
-    let timeoutId: number | null = null;
-
     widgetIdRef.current = window.turnstile.render(document.getElementById(containerId) as HTMLElement, {
       sitekey: siteKey,
       theme: "auto",
+      retry: "never",
+      "retry-interval": 8000,
+      "refresh-timeout": "manual",
       callback: (token) => {
-        if (timeoutId) window.clearTimeout(timeoutId);
         onReadyChange?.(true);
         onTokenChange(token);
       },
       "expired-callback": () => {
         onTokenChange("");
+        if (widgetIdRef.current && window.turnstile?.reset) {
+          window.turnstile.reset(widgetIdRef.current);
+        }
       },
-      "error-callback": () => {
-        if (timeoutId) window.clearTimeout(timeoutId);
+      "timeout-callback": () => {
         onReadyChange?.(false);
         onTokenChange("");
-        onError?.();
+        if (widgetIdRef.current && window.turnstile?.reset) {
+          window.turnstile.reset(widgetIdRef.current);
+        }
+      },
+      "error-callback": (errorCode) => {
+        onReadyChange?.(false);
+        onTokenChange("");
+        onError?.(errorCode);
       },
     });
 
-    timeoutId = window.setTimeout(() => {
-      onReadyChange?.(false);
-      onTokenChange("");
-      onError?.();
-    }, 15000);
-
     return () => {
-      if (timeoutId) window.clearTimeout(timeoutId);
       if (widgetIdRef.current && window.turnstile?.remove) {
         window.turnstile.remove(widgetIdRef.current);
         widgetIdRef.current = null;

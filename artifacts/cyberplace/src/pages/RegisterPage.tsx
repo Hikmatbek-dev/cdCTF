@@ -32,6 +32,7 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [captchaUnavailable, setCaptchaUnavailable] = useState(false);
   const [captchaReady, setCaptchaReady] = useState(false);
+  const [captchaErrorCode, setCaptchaErrorCode] = useState<string | null>(null);
   const isLocalDev = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
   const hasTurnstileSiteKey = Boolean(import.meta.env.VITE_TURNSTILE_SITE_KEY);
 
@@ -120,9 +121,23 @@ export default function RegisterPage() {
               )} />
               <div className="space-y-2">
                 <TurnstileWidget
-                  onTokenChange={setCaptchaToken}
-                  onError={() => setCaptchaUnavailable(true)}
-                  onReadyChange={setCaptchaReady}
+                  onTokenChange={(token) => {
+                    setCaptchaToken(token);
+                    if (token) {
+                      setCaptchaUnavailable(false);
+                      setCaptchaErrorCode(null);
+                    }
+                  }}
+                  onError={(errorCode) => {
+                    setCaptchaUnavailable(true);
+                    setCaptchaErrorCode(errorCode ?? null);
+                  }}
+                  onReadyChange={(ready) => {
+                    setCaptchaReady(ready);
+                    if (ready) {
+                      setCaptchaUnavailable(false);
+                    }
+                  }}
                 />
                 {!hasTurnstileSiteKey && (
                   <p className="text-xs text-amber-600">
@@ -155,10 +170,21 @@ export default function RegisterPage() {
                 {captchaUnavailable && !isLocalDev && (
                   <p className="text-xs text-amber-600">
                     {t(
-                      "Captcha verification did not finish. Check the Turnstile site key, allowed domains, and CSP rules on Vercel.",
-                      "Captcha tekshiruvi tugamadi. Cloudflare ichida Turnstile site key, ruxsat etilgan domenlar va Vercel CSP qoidalarini tekshiring.",
-                      "Проверка captcha не завершилась. Проверьте site key Turnstile, разрешённые домены и правила CSP в Vercel."
+                      captchaErrorCode === "110200"
+                        ? "Turnstile rejected this hostname. Add your Vercel domain to Cloudflare Turnstile allowed hostnames."
+                        : "Captcha verification did not finish. Check the Turnstile site key, allowed domains, and CSP rules on Vercel.",
+                      captchaErrorCode === "110200"
+                        ? "Turnstile bu domenni rad etdi. Cloudflare Turnstile ichida Vercel domeningizni allowed hostnames ga qo'shing."
+                        : "Captcha tekshiruvi tugamadi. Cloudflare ichida Turnstile site key, ruxsat etilgan domenlar va Vercel CSP qoidalarini tekshiring.",
+                      captchaErrorCode === "110200"
+                        ? "Turnstile отклонил этот домен. Добавьте ваш Vercel домен в allowed hostnames Cloudflare Turnstile."
+                        : "Проверка captcha не завершилась. Проверьте site key Turnstile, разрешённые домены и правила CSP в Vercel."
                     )}
+                  </p>
+                )}
+                {captchaErrorCode && !isLocalDev && (
+                  <p className="text-xs text-muted-foreground">
+                    Turnstile error code: {captchaErrorCode}
                   </p>
                 )}
               </div>
