@@ -5,6 +5,12 @@ type SentryConfig = {
   secretKey?: string;
 };
 
+type FetchResponseLike = {
+  ok: boolean;
+  status: number;
+  json: () => Promise<unknown>;
+};
+
 function parseSentryDsn(dsn: string): SentryConfig | null {
   try {
     const url = new URL(dsn);
@@ -48,7 +54,7 @@ export async function verifyTurnstileToken(token: string, ip?: string) {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body,
-  });
+  }) as unknown as FetchResponseLike;
 
   if (!response.ok) return { ok: false, reason: "Turnstile verification request failed" };
   const data = await response.json() as { success?: boolean; "error-codes"?: string[] };
@@ -83,7 +89,7 @@ export async function sendVerificationEmail(email: string, token: string) {
         </div>
       `,
     }),
-  });
+  }) as unknown as FetchResponseLike;
 
   return { ok: response.ok, reason: response.ok ? undefined : `Resend returned ${response.status}` };
 }
