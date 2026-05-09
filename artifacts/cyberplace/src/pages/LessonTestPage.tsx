@@ -23,18 +23,19 @@ export default function LessonTestPage() {
   const [countdown, setCountdown] = useState(0);
   const [blocked, setBlocked] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [fullscreenActive, setFullscreenActive] = useState(Boolean(document.fullscreenElement));
+  const [fullscreenStarted, setFullscreenStarted] = useState(false);
 
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTest = useStartLessonTest();
   const submitTest = useSubmitLessonTest();
   const reportEscape = useReportTestEscape();
 
-  // Enter fullscreen on mount
   useEffect(() => {
-    document.documentElement.requestFullscreen?.().catch(() => {});
-
     const handleFullscreenChange = () => {
-      if (!document.fullscreenElement && sessionId && !result) {
+      const isFullscreen = Boolean(document.fullscreenElement);
+      setFullscreenActive(isFullscreen);
+      if (!isFullscreen && fullscreenStarted && sessionId && !result) {
         handleEscape();
       }
     };
@@ -45,7 +46,25 @@ export default function LessonTestPage() {
       if (document.fullscreenElement) document.exitFullscreen?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, result]);
+  }, [sessionId, result, fullscreenStarted]);
+
+  const enterFullscreen = () => {
+    if (!document.documentElement.requestFullscreen) {
+      setFullscreenStarted(true);
+      return;
+    }
+    document.documentElement.requestFullscreen()
+      .then(() => {
+        setFullscreenStarted(true);
+        setFullscreenActive(true);
+      })
+      .catch(() => {
+        toast({
+          title: t("Fullscreen is required", "To'liq ekran kerak", "Требуется полноэкранный режим"),
+          variant: "destructive",
+        });
+      });
+  };
 
   const handleEscape = useCallback(() => {
     if (!sessionId) return;
@@ -180,6 +199,23 @@ export default function LessonTestPage() {
 
   const answered = Object.keys(answers).length;
   const progress = (answered / questions.length) * 100;
+
+  if (!fullscreenStarted || !fullscreenActive) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="text-center max-w-sm">
+          <AlertTriangle className="w-12 h-12 text-primary mx-auto mb-4" />
+          <h2 className="text-xl font-bold mb-2">{t("Fullscreen required", "To'liq ekran kerak", "Нужен полноэкранный режим")}</h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            {t("Start the test in fullscreen mode.", "Testni to'liq ekran rejimida boshlang.", "Начните тест в полноэкранном режиме.")}
+          </p>
+          <Button onClick={enterFullscreen}>
+            {t("Start Fullscreen Test", "To'liq ekran testini boshlash", "Начать тест")}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

@@ -1,6 +1,7 @@
 import express, { type Express, type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import path from "node:path";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { reportErrorToSentry } from "./lib/integrations";
@@ -37,6 +38,7 @@ app.use(createRateLimiter({ windowMs: 15 * 60 * 1000, max: 600, keyPrefix: "glob
 app.use(cookieParser());
 app.use(express.json({ limit: "100kb" }));
 app.use(express.urlencoded({ extended: true, limit: "100kb" }));
+app.use("/uploads", express.static(process.env.LOCAL_UPLOAD_DIR ? path.resolve(process.env.LOCAL_UPLOAD_DIR) : path.resolve(process.cwd(), "..", "..", "uploads")));
 
 app.use("/api", router);
 

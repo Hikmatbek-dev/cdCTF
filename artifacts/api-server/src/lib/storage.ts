@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 
 function getSupabaseConfig() {
   const url = process.env.SUPABASE_URL;
@@ -10,6 +12,16 @@ function getSupabaseConfig() {
 
 function sanitizePathSegment(input: string) {
   return input.replace(/[^a-zA-Z0-9._-]/g, "-");
+}
+
+function getLocalUploadsRoot() {
+  return process.env.LOCAL_UPLOAD_DIR
+    ? path.resolve(process.env.LOCAL_UPLOAD_DIR)
+    : path.resolve(process.cwd(), "..", "..", "uploads");
+}
+
+function getLocalPublicUrl(objectName: string) {
+  return `/uploads/${objectName.split("/").map(encodeURIComponent).join("/")}`;
 }
 
 export function isStorageConfigured() {
@@ -56,7 +68,16 @@ export async function uploadBufferToStorage(params: {
   buffer: Buffer;
 }) {
   const config = getSupabaseConfig();
-  if (!config) throw new Error("Supabase storage is not configured");
+  if (!config) {
+    const objectName = `${params.folder}/${randomUUID()}-${sanitizePathSegment(params.filename)}`;
+    const destination = path.join(getLocalUploadsRoot(), objectName);
+    await mkdir(path.dirname(destination), { recursive: true });
+    await writeFile(destination, params.buffer);
+    return {
+      path: objectName,
+      publicUrl: getLocalPublicUrl(objectName),
+    };
+  }
   await ensureBucket();
 
   const objectName = `${params.folder}/${randomUUID()}-${sanitizePathSegment(params.filename)}`;

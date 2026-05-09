@@ -54,13 +54,56 @@ export default function AdminCtfPage() {
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", description: "", category: "Web", difficulty: "easy", points: 100, flag: "" },
+    defaultValues: {
+      name: "",
+      nameUz: "",
+      nameRu: "",
+      description: "",
+      descriptionUz: "",
+      descriptionRu: "",
+      category: "Web",
+      difficulty: "easy",
+      points: 100,
+      hint: "",
+      flag: "",
+      fileUrl: "",
+    },
   });
 
-  const openCreate = () => { setEditingId(null); form.reset({ name: "", description: "", category: "Web", difficulty: "easy", points: 100, flag: "" }); setShowForm(true); };
+  const openCreate = () => {
+    setEditingId(null);
+    form.reset({
+      name: "",
+      nameUz: "",
+      nameRu: "",
+      description: "",
+      descriptionUz: "",
+      descriptionRu: "",
+      category: "Web",
+      difficulty: "easy",
+      points: 100,
+      hint: "",
+      flag: "",
+      fileUrl: "",
+    });
+    setShowForm(true);
+  };
   const openEdit = (ch: NonNullable<typeof challenges>[0] & { description?: string; flag?: string }) => {
     setEditingId(ch.id);
-    form.reset({ name: ch.name, description: (ch as { description?: string }).description ?? "", category: ch.category, difficulty: ch.difficulty as "easy" | "medium" | "hard" | "insane", points: ch.points, flag: "" });
+    form.reset({
+      name: ch.name,
+      nameUz: "",
+      nameRu: "",
+      description: (ch as { description?: string }).description ?? "",
+      descriptionUz: "",
+      descriptionRu: "",
+      category: ch.category,
+      difficulty: ch.difficulty as "easy" | "medium" | "hard" | "insane",
+      points: ch.points,
+      hint: "",
+      flag: "",
+      fileUrl: "",
+    });
     setShowForm(true);
   };
 
@@ -135,10 +178,10 @@ export default function AdminCtfPage() {
                   <FormItem><FormLabel>{t("Flag", "Flag", "Флаг")}</FormLabel><FormControl><Input {...field} placeholder="Flag{...}" className="font-mono" data-testid="input-ctf-flag" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="nameUz" render={({ field }) => (
-                  <FormItem><FormLabel>{t("Name (UZ)", "Nomi (UZ)", "Название (UZ)")}</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+	                  <FormItem><FormLabel>{t("Name (UZ)", "Nomi (UZ)", "Название (UZ)")}</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="nameRu" render={({ field }) => (
-                  <FormItem><FormLabel>{t("Name (RU)", "Nomi (RU)", "Название (RU)")}</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+	                  <FormItem><FormLabel>{t("Name (RU)", "Nomi (RU)", "Название (RU)")}</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="description" render={({ field }) => (
                   <FormItem className="col-span-2"><FormLabel>{t("Description (EN)", "Tavsif (EN)", "Описание (EN)")}</FormLabel><FormControl><Textarea {...field} rows={3} data-testid="input-ctf-description" /></FormControl><FormMessage /></FormItem>
@@ -165,12 +208,12 @@ export default function AdminCtfPage() {
                   <FormItem><FormLabel>{t("Points", "Ball", "Очки")}</FormLabel><FormControl><Input {...field} type="number" data-testid="input-ctf-points" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="hint" render={({ field }) => (
-                  <FormItem><FormLabel>{t("Hint (optional)", "Yordam (ixtiyoriy)", "Подсказка (необязательно)")}</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+	                  <FormItem><FormLabel>{t("Hint (optional)", "Yordam (ixtiyoriy)", "Подсказка (необязательно)")}</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="fileUrl" render={({ field }) => (
                   <FormItem className="col-span-2">
                     <FormLabel>{t("File URL (optional)", "Fayl URL (ixtiyoriy)", "URL файла (необязательно)")}</FormLabel>
-                    <FormControl><Input {...field} placeholder="https://..." /></FormControl>
+	                    <FormControl><Input {...field} value={field.value ?? ""} placeholder="https://..." /></FormControl>
                     <div className="flex items-center gap-2 pt-2">
                       <Button type="button" size="sm" variant="outline" onClick={() => fileRef.current?.click()} disabled={uploadingFile}>
                         <Upload className="w-4 h-4" /> {uploadingFile ? t("Uploading...", "Yuklanmoqda...", "Загрузка...") : t("Upload challenge file", "Topshiriq faylini yuklash", "Загрузить файл задания")}
