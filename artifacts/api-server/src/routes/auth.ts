@@ -10,7 +10,7 @@ import { sendVerificationEmail, verifyTurnstileToken } from "../lib/integrations
 
 const router = Router();
 const authRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20, keyPrefix: "auth" });
-const emailDeliveryRequired = process.env.NODE_ENV === "production" || process.env.EMAIL_VERIFICATION_REQUIRED === "true";
+const emailDeliveryRequired = process.env.EMAIL_VERIFICATION_REQUIRED === "true";
 
 function authCookieOptions() {
   const secure = process.env.NODE_ENV === "production";

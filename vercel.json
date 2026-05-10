@@ -1,7 +1,7 @@
 {
   "version": 2,
   "installCommand": "corepack pnpm install --frozen-lockfile",
-  "buildCommand": "corepack pnpm --filter @workspace/cyberplace run build",
+  "buildCommand": "corepack pnpm run build",
   "outputDirectory": "artifacts/cyberplace/dist/public",
   "headers": [
     {
