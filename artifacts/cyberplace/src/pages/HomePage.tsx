@@ -45,6 +45,33 @@ export default function HomePage() {
     { icon: Target, name: "Steganography" },
   ];
 
+  const seoTopics = [
+    {
+      title: t("CTF site for practice", "Amaliyot uchun CTF site", "CTF-платформа для практики"),
+      desc: t(
+        "Use cdCTF as a practical CTF platform for web security, cryptography, OSINT, forensics, reverse engineering and binary exploitation challenges.",
+        "cdCTF orqali web security, kriptografiya, OSINT, forensics, reverse engineering va binary exploitation bo'yicha amaliy CTF topshiriqlarini yeching.",
+        "Используйте cdCTF для практики web security, cryptography, OSINT, forensics, reverse engineering и binary exploitation.",
+      ),
+    },
+    {
+      title: t("Learn cybersecurity", "Kiberxavfsizlikni o'rganing", "Изучайте кибербезопасность"),
+      desc: t(
+        "Follow structured cybersecurity lessons, ethical hacking topics and hands-on tests designed for beginners and growing security learners.",
+        "Boshlovchilar va rivojlanayotgan mutaxassislar uchun tuzilgan kiberxavfsizlik darslari, ethical hacking mavzulari va amaliy testlarni bajaring.",
+        "Изучайте уроки по кибербезопасности, ethical hacking и практические тесты для начинающих.",
+      ),
+    },
+    {
+      title: t("Online CTF competitions", "Online CTF musobaqalari", "Онлайн CTF-соревнования"),
+      desc: t(
+        "Join cybersecurity competitions, solve timed hacking labs, climb the scoreboard and build a public profile with points and titles.",
+        "Kiberxavfsizlik musobaqalariga qo'shiling, vaqtli hacking lablarni yeching, reytingda ko'tariling va ball hamda unvonlar bilan profilingizni rivojlantiring.",
+        "Участвуйте в соревнованиях, решайте задания на время и поднимайтесь в рейтинге.",
+      ),
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero */}
@@ -56,7 +83,7 @@ export default function HomePage() {
             {t("Cybersecurity Learning Platform", "Kiberhavfsizlik Ta'lim Platformasi", "Платформа обучения кибербезопасности")}
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6 leading-tight">
-            {t("Master Cybersecurity.", "Kiberhavfsizlikni", "Освойте")} <span className="text-primary">{t("One Challenge at a Time.", "O'rganing.", "Кибербезопасность.")}</span>
+            {t("Learn Cybersecurity", "Kiberxavfsizlikni", "Изучайте")} <span className="text-primary">{t("on a CTF Platform.", "CTF platformada o'rganing.", "на CTF-платформе.")}</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
             {t(
@@ -105,6 +132,36 @@ export default function HomePage() {
           </div>
         </section>
       )}
+
+      {/* Search-focused content */}
+      <section className="py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-3xl mb-8">
+            <h2 className="text-2xl font-bold mb-3">
+              {t(
+                "CTF Platform for Cybersecurity Training",
+                "Kiberxavfsizlik Kurslari uchun CTF Platforma",
+                "CTF-платформа для обучения кибербезопасности",
+              )}
+            </h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {t(
+                "cdCTF by CyberPlace is built for anyone searching for a CTF site, CTF platform, cybersecurity training, ethical hacking practice or a place to learn cybersecurity through real challenges.",
+                "CyberPlace tomonidan yaratilgan cdCTF - CTF site, CTF platforma, kiberxavfsizlik kurslari, ethical hacking amaliyoti va real topshiriqlar orqali cybersecurity o'rganish uchun platforma.",
+                "cdCTF от CyberPlace создан для тех, кто ищет CTF site, CTF platform, cybersecurity training и практику ethical hacking.",
+              )}
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-4">
+            {seoTopics.map((topic) => (
+              <article key={topic.title} className="rounded-lg border border-border bg-card p-5">
+                <h3 className="font-semibold mb-2">{topic.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{topic.desc}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Features */}
       <section className="py-20 px-4">
