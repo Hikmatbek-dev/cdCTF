@@ -1,2 +1,9 @@
 User-agent: *
 Allow: /
+
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile/edit
+Disallow: /verify-email
+
+Sitemap: https://cyberplace.uz/sitemap.xml

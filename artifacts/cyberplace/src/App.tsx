@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
 import { LanguageProvider } from "@/lib/LanguageContext";
 import { ThemeProvider } from "@/lib/ThemeContext";
+import { SeoManager } from "@/lib/seo";
 import { Navbar } from "@/components/Navbar";
 
 import HomePage from "@/pages/HomePage";
@@ -46,6 +47,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 function Router() {
   return (
     <>
+      <SeoManager />
       <Navbar />
       <Switch>
         <Route path="/" component={HomePage} />
