@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
-import { AUTH_COOKIE_NAME, generateToken, authenticateToken, optionalAuth } from "../middleware/auth";
+import { AUTH_COOKIE_NAME, AUTH_SESSION_MAX_AGE_MS, generateToken, authenticateToken, optionalAuth } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/security";
 import { sendVerificationEmail, verifyTurnstileToken } from "../lib/integrations";
 
@@ -13,14 +13,20 @@ const authRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20, key
 const emailDeliveryRequired = process.env.EMAIL_VERIFICATION_REQUIRED === "true";
 
 function authCookieOptions() {
-  const secure = process.env.NODE_ENV === "production";
+  const sameSite: "none" | "lax" = process.env.AUTH_COOKIE_SAME_SITE === "none" ? "none" : "lax";
+  const secure = process.env.NODE_ENV === "production" || sameSite === "none";
   return {
     httpOnly: true,
-    sameSite: "lax" as const,
+    sameSite,
     secure,
-    maxAge: 12 * 60 * 60 * 1000,
+    maxAge: AUTH_SESSION_MAX_AGE_MS,
     path: "/",
   };
+}
+
+function authCookieClearOptions() {
+  const { maxAge: _maxAge, ...options } = authCookieOptions();
+  return options;
 }
 
 function normalizeNickname(nickname: string) {
@@ -137,7 +143,7 @@ router.post("/login", authRateLimit, async (req, res) => {
 });
 
 router.post("/logout", authenticateToken, (_req, res) => {
-  res.clearCookie(AUTH_COOKIE_NAME, { path: "/" });
+  res.clearCookie(AUTH_COOKIE_NAME, authCookieClearOptions());
   res.json({ success: true, message: "Logged out" });
 });
 

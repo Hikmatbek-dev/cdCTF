@@ -1,13 +1,29 @@
 import { Router } from "express";
 import multer from "multer";
 import { authenticateToken, requireAdmin } from "../middleware/auth";
-import { MAX_CTF_FILE_SIZE_BYTES, StorageUploadError, uploadBufferToStorage } from "../lib/storage";
+import { MAX_CTF_FILE_SIZE_BYTES, StorageUploadError, createSignedCtfUpload, uploadBufferToStorage } from "../lib/storage";
 
 const router = Router();
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_CTF_FILE_SIZE_BYTES, files: 1 },
+});
+
+router.post("/ctf-file/sign", authenticateToken, requireAdmin, async (req, res) => {
+  const filename = typeof req.body?.filename === "string" ? req.body.filename : "challenge.bin";
+  const size = Number(req.body?.size);
+
+  try {
+    const result = await createSignedCtfUpload({ filename, size });
+    return res.status(201).json(result);
+  } catch (error) {
+    if (error instanceof StorageUploadError) {
+      const status = error.status >= 400 && error.status < 500 ? error.status : 502;
+      return res.status(status).json({ error: error.message || "Storage upload failed" });
+    }
+    return res.status(502).json({ error: "Storage upload failed" });
+  }
 });
 
 router.post("/ctf-file", authenticateToken, requireAdmin, upload.single("file"), async (req, res) => {

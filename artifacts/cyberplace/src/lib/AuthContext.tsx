@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    fetch("/api/auth/session")
+    fetch("/api/auth/session", { credentials: "include" })
       .then(response => response.ok ? response.json() : { user: null })
       .then((session: { user: User | null }) => {
         if (cancelled) return;
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    void fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
+    void fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => undefined);
     setUser(null);
     setToken(null);
     localStorage.removeItem("cdctf_user");

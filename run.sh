@@ -8,8 +8,16 @@ if [ -f .env ]; then
   set +a
 fi
 
-API_PORT="${API_PORT:-${PORT:-8080}}"
-FRONTEND_PORT="${FRONTEND_PORT:-7000}"
+# Frontend should use the main PORT provided by the environment (e.g. Replit)
+# API should use a secondary port, or 8080 by default
+FRONTEND_PORT="${PORT:-7000}"
+API_PORT="${API_PORT:-8080}"
+
+# If they are the same, move the API port to avoid conflict
+if [ "$API_PORT" == "$FRONTEND_PORT" ]; then
+  API_PORT=$((FRONTEND_PORT + 1))
+fi
+
 
 # Kill any existing processes on the configured development ports
 echo "Killing existing processes on ports ${API_PORT} and ${FRONTEND_PORT}..."
@@ -42,9 +50,11 @@ sleep 5
 # Start frontend
 echo "Starting frontend on port ${FRONTEND_PORT}..."
 export PORT="${FRONTEND_PORT}"
+export VITE_API_URL="http://localhost:${API_PORT}"
 export VITE_TURNSTILE_SITE_KEY="${VITE_TURNSTILE_SITE_KEY:-}"
 export VITE_SENTRY_DSN="${VITE_SENTRY_DSN:-}"
 corepack pnpm --filter cyberplace run dev &
+
 FRONTEND_PID=$!
 
 echo "Servers started!"

@@ -5,6 +5,18 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_ISSUER = "cdctf-api";
 const JWT_AUDIENCE = "cdctf-web";
 export const AUTH_COOKIE_NAME = "cdctf_session";
+const DEFAULT_SESSION_DAYS = 30;
+
+function resolveSessionMaxAgeMs() {
+  const raw = process.env.AUTH_SESSION_MAX_AGE_DAYS;
+  if (!raw) return DEFAULT_SESSION_DAYS * 24 * 60 * 60 * 1000;
+
+  const days = Number(raw);
+  if (!Number.isFinite(days) || days <= 0) return DEFAULT_SESSION_DAYS * 24 * 60 * 60 * 1000;
+  return Math.floor(days * 24 * 60 * 60 * 1000);
+}
+
+export const AUTH_SESSION_MAX_AGE_MS = resolveSessionMaxAgeMs();
 
 if (!JWT_SECRET) {
   if (process.env.NODE_ENV === "production") {
@@ -81,7 +93,7 @@ export function generateToken(userId: number, role: string): string {
   return jwt.sign({ userId, role: normalizedRole }, effectiveJwtSecret, {
     algorithm: "HS256",
     audience: JWT_AUDIENCE,
-    expiresIn: "12h",
+    expiresIn: Math.floor(AUTH_SESSION_MAX_AGE_MS / 1000),
     issuer: JWT_ISSUER,
   });
 }

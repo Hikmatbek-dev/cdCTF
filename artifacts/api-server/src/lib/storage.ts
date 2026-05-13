@@ -122,3 +122,53 @@ export async function uploadBufferToStorage(params: {
     publicUrl: `${config.url}/storage/v1/object/public/${config.bucket}/${objectName}`,
   };
 }
+
+export async function createSignedCtfUpload(params: {
+  filename: string;
+  size: number;
+}) {
+  if (!Number.isFinite(params.size) || params.size < 1) {
+    throw new StorageUploadError(400, "Invalid file size");
+  }
+  if (params.size > MAX_CTF_FILE_SIZE_BYTES) {
+    throw new StorageUploadError(413, "Uploaded file is too large for storage");
+  }
+
+  const config = getSupabaseConfig();
+  if (!config) {
+    throw new StorageUploadError(501, "Supabase storage is not configured");
+  }
+
+  await ensureBucket();
+
+  const objectName = `ctf/${randomUUID()}-${sanitizePathSegment(params.filename || "challenge.bin")}`;
+  const response = await fetch(`${config.url}/storage/v1/object/upload/sign/${config.bucket}/${objectName}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.key}`,
+      apikey: config.key,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({}),
+  });
+
+  const data = await response.json().catch(() => null) as { url?: unknown } | null;
+  if (!response.ok) {
+    throw new StorageUploadError(response.status, `Signed upload URL creation failed: ${response.status}`.trim());
+  }
+
+  const relativeSignedUrl = typeof data?.url === "string" ? data.url : null;
+  if (!relativeSignedUrl) {
+    throw new StorageUploadError(502, "Signed upload URL was not returned");
+  }
+
+  const signedUrl = relativeSignedUrl.startsWith("http")
+    ? relativeSignedUrl
+    : `${config.url}/storage/v1${relativeSignedUrl.startsWith("/") ? "" : "/"}${relativeSignedUrl}`;
+
+  return {
+    path: objectName,
+    signedUrl,
+    publicUrl: `${config.url}/storage/v1/object/public/${config.bucket}/${objectName}`,
+  };
+}
