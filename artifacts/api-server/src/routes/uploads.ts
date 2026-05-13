@@ -2,6 +2,8 @@ import { Router } from "express";
 import multer from "multer";
 import { authenticateToken, requireAdmin } from "../middleware/auth";
 import { MAX_CTF_FILE_SIZE_BYTES, StorageUploadError, createSignedCtfUpload, uploadBufferToStorage } from "../lib/storage";
+import { logger } from "../lib/logger";
+
 
 const router = Router();
 
