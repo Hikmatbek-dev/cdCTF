@@ -29,7 +29,7 @@ router.post("/ctf-file", authenticateToken, requireAdmin, upload.single("file"),
         error: status === 413 ? "Uploaded file is too large for storage" : "Storage upload failed",
       });
     }
-    throw error;
+    return res.status(502).json({ error: "Storage upload failed" });
   }
 });
 

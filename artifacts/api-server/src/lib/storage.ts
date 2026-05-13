@@ -64,23 +64,6 @@ async function ensureBucket() {
       });
 
       if (response.status === 409) {
-        const updateResponse = await fetch(`${config.url}/storage/v1/bucket/${config.bucket}`, {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${config.key}`,
-            apikey: config.key,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            public: true,
-            file_size_limit: MAX_CTF_FILE_SIZE_BYTES,
-          }),
-        });
-
-        if (!updateResponse.ok) {
-          const text = await updateResponse.text().catch(() => "");
-          throw new Error(`Bucket update failed: ${updateResponse.status} ${text}`.trim());
-        }
         return;
       }
 
@@ -88,7 +71,10 @@ async function ensureBucket() {
         const text = await response.text().catch(() => "");
         throw new Error(`Bucket creation failed: ${response.status} ${text}`.trim());
       }
-    })();
+    })().catch((error) => {
+      bucketReadyPromise = null;
+      throw error;
+    });
   }
 
   await bucketReadyPromise;
