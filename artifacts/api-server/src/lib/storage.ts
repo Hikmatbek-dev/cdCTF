@@ -2,6 +2,18 @@ import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
+export const MAX_CTF_FILE_SIZE_BYTES = 25 * 1024 * 1024;
+
+export class StorageUploadError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "StorageUploadError";
+  }
+}
+
 function getSupabaseConfig() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -47,11 +59,32 @@ async function ensureBucket() {
           id: config.bucket,
           name: config.bucket,
           public: true,
-          file_size_limit: 26214400,
+          file_size_limit: MAX_CTF_FILE_SIZE_BYTES,
         }),
       });
 
-      if (!response.ok && response.status !== 409) {
+      if (response.status === 409) {
+        const updateResponse = await fetch(`${config.url}/storage/v1/bucket/${config.bucket}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${config.key}`,
+            apikey: config.key,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            public: true,
+            file_size_limit: MAX_CTF_FILE_SIZE_BYTES,
+          }),
+        });
+
+        if (!updateResponse.ok) {
+          const text = await updateResponse.text().catch(() => "");
+          throw new Error(`Bucket update failed: ${updateResponse.status} ${text}`.trim());
+        }
+        return;
+      }
+
+      if (!response.ok) {
         const text = await response.text().catch(() => "");
         throw new Error(`Bucket creation failed: ${response.status} ${text}`.trim());
       }
@@ -95,7 +128,7 @@ export async function uploadBufferToStorage(params: {
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    throw new Error(`Storage upload failed: ${response.status} ${text}`.trim());
+    throw new StorageUploadError(response.status, `Storage upload failed: ${response.status} ${text}`.trim());
   }
 
   return {

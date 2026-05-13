@@ -35,6 +35,8 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 const CATEGORIES = ["Web", "Crypto", "Reverse", "Forensics", "Pwn", "OSINT", "Steganography", "Others"];
+const MAX_CHALLENGE_FILE_SIZE_BYTES = 25 * 1024 * 1024;
+const VERCEL_SERVERLESS_UPLOAD_LIMIT_BYTES = 4 * 1024 * 1024;
 
 export default function AdminCtfPage() {
   const { t } = useLang();
@@ -134,6 +136,26 @@ export default function AdminCtfPage() {
   };
 
   const handleChallengeFileUpload = async (file: File) => {
+    if (file.size > MAX_CHALLENGE_FILE_SIZE_BYTES) {
+      toast({
+        title: t("File too large (max 25MB)", "Fayl juda katta (maks 25MB)", "Файл слишком большой (макс. 25МБ)"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > VERCEL_SERVERLESS_UPLOAD_LIMIT_BYTES) {
+      toast({
+        title: t(
+          "This hosting accepts uploads up to 4MB. Use File URL for larger files.",
+          "Bu hosting 4MB gacha yuklashni qabul qiladi. Kattaroq fayl uchun File URL dan foydalaning.",
+          "Этот хостинг принимает загрузки до 4МБ. Для больших файлов используйте URL файла.",
+        ),
+        variant: "destructive",
+      });
+      return;
+    }
+
     const body = new FormData();
     body.append("file", file);
     setUploadingFile(true);
@@ -220,7 +242,7 @@ export default function AdminCtfPage() {
                       <Button type="button" size="sm" variant="outline" onClick={() => fileRef.current?.click()} disabled={uploadingFile}>
                         <Upload className="w-4 h-4" /> {uploadingFile ? t("Uploading...", "Yuklanmoqda...", "Загрузка...") : t("Upload challenge file", "Topshiriq faylini yuklash", "Загрузить файл задания")}
                       </Button>
-                      <span className="text-xs text-muted-foreground">{t("Max 25MB", "Maks 25MB", "Макс. 25МБ")}</span>
+                      <span className="text-xs text-muted-foreground">{t("Upload max 4MB, URL max 25MB", "Yuklash maks 4MB, URL maks 25MB", "Загрузка макс. 4МБ, URL макс. 25МБ")}</span>
                     </div>
                     <input
                       ref={fileRef}
