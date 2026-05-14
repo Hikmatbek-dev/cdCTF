@@ -61,17 +61,10 @@ router.get("/me/dashboard", authenticateToken, async (req, res) => {
   });
 });
 
-// GET /api/users/me/profile
-router.get("/me/profile", authenticateToken, async (req, res) => {
-  res.redirect(`/api/users/${req.user!.userId}/profile`);
-});
-
-// GET /api/users/:id/profile
-router.get("/:id/profile", optionalAuth, async (req, res) => {
-  const id = Number(req.params.id);
-  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+// Shared profile fetching logic
+async function getProfileData(id: number, requestingUserId?: number, requestingUserRole?: string) {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, id)).limit(1);
-  if (!user) return res.status(404).json({ error: "Not found" });
+  if (!user) return null;
 
   // Get rank
   const allUsers = await db.select().from(usersTable).where(eq(usersTable.isBlocked, false));
@@ -114,21 +107,45 @@ router.get("/:id/profile", optionalAuth, async (req, res) => {
     const allSolves = await db.select().from(competitionSolvesTable).where(eq(competitionSolvesTable.competitionId, p.competitionId));
     const userPoints = new Map<number, number>();
     for (const s of allSolves) userPoints.set(s.userId, (userPoints.get(s.userId) ?? 0) + s.pointsEarned);
-    const sorted = [...userPoints.entries()].sort((a, b) => b[1] - a[1]);
-    const rank = sorted.findIndex(e => e[0] === id) + 1;
+    const sortedPoints = [...userPoints.entries()].sort((a, b) => b[1] - a[1]);
+    const compRank = sortedPoints.findIndex(e => e[0] === id) + 1;
 
-    competitionHistory.push({ competitionId: comp.id, competitionName: comp.name, points, rank: rank || compParticipations.length });
+    competitionHistory.push({ competitionId: comp.id, competitionName: comp.name, points, rank: compRank || compParticipations.length });
   }
 
-  const canViewPrivate = req.user?.userId === id || req.user?.role === "admin";
+  const canViewPrivate = requestingUserId === id || requestingUserRole === "admin";
 
-  res.json({
+  return {
     id: user.id, nickname: user.nickname, email: canViewPrivate ? user.email : "", avatarUrl: user.avatarUrl,
     points: user.points, role: user.role, emailVerified: user.emailVerified, isBlocked: user.isBlocked,
     createdAt: user.createdAt, rank,
-    titles: userTitles.map(t => ({ id: t.id!, name: t.name!, category: t.category!, points: t.points!, earnedAt: t.earnedAt })),
+    titles: userTitles.map(t => ({ id: t.id ?? 0, name: t.name ?? "Title", category: t.category ?? "Misc", points: t.points ?? 0, earnedAt: t.earnedAt })),
     solvedCtf, completedLessons, competitionHistory,
-  });
+  };
+}
+
+// GET /api/users/me/profile
+router.get("/me/profile", authenticateToken, async (req, res) => {
+  try {
+    const data = await getProfileData(req.user!.userId, req.user!.userId, req.user!.role);
+    if (!data) return res.status(404).json({ error: "User not found" });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// GET /api/users/:id/profile
+router.get("/:id/profile", optionalAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+    const data = await getProfileData(id, req.user?.userId, req.user?.role);
+    if (!data) return res.status(404).json({ error: "Not found" });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
 });
 
 // PATCH /api/users/:id

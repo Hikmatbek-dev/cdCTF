@@ -25,9 +25,9 @@ export default function ProfilePage() {
 
   const id = match && params?.id ? Number(params.id) : currentUser?.id;
 
-  const { data: profile, isLoading, isError } = useGetUserProfile(id as number, {
+  const { data: profile, isLoading, error, isError } = useGetUserProfile(id as number, {
     query: { 
-      enabled: typeof id === "number" && !isNaN(id), 
+      enabled: typeof id === "number" && !isNaN(id) && id > 0, 
       queryKey: getGetUserProfileQueryKey(id as number) 
     },
   });
@@ -51,12 +51,15 @@ export default function ProfilePage() {
     );
   }
 
+  const errorMessage = (error as any)?.response?.data?.error || (error as any)?.message;
+
   if (!profile || isError) {
     return (
       <div className="min-h-screen bg-background pt-14 flex items-center justify-center">
         <div className="text-center px-4">
-          <p className="text-muted-foreground mb-4">
-            {isError ? t("Error loading profile", "Profil yuklashda xato", "Ошибка загрузки профиля") : t("User not found", "Foydalanuvchi topilmadi", "Пользователь не найден")}
+          <p className="text-destructive font-medium mb-2">{t("Profile Error", "Profil xatosi", "Ошибка профиля")}</p>
+          <p className="text-muted-foreground mb-6 max-w-xs mx-auto">
+            {errorMessage || t("User not found or data load failed", "Foydalanuvchi topilmadi yoki ma'lumot yuklanmadi", "Пользователь не найден")}
           </p>
           <Link href="/scoreboard">
             <Button variant="outline">{t("Go to Scoreboard", "Reytingga o'tish", "В рейтинг")}</Button>
