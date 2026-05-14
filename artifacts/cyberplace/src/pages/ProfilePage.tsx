@@ -13,8 +13,8 @@ export default function ProfilePage() {
   const { user: currentUser } = useAuth();
   const id = params?.id ? Number(params.id) : currentUser?.id;
 
-  const { data: profile, isLoading } = useGetUserProfile(id, {
-    query: { enabled: !!id, queryKey: getGetUserProfileQueryKey(id) },
+  const { data: profile, isLoading } = useGetUserProfile(id as number, {
+    query: { enabled: !!id, queryKey: getGetUserProfileQueryKey(id as number) },
   });
 
   if (isLoading) {
