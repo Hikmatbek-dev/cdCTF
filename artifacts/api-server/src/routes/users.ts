@@ -69,6 +69,7 @@ router.get("/me/profile", authenticateToken, async (req, res) => {
 // GET /api/users/:id/profile
 router.get("/:id/profile", optionalAuth, async (req, res) => {
   const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, id)).limit(1);
   if (!user) return res.status(404).json({ error: "Not found" });
 

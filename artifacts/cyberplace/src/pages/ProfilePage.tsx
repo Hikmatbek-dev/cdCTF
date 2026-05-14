@@ -1,4 +1,5 @@
-import { useRoute, Link } from "wouter";
+import { useEffect } from "react";
+import { useRoute, Link, useLocation } from "wouter";
 import { Trophy, Flag, BookOpen, Target, Calendar, Star, CheckCircle2, Share2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
@@ -10,14 +11,25 @@ import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 
 export default function ProfilePage() {
-  const [, params] = useRoute("/profile/:id");
+  const [match, params] = useRoute("/profile/:id");
+  const [, setLocation] = useLocation();
   const { t } = useLang();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const id = params?.id ? Number(params.id) : currentUser?.id;
 
-  const { data: profile, isLoading } = useGetUserProfile(id as number, {
-    query: { enabled: !!id, queryKey: getGetUserProfileQueryKey(id as number) },
+  useEffect(() => {
+    if (!match && currentUser?.id) {
+      setLocation(`/profile/${currentUser.id}`, { replace: true });
+    }
+  }, [match, currentUser, setLocation]);
+
+  const id = match && params?.id ? Number(params.id) : currentUser?.id;
+
+  const { data: profile, isLoading, isError } = useGetUserProfile(id as number, {
+    query: { 
+      enabled: typeof id === "number" && !isNaN(id), 
+      queryKey: getGetUserProfileQueryKey(id as number) 
+    },
   });
 
   const handleShare = () => {
@@ -27,7 +39,7 @@ export default function ProfilePage() {
     });
   };
 
-  if (isLoading) {
+  if (isLoading || (isAuthenticated && !id)) {
     return (
       <div className="min-h-screen bg-background pt-14">
         <div className="max-w-4xl mx-auto px-4 py-8 space-y-4">
@@ -39,11 +51,13 @@ export default function ProfilePage() {
     );
   }
 
-  if (!profile) {
+  if (!profile || isError) {
     return (
       <div className="min-h-screen bg-background pt-14 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground mb-4">{t("User not found", "Foydalanuvchi topilmadi", "Пользователь не найден")}</p>
+        <div className="text-center px-4">
+          <p className="text-muted-foreground mb-4">
+            {isError ? t("Error loading profile", "Profil yuklashda xato", "Ошибка загрузки профиля") : t("User not found", "Foydalanuvchi topilmadi", "Пользователь не найден")}
+          </p>
           <Link href="/scoreboard">
             <Button variant="outline">{t("Go to Scoreboard", "Reytingga o'tish", "В рейтинг")}</Button>
           </Link>
