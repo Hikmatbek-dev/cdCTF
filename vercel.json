@@ -29,6 +29,10 @@
       "destination": "/api/[...path]"
     },
     {
+      "source": "/uploads/(.*)",
+      "destination": "/api/[...path]"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
