@@ -56,7 +56,7 @@ app.get("/uploads/ctf/:filename", async (req, res, next) => {
       [originalFilename]
     );
 
-    if (result.rowCount > 0) {
+    if (result.rowCount && result.rowCount > 0) {
       const { content_type, content } = result.rows[0];
       const buffer = Buffer.from(content, "base64");
       res.setHeader("Content-Type", content_type);
