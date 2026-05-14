@@ -77,7 +77,7 @@ export default function LoginPage() {
                 <FormItem>
                   <div className="flex items-center justify-between">
                     <FormLabel>{t("Password", "Parol", "Пароль")}</FormLabel>
-                    <Link href="/forgot-password" size="sm" className="text-xs text-primary hover:underline">
+                    <Link href="/forgot-password" className="text-xs text-primary hover:underline">
                       {t("Forgot Password?", "Parolni unutdingizmi?", "Забыли пароль?")}
                     </Link>
                   </div>
