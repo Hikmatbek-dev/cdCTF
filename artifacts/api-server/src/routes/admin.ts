@@ -4,7 +4,7 @@ import { db } from "@workspace/db";
 import {
   usersTable, ctfTasksTable, ctfAttemptsTable,
   lessonsTable, lessonQuestionsTable, learnCategoriesTable,
-  competitionsTable, competitionTasksTable, competitionUsersTable,
+  competitionsTable, competitionTasksTable, competitionUsersTable, competitionSolvesTable,
   userLessonAttemptsTable, titlesTable, auditLogsTable, userTitlesTable
 } from "@workspace/db/schema";
 import { eq, and, desc, sql, inArray } from "drizzle-orm";
@@ -226,36 +226,65 @@ router.delete("/ctf/:id", async (req, res) => {
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid CTF id" });
 
   try {
-    // 1. Get the challenge to know its points
     const [challenge] = await db.select().from(ctfTasksTable).where(eq(ctfTasksTable.id, id)).limit(1);
     if (!challenge) return res.status(404).json({ error: "CTF not found" });
 
-    // 2. Find all users who solved this challenge
-    const solvers = await db.select()
-      .from(ctfAttemptsTable)
+    // 1. Get all affected users
+    const solvers = await db.select().from(ctfAttemptsTable)
       .where(and(eq(ctfAttemptsTable.ctfId, id), eq(ctfAttemptsTable.solved, true)));
+    const solverIds = [...new Set(solvers.map(s => s.userId))];
 
-    // 3. Deduct points from each solver
-    if (solvers.length > 0) {
-      const solverIds = solvers.map(s => s.userId);
-      await db.update(usersTable)
-        .set({ points: sql`GREATEST(${usersTable.points} - ${challenge.points}, 0)` })
-        .where(inArray(usersTable.id, solverIds));
-    }
-
-    // 4. Delete related attempts and then the task
+    // 2. Delete all related data
     await db.delete(ctfAttemptsTable).where(eq(ctfAttemptsTable.ctfId, id));
+    await db.delete(competitionSolvesTable).where(eq(competitionSolvesTable.ctfId, id));
+    await db.delete(competitionTasksTable).where(eq(competitionTasksTable.ctfId, id));
     await db.delete(ctfTasksTable).where(eq(ctfTasksTable.id, id));
 
-    await writeAuditLog(req, "ctf.delete", "ctf", id, { 
-      name: challenge.name, 
-      pointsDeducted: challenge.points, 
-      solverCount: solvers.length 
-    });
+    // 3. Recalculate points for affected users to ensure accuracy (including titles)
+    if (solverIds.length > 0) {
+      const titles = await db.select().from(titlesTable);
+      for (const userId of solverIds) {
+        // CTF Points
+        const ctfSolves = await db.select({ points: ctfTasksTable.points, category: ctfTasksTable.category })
+          .from(ctfAttemptsTable)
+          .innerJoin(ctfTasksTable, eq(ctfAttemptsTable.ctfId, ctfTasksTable.id))
+          .where(and(eq(ctfAttemptsTable.userId, userId), eq(ctfAttemptsTable.solved, true)));
+        const ctfTotal = ctfSolves.reduce((sum, s) => sum + s.points, 0);
 
-    res.json({ success: true, message: "CTF deleted and user points updated" });
+        // Lesson Points
+        const lessonSolves = await db.select({ points: lessonsTable.points })
+          .from(userLessonAttemptsTable)
+          .innerJoin(lessonsTable, eq(userLessonAttemptsTable.lessonId, lessonsTable.id))
+          .where(and(eq(userLessonAttemptsTable.userId, userId), eq(userLessonAttemptsTable.status, "completed")));
+        const lessonTotal = lessonSolves.reduce((sum, s) => sum + s.points, 0);
+
+        // Titles
+        await db.delete(userTitlesTable).where(eq(userTitlesTable.userId, userId));
+        let titleTotal = 0;
+        const categoryCounts = ctfSolves.reduce((acc, s) => {
+          acc[s.category] = (acc[s.category] ?? 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        for (const [category, count] of Object.entries(categoryCounts)) {
+          if (count >= 3) {
+            const title = titles.find(t => t.category === category);
+            if (title) {
+              await db.insert(userTitlesTable).values({ userId, titleId: title.id });
+              titleTotal += title.points;
+            }
+          }
+        }
+
+        // Update User
+        await db.update(usersTable).set({ points: ctfTotal + lessonTotal + titleTotal }).where(eq(usersTable.id, userId));
+      }
+    }
+
+    await writeAuditLog(req, "ctf.delete", "ctf", id, { name: challenge.name, affectedUsers: solverIds.length });
+    res.json({ success: true, message: "CTF deleted and user points synchronized" });
   } catch (error) {
-    logger.error({ err: error }, "Error deleting CTF and updating points");
+    logger.error({ err: error }, "Error deleting CTF");
     res.status(500).json({ error: "Internal server error" });
   }
 });

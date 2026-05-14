@@ -34,7 +34,11 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-const CATEGORIES = ["Web", "Crypto", "Reverse", "Forensics", "Pwn", "OSINT", "Steganography", "Others"];
+const CATEGORIES = [
+  "Web", "Crypto", "Reverse", "Forensics", "Pwn", "OSINT", 
+  "Steganography", "Miscellaneous", "Mobile", "Hardware", 
+  "Networking", "Cloud", "AI", "Scripting", "Others"
+];
 const MAX_CHALLENGE_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 
 export default function AdminCtfPage() {

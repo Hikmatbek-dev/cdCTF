@@ -10,7 +10,11 @@ import { useLang } from "@/lib/LanguageContext";
 import { useListCtfChallenges, getListCtfChallengesQueryKey } from "@workspace/api-client-react";
 import { normalizeCtfChallenges } from "@/lib/api-shapes";
 
-const CATEGORIES = ["All", "Web", "Crypto", "Reverse", "Forensics", "Pwn", "OSINT", "Steganography", "Others"];
+const CATEGORIES = [
+  "All", "Web", "Crypto", "Reverse", "Forensics", "Pwn", "OSINT", 
+  "Steganography", "Miscellaneous", "Mobile", "Hardware", 
+  "Networking", "Cloud", "AI", "Scripting", "Others"
+];
 const DIFFICULTIES = ["All", "easy", "medium", "hard", "insane"];
 
 export default function CtfListPage() {
