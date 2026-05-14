@@ -151,6 +151,7 @@ export default function AdminCtfPage() {
     try {
       const signResponse = await fetch("/api/uploads/ctf-file/sign", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           filename: file.name,
@@ -192,6 +193,7 @@ export default function AdminCtfPage() {
 
       const directResponse = await fetch("/api/uploads/ctf-file", {
         method: "POST",
+        credentials: "include",
         body: formData,
       });
 

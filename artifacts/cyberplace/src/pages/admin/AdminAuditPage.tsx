@@ -16,7 +16,7 @@ type AuditLog = {
 };
 
 async function fetchAuditLogs() {
-  const response = await fetch("/api/admin/audit-logs");
+  const response = await fetch("/api/admin/audit-logs", { credentials: "include" });
   if (!response.ok) throw new Error("Failed to load audit logs");
   return response.json() as Promise<{ logs: AuditLog[] }>;
 }

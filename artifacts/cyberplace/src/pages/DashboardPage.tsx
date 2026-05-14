@@ -18,7 +18,7 @@ type DashboardResponse = {
 };
 
 async function fetchDashboard() {
-  const response = await fetch("/api/users/me/dashboard");
+  const response = await fetch("/api/users/me/dashboard", { credentials: "include" });
   if (!response.ok) throw new Error("Failed to load dashboard");
   return response.json() as Promise<DashboardResponse>;
 }

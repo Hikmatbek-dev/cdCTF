@@ -83,6 +83,7 @@ export default function ProfileEditPage() {
     try {
       const res = await fetch("/api/auth/change-password", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });

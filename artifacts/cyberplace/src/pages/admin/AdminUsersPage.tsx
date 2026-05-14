@@ -49,9 +49,9 @@ export default function AdminUsersPage() {
     try {
       const res = await fetch("/api/admin/users/recalculate-points", {
         method: "POST",
+        credentials: "include",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("token")}`
+          "Content-Type": "application/json"
         }
       });
       if (!res.ok) throw new Error();
