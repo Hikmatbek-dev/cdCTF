@@ -96,6 +96,8 @@ export async function sendVerificationEmail(email: string, token: string) {
       `,
     }),
   }) as unknown as FetchResponseLike;
+  return { ok: response.ok, reason: response.ok ? undefined : `Resend returned ${response.status}` };
+}
 
 export async function sendPasswordResetEmail(email: string, token: string) {
   const apiKey = process.env.RESEND_API_KEY;
