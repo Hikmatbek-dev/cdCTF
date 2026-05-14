@@ -18,6 +18,15 @@ export const ctfTasksTable = pgTable("ctf_tasks", {
   hint: text("hint"),
   flag: text("flag").notNull(),
   fileUrl: text("file_url"),
+  fileId: integer("file_id").references(() => ctfFilesTable.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const ctfFilesTable = pgTable("ctf_files", {
+  id: serial("id").primaryKey(),
+  filename: text("filename").notNull(),
+  contentType: text("content_type").notNull(),
+  content: text("content").notNull(), // Base64 encoded
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

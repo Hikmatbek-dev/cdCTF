@@ -116,21 +116,22 @@ export async function uploadBufferToStorage(params: {
   if (!config) {
     const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
 
-    // In serverless environments like Vercel, local storage is ephemeral and won't work for downloads.
-    // We fallback to a Data URL which gets stored in the database. 
-    // Note: Vercel has a 4.5MB limit for API responses.
+    // In serverless environments, we store the file in the database to ensure it persists across function restarts.
     if (isServerless) {
+      const { pool } = await import("@workspace/db");
       const base64 = params.buffer.toString("base64");
-      const dataUrl = `data:${params.contentType};base64,${base64}`;
       
-      // We still log a warning because this is not ideal for large files
-      if (params.buffer.length > 3 * 1024 * 1024) {
-        console.warn("Large file detected for Data URL fallback. This may exceed Vercel's 4.5MB limit.");
-      }
+      const result = await pool.query(
+        "INSERT INTO ctf_files (filename, content_type, content) VALUES ($1, $2, $3) RETURNING id",
+        [params.filename, params.contentType, base64]
+      );
+      
+      const fileId = result.rows[0].id;
+      const downloadUrl = `/api/uploads/download/${fileId}/${encodeURIComponent(params.filename)}`;
 
       return {
-        path: "data-url",
-        publicUrl: dataUrl,
+        path: `db:${fileId}`,
+        publicUrl: downloadUrl,
       };
     }
 
