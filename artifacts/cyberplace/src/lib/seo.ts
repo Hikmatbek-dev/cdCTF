@@ -44,11 +44,11 @@ const publicRoutes: Array<{ match: (path: string) => boolean; config: SeoConfig 
         {
           "@context": "https://schema.org",
           "@type": "EducationalOrganization",
-          name: "CyberPlace cdCTF",
-          alternateName: ["cdCTF", "CyberPlace", "CyberPlace CTF"],
+          name: "cdCTF",
+          alternateName: ["cdCTF Platform", "cdCTF"],
           url: SITE_URL,
           logo: DEFAULT_IMAGE,
-          sameAs: ["https://t.me/cyberplace", "https://instagram.com/cyberplace"],
+          sameAs: ["https://t.me/cdctf_uz", "https://instagram.com/cyberplace"],
           description:
             "CTF site and cybersecurity learning platform for ethical hacking, web security, OSINT, cryptography, forensics and CTF competitions.",
           knowsAbout: [
@@ -67,7 +67,7 @@ const publicRoutes: Array<{ match: (path: string) => boolean; config: SeoConfig 
           "@context": "https://schema.org",
           "@type": "WebSite",
           name: "cdCTF",
-          alternateName: "CyberPlace CTF Platform",
+          alternateName: "cdCTF Platform",
           url: SITE_URL,
           inLanguage: ["uz", "en", "ru"],
           description:
@@ -87,7 +87,7 @@ const publicRoutes: Array<{ match: (path: string) => boolean; config: SeoConfig 
             "Learn cybersecurity through structured lessons and practical CTF challenges in web security, OSINT, cryptography and forensics.",
           provider: {
             "@type": "Organization",
-            name: "CyberPlace cdCTF",
+            name: "cdCTF",
             sameAs: SITE_URL,
           },
         },

@@ -10,6 +10,7 @@ import {
 import { eq, and } from "drizzle-orm";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { uploadBufferToStorage } from "../lib/storage";
+import { logger } from "../lib/logger";
 
 const router = Router();
 
@@ -131,7 +132,8 @@ router.get("/me/profile", authenticateToken, async (req, res) => {
     if (!data) return res.status(404).json({ error: "User not found" });
     res.json(data);
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    logger.error({ err }, "Error fetching me/profile");
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -144,7 +146,8 @@ router.get("/:id", optionalAuth, async (req, res) => {
     if (!data) return res.status(404).json({ error: "Not found" });
     res.json(data);
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    logger.error({ err }, "Error fetching user profile");
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

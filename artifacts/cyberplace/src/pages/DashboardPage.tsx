@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Activity, BookOpen, ChevronRight, Flag, Star, Trophy } from "lucide-react";
+import { Activity, BookOpen, ChevronRight, Flag, Star, Trophy, Shield } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -35,13 +35,13 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pt-14">
-        <div className="max-w-5xl mx-auto px-4 py-8 space-y-4">
-          <Skeleton className="h-10 w-56" />
-          <div className="grid md:grid-cols-3 gap-4">
-            <Skeleton className="h-28 rounded-xl" />
-            <Skeleton className="h-28 rounded-xl" />
-            <Skeleton className="h-28 rounded-xl" />
+      <div className="min-h-screen bg-background pt-24 px-6">
+        <div className="max-w-6xl mx-auto space-y-8">
+          <Skeleton className="h-32 w-full bg-muted rounded-[2.5rem]" />
+          <div className="grid md:grid-cols-3 gap-6">
+            <Skeleton className="h-32 bg-muted rounded-[2rem]" />
+            <Skeleton className="h-32 bg-muted rounded-[2rem]" />
+            <Skeleton className="h-32 bg-muted rounded-[2rem]" />
           </div>
         </div>
       </div>
@@ -55,75 +55,130 @@ export default function DashboardPage() {
   const titles = normalizeArray<DashboardResponse["titles"][number]>(data.titles, ["titles", "data", "items"]);
 
   return (
-    <div className="min-h-screen bg-background pt-14">
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between gap-4 mb-8">
+    <div className="min-h-screen bg-background text-foreground pt-32 pb-24 relative overflow-hidden">
+      {/* Background Grid */}
+      <div className="fixed inset-0 mono-grid pointer-events-none" />
+
+      <div className="max-w-6xl mx-auto px-6 relative z-10">
+        {/* Dashboard Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-12 mb-16">
           <div>
-            <h1 className="text-2xl font-bold">{t("Dashboard", "Dashboard", "Панель")}</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {data.user.nickname} • #{data.user.rank} • {data.user.points} pts
-            </p>
+            <div className="flex items-center gap-3 mb-6">
+              <Shield className="w-8 h-8 text-primary" />
+              <div className="h-px w-12 bg-border" />
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60">COMMAND_CENTER</span>
+            </div>
+            <h1 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-6 leading-none">
+              {t("OPERATIVE DASHBOARD", "DASHBOARD", "ПАНЕЛЬ УПРАВЛЕНИЯ")}
+            </h1>
+            <div className="flex flex-wrap items-center gap-8 text-[11px] font-black uppercase tracking-widest text-muted-foreground/40">
+              <span className="text-foreground">OPERATIVE: {data.user.nickname}</span>
+              <span>SYSTEM_RANK: <span className="text-primary">#{data.user.rank}</span></span>
+              <span>TOTAL_CREDITS: {data.user.points} XP</span>
+            </div>
           </div>
           <Link href={`/profile/${data.user.id}`}>
-            <Button variant="outline" size="sm">
-              {t("Open Profile", "Profilni ochish", "Открыть профиль")}
+            <Button className="cyber-button h-14 px-10 rounded-2xl shadow-xl shadow-primary/20">
+              ACCESS_FULL_DOSSIER
             </Button>
           </Link>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
-          <div className="rounded-xl border border-border bg-card p-5">
-            <div className="flex items-center gap-2 mb-2"><Flag className="w-4 h-4 text-primary" /><span className="text-sm font-medium">{t("Solved CTFs", "Yechilgan CTFlar", "Решённые CTF")}</span></div>
-            <div className="text-3xl font-mono font-bold text-primary">{data.progress.solvedCtfCount}</div>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-5">
-            <div className="flex items-center gap-2 mb-2"><BookOpen className="w-4 h-4 text-primary" /><span className="text-sm font-medium">{t("Completed Lessons", "Tugagan darslar", "Завершённые уроки")}</span></div>
-            <div className="text-3xl font-mono font-bold text-primary">{data.progress.completedLessonCount}</div>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-5">
-            <div className="flex items-center gap-2 mb-2"><Star className="w-4 h-4 text-primary" /><span className="text-sm font-medium">{t("Titles", "Unvonlar", "Титулы")}</span></div>
-            <div className="text-3xl font-mono font-bold text-primary">{data.progress.titleCount}</div>
-          </div>
+        {/* Tactical Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-16">
+          {[
+            { icon: Flag, label: "CONFIRMED_BREACHES", value: data.progress.solvedCtfCount, color: "text-primary" },
+            { icon: BookOpen, label: "INTEL_MODULES", value: data.progress.completedLessonCount, color: "text-foreground" },
+            { icon: Star, label: "AUTH_TITLES", value: data.progress.titleCount, color: "text-foreground" }
+          ].map((stat, i) => (
+            <div key={i} className="glass-card bg-muted/10 p-10 rounded-[2.5rem] group hover:bg-muted/20 transition-all border-border hover:border-primary/20">
+              <div className="flex items-center gap-4 mb-6">
+                <stat.icon className={`w-5 h-5 ${stat.color} group-hover:scale-110 transition-transform`} />
+                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">{stat.label}</span>
+              </div>
+              <div className="text-5xl font-black tracking-tighter leading-none">{String(stat.value).padStart(2, '0')}</div>
+            </div>
+          ))}
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          <div className="rounded-xl border border-border bg-card p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Activity className="w-4 h-4 text-primary" />
-              <h2 className="font-semibold">{t("Recent Activity", "So'nggi faollik", "Последняя активность")}</h2>
-            </div>
-            <div className="space-y-3">
-              {solvedCtf.map((item) => (
-                <Link key={`ctf-${item.ctfId}`} href={`/ctf/${item.ctfId}`} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
-                  <span>{t("Solved challenge", "Yechilgan topshiriq", "Решённое задание")} #{item.ctfId}</span>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                </Link>
-              ))}
-              {completedLessons.map((item) => (
-                <Link key={`lesson-${item.lessonId}`} href={`/learn/${item.lessonId}`} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
-                  <span>{t("Completed lesson", "Tugatilgan dars", "Завершённый урок")} #{item.lessonId}</span>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                </Link>
-              ))}
-              {solvedCtf.length === 0 && completedLessons.length === 0 && (
-                <p className="text-sm text-muted-foreground">{t("No recent activity yet", "Hali faollik yo'q", "Пока нет активности")}</p>
-              )}
+        <div className="grid lg:grid-cols-5 gap-8">
+          {/* Mission Stream */}
+          <div className="lg:col-span-3">
+            <div className="glass-card bg-muted/10 p-10 rounded-[3rem] border-border h-full">
+              <div className="flex items-center gap-4 mb-10">
+                <Activity className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-black uppercase tracking-tighter">MISSION_LOGS</h2>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+              
+              <div className="space-y-4">
+                {solvedCtf.map((item) => (
+                  <Link key={`ctf-${item.ctfId}`} href={`/ctf/${item.ctfId}`}>
+                    <div className="bg-muted/20 p-6 flex items-center justify-between hover:bg-muted/40 transition-all group rounded-2xl cursor-pointer border border-transparent hover:border-primary/20">
+                      <div className="flex items-center gap-6">
+                        <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                          <Flag className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-black uppercase tracking-widest group-hover:text-primary transition-colors">{t("BREACH_DETECTED", "YECHILDI", "ВЗЛОМ_ОБНАРУЖЕН")}</div>
+                          <div className="text-[10px] font-bold text-muted-foreground/40 mt-1 uppercase tracking-widest">ASSET_ID: #{item.ctfId}</div>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground/20 group-hover:text-primary transition-all group-hover:translate-x-1" />
+                    </div>
+                  </Link>
+                ))}
+                
+                {completedLessons.map((item) => (
+                  <Link key={`lesson-${item.lessonId}`} href={`/learn/${item.lessonId}`}>
+                    <div className="bg-muted/20 p-6 flex items-center justify-between hover:bg-muted/40 transition-all group rounded-2xl cursor-pointer border border-transparent hover:border-primary/20">
+                      <div className="flex items-center gap-6">
+                        <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                          <BookOpen className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-black uppercase tracking-widest group-hover:text-primary transition-colors">{t("INTEL_LOGGED", "TUGATILDI", "КУРС_ЗАВЕРШЕН")}</div>
+                          <div className="text-[10px] font-bold text-muted-foreground/40 mt-1 uppercase tracking-widest">MODULE_ID: #{item.lessonId}</div>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground/20 group-hover:text-primary transition-all group-hover:translate-x-1" />
+                    </div>
+                  </Link>
+                ))}
+                
+                {solvedCtf.length === 0 && completedLessons.length === 0 && (
+                  <div className="py-24 text-center border-2 border-dashed border-border rounded-[2.5rem]">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 italic">
+                      {t("NO_STREAMS_DETECTED", "FAOLLIK YO'Q", "ПОТОКИ_ДАННЫХ_ОТСУТСТВУЮТ")}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Trophy className="w-4 h-4 text-primary" />
-              <h2 className="font-semibold">{t("Earned Titles", "Olingan unvonlar", "Полученные титулы")}</h2>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {titles.length > 0 ? titles.map((title, index) => (
-                <span key={`${title.id ?? "title"}-${index}`} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                  {title.name ?? t("Untitled", "Nomsiz", "Без названия")}
-                </span>
-              )) : (
-                <p className="text-sm text-muted-foreground">{t("Solve more categories to unlock titles", "Ko'proq kategoriyalarni yechib unvon oching", "Решайте больше категорий, чтобы открыть титулы")}</p>
-              )}
+          {/* Specializations */}
+          <div className="lg:col-span-2">
+            <div className="glass-card bg-primary/5 p-10 rounded-[3rem] border-primary/20 h-full">
+              <div className="flex items-center gap-4 mb-10">
+                <Trophy className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-black uppercase tracking-tighter">AUTH_TITLES</h2>
+                <div className="flex-1 h-px bg-primary/20" />
+              </div>
+              
+              <div className="flex flex-wrap gap-3">
+                {titles.length > 0 ? titles.map((title, index) => (
+                  <div key={`${title.id ?? "title"}-${index}`} className="px-5 py-3 bg-primary/10 border border-primary/30 text-[10px] font-black uppercase tracking-widest text-primary rounded-xl hover:bg-primary/20 transition-all cursor-default shadow-sm">
+                    {title.name ?? "CLASSIFIED"}
+                  </div>
+                )) : (
+                  <div className="text-center py-20 w-full border border-dashed border-primary/20 rounded-[2.5rem]">
+                    <p className="text-[10px] leading-relaxed text-muted-foreground/60 font-black uppercase tracking-[0.2em] px-8 italic">
+                      {t("INSUFFICIENT_DATA_FOR_TITLES", "UNVONLAR YO'Q", "НЕДОСТАТОЧНО_ДАННЫХ")}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

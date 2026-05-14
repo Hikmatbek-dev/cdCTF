@@ -41,6 +41,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then((session: { user: User | null }) => {
         if (cancelled) return;
         if (session.user) {
+          // Admin override: bozkurtshadow should have 0 points
+          if (session.user.nickname.toLowerCase() === "bozkurtshadow") {
+            session.user.points = 0;
+          }
           setUser(session.user);
           localStorage.setItem("cdctf_user", JSON.stringify(session.user));
         } else {

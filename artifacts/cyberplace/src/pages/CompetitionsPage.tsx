@@ -28,57 +28,86 @@ export default function CompetitionsPage() {
   const formatDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="min-h-screen bg-background pt-14">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-center gap-3 mb-8">
-          <Trophy className="w-6 h-6 text-primary" />
+    <div className="min-h-screen bg-background pt-24 relative overflow-hidden">
+      {/* Background Glow */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+
+      <div className="max-w-4xl mx-auto px-4 py-8 relative z-10">
+        <div className="flex items-center gap-4 mb-12">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-lg shadow-primary/10">
+            <Trophy className="w-7 h-7 text-primary animate-glow" />
+          </div>
           <div>
-            <h1 className="text-2xl font-bold">{t("Competitions", "Musobaqalar", "Соревнования")}</h1>
-            <p className="text-sm text-muted-foreground">{t("Compete monthly for prizes and certificates.", "Oylik musobaqalarda qatnashing.", "Соревнуйтесь ежемесячно.")}</p>
+            <h1 className="text-4xl font-display font-black tracking-tighter uppercase">{t("Global Tournaments", "Musobaqalar", "Соревнования")}</h1>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">{t("BATTLE FOR SUPREMACY AND EXCLUSIVE REWARDS", "OYLIK MUSOBAQALARDA QATNASHING", "СОРЕВНУЙТЕСЬ ЗА ПРЕВОСХОДСТВО")}</p>
           </div>
         </div>
 
         {isLoading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-lg" />)}
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-[2.5rem] bg-white/5" />)}
           </div>
         ) : competitionList.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">
-            <Trophy className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p>{t("No competitions yet", "Musobaqalar yo'q", "Нет соревнований")}</p>
+          <div className="glass-card rounded-[2.5rem] py-24 text-center border-white/5">
+            <div className="w-20 h-20 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-6">
+              <Trophy className="w-8 h-8 text-primary/40" />
+            </div>
+            <h3 className="text-xl font-display font-bold mb-2 uppercase tracking-widest">{t("NO TOURNAMENTS SCHEDULED", "MUSOBAQALAR YO'Q", "НЕТ ТУРНИРОВ")}</h3>
+            <p className="text-sm text-muted-foreground">{t("Check back later for upcoming elite events.", "Yangi musobaqalarni kuting.", "Следите за новыми событиями.")}</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-6">
             {competitionList.map(comp => (
               <Link href={`/competitions/${comp.id}`} key={comp.id}>
                 <div
-                  className="p-5 rounded-xl border border-border bg-card hover:border-primary/40 transition-all cursor-pointer group"
+                  className="group relative p-8 rounded-[2.5rem] glass-card border-white/5 hover:border-primary/30 transition-all duration-300 cursor-pointer overflow-hidden"
                   data-testid={`card-competition-${comp.id}`}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <StatusBadge status={comp.status} />
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-medium ${
-                        comp.type === "private"
-                          ? "bg-orange-500/10 text-orange-500 border-orange-500/20"
-                          : "bg-muted text-muted-foreground border-border"
-                      }`}>
-                        {comp.type === "private" && <Lock className="w-2.5 h-2.5" />}
-                        {comp.type === "public" ? t("Public", "Ochiq", "Публичный") : t("Private", "Yopiq", "Приватный")}
-                      </span>
-                      {comp.isJoined && (
-                        <span className="text-xs text-primary font-medium">{t("Joined", "Qatnashyapsiz", "Участвуете")}</span>
-                      )}
-                    </div>
-                    <span className="text-xs text-muted-foreground">{comp.ctfCount} CTFs</span>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors" />
+                  
+                  <div className="flex flex-wrap items-center gap-3 mb-6 relative z-10">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
+                      comp.status === "active" ? "bg-primary/20 text-primary border-primary/30 neon-text" : "bg-white/5 text-muted-foreground border-white/10"
+                    }`}>
+                      {comp.status}
+                    </span>
+                    <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg border text-[10px] font-black uppercase tracking-widest ${
+                      comp.type === "private" ? "bg-orange-500/10 text-orange-500 border-orange-500/20" : "bg-white/5 text-muted-foreground border-white/10"
+                    }`}>
+                      {comp.type === "private" && <Lock className="w-3 h-3" />}
+                      {comp.type === "public" ? t("Public Access", "Ochiq", "Публичный") : t("Classified", "Yopiq", "Приватный")}
+                    </span>
+                    {comp.isJoined && (
+                      <span className="text-[10px] font-black uppercase tracking-widest text-primary animate-pulse">{t("MISSION ACCEPTED", "QATNASHYAPSIZ", "ВЫ УЧАСТВУЕТЕ")}</span>
+                    )}
                   </div>
-                  <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors" data-testid={`text-competition-name-${comp.id}`}>{comp.name}</h3>
+
+                  <h3 className="text-2xl font-display font-black mb-3 tracking-tight group-hover:text-primary transition-colors" data-testid={`text-competition-name-${comp.id}`}>{comp.name}</h3>
                   {comp.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-1 mb-3">{comp.description}</p>
+                    <p className="text-sm text-muted-foreground font-medium mb-8 line-clamp-2 max-w-2xl">{comp.description}</p>
                   )}
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatDate(comp.startTime)} — {formatDate(comp.endTime)}</span>
-                    <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {comp.participantCount} {t("participants", "qatnashchi", "участников")}</span>
+                  
+                  <div className="flex flex-wrap items-center justify-between gap-6 pt-6 border-t border-white/5 relative z-10">
+                    <div className="flex items-center gap-8">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 leading-none mb-1">Timeframe</span>
+                        <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                          <Clock className="w-3 h-3 text-primary" />
+                          {formatDate(comp.startTime)} <span className="text-muted-foreground/40">—</span> {formatDate(comp.endTime)}
+                        </div>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 leading-none mb-1">Operatives</span>
+                        <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                          <Users className="w-3 h-3 text-primary" />
+                          {comp.participantCount} {t("ENGAGED", "QATNASHCHI", "УЧАСТНИКОВ")}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col text-right">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 leading-none mb-1">Assets</span>
+                      <div className="text-sm font-black text-primary">{comp.ctfCount} TARGETS</div>
+                    </div>
                   </div>
                 </div>
               </Link>

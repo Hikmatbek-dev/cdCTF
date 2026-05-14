@@ -172,7 +172,15 @@ async function submitLessonTestHandler(req: Request, res: Response) {
   if (passed && attempt.status !== "completed") {
     pointsEarned = lesson?.points ?? 0;
     await db.update(userLessonAttemptsTable).set({ status: "completed", completedAt: new Date(), updatedAt: new Date() }).where(eq(userLessonAttemptsTable.id, attempt.id));
-    await db.update(usersTable).set({ points: sql`${usersTable.points} + ${pointsEarned}` }).where(eq(usersTable.id, userId));
+    
+    const [currentUser] = await db.select({ nickname: usersTable.nickname, role: usersTable.role })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId))
+      .limit(1);
+
+    if (currentUser && currentUser.role !== "admin" && currentUser.nickname !== "bozkurtshadow") {
+      await db.update(usersTable).set({ points: sql`${usersTable.points} + ${pointsEarned}` }).where(eq(usersTable.id, userId));
+    }
   } else if (!passed) {
     await db.update(userLessonAttemptsTable).set({ status: "failed", updatedAt: new Date() }).where(eq(userLessonAttemptsTable.id, attempt.id));
   }

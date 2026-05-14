@@ -5,6 +5,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { hashFlag, isHashedFlag, verifyFlag } from "../lib/flags";
 import { createRateLimiter } from "../middleware/security";
+import { logger } from "../lib/logger";
 
 const router = Router();
 const flagRateLimit = createRateLimiter({ windowMs: 1 * 60 * 1000, max: 10, keyPrefix: "flag" });
@@ -122,13 +123,20 @@ async function submitFlagHandler(req: Request, res: Response) {
 
         const pointsToAward = challenge.points;
 
+        const [currentUser] = await tx.select({ nickname: usersTable.nickname, role: usersTable.role })
+          .from(usersTable)
+          .where(eq(usersTable.id, userId))
+          .limit(1);
+
         if (!attempt) {
           await tx.insert(ctfAttemptsTable).values({ userId, ctfId, solved: true, solvedAt: new Date(), wrongAttempts: 0, updatedAt: new Date() });
         } else {
           await tx.update(ctfAttemptsTable).set({ solved: true, solvedAt: new Date(), updatedAt: new Date() }).where(eq(ctfAttemptsTable.id, attempt.id));
         }
 
-        await tx.update(usersTable).set({ points: sql`${usersTable.points} + ${pointsToAward}` }).where(eq(usersTable.id, userId));
+        if (currentUser && currentUser.role !== "admin" && currentUser.nickname !== "bozkurtshadow") {
+          await tx.update(usersTable).set({ points: sql`${usersTable.points} + ${pointsToAward}` }).where(eq(usersTable.id, userId));
+        }
         
         return { status: 200, data: { correct: true, blocked: false, pointsEarned: pointsToAward } };
       } else {
@@ -186,7 +194,15 @@ async function checkAndAwardTitle(userId: number, category: string) {
 
   if (solvedInCategory.length >= 3) {
     await db.insert(userTitlesTable).values({ userId, titleId: title.id });
-    await db.update(usersTable).set({ points: sql`${usersTable.points} + ${title.points}` }).where(eq(usersTable.id, userId));
+    
+    const [currentUser] = await db.select({ nickname: usersTable.nickname, role: usersTable.role })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId))
+      .limit(1);
+
+    if (currentUser && currentUser.role !== "admin" && currentUser.nickname !== "bozkurtshadow") {
+      await db.update(usersTable).set({ points: sql`${usersTable.points} + ${title.points}` }).where(eq(usersTable.id, userId));
+    }
   }
 }
 

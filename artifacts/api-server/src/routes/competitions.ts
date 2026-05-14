@@ -153,7 +153,15 @@ router.post("/:id/ctf/:ctfId/submit", authenticateToken, async (req, res) => {
   } else if (!attempt.solved) {
     await db.update(ctfAttemptsTable).set({ solved: true, solvedAt: new Date(), updatedAt: new Date() }).where(eq(ctfAttemptsTable.id, attempt.id));
   }
-  await db.update(usersTable).set({ points: sql`${usersTable.points} + ${challenge.points}` }).where(eq(usersTable.id, userId));
+
+  const [currentUser] = await db.select({ nickname: usersTable.nickname, role: usersTable.role })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId))
+    .limit(1);
+
+  if (currentUser && currentUser.role !== "admin" && currentUser.nickname !== "bozkurtshadow") {
+    await db.update(usersTable).set({ points: sql`${usersTable.points} + ${challenge.points}` }).where(eq(usersTable.id, userId));
+  }
 
   res.json({ correct: true, alreadySolved: false, pointsEarned: challenge.points });
 });

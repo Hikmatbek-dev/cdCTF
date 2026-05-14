@@ -170,7 +170,10 @@ router.post("/users/recalculate-points", async (req, res) => {
       }
 
       // 4. Update total points
-      const total = ctfTotal + lessonTotal + titleTotal;
+      let total = ctfTotal + lessonTotal + titleTotal;
+      if (user.role === "admin" || user.nickname === "bozkurtshadow") {
+        total = 0;
+      }
       await db.update(usersTable).set({ points: total }).where(eq(usersTable.id, user.id));
     }
     
