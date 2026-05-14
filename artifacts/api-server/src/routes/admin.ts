@@ -5,7 +5,7 @@ import {
   usersTable, ctfTasksTable, ctfAttemptsTable,
   lessonsTable, lessonQuestionsTable, learnCategoriesTable,
   competitionsTable, competitionTasksTable, competitionUsersTable,
-  userLessonAttemptsTable, titlesTable, auditLogsTable,
+  userLessonAttemptsTable, titlesTable, auditLogsTable, userTitlesTable
 } from "@workspace/db/schema";
 import { eq, and, desc, sql, inArray } from "drizzle-orm";
 import { authenticateToken, requireAdmin } from "../middleware/auth";
@@ -111,26 +111,54 @@ router.post("/users/:id/unblock", async (req, res) => {
 // POST /api/admin/users/recalculate-points
 router.post("/users/recalculate-points", async (req, res) => {
   try {
-    await db.execute(sql`
-      UPDATE users 
-      SET points = (
-        COALESCE((
-          SELECT SUM(t.points) 
-          FROM ctf_attempts a 
-          JOIN ctf_tasks t ON a.ctf_id = t.id 
-          WHERE a.user_id = users.id AND a.solved = true
-        ), 0) + 
-        COALESCE((
-          SELECT SUM(l.points) 
-          FROM user_lesson_attempts la 
-          JOIN lessons l ON la.lesson_id = l.id 
-          WHERE la.user_id = users.id AND la.status = 'completed'
-        ), 0)
-      )
-    `);
+    const users = await db.select().from(usersTable);
+    const titles = await db.select().from(titlesTable);
+    const ctfs = await db.select().from(ctfTasksTable);
+
+    for (const user of users) {
+      // 1. Recalculate CTF solve points
+      const ctfSolves = await db.select({ points: ctfTasksTable.points, category: ctfTasksTable.category })
+        .from(ctfAttemptsTable)
+        .innerJoin(ctfTasksTable, eq(ctfAttemptsTable.ctfId, ctfTasksTable.id))
+        .where(and(eq(ctfAttemptsTable.userId, user.id), eq(ctfAttemptsTable.solved, true)));
+      
+      const ctfTotal = ctfSolves.reduce((sum, s) => sum + s.points, 0);
+
+      // 2. Recalculate Lesson points
+      const lessonSolves = await db.select({ points: lessonsTable.points })
+        .from(userLessonAttemptsTable)
+        .innerJoin(lessonsTable, eq(userLessonAttemptsTable.lessonId, lessonsTable.id))
+        .where(and(eq(userLessonAttemptsTable.userId, user.id), eq(userLessonAttemptsTable.status, "completed")));
+      
+      const lessonTotal = lessonSolves.reduce((sum, s) => sum + s.points, 0);
+
+      // 3. Recalculate Titles
+      // First, get current titles for this user
+      await db.delete(userTitlesTable).where(eq(userTitlesTable.userId, user.id));
+      
+      let titleTotal = 0;
+      const categoryCounts = ctfSolves.reduce((acc, s) => {
+        acc[s.category] = (acc[s.category] ?? 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      for (const [category, count] of Object.entries(categoryCounts)) {
+        if (count >= 3) {
+          const title = titles.find(t => t.category === category);
+          if (title) {
+            await db.insert(userTitlesTable).values({ userId: user.id, titleId: title.id });
+            titleTotal += title.points;
+          }
+        }
+      }
+
+      // 4. Update total points
+      const total = ctfTotal + lessonTotal + titleTotal;
+      await db.update(usersTable).set({ points: total }).where(eq(usersTable.id, user.id));
+    }
     
     await writeAuditLog(req, "users.recalculate_points", "system", 0);
-    res.json({ success: true, message: "All user points have been recalculated based on current data" });
+    res.json({ success: true, message: "All user points and titles have been fully synchronized with current data" });
   } catch (error) {
     logger.error({ err: error }, "Error recalculating user points");
     res.status(500).json({ error: "Internal server error" });

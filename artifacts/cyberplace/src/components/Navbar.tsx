@@ -66,6 +66,18 @@ export function Navbar() {
                 {t("Admin", "Admin", "Админ")}
               </Link>
             )}
+            {isAuthenticated && user && (
+              <Link
+                href={`/profile/${user.id}`}
+                className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                  isActive("/profile")
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                {t("Profile", "Profil", "Профиль")}
+              </Link>
+            )}
           </div>
 
           {/* Right side */}

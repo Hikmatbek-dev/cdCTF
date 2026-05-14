@@ -1,5 +1,5 @@
 import { useRoute, Link } from "wouter";
-import { Trophy, Flag, BookOpen, Target, Calendar, Star } from "lucide-react";
+import { Trophy, Flag, BookOpen, Target, Calendar, Star, CheckCircle2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
 import { useGetUserProfile, getGetUserProfileQueryKey } from "@workspace/api-client-react";
@@ -32,135 +32,187 @@ export default function ProfilePage() {
   if (!profile) {
     return (
       <div className="min-h-screen bg-background pt-14 flex items-center justify-center">
-        <p className="text-muted-foreground">{t("User not found", "Foydalanuvchi topilmadi", "Пользователь не найден")}</p>
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">{t("User not found", "Foydalanuvchi topilmadi", "Пользователь не найден")}</p>
+          <Link href="/scoreboard">
+            <Button variant="outline">{t("Go to Scoreboard", "Reytingga o'tish", "В рейтинг")}</Button>
+          </Link>
+        </div>
       </div>
     );
   }
 
   const isOwn = currentUser?.id === profile.id;
-  const titles = normalizeArray<(typeof profile.titles)[number]>(profile.titles, ["titles", "data", "items"]);
-  const solvedCtf = normalizeArray<(typeof profile.solvedCtf)[number]>(profile.solvedCtf, ["solvedCtf", "data", "items"]);
-  const completedLessons = normalizeArray<(typeof profile.completedLessons)[number]>(profile.completedLessons, ["completedLessons", "data", "items"]);
-  const competitionHistory = normalizeArray<(typeof profile.competitionHistory)[number]>(profile.competitionHistory, ["competitionHistory", "competitions", "data", "items"]);
+  const titles = normalizeArray<any>(profile.titles, ["titles", "data", "items"]);
+  const solvedCtf = normalizeArray<any>(profile.solvedCtf, ["solvedCtf", "data", "items"]);
+  const completedLessons = normalizeArray<any>(profile.completedLessons, ["completedLessons", "data", "items"]);
+  const competitionHistory = normalizeArray<any>(profile.competitionHistory, ["competitionHistory", "competitions", "data", "items"]);
 
   return (
-    <div className="min-h-screen bg-background pt-14">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background pt-14 pb-12">
+      {/* Background Decor */}
+      <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
+
+      <div className="max-w-4xl mx-auto px-4 py-8 relative">
         {/* Profile Header */}
-        <div className="flex items-start gap-6 mb-8">
-          <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary flex-shrink-0 overflow-hidden">
-            {profile.avatarUrl ? (
-              <img src={profile.avatarUrl} alt={profile.nickname} className="w-full h-full object-cover" data-testid="img-avatar" />
-            ) : (
-              profile.nickname[0].toUpperCase()
-            )}
-          </div>
-          <div className="flex-1">
-            <div className="flex items-start justify-between">
-              <div>
-                <h1 className="text-2xl font-bold" data-testid="text-nickname">{profile.nickname}</h1>
-                <p className="text-sm text-muted-foreground">{profile.email}</p>
-                <div className="flex items-center gap-3 mt-2">
-                  <span className="font-mono font-bold text-primary text-lg" data-testid="text-points">{profile.points} pts</span>
-                  <span className="text-sm text-muted-foreground">#{profile.rank} {t("rank", "reyting", "место")}</span>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    {new Date(profile.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-              {isOwn && (
-                <Link href="/profile/edit">
-                  <Button variant="outline" size="sm" data-testid="button-edit-profile">{t("Edit Profile", "Profilni Tahrirlash", "Редактировать")}</Button>
-                </Link>
+        <div className="bg-card border border-border rounded-2xl p-6 md:p-8 mb-6 shadow-sm">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+            <div className="w-24 h-24 rounded-2xl bg-primary/10 flex items-center justify-center text-3xl font-bold text-primary flex-shrink-0 shadow-inner overflow-hidden border-2 border-primary/20">
+              {profile.avatarUrl ? (
+                <img src={profile.avatarUrl} alt={profile.nickname} className="w-full h-full object-cover" />
+              ) : (
+                profile.nickname[0].toUpperCase()
               )}
             </div>
-
-            {/* Titles */}
-            {titles.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {titles.map(title => (
-                  <span key={title.id} className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium" data-testid={`badge-title-${title.id}`}>
-                    <Star className="w-2.5 h-2.5" /> {title.name}
-                  </span>
-                ))}
+            
+            <div className="flex-1 text-center md:text-left">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold tracking-tight">{profile.nickname}</h1>
+                  <p className="text-muted-foreground flex items-center justify-center md:justify-start gap-2 mt-1">
+                    {profile.email}
+                    {(profile as any).emailVerified && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                  </p>
+                </div>
+                {isOwn && (
+                  <Link href="/profile/edit">
+                    <Button variant="outline" size="sm" className="rounded-full px-5">
+                      {t("Edit Profile", "Profilni Tahrirlash", "Редактировать")}
+                    </Button>
+                  </Link>
+                )}
               </div>
-            )}
+
+              {/* Stats Bar */}
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 mt-6 pt-6 border-t border-border/50">
+                <div className="flex flex-col">
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">{t("Points", "Ballar", "Очки")}</span>
+                  <span className="text-xl font-mono font-bold text-primary">{profile.points}</span>
+                </div>
+                <div className="w-px h-8 bg-border/50 hidden sm:block" />
+                <div className="flex flex-col">
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">{t("Rank", "Reyting", "Место")}</span>
+                  <span className="text-xl font-mono font-bold text-foreground">#{profile.rank}</span>
+                </div>
+                <div className="w-px h-8 bg-border/50 hidden sm:block" />
+                <div className="flex flex-col">
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">{t("Solves", "Yechimlar", "Решений")}</span>
+                  <span className="text-xl font-mono font-bold text-foreground">{solvedCtf.length}</span>
+                </div>
+              </div>
+
+              {/* Titles Section (Directly under info) */}
+              {titles.length > 0 ? (
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-6">
+                  {titles.map(title => (
+                    <span 
+                      key={title.id} 
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wide"
+                    >
+                      <Star className="w-3 h-3 fill-primary/20" />
+                      {title.name}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-6 text-xs text-muted-foreground italic">
+                  {t("No titles earned yet", "Unvonlar hali yo'q", "Титулов пока нет")}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="p-4 rounded-xl border border-border bg-card text-center" data-testid="stat-solved-ctf">
-            <div className="text-2xl font-mono font-bold text-primary">{solvedCtf.length}</div>
-            <div className="text-xs text-muted-foreground mt-1">{t("CTFs Solved", "CTF Yechilgan", "CTF решено")}</div>
-          </div>
-          <div className="p-4 rounded-xl border border-border bg-card text-center" data-testid="stat-completed-lessons">
-            <div className="text-2xl font-mono font-bold text-primary">{completedLessons.length}</div>
-            <div className="text-xs text-muted-foreground mt-1">{t("Lessons Done", "Darslar Tugatilgan", "Уроков завершено")}</div>
-          </div>
-          <div className="p-4 rounded-xl border border-border bg-card text-center" data-testid="stat-competitions">
-            <div className="text-2xl font-mono font-bold text-primary">{competitionHistory.length}</div>
-            <div className="text-xs text-muted-foreground mt-1">{t("Competitions", "Musobaqalar", "Соревнований")}</div>
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Solved CTF */}
-          <div>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Flag className="w-4 h-4" /> {t("Solved Challenges", "Yechilgan Topshiriqlar", "Решённые задания")}
-            </h2>
-            <div className="space-y-1.5 max-h-64 overflow-y-auto">
-              {solvedCtf.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">{t("No challenges solved yet", "Topshiriqlar yechilmagan", "Нет решённых заданий")}</p>
-              ) : solvedCtf.map(ctf => (
-                <div key={ctf.id} className="flex items-center gap-3 p-2.5 rounded-lg border border-border bg-card text-sm" data-testid={`row-solved-ctf-${ctf.id}`}>
-                  <Target className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                  <span className="flex-1 truncate">{ctf.name}</span>
-                  <span className="text-xs text-muted-foreground">{ctf.category}</span>
-                  <span className="font-mono text-xs text-primary font-bold">+{ctf.points}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Completed Lessons */}
-          <div>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-              <BookOpen className="w-4 h-4" /> {t("Completed Lessons", "Tugatilgan Darslar", "Завершённые уроки")}
-            </h2>
-            <div className="space-y-1.5 max-h-64 overflow-y-auto">
-              {completedLessons.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">{t("No lessons completed yet", "Darslar tugatilmagan", "Нет завершённых уроков")}</p>
-              ) : completedLessons.map(lesson => (
-                <div key={lesson.id} className="flex items-center gap-3 p-2.5 rounded-lg border border-border bg-card text-sm" data-testid={`row-completed-lesson-${lesson.id}`}>
-                  <BookOpen className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                  <span className="flex-1 truncate">{lesson.title}</span>
-                  <span className="font-mono text-xs text-primary font-bold">+{lesson.points}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Competition History */}
-          {competitionHistory.length > 0 && (
-            <div className="md:col-span-2">
-              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-                <Trophy className="w-4 h-4" /> {t("Competition History", "Musobaqa Tarixi", "История соревнований")}
+        {/* Content Section */}
+        <div className="space-y-6">
+          {/* Solved CTF Section */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <Flag className="w-5 h-5 text-primary" />
+                {t("Solved CTF Challenges", "Yechilgan CTF Topshiriqlari", "Решённые CTF")}
               </h2>
-              <div className="grid sm:grid-cols-2 gap-2">
-                {competitionHistory.map(comp => (
-                  <div key={comp.competitionId} className="flex items-center justify-between p-3 rounded-lg border border-border bg-card text-sm" data-testid={`row-comp-history-${comp.competitionId}`}>
-                    <span className="truncate font-medium">{comp.competitionName}</span>
-                    <div className="flex items-center gap-2 ml-2">
-                      <span className="text-muted-foreground text-xs">#{comp.rank}</span>
-                      <span className="font-mono text-xs text-primary font-bold">{comp.points}pts</span>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                {solvedCtf.length} {t("total", "jami", "всего")}
+              </span>
+            </div>
+
+            {solvedCtf.length === 0 ? (
+              <div className="bg-card border border-dashed border-border rounded-xl p-12 text-center">
+                <Target className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                <p className="text-muted-foreground">{t("No challenges solved yet", "Topshiriqlar yechilmagan", "Нет решённых заданий")}</p>
+                <Link href="/ctf">
+                  <Button variant="link" className="mt-2 text-primary">{t("Browse Challenges", "Topshiriqlarni ko'rish", "Посмотреть задания")}</Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {solvedCtf.map(ctf => (
+                  <div key={ctf.id} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors group">
+                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                      <Target className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm truncate">{ctf.name}</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{ctf.category}</span>
+                        {ctf.solvedAt && (
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                            <Calendar className="w-2.5 h-2.5" />
+                            {new Date(ctf.solvedAt).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-mono text-sm font-bold text-primary">+{ctf.points}</span>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
+            )}
+          </section>
+
+          {/* Lessons Section */}
+          {completedLessons.length > 0 && (
+            <section className="pt-6 border-t border-border/50">
+              <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                {t("Educational Progress", "O'quv Jarayoni", "Образовательный процесс")}
+              </h2>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {completedLessons.map(lesson => (
+                  <div key={lesson.id} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card/50 text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <span className="flex-1 truncate">{lesson.title}</span>
+                    <span className="font-mono text-xs text-primary font-bold">+{lesson.points}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Competition History */}
+          {competitionHistory.length > 0 && (
+            <section className="pt-6 border-t border-border/50">
+              <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
+                <Trophy className="w-4 h-4" />
+                {t("Competition History", "Musobaqa Tarixi", "История соревнований")}
+              </h2>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {competitionHistory.map(comp => (
+                  <div key={comp.competitionId} className="p-4 rounded-xl border border-border bg-card flex flex-col justify-between gap-2 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="font-bold text-sm truncate">{comp.competitionName}</div>
+                    <div className="flex items-center justify-between mt-2">
+                      <div className="px-2 py-0.5 rounded-full bg-muted text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
+                        Rank #{comp.rank}
+                      </div>
+                      <span className="font-mono text-xs font-bold text-primary">{comp.points} pts</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
           )}
         </div>
       </div>
