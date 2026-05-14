@@ -7,10 +7,11 @@ import {
   competitionsTable, competitionTasksTable, competitionUsersTable,
   userLessonAttemptsTable, titlesTable, auditLogsTable,
 } from "@workspace/db/schema";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, inArray } from "drizzle-orm";
 import { authenticateToken, requireAdmin } from "../middleware/auth";
 import { writeAuditLog } from "../lib/audit";
 import { hashFlag } from "../lib/flags";
+import { logger } from "../lib/logger";
 
 const router = Router();
 router.use(authenticateToken, requireAdmin);
@@ -162,11 +163,10 @@ router.delete("/ctf/:id", async (req, res) => {
 
     // 3. Deduct points from each solver
     if (solvers.length > 0) {
-      for (const solve of solvers) {
-        await db.update(usersTable)
-          .set({ points: sql`GREATEST(${usersTable.points} - ${challenge.points}, 0)` })
-          .where(eq(usersTable.id, solve.userId));
-      }
+      const solverIds = solvers.map(s => s.userId);
+      await db.update(usersTable)
+        .set({ points: sql`GREATEST(${usersTable.points} - ${challenge.points}, 0)` })
+        .where(inArray(usersTable.id, solverIds));
     }
 
     // 4. Delete related attempts and then the task
