@@ -266,11 +266,11 @@ export default function HomePage() {
           <span className="font-bold">cd<span className="text-primary">CTF</span></span>
         </div>
         <p className="text-xs text-muted-foreground mb-3">
-          {t("Founders: ", "Asoschilari: ", "Основатели: ")}<span className="text-foreground font-medium">Bozkurtuzb &amp; Shadow</span>
+          {t("Founders: ", "Asoschilari: ", "Основатели: ")}<span className="text-foreground font-medium">Bozkurt &amp; Shadow</span>
         </p>
         <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-          <a href="https://t.me/cyberplace" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Telegram</a>
-          <a href="https://instagram.com/cyberplace" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Instagram</a>
+          <a href="https://t.me/cdctf_uz" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Telegram</a>
+          <a href="https://instagram.com/cdctf_uz" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Instagram</a>
         </div>
       </footer>
     </div>

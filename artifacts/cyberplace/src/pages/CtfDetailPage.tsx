@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRoute } from "wouter";
-import { Download, Lightbulb, Flag, AlertTriangle, CheckCircle2, Lock } from "lucide-react";
+import { Download, Flag, AlertTriangle, CheckCircle2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
@@ -17,14 +17,12 @@ export default function CtfDetailPage() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [flag, setFlag] = useState("");
-  const [showHintConfirm, setShowHintConfirm] = useState(false);
 
   const { data: challenge, isLoading } = useGetCtfChallenge(id, {
     query: { enabled: !!id, queryKey: getGetCtfChallengeQueryKey(id) },
   });
 
   const submitFlag = useSubmitCtfFlag();
-  const useHint = useUseCtfHint();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,19 +47,6 @@ export default function CtfDetailPage() {
     );
   };
 
-  const handleHint = () => {
-    useHint.mutate(
-      { id },
-      {
-        onSuccess: (res) => {
-          toast({ title: t("Hint revealed", "Maslahat ochildi", "Подсказка показана"), description: res.hint });
-          setShowHintConfirm(false);
-          qc.invalidateQueries({ queryKey: getGetCtfChallengeQueryKey(id) });
-        },
-        onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
-      }
-    );
-  };
 
   if (isLoading) {
     return (
@@ -126,35 +111,6 @@ export default function CtfDetailPage() {
           </div>
         )}
 
-        {/* Hint */}
-        {!challenge.isSolved && !challenge.isBlocked && (
-          <div className="mb-6 p-4 rounded-lg border border-border bg-card">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Lightbulb className="w-4 h-4 text-yellow-500" />
-                <span className="text-sm font-medium">{t("Hint", "Maslahat", "Подсказка")}</span>
-              </div>
-              {!challenge.hintUsed && (
-                <span className="text-xs text-muted-foreground">-{challenge.hintCost} pts</span>
-              )}
-            </div>
-            {challenge.hintUsed ? (
-              <p className="text-sm text-muted-foreground italic">{t("Hint already used", "Maslahat allaqachon ishlatilgan", "Подсказка уже использована")}</p>
-            ) : showHintConfirm ? (
-              <div className="flex items-center gap-2 mt-2">
-                <p className="text-xs text-muted-foreground flex-1">{t("This will cost", "Bu", "Это стоит")} {challenge.hintCost} pts.</p>
-                <Button size="sm" variant="outline" onClick={() => setShowHintConfirm(false)} className="text-xs">{t("Cancel", "Bekor", "Отмена")}</Button>
-                <Button size="sm" onClick={handleHint} disabled={useHint.isPending} className="text-xs" data-testid="button-confirm-hint">
-                  {t("Reveal", "Ko'rsatish", "Показать")}
-                </Button>
-              </div>
-            ) : (
-              <Button variant="ghost" size="sm" onClick={() => setShowHintConfirm(true)} className="gap-1 text-xs mt-1" data-testid="button-use-hint">
-                <Lightbulb className="w-3.5 h-3.5" /> {t("Use Hint", "Maslahatdan foydalanish", "Использовать подсказку")}
-              </Button>
-            )}
-          </div>
-        )}
 
         {/* Wrong attempts warning */}
         {challenge.wrongAttempts > 0 && !challenge.isSolved && !challenge.isBlocked && (

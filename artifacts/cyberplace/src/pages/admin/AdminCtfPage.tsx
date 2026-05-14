@@ -27,7 +27,6 @@ const schema = z.object({
   category: z.string().min(1),
   difficulty: z.enum(["easy", "medium", "hard", "insane"]),
   points: z.coerce.number().min(1),
-  hint: z.string().optional(),
   flag: z.string().min(1),
   fileUrl: z.string().optional(),
 });
@@ -71,7 +70,6 @@ export default function AdminCtfPage() {
       category: "Web",
       difficulty: "easy",
       points: 100,
-      hint: "",
       flag: "",
       fileUrl: "",
     },
@@ -89,7 +87,6 @@ export default function AdminCtfPage() {
       category: "Web",
       difficulty: "easy",
       points: 100,
-      hint: "",
       flag: "",
       fileUrl: "",
     });
@@ -107,7 +104,6 @@ export default function AdminCtfPage() {
       category: ch.category,
       difficulty: ch.difficulty as "easy" | "medium" | "hard" | "insane",
       points: ch.points,
-      hint: "",
       flag: "",
       fileUrl: "",
     });
@@ -115,7 +111,7 @@ export default function AdminCtfPage() {
   };
 
   const onSubmit = (data: FormData) => {
-    const payload = { ...data, nameUz: data.nameUz || null, nameRu: data.nameRu || null, descriptionUz: data.descriptionUz || null, descriptionRu: data.descriptionRu || null, hint: data.hint || null, fileUrl: data.fileUrl || null };
+    const payload = { ...data, nameUz: data.nameUz || null, nameRu: data.nameRu || null, descriptionUz: data.descriptionUz || null, descriptionRu: data.descriptionRu || null, fileUrl: data.fileUrl || null };
     const invalidate = () => { qc.invalidateQueries({ queryKey: getListCtfChallengesQueryKey({}) }); setShowForm(false); };
     if (editingId) {
       updateCtf.mutate({ id: editingId, data: payload }, {
@@ -267,9 +263,6 @@ export default function AdminCtfPage() {
                 )} />
                 <FormField control={form.control} name="points" render={({ field }) => (
                   <FormItem><FormLabel>{t("Points", "Ball", "Очки")}</FormLabel><FormControl><Input {...field} type="number" data-testid="input-ctf-points" /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="hint" render={({ field }) => (
-	                  <FormItem><FormLabel>{t("Hint (optional)", "Yordam (ixtiyoriy)", "Подсказка (необязательно)")}</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="fileUrl" render={({ field }) => (
                   <FormItem className="col-span-2">

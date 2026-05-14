@@ -87,12 +87,9 @@ router.get("/:id", optionalAuth, async (req, res) => {
     difficulty: challenge.difficulty,
     points: challenge.points,
     fileUrl: challenge.fileUrl,
-    hintCost: challenge.hintCost,
     isSolved: userAttempt?.solved ?? false,
     isBlocked: userAttempt?.blocked ?? false,
-    hintUsed: userAttempt?.hintUsed ?? false,
     wrongAttempts: userAttempt?.wrongAttempts ?? 0,
-    hint: userAttempt?.hintUsed ? challenge.hint : null,
   });
 });
 
@@ -106,43 +103,56 @@ async function submitFlagHandler(req: Request, res: Response) {
     return res.status(400).json({ error: "Flag is required" });
   }
 
-  const [challenge] = await db.select().from(ctfTasksTable).where(eq(ctfTasksTable.id, ctfId)).limit(1);
-  if (!challenge) return res.status(404).json({ error: "Not found" });
+  try {
+    const result = await db.transaction(async (tx) => {
+      const [challenge] = await tx.select().from(ctfTasksTable).where(eq(ctfTasksTable.id, ctfId)).limit(1);
+      if (!challenge) return { status: 404, data: { error: "Not found" } };
 
-  let [attempt] = await db.select().from(ctfAttemptsTable).where(and(eq(ctfAttemptsTable.userId, userId), eq(ctfAttemptsTable.ctfId, ctfId))).limit(1);
+      const [attempt] = await tx.select().from(ctfAttemptsTable)
+        .where(and(eq(ctfAttemptsTable.userId, userId), eq(ctfAttemptsTable.ctfId, ctfId)))
+        .limit(1);
 
-  if (attempt?.solved) return res.json({ correct: true, blocked: false, wrongAttempts: attempt.wrongAttempts });
-  if (attempt?.blocked) return res.json({ correct: false, blocked: true, wrongAttempts: attempt.wrongAttempts });
+      if (attempt?.solved) return { status: 200, data: { correct: true, blocked: false, wrongAttempts: attempt.wrongAttempts } };
+      if (attempt?.blocked) return { status: 200, data: { correct: false, blocked: true, wrongAttempts: attempt.wrongAttempts } };
 
-  if (verifyFlag(flag, challenge.flag)) {
-    if (!isHashedFlag(challenge.flag)) {
-      await db.update(ctfTasksTable).set({ flag: hashFlag(challenge.flag) }).where(eq(ctfTasksTable.id, ctfId));
+      if (verifyFlag(flag, challenge.flag)) {
+        if (!isHashedFlag(challenge.flag)) {
+          await tx.update(ctfTasksTable).set({ flag: hashFlag(challenge.flag) }).where(eq(ctfTasksTable.id, ctfId));
+        }
+
+        const pointsToAward = challenge.points;
+
+        if (!attempt) {
+          await tx.insert(ctfAttemptsTable).values({ userId, ctfId, solved: true, solvedAt: new Date(), wrongAttempts: 0, updatedAt: new Date() });
+        } else {
+          await tx.update(ctfAttemptsTable).set({ solved: true, solvedAt: new Date(), updatedAt: new Date() }).where(eq(ctfAttemptsTable.id, attempt.id));
+        }
+
+        await tx.update(usersTable).set({ points: sql`${usersTable.points} + ${pointsToAward}` }).where(eq(usersTable.id, userId));
+        
+        return { status: 200, data: { correct: true, blocked: false, pointsEarned: pointsToAward } };
+      } else {
+        const wrongAttempts = (attempt?.wrongAttempts ?? 0) + 1;
+        const isBlocked = wrongAttempts >= 5;
+
+        if (!attempt) {
+          await tx.insert(ctfAttemptsTable).values({ userId, ctfId, wrongAttempts, blocked: isBlocked, updatedAt: new Date() });
+        } else {
+          await tx.update(ctfAttemptsTable).set({ wrongAttempts, blocked: isBlocked, updatedAt: new Date() }).where(eq(ctfAttemptsTable.id, attempt.id));
+        }
+
+        return { status: 200, data: { correct: false, blocked: isBlocked, wrongAttempts } };
+      }
+    });
+
+    if (result.data.correct && (result.data as any).pointsEarned) {
+      void checkAndAwardTitle(userId, (await db.select({ cat: ctfTasksTable.category }).from(ctfTasksTable).where(eq(ctfTasksTable.id, ctfId)).limit(1))[0].cat);
     }
-    const pointsToAward = attempt?.hintUsed
-      ? Math.floor(challenge.points * (1 - challenge.hintCost / 100))
-      : challenge.points;
 
-    if (!attempt) {
-      await db.insert(ctfAttemptsTable).values({ userId, ctfId, solved: true, solvedAt: new Date(), wrongAttempts: 0, updatedAt: new Date() });
-    } else {
-      await db.update(ctfAttemptsTable).set({ solved: true, solvedAt: new Date(), updatedAt: new Date() }).where(eq(ctfAttemptsTable.id, attempt.id));
-    }
-
-    await db.update(usersTable).set({ points: sql`${usersTable.points} + ${pointsToAward}` }).where(eq(usersTable.id, userId));
-    await checkAndAwardTitle(userId, challenge.category);
-
-    return res.json({ correct: true, blocked: false, pointsEarned: pointsToAward });
-  } else {
-    const wrongAttempts = (attempt?.wrongAttempts ?? 0) + 1;
-    const isBlocked = wrongAttempts >= 5;
-
-    if (!attempt) {
-      await db.insert(ctfAttemptsTable).values({ userId, ctfId, wrongAttempts, blocked: isBlocked, updatedAt: new Date() });
-    } else {
-      await db.update(ctfAttemptsTable).set({ wrongAttempts, blocked: isBlocked, updatedAt: new Date() }).where(eq(ctfAttemptsTable.id, attempt.id));
-    }
-
-    return res.json({ correct: false, blocked: isBlocked, wrongAttempts });
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    logger.error({ err: error }, "Flag submission error");
+    res.status(500).json({ error: "Internal server error" });
   }
 }
 
@@ -151,35 +161,6 @@ router.post("/:id/submit", authenticateToken, flagRateLimit, submitFlagHandler);
 
 // Backward-compatible alias.
 router.post("/:id/flag", authenticateToken, flagRateLimit, submitFlagHandler);
-
-// POST /api/ctf/:id/hint
-router.post("/:id/hint", authenticateToken, async (req, res) => {
-  const ctfId = Number(req.params.id);
-  const userId = req.user!.userId;
-
-  if (!Number.isInteger(ctfId) || ctfId <= 0) return res.status(400).json({ error: "Invalid CTF id" });
-
-  const [challenge] = await db.select().from(ctfTasksTable).where(eq(ctfTasksTable.id, ctfId)).limit(1);
-  if (!challenge) return res.status(404).json({ error: "Not found" });
-
-  if (!challenge.hint) return res.status(400).json({ error: "No hint available" });
-
-  let [attempt] = await db.select().from(ctfAttemptsTable).where(and(eq(ctfAttemptsTable.userId, userId), eq(ctfAttemptsTable.ctfId, ctfId))).limit(1);
-
-  if (attempt?.hintUsed) return res.json({ hint: challenge.hint });
-  if (attempt?.solved) return res.json({ hint: challenge.hint });
-
-  if (!attempt) {
-    await db.insert(ctfAttemptsTable).values({ userId, ctfId, hintUsed: true, updatedAt: new Date() });
-  } else {
-    await db.update(ctfAttemptsTable).set({ hintUsed: true, updatedAt: new Date() }).where(eq(ctfAttemptsTable.id, attempt.id));
-  }
-
-  const hintCostPoints = Math.floor(challenge.points * challenge.hintCost / 100);
-  await db.update(usersTable).set({ points: sql`GREATEST(0, ${usersTable.points} - ${hintCostPoints})` }).where(eq(usersTable.id, userId));
-
-  res.json({ hint: challenge.hint });
-});
 
 async function checkAndAwardTitle(userId: number, category: string) {
   const categoryTitleMap: Record<string, string> = {
