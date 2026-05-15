@@ -149,7 +149,7 @@ export default function CtfListPage() {
                       ch.isSolved ? "border-primary/40 bg-primary/[0.02]" : ch.isBlocked ? "opacity-40 grayscale" : ""
                     }`}
                   >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-all" />
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-all pointer-events-none" />
                     
                     <div className="flex items-start justify-between mb-8 relative z-10">
                       <DifficultyBadge difficulty={ch.difficulty} className="rounded-lg px-3 py-1 text-[10px] font-black uppercase tracking-widest shadow-sm" />

@@ -14,7 +14,7 @@ import { useLang } from "@/lib/LanguageContext";
 import { normalizeLearnCategories, normalizeLessons } from "@/lib/api-shapes";
 import { useListLessons, getListLessonsQueryKey, useListLearnCategories, getListLearnCategoriesQueryKey, useAdminCreateLesson, useAdminUpdateLesson, useAdminDeleteLesson } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 
 const questionSchema = z.object({
   question: z.string().min(1),
@@ -43,9 +43,16 @@ export default function AdminLessonsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  const { data: lessons, isLoading } = useListLessons({}, { query: { queryKey: getListLessonsQueryKey({}) } });
+  const { data: lessonsData, isLoading } = useQuery({
+    queryKey: ["admin-lessons"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/lessons", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch admin lessons");
+      return res.json();
+    }
+  });
   const { data: categories } = useListLearnCategories({ query: { queryKey: getListLearnCategoriesQueryKey() } });
-  const lessonList = normalizeLessons(lessons);
+  const lessonList = normalizeLessons(lessonsData);
   const categoryList = normalizeLearnCategories(categories);
 
   const createLesson = useAdminCreateLesson();
@@ -65,7 +72,7 @@ export default function AdminLessonsPage() {
   const openCreate = () => { setEditingId(null); form.reset({ title: "", content: "", categoryId: categoryList[0]?.id ?? 1, points: 50, questions: [{ question: "", options: ["", "", "", ""], correctOption: 0 }] }); setShowForm(true); };
 
   const onSubmit = (data: FormData) => {
-    const invalidate = () => { qc.invalidateQueries({ queryKey: getListLessonsQueryKey({}) }); setShowForm(false); };
+    const invalidate = () => { qc.invalidateQueries({ queryKey: ["admin-lessons"] }); setShowForm(false); };
     if (editingId) {
       updateLesson.mutate({ id: editingId, data }, {
         onSuccess: () => { toast({ title: t("Lesson updated!", "Dars yangilandi!", "Урок обновлён!") }); invalidate(); },
@@ -82,7 +89,7 @@ export default function AdminLessonsPage() {
   const handleDelete = (id: number) => {
     if (!confirm(t("Delete this lesson?", "O'chirish?", "Удалить?"))) return;
     deleteLesson.mutate({ id }, {
-      onSuccess: () => { toast({ title: t("Deleted", "O'chirildi", "Удалено") }); qc.invalidateQueries({ queryKey: getListLessonsQueryKey({}) }); },
+      onSuccess: () => { toast({ title: t("Deleted", "O'chirildi", "Удалено") }); qc.invalidateQueries({ queryKey: ["admin-lessons"] }); },
       onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
     });
   };
@@ -205,7 +212,32 @@ export default function AdminLessonsPage() {
                     <td className="px-4 py-3 font-mono font-bold text-primary">{lesson.points}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center gap-1 justify-end">
-                        <Button size="sm" variant="ghost" onClick={() => { setEditingId(lesson.id); form.reset({ title: lesson.title, content: "", categoryId: lesson.categoryId, points: lesson.points, questions: [{ question: "", options: ["", "", "", ""], correctOption: 0 }] }); setShowForm(true); }} className="h-7 w-7 p-0" data-testid={`button-edit-lesson-${lesson.id}`}><Pencil className="w-3.5 h-3.5" /></Button>
+                        <Button size="sm" variant="ghost" onClick={async () => { 
+                          try {
+                            const res = await fetch(`/api/admin/lessons/${lesson.id}`, { credentials: "include" });
+                            if (!res.ok) throw new Error();
+                            const data = await res.json();
+                            setEditingId(lesson.id);
+                            form.reset({
+                              title: data.title || "",
+                              titleUz: data.titleUz || "",
+                              titleRu: data.titleRu || "",
+                              content: data.content || "",
+                              contentUz: data.contentUz || "",
+                              contentRu: data.contentRu || "",
+                              categoryId: data.categoryId,
+                              points: data.points,
+                              questions: data.questions?.map((q: any) => ({
+                                question: q.question,
+                                options: q.options || ["", "", "", ""],
+                                correctOption: q.correctOption,
+                              })) || [{ question: "", options: ["", "", "", ""], correctOption: 0 }],
+                            });
+                            setShowForm(true);
+                          } catch (e) {
+                            toast({ title: "Failed to load lesson details", variant: "destructive" });
+                          }
+                        }} className="h-7 w-7 p-0" data-testid={`button-edit-lesson-${lesson.id}`}><Pencil className="w-3.5 h-3.5" /></Button>
                         <Button size="sm" variant="ghost" onClick={() => handleDelete(lesson.id)} className="h-7 w-7 p-0 text-destructive hover:text-destructive" data-testid={`button-delete-lesson-${lesson.id}`}><Trash2 className="w-3.5 h-3.5" /></Button>
                       </div>
                     </td>

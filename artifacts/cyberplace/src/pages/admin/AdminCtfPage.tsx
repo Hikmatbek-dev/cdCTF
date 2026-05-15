@@ -27,7 +27,7 @@ const schema = z.object({
   category: z.string().min(1),
   difficulty: z.enum(["easy", "medium", "hard", "insane"]),
   points: z.coerce.number().min(1),
-  flag: z.string().min(1),
+  flag: z.string().optional(),
   fileUrl: z.string().optional(),
 });
 
@@ -116,8 +116,13 @@ export default function AdminCtfPage() {
   };
 
   const onSubmit = (data: FormData) => {
+    if (!editingId && (!data.flag || !data.flag.trim())) {
+      form.setError("flag", { message: t("Flag is required for new challenges", "Yangi topshiriq uchun flag majburiy", "Флаг обязателен для новых заданий") });
+      return;
+    }
+
     const payload = { ...data, nameUz: data.nameUz || null, nameRu: data.nameRu || null, descriptionUz: data.descriptionUz || null, descriptionRu: data.descriptionRu || null, fileUrl: data.fileUrl || null };
-    const invalidate = () => { qc.invalidateQueries({ queryKey: getListCtfChallengesQueryKey({}) }); setShowForm(false); };
+    const invalidate = () => { qc.invalidateQueries({ queryKey: ["admin-ctfs"] }); setShowForm(false); };
     if (editingId) {
       updateCtf.mutate({ id: editingId, data: payload }, {
         onSuccess: () => { toast({ title: t("CTF updated!", "CTF yangilandi!", "CTF обновлён!") }); invalidate(); },
@@ -134,7 +139,7 @@ export default function AdminCtfPage() {
   const handleDelete = (id: number) => {
     if (!confirm(t("Delete this challenge?", "O'chirish?", "Удалить?"))) return;
     deleteCtf.mutate({ id }, {
-      onSuccess: () => { toast({ title: t("Deleted", "O'chirildi", "Удалено") }); qc.invalidateQueries({ queryKey: getListCtfChallengesQueryKey({}) }); },
+      onSuccess: () => { toast({ title: t("Deleted", "O'chirildi", "Удалено") }); qc.invalidateQueries({ queryKey: ["admin-ctfs"] }); },
       onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
     });
   };
@@ -237,7 +242,7 @@ export default function AdminCtfPage() {
                   <FormItem><FormLabel>{t("Name (EN)", "Nomi (EN)", "Название (EN)")}</FormLabel><FormControl><Input {...field} data-testid="input-ctf-name" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="flag" render={({ field }) => (
-                  <FormItem><FormLabel>{t("Flag", "Flag", "Флаг")}</FormLabel><FormControl><Input {...field} placeholder="Flag{...}" className="font-mono" data-testid="input-ctf-flag" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>{t("Flag", "Flag", "Флаг")}</FormLabel><FormControl><Input {...field} placeholder={editingId ? t("Leave empty to keep current", "Joriy flagni saqlash uchun bo'sh qoldiring", "Оставьте пустым, чтобы сохранить") : "Flag{...}"} className="font-mono" data-testid="input-ctf-flag" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="nameUz" render={({ field }) => (
 	                  <FormItem><FormLabel>{t("Name (UZ)", "Nomi (UZ)", "Название (UZ)")}</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>

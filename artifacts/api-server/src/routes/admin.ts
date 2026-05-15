@@ -225,7 +225,13 @@ async function updateCtfHandler(req: Request, res: Response) {
   const updates = filterAllowedUpdates(userRole, "ctf_tasks", req.body);
 
   if (updates.points !== undefined) updates.points = Number(updates.points);
-  if (updates.flag && String(updates.flag).trim()) updates.flag = hashFlag(String(updates.flag));
+  if (updates.flag !== undefined) {
+    if (typeof updates.flag === "string" && updates.flag.trim()) {
+      updates.flag = hashFlag(updates.flag.trim());
+    } else {
+      delete updates.flag;
+    }
+  }
   
   if (Object.keys(updates).length === 0) return res.status(400).json({ error: "Nothing to update or no permission" });
 
@@ -487,6 +493,25 @@ async function addCompetitionUserHandler(req: Request, res: Response) {
 
 router.post("/competitions/:id/users", addCompetitionUserHandler);
 router.post("/competitions/:id/users/:userId", addCompetitionUserHandler);
+
+// GET /api/admin/lessons
+router.get("/lessons", async (_req, res) => {
+  const lessons = await db.select({
+    id: lessonsTable.id, title: lessonsTable.title, titleUz: lessonsTable.titleUz, titleRu: lessonsTable.titleRu,
+    categoryId: lessonsTable.categoryId, points: lessonsTable.points, createdAt: lessonsTable.createdAt,
+    categoryName: learnCategoriesTable.name,
+  }).from(lessonsTable).leftJoin(learnCategoriesTable, eq(lessonsTable.categoryId, learnCategoriesTable.id));
+  res.json({ lessons });
+});
+
+// GET /api/admin/lessons/:id
+router.get("/lessons/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const [lesson] = await db.select().from(lessonsTable).where(eq(lessonsTable.id, id)).limit(1);
+  if (!lesson) return res.status(404).json({ error: "Lesson not found" });
+  const questions = await db.select().from(lessonQuestionsTable).where(eq(lessonQuestionsTable.lessonId, id)).orderBy(lessonQuestionsTable.orderIndex);
+  res.json({ ...lesson, questions });
+});
 
 // POST /api/admin/lessons
 router.post("/lessons", async (req, res) => {
