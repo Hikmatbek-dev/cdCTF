@@ -319,6 +319,7 @@ export default function AdminCtfPage() {
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Category", "Kategoriya", "Категория")}</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Difficulty", "Qiyinlik", "Сложность")}</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Points", "Ball", "Очки")}</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Flag", "Flag", "Флаг")}</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Solves", "Yechimlar", "Решения")}</th>
                   <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Actions", "Amallar", "Действия")}</th>
                 </tr>
@@ -330,6 +331,7 @@ export default function AdminCtfPage() {
                     <td className="px-4 py-3 text-muted-foreground text-xs font-mono">{ch.category}</td>
                     <td className="px-4 py-3"><DifficultyBadge difficulty={ch.difficulty} /></td>
                     <td className="px-4 py-3 font-mono font-bold text-primary">{ch.points}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground truncate max-w-[150px]">{ch.flag}</td>
                     <td className="px-4 py-3 text-muted-foreground">{ch.solvedCount}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center gap-1 justify-end">
