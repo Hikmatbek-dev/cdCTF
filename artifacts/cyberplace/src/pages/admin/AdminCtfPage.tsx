@@ -109,7 +109,7 @@ export default function AdminCtfPage() {
       category: ch.category || "Web",
       difficulty: (ch.difficulty as any) || "easy",
       points: ch.points || 100,
-      flag: "", // Don't show hashed flag
+      flag: ch.flag ? "••••••••" : "",
       fileUrl: ch.fileUrl || "",
     });
     setShowForm(true);
@@ -121,7 +121,11 @@ export default function AdminCtfPage() {
       return;
     }
 
-    const payload = { ...data, nameUz: data.nameUz || null, nameRu: data.nameRu || null, descriptionUz: data.descriptionUz || null, descriptionRu: data.descriptionRu || null, fileUrl: data.fileUrl || null };
+    const payload: any = { ...data, nameUz: data.nameUz || null, nameRu: data.nameRu || null, descriptionUz: data.descriptionUz || null, descriptionRu: data.descriptionRu || null, fileUrl: data.fileUrl || null };
+    if (editingId && (data.flag === "••••••••" || !data.flag || !data.flag.trim())) {
+      delete payload.flag;
+    }
+    
     const invalidate = () => { qc.invalidateQueries({ queryKey: ["admin-ctfs"] }); setShowForm(false); };
     if (editingId) {
       updateCtf.mutate({ id: editingId, data: payload }, {
