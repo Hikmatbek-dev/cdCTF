@@ -114,7 +114,7 @@ export default function AdminCtfPage() {
         category: data.category || "Web",
         difficulty: (data.difficulty as any) || "easy",
         points: data.points || 100,
-        flag: data.flag ? "••••••••" : "",
+        flag: "",
         fileUrl: data.fileUrl || data.file_url || "",
       });
       setShowForm(true);
@@ -129,8 +129,8 @@ export default function AdminCtfPage() {
       return;
     }
 
-    const payload: any = { ...data, nameUz: data.nameUz || null, nameRu: data.nameRu || null, descriptionUz: data.descriptionUz || null, descriptionRu: data.descriptionRu || null, fileUrl: data.fileUrl || null };
-    if (editingId && (data.flag === "••••••••" || !data.flag || !data.flag.trim())) {
+    const payload: any = { ...data, nameUz: data.nameUz || null, nameRu: data.nameRu || null, descriptionUz: data.descriptionUz || null, descriptionRu: data.descriptionRu || null, fileUrl: data.fileUrl || data.file_url || null };
+    if (editingId && (!data.flag || !data.flag.trim())) {
       delete payload.flag;
     }
     
