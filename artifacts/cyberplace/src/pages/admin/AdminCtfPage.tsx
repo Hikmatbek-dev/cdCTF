@@ -333,7 +333,7 @@ export default function AdminCtfPage() {
                 </tr>
               </thead>
               <tbody className="bg-card divide-y divide-border">
-                {challengeList.map(ch => (
+                {challengeList.map((ch: any) => (
                   <tr key={ch.id} className="hover:bg-muted/20 transition-colors" data-testid={`row-ctf-${ch.id}`}>
                     <td className="px-4 py-3 font-medium">{ch.name}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs font-mono">{ch.category}</td>
