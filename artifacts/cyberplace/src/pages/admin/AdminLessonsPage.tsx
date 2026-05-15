@@ -127,9 +127,9 @@ export default function AdminLessonsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <FormField control={form.control} name="categoryId" render={({ field }) => (
                     <FormItem><FormLabel>{t("Category", "Kategoriya", "Категория")}</FormLabel>
-                      <Select onValueChange={v => field.onChange(Number(v))} defaultValue={String(field.value)}>
+                      <Select onValueChange={v => field.onChange(Number(v))} value={String(field.value)}>
                         <FormControl><SelectTrigger data-testid="select-lesson-category"><SelectValue /></SelectTrigger></FormControl>
-	                        <SelectContent>{categoryList.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
+                        <SelectContent>{categoryList.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
                       </Select>
                     </FormItem>
                   )} />
@@ -138,7 +138,13 @@ export default function AdminLessonsPage() {
                   )} />
                 </div>
                 <FormField control={form.control} name="content" render={({ field }) => (
-                  <FormItem><FormLabel>{t("Content (EN) - supports markdown + code blocks", "Kontent (EN) - markdown va kod bloklarini qo'llaydi", "Контент (EN) - поддерживает markdown и блоки кода")}</FormLabel><FormControl><Textarea {...field} rows={6} placeholder="## Introduction&#10;&#10;```bash&#10;sudo apt update&#10;```" data-testid="input-lesson-content" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>{t("Content (EN) - markdown support", "Kontent (EN) - markdown qo'llab-quvvatlanadi", "Контент (EN) - поддержка markdown")}</FormLabel><FormControl><Textarea {...field} rows={4} data-testid="input-lesson-content" /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="contentUz" render={({ field }) => (
+                  <FormItem><FormLabel>{t("Content (UZ)", "Kontent (UZ)", "Контент (UZ)")}</FormLabel><FormControl><Textarea {...field} value={field.value ?? ""} rows={4} /></FormControl></FormItem>
+                )} />
+                <FormField control={form.control} name="contentRu" render={({ field }) => (
+                  <FormItem><FormLabel>{t("Content (RU)", "Kontent (RU)", "Контент (RU)")}</FormLabel><FormControl><Textarea {...field} value={field.value ?? ""} rows={4} /></FormControl></FormItem>
                 )} />
 
                 {/* Questions */}

@@ -114,7 +114,7 @@ export default function AdminCtfPage() {
         category: data.category || "Web",
         difficulty: (data.difficulty as any) || "easy",
         points: data.points || 100,
-        flag: data.flag || "",
+        flag: data.flag ? "••••••••" : "",
         fileUrl: data.fileUrl || data.file_url || "",
       });
       setShowForm(true);
@@ -130,6 +130,9 @@ export default function AdminCtfPage() {
     }
 
     const payload: any = { ...data, nameUz: data.nameUz || null, nameRu: data.nameRu || null, descriptionUz: data.descriptionUz || null, descriptionRu: data.descriptionRu || null, fileUrl: data.fileUrl || null };
+    if (editingId && (data.flag === "••••••••" || !data.flag || !data.flag.trim())) {
+      delete payload.flag;
+    }
     
     const invalidate = () => { qc.invalidateQueries({ queryKey: ["admin-ctfs"] }); setShowForm(false); };
     if (editingId) {
@@ -251,7 +254,7 @@ export default function AdminCtfPage() {
                   <FormItem><FormLabel>{t("Name (EN)", "Nomi (EN)", "Название (EN)")}</FormLabel><FormControl><Input {...field} data-testid="input-ctf-name" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="flag" render={({ field }) => (
-                  <FormItem><FormLabel>{t("Flag", "Flag", "Флаг")}</FormLabel><FormControl><Input {...field} placeholder="Flag{...}" className="font-mono" data-testid="input-ctf-flag" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>{t("Flag", "Flag", "Флаг")}</FormLabel><FormControl><Input {...field} placeholder={editingId ? t("Leave empty to keep current", "Joriy flagni saqlash uchun bo'sh qoldiring", "Оставьте приблизительно так, чтобы сохранить") : "Flag{...}"} className="font-mono" data-testid="input-ctf-flag" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="nameUz" render={({ field }) => (
 	                  <FormItem><FormLabel>{t("Name (UZ)", "Nomi (UZ)", "Название (UZ)")}</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
@@ -260,11 +263,17 @@ export default function AdminCtfPage() {
 	                  <FormItem><FormLabel>{t("Name (RU)", "Nomi (RU)", "Название (RU)")}</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="description" render={({ field }) => (
-                  <FormItem className="col-span-2"><FormLabel>{t("Description (EN)", "Tavsif (EN)", "Описание (EN)")}</FormLabel><FormControl><Textarea {...field} rows={3} data-testid="input-ctf-description" /></FormControl><FormMessage /></FormItem>
+                  <FormItem className="col-span-2"><FormLabel>{t("Description (EN)", "Tavsif (EN)", "Описание (EN)")}</FormLabel><FormControl><Textarea {...field} rows={2} data-testid="input-ctf-description" /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="descriptionUz" render={({ field }) => (
+                  <FormItem className="col-span-2"><FormLabel>{t("Description (UZ)", "Tavsif (UZ)", "Описание (UZ)")}</FormLabel><FormControl><Textarea {...field} value={field.value ?? ""} rows={2} /></FormControl></FormItem>
+                )} />
+                <FormField control={form.control} name="descriptionRu" render={({ field }) => (
+                  <FormItem className="col-span-2"><FormLabel>{t("Description (RU)", "Tavsif (RU)", "Описание (RU)")}</FormLabel><FormControl><Textarea {...field} value={field.value ?? ""} rows={2} /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="category" render={({ field }) => (
                   <FormItem><FormLabel>{t("Category", "Kategoriya", "Категория")}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger data-testid="select-ctf-category"><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                     </Select>
@@ -272,7 +281,7 @@ export default function AdminCtfPage() {
                 )} />
                 <FormField control={form.control} name="difficulty" render={({ field }) => (
                   <FormItem><FormLabel>{t("Difficulty", "Qiyinlik", "Сложность")}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger data-testid="select-ctf-difficulty"><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>
                         {["easy", "medium", "hard", "insane"].map(d => <SelectItem key={d} value={d} className="capitalize">{d}</SelectItem>)}
@@ -327,7 +336,6 @@ export default function AdminCtfPage() {
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Category", "Kategoriya", "Категория")}</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Difficulty", "Qiyinlik", "Сложность")}</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Points", "Ball", "Очки")}</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Flag", "Flag", "Флаг")}</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Solves", "Yechimlar", "Решения")}</th>
                   <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Actions", "Amallar", "Действия")}</th>
                 </tr>
@@ -339,7 +347,6 @@ export default function AdminCtfPage() {
                     <td className="px-4 py-3 text-muted-foreground text-xs font-mono">{ch.category}</td>
                     <td className="px-4 py-3"><DifficultyBadge difficulty={ch.difficulty} /></td>
                     <td className="px-4 py-3 font-mono font-bold text-primary">{ch.points}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground truncate max-w-[150px]">{ch.flag}</td>
                     <td className="px-4 py-3 text-muted-foreground">{ch.solvedCount}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center gap-1 justify-end">
