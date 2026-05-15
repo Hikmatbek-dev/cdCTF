@@ -129,7 +129,7 @@ export default function AdminCtfPage() {
       return;
     }
 
-    const payload: any = { ...data, nameUz: data.nameUz || null, nameRu: data.nameRu || null, descriptionUz: data.descriptionUz || null, descriptionRu: data.descriptionRu || null, fileUrl: data.fileUrl || data.file_url || null };
+    const payload: any = { ...data, nameUz: data.nameUz || null, nameRu: data.nameRu || null, descriptionUz: data.descriptionUz || null, descriptionRu: data.descriptionRu || null, fileUrl: data.fileUrl || null };
     if (editingId && (!data.flag || !data.flag.trim())) {
       delete payload.flag;
     }
