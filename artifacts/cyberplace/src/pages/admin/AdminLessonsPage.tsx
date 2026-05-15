@@ -220,11 +220,11 @@ export default function AdminLessonsPage() {
                             setEditingId(lesson.id);
                             form.reset({
                               title: data.title || "",
-                              titleUz: data.titleUz || "",
-                              titleRu: data.titleRu || "",
+                              titleUz: data.titleUz || data.title_uz || "",
+                              titleRu: data.titleRu || data.title_ru || "",
                               content: data.content || "",
-                              contentUz: data.contentUz || "",
-                              contentRu: data.contentRu || "",
+                              contentUz: data.contentUz || data.content_uz || "",
+                              contentRu: data.contentRu || data.content_ru || "",
                               categoryId: data.categoryId,
                               points: data.points,
                               questions: data.questions?.map((q: any) => ({

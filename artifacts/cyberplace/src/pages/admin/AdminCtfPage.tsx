@@ -101,16 +101,16 @@ export default function AdminCtfPage() {
     setEditingId(ch.id);
     form.reset({
       name: ch.name || "",
-      nameUz: ch.nameUz || "",
-      nameRu: ch.nameRu || "",
+      nameUz: ch.nameUz || ch.name_uz || "",
+      nameRu: ch.nameRu || ch.name_ru || "",
       description: ch.description || "",
-      descriptionUz: ch.descriptionUz || "",
-      descriptionRu: ch.descriptionRu || "",
+      descriptionUz: ch.descriptionUz || ch.description_uz || "",
+      descriptionRu: ch.descriptionRu || ch.description_ru || "",
       category: ch.category || "Web",
       difficulty: (ch.difficulty as any) || "easy",
       points: ch.points || 100,
       flag: ch.flag || "",
-      fileUrl: ch.fileUrl || "",
+      fileUrl: ch.fileUrl || ch.file_url || "",
     });
     setShowForm(true);
   };
