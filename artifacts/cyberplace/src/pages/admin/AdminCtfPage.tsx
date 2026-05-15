@@ -263,13 +263,7 @@ export default function AdminCtfPage() {
 	                  <FormItem><FormLabel>{t("Name (RU)", "Nomi (RU)", "Название (RU)")}</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="description" render={({ field }) => (
-                  <FormItem className="col-span-2"><FormLabel>{t("Description (EN)", "Tavsif (EN)", "Описание (EN)")}</FormLabel><FormControl><Textarea {...field} rows={2} data-testid="input-ctf-description" /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="descriptionUz" render={({ field }) => (
-                  <FormItem className="col-span-2"><FormLabel>{t("Description (UZ)", "Tavsif (UZ)", "Описание (UZ)")}</FormLabel><FormControl><Textarea {...field} value={field.value ?? ""} rows={2} /></FormControl></FormItem>
-                )} />
-                <FormField control={form.control} name="descriptionRu" render={({ field }) => (
-                  <FormItem className="col-span-2"><FormLabel>{t("Description (RU)", "Tavsif (RU)", "Описание (RU)")}</FormLabel><FormControl><Textarea {...field} value={field.value ?? ""} rows={2} /></FormControl></FormItem>
+                  <FormItem className="col-span-2"><FormLabel>{t("Description (EN)", "Tavsif (EN)", "Описание (EN)")}</FormLabel><FormControl><Textarea {...field} rows={3} data-testid="input-ctf-description" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="category" render={({ field }) => (
                   <FormItem><FormLabel>{t("Category", "Kategoriya", "Категория")}</FormLabel>
