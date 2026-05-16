@@ -16,8 +16,8 @@ export default function HomePage() {
       {/* Dynamic Background */}
       <div className="fixed inset-0 mono-grid opacity-20 pointer-events-none" />
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/10 blur-[120px] rounded-full animate-pulse delay-700" />
+        <div className="absolute top-[10%] right-[-10%] w-[60%] h-[60%] bg-primary/5 blur-[120px] rounded-full opacity-50" />
+        <div className="absolute bottom-[10%] left-[-10%] w-[60%] h-[60%] bg-accent/5 blur-[120px] rounded-full opacity-50" />
       </div>
 
       <div className="relative max-w-7xl mx-auto px-6 pt-32 sm:pt-48 pb-32">
@@ -217,4 +217,3 @@ export default function HomePage() {
     </div>
   );
 }
-

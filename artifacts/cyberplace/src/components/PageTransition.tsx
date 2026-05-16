@@ -8,13 +8,14 @@ interface PageTransitionProps {
 export function PageTransition({ children }: PageTransitionProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
+      exit={{ opacity: 0, y: -15 }}
       transition={{ 
-        duration: 0.4,
-        ease: [0.22, 1, 0.36, 1] 
+        duration: 0.3,
+        ease: "easeOut" 
       }}
+      style={{ willChange: "opacity, transform" }}
       className="w-full h-full"
     >
       {children}
@@ -27,8 +28,9 @@ export function FadeIn({ children, delay = 0, duration = 0.5 }: { children: Reac
     <motion.div
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
-      viewport={{ once: true }}
+      viewport={{ once: true, margin: "-50px" }}
       transition={{ duration, delay }}
+      style={{ willChange: "opacity" }}
     >
       {children}
     </motion.div>
@@ -38,14 +40,15 @@ export function FadeIn({ children, delay = 0, duration = 0.5 }: { children: Reac
 export function ScaleIn({ children, delay = 0 }: { children: ReactNode, delay?: number }) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
+      initial={{ opacity: 0, scale: 0.95 }}
       whileInView={{ opacity: 1, scale: 1 }}
-      viewport={{ once: true }}
+      viewport={{ once: true, margin: "-50px" }}
       transition={{ 
-        duration: 0.5, 
+        duration: 0.4, 
         delay,
-        ease: [0.34, 1.56, 0.64, 1] 
+        ease: "easeOut" 
       }}
+      style={{ willChange: "opacity, transform" }}
     >
       {children}
     </motion.div>

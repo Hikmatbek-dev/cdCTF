@@ -54,8 +54,8 @@ export default function CtfListPage() {
       {/* Background Effects */}
       <div className="fixed inset-0 mono-grid opacity-20 pointer-events-none" />
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[20%] left-[-10%] w-[40%] h-[40%] bg-accent/5 blur-[120px] rounded-full animate-pulse delay-1000" />
+        <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full opacity-30" />
+        <div className="absolute bottom-[20%] left-[-10%] w-[40%] h-[40%] bg-accent/5 blur-[120px] rounded-full opacity-30" />
       </div>
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
