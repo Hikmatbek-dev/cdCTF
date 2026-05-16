@@ -151,7 +151,7 @@ export default function CtfDetailPage() {
             {/* Asset Link */}
             {challenge.fileUrl && (
               <FadeIn delay={0.3}>
-                (() => {
+                {(() => {
                   const isUrl = challenge.fileUrl.startsWith("http://") || challenge.fileUrl.startsWith("https://");
                   const Icon = isUrl ? ExternalLink : Download;
                   return (
@@ -176,7 +176,7 @@ export default function CtfDetailPage() {
                       </a>
                     </div>
                   );
-                })()
+                })()}
               </FadeIn>
             )}
 
@@ -296,13 +296,4 @@ export default function CtfDetailPage() {
     </div>
   );
 }
- text-muted-foreground font-bold italic">
-                "Sharing active mission data or capture tokens is a violation of the cdCTF Conduct. Violators face permanent terminal exclusion."
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+
