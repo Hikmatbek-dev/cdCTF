@@ -152,7 +152,7 @@ async function submitFlagHandler(req: Request, res: Response) {
         return { status: 200, data: { correct: true, blocked: false, pointsEarned: pointsToAward } };
       } else {
         const wrongAttempts = (attempt?.wrongAttempts ?? 0) + 1;
-        const isBlocked = wrongAttempts >= 5;
+        const isBlocked = wrongAttempts >= 3;
 
         if (!attempt) {
           await tx.insert(ctfAttemptsTable).values({ userId, ctfId, wrongAttempts, blocked: isBlocked, updatedAt: new Date() });

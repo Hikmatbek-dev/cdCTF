@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useRoute } from "wouter";
-import { ArrowLeft, CheckCircle2, Flag, Lock, Trophy } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Flag, Lock, Trophy } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,7 @@ export default function CompetitionCtfPage() {
       } else if (data.blocked) {
         toast({ title: t("Challenge blocked", "Topshiriq bloklandi", "Задание заблокировано"), description: t("You used all attempts for this challenge.", "Bu topshiriqda barcha urinishlar tugadi.", "Вы исчерпали попытки для этого задания."), variant: "destructive" });
       } else {
-        toast({ title: t("Wrong flag", "Noto'g'ri flag", "Неверный флаг"), description: `${t("Attempts used:", "Ishlatilgan urinishlar:", "Использовано попыток:")} ${data.wrongAttempts}`, variant: "destructive" });
+        toast({ title: t("Wrong flag", "Noto'g'ri flag", "Неверный флаг"), description: `${t("Attempts left:", "Qolgan urinishlar:", "Осталось попыток:")} ${3 - data.wrongAttempts}`, variant: "destructive" });
       }
       setFlag("");
       qc.invalidateQueries({ queryKey: getGetCompetitionScoreboardQueryKey(competitionId) });
@@ -124,6 +124,13 @@ export default function CompetitionCtfPage() {
           <div className="mb-4 flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-destructive">
             <Lock className="w-5 h-5" />
             <span className="font-medium">{t("This challenge is blocked for your account.", "Bu challenge siz uchun bloklangan.", "Это задание заблокировано для вашего аккаунта.")}</span>
+          </div>
+        )}
+
+        {challenge.wrongAttempts > 0 && !challenge.isBlocked && !challenge.isSolved && (
+          <div className="mb-4 flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-destructive text-sm font-medium">
+            <AlertTriangle className="w-5 h-5" />
+            <span>{t(`Warning: ${challenge.wrongAttempts}/3 attempts used.`, `Ogohlantirish: ${challenge.wrongAttempts}/3 urinish ishlatildi.`, `Предупреждение: использовано ${challenge.wrongAttempts}/3 попыток.`)}</span>
           </div>
         )}
 
