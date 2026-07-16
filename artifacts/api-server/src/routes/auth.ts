@@ -15,6 +15,7 @@ import {
   requireSession,
   requireScope,
   sessionOf,
+  normalizeRole,
 } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/security";
 import { sendVerificationEmail, verifyTurnstileToken, sendPasswordResetEmail } from "../lib/integrations";
@@ -51,6 +52,7 @@ import {
   revokeApiToken,
   type ApiScope,
 } from "../lib/api-tokens";
+import { permissionsForRole } from "../lib/permissions";
 
 const router = Router();
 const authRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20, keyPrefix: "auth" });
@@ -571,17 +573,10 @@ router.get("/session", optionalAuth, async (req, res) => {
   if (!user || user.isBlocked) return res.json({ user: null });
 
   res.json({
-    user: {
-      id: user.id,
-      nickname: user.nickname,
-      email: user.email,
-      avatarUrl: user.avatarUrl,
-      points: user.points,
-      role: user.role,
-      emailVerified: user.emailVerified,
-      isBlocked: user.isBlocked,
-      createdAt: user.createdAt,
-    },
+    user: publicUser(user),
+    // Derived server-side so the client never has to keep its own copy of the
+    // permission table — it would drift the first time one changes.
+    permissions: permissionsForRole(normalizeRole(user.role)),
   });
 });
 

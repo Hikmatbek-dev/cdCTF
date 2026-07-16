@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/AuthContext";
 import { useLang, Language } from "@/lib/LanguageContext";
 import { useTheme } from "@/lib/ThemeContext";
-import { Menu, X, Sun, Moon, ChevronDown, LogOut, User, Settings, LayoutDashboard, Shield } from "lucide-react";
+import { Menu, X, Sun, Moon, ChevronDown, LogOut, User, Settings, LayoutDashboard, Shield, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -22,7 +22,7 @@ const NAV_LINKS = [
 ];
 
 export function Navbar() {
-  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { user, isAuthenticated, isStaff, logout } = useAuth();
   const { lang, setLang, t } = useLang();
   const { theme, toggleTheme } = useTheme();
   const [location] = useLocation();
@@ -70,7 +70,7 @@ export function Navbar() {
                 <span className="relative z-10">{link.label[lang]}</span>
               </Link>
             ))}
-            {isAdmin && (
+            {isStaff && (
               <Link
                 href="/admin/dashboard"
                 className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] transition-all rounded-xl ${
@@ -140,6 +140,12 @@ export function Navbar() {
                       <span className="text-[10px] font-black uppercase tracking-widest text-white/80">{t("Profile", "Profil", "Профиль")}</span>
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="p-3 cursor-pointer rounded-xl hover:bg-white/5 focus:bg-white/5 transition-all mb-1">
+                    <Link href="/settings/security" className="flex items-center gap-4 w-full">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary"><ShieldCheck className="w-4 h-4" /></div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-white/80">{t("Security", "Xavfsizlik", "Безопасность")}</span>
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-white/5 mx-2 my-2" />
                   <DropdownMenuItem onClick={logout} className="p-3 cursor-pointer rounded-xl hover:bg-destructive/10 focus:bg-destructive/10 text-destructive transition-all">
                     <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center"><LogOut className="w-4 h-4" /></div>
@@ -189,7 +195,7 @@ export function Navbar() {
                   {link.label[lang]}
                 </Link>
               ))}
-              {isAdmin && (
+              {isStaff && (
                 <Link href="/admin/dashboard" onClick={() => setMobileOpen(false)} className="flex items-center h-14 px-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-accent hover:bg-accent/10 transition-all border border-transparent hover:border-accent/20">
                   ADMIN_TERMINAL
                 </Link>

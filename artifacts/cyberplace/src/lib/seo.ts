@@ -145,6 +145,16 @@ const privateOrUtilityRoutes: Array<{ match: (path: string) => boolean; config: 
     }
   },
   {
+    // Unlisted routes fall through to the 404 config, so a real page ends up
+    // titled "404 - Terminal Error" until it is named here.
+    match: (path) => path.startsWith("/settings"),
+    config: {
+      title: text("Security | cdCTF", "Xavfsizlik | cdCTF", "Безопасность | cdCTF"),
+      description: text("Two-factor authentication, devices, sign-in history and API tokens.", "Ikki bosqichli tasdiq, qurilmalar, kirish tarixi va API tokenlar.", "Двухфакторная аутентификация, устройства, история входов и API-токены."),
+      robots: "noindex, nofollow"
+    }
+  },
+  {
     match: (path) => path.startsWith("/admin"),
     config: {
       title: text("Admin Control Center | cdCTF", "Admin Paneli | cdCTF", "Админ Панель | cdCTF"),
