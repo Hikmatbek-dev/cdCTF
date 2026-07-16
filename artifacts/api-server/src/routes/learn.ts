@@ -105,6 +105,7 @@ async function startLessonTestHandler(req: Request, res: Response) {
     .where(and(eq(userLessonAttemptsTable.userId, userId), eq(userLessonAttemptsTable.lessonId, lessonId))).limit(1);
 
   if (attempt?.blocked) return res.status(403).json({ error: "Lesson is blocked" });
+  if (attempt?.completedAt) return res.status(400).json({ error: "Lesson already completed" });
   if (attempt?.attemptCount >= 3) return res.status(400).json({ error: "Maximum attempts reached" });
 
   const questions = await db.select().from(lessonQuestionsTable).where(eq(lessonQuestionsTable.lessonId, lessonId));
@@ -149,43 +150,74 @@ async function submitLessonTestHandler(req: Request, res: Response) {
     return res.status(400).json({ error: "Invalid test payload" });
   }
 
-  const [attempt] = await db.select().from(userLessonAttemptsTable)
-    .where(and(eq(userLessonAttemptsTable.userId, userId), eq(userLessonAttemptsTable.lessonId, lessonId))).limit(1);
-
-  if (!attempt || attempt.testSessionId !== sessionId) return res.status(400).json({ error: "Invalid session" });
-
   const questions = await db.select().from(lessonQuestionsTable).where(eq(lessonQuestionsTable.lessonId, lessonId));
+  if (questions.length === 0) return res.status(400).json({ error: "No questions for this lesson" });
   const questionMap = new Map(questions.map(q => [q.id, q]));
 
-  let correct = 0;
-  for (const a of answers) {
-    const q = questionMap.get(a.questionId);
-    if (q && q.correctOption === a.selectedOption) correct++;
+  // Collapse the submission to at most one answer per question BEFORE scoring.
+  // Scoring the raw array would let a client send every option for every question
+  // and bank one hit per question — a guaranteed 100% that defeats the whole test.
+  const answerByQuestion = new Map<number, number>();
+  for (const answer of answers) {
+    if (typeof answer !== "object" || answer === null) return res.status(400).json({ error: "Invalid answer" });
+    const { questionId, selectedOption } = answer;
+    if (!Number.isInteger(questionId) || !Number.isInteger(selectedOption)) {
+      return res.status(400).json({ error: "Invalid answer" });
+    }
+    if (!questionMap.has(questionId)) return res.status(400).json({ error: "Answer does not belong to this lesson" });
+    if (answerByQuestion.has(questionId)) return res.status(400).json({ error: "Duplicate answer for a question" });
+    answerByQuestion.set(questionId, selectedOption);
   }
-
-  const score = questions.length > 0 ? correct / questions.length : 0;
-  const passed = score >= 0.8;
 
   const [lesson] = await db.select().from(lessonsTable).where(eq(lessonsTable.id, lessonId)).limit(1);
-  let pointsEarned = 0;
 
-  if (passed && attempt.status !== "completed") {
-    pointsEarned = lesson?.points ?? 0;
-    await db.update(userLessonAttemptsTable).set({ status: "completed", completedAt: new Date(), updatedAt: new Date() }).where(eq(userLessonAttemptsTable.id, attempt.id));
-    
-    const [currentUser] = await db.select({ nickname: usersTable.nickname, role: usersTable.role })
-      .from(usersTable)
-      .where(eq(usersTable.id, userId))
-      .limit(1);
+  const outcome = await db.transaction(async tx => {
+    // Lock the attempt row so two concurrent submits cannot both observe
+    // `status !== "completed"` and both award points.
+    const [attempt] = await tx.select().from(userLessonAttemptsTable)
+      .where(and(eq(userLessonAttemptsTable.userId, userId), eq(userLessonAttemptsTable.lessonId, lessonId)))
+      .limit(1)
+      .for("update");
 
-    if (currentUser && currentUser.role !== "admin" && currentUser.nickname !== "bozkurtshadow") {
-      await db.update(usersTable).set({ points: sql`${usersTable.points} + ${pointsEarned}` }).where(eq(usersTable.id, userId));
+    if (!attempt || attempt.testSessionId !== sessionId) return { status: 400, data: { error: "Invalid session" } };
+    if (attempt.blocked) return { status: 403, data: { error: "Lesson is blocked" } };
+
+    let correct = 0;
+    for (const [questionId, selectedOption] of answerByQuestion) {
+      if (questionMap.get(questionId)!.correctOption === selectedOption) correct++;
     }
-  } else if (!passed) {
-    await db.update(userLessonAttemptsTable).set({ status: "failed", updatedAt: new Date() }).where(eq(userLessonAttemptsTable.id, attempt.id));
-  }
 
-  res.json({ passed, score, correctCount: correct, totalCount: questions.length, pointsEarned });
+    const score = correct / questions.length;
+    const passed = score >= 0.8;
+    let pointsEarned = 0;
+
+    // Guard on `completedAt`, not `status`: starting a new attempt rewrites
+    // `status` back to "in_progress", which would re-open the points award and
+    // let a user bank the lesson's points once per allowed attempt.
+    if (passed && !attempt.completedAt) {
+      pointsEarned = lesson?.points ?? 0;
+      await tx.update(userLessonAttemptsTable)
+        .set({ status: "completed", completedAt: new Date(), updatedAt: new Date() })
+        .where(eq(userLessonAttemptsTable.id, attempt.id));
+
+      const [currentUser] = await tx.select({ nickname: usersTable.nickname, role: usersTable.role })
+        .from(usersTable)
+        .where(eq(usersTable.id, userId))
+        .limit(1);
+
+      if (currentUser && currentUser.role !== "admin" && currentUser.nickname !== "bozkurtshadow") {
+        await tx.update(usersTable).set({ points: sql`${usersTable.points} + ${pointsEarned}` }).where(eq(usersTable.id, userId));
+      }
+    } else if (!passed) {
+      await tx.update(userLessonAttemptsTable)
+        .set({ status: "failed", updatedAt: new Date() })
+        .where(eq(userLessonAttemptsTable.id, attempt.id));
+    }
+
+    return { status: 200, data: { passed, score, correctCount: correct, totalCount: questions.length, pointsEarned } };
+  });
+
+  res.status(outcome.status).json(outcome.data);
 }
 
 // POST /api/learn/lessons/:id/test/submit

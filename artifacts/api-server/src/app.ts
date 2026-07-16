@@ -7,7 +7,7 @@ import { getLocalUploadsRoot } from "./lib/storage";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { reportErrorToSentry } from "./lib/integrations";
-import { corsOptions, createRateLimiter, securityHeaders } from "./middleware/security";
+import { CorsOriginError, corsOptions, createRateLimiter, securityHeaders } from "./middleware/security";
 
 const app: Express = express();
 const REQUEST_BODY_LIMIT = process.env.REQUEST_BODY_LIMIT || "10mb";
@@ -71,7 +71,18 @@ app.get("/uploads/ctf/:filename", async (req, res, next) => {
 
 app.use("/api", router);
 
+// Unmatched API routes should answer JSON, not Express's default HTML page.
+app.use("/api", (req: Request, res: Response) => {
+  res.status(404).json({ error: `Cannot ${req.method} ${req.originalUrl.split("?")[0]}` });
+});
+
 app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  // A rejected Origin is a policy decision, not a server fault — answering 500
+  // here also meant every scanner hit burned a Sentry event.
+  if (err instanceof CorsOriginError) {
+    return res.status(403).json({ error: "Origin is not allowed" });
+  }
+
   if (err instanceof multer.MulterError) {
     const status = err.code === "LIMIT_FILE_SIZE" ? 413 : 400;
     return res.status(status).json({

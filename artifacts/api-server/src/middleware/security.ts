@@ -25,7 +25,21 @@ function getAllowedOrigins() {
     process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined,
   ].filter((item): item is string => Boolean(item));
 
-  return [...new Set([...configured, ...derived, ...DEFAULT_ALLOWED_ORIGINS])];
+  // The localhost defaults must never reach production: combined with
+  // `credentials: true` they let any page on a dev port read authenticated
+  // responses — and this platform's users run challenge code on those ports.
+  const defaults = process.env.NODE_ENV === "production" ? [] : DEFAULT_ALLOWED_ORIGINS;
+
+  return [...new Set([...configured, ...derived, ...defaults])];
+}
+
+/** Thrown for a disallowed Origin so the error handler can answer 403, not 500. */
+export class CorsOriginError extends Error {
+  readonly status = 403;
+  constructor(readonly origin: string) {
+    super("Origin is not allowed by CORS");
+    this.name = "CorsOriginError";
+  }
 }
 
 export const corsOptions: CorsOptions = {
@@ -35,7 +49,7 @@ export const corsOptions: CorsOptions = {
     const allowedOrigins = getAllowedOrigins();
 
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error("Origin is not allowed by CORS"));
+    return callback(new CorsOriginError(origin));
   },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Authorization", "Content-Type"],
@@ -61,6 +75,21 @@ type RateLimitEntry = {
 };
 
 const buckets = new Map<string, RateLimitEntry>();
+
+// Entries are only ever overwritten when the same IP comes back, so without a
+// sweep every one-shot IP leaks a Map entry for the lifetime of the process.
+const SWEEP_INTERVAL_MS = 5 * 60 * 1000;
+
+function sweepExpiredBuckets() {
+  const now = Date.now();
+  for (const [key, entry] of buckets) {
+    if (entry.resetAt <= now) buckets.delete(key);
+  }
+}
+
+const sweepTimer = setInterval(sweepExpiredBuckets, SWEEP_INTERVAL_MS);
+// Never hold the process open just to sweep an in-memory cache.
+sweepTimer.unref?.();
 
 export function createRateLimiter(options: { windowMs: number; max: number; keyPrefix: string }) {
   return (req: Request, res: Response, next: NextFunction) => {
