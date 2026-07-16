@@ -69,5 +69,14 @@ export async function ensureDatabaseShape() {
   await pool.query("CREATE INDEX IF NOT EXISTS login_history_user_id_created_at_idx ON login_history(user_id, created_at)");
   await pool.query("CREATE INDEX IF NOT EXISTS login_history_ip_address_idx ON login_history(ip_address)");
 
+  // Authorship and draft state. `DEFAULT true` deliberately backfills every
+  // existing challenge and lesson as published so they stay visible.
+  await pool.query("ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS author_id integer REFERENCES users(id) ON DELETE SET NULL");
+  await pool.query("ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS is_published boolean NOT NULL DEFAULT true");
+  await pool.query("ALTER TABLE lessons ADD COLUMN IF NOT EXISTS author_id integer REFERENCES users(id) ON DELETE SET NULL");
+  await pool.query("ALTER TABLE lessons ADD COLUMN IF NOT EXISTS is_published boolean NOT NULL DEFAULT true");
+  await pool.query("CREATE INDEX IF NOT EXISTS ctf_tasks_author_id_idx ON ctf_tasks(author_id)");
+  await pool.query("CREATE INDEX IF NOT EXISTS lessons_author_id_idx ON lessons(author_id)");
+
   logger.info("Database shape verified");
 }

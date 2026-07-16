@@ -51,15 +51,16 @@ check "$(echo "$R" | python3 -c 'import sys,json; print(json.load(sys.stdin)["pa
 check "$(echo "$R" | python3 -c 'import sys,json; print(json.load(sys.stdin)["correctCount"])')" "3" "3 ta to'g'ri sanaldi"
 check "$(echo "$R" | python3 -c 'import sys,json; print(json.load(sys.stdin)["pointsEarned"])')" "0" "ball berilmadi"
 
-echo "=== Ikki marta o'tish ballni ikki marta bermasligi kerak ==="
+echo "=== Tugatilgan darsni qayta boshlab ball yig'ib bo'lmaydi ==="
 T=$(new_user)
 submit "$T" "2" > /dev/null
-NICK_PTS_1=$(psql "$DATABASE_URL" -tAqc "SELECT points FROM users ORDER BY id DESC LIMIT 1;")
-R=$(submit "$T" "2")
-NICK_PTS_2=$(psql "$DATABASE_URL" -tAqc "SELECT points FROM users ORDER BY id DESC LIMIT 1;")
-echo "  → 1-topshiruvdan keyin: $NICK_PTS_1 ball, 2-topshiruvdan keyin: $NICK_PTS_2 ball"
-check "$NICK_PTS_2" "$NICK_PTS_1" "qayta topshirish ball QO'SHMADI"
-check "$(echo "$R" | python3 -c 'import sys,json; print(json.load(sys.stdin)["pointsEarned"])')" "0" "ikkinchi marta 0 ball qaytardi"
+PTS_1=$(psql "$DATABASE_URL" -tAqc "SELECT points FROM users ORDER BY id DESC LIMIT 1;")
+# Restarting is refused outright, so there is no second submit to make.
+CODE=$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/learn/lessons/$LESSON/test/start -H "Authorization: Bearer $T")
+PTS_2=$(psql "$DATABASE_URL" -tAqc "SELECT points FROM users ORDER BY id DESC LIMIT 1;")
+echo "  → 1-topshiruvdan keyin: $PTS_1 ball; qayta boshlashga urinish → HTTP $CODE; hozir: $PTS_2 ball"
+check "$CODE" "400" "tugatilgan darsni qayta boshlash RAD ETILDI"
+check "$PTS_2" "$PTS_1" "ball QO'SHILMADI (50 → 50)"
 
 echo
 [ -z "$FAILED" ] && echo "🎉 HALOL YO'L BUZILMAGAN" || echo "⚠️  TUZATISH FUNKSIYANI BUZDI"

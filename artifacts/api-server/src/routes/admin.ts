@@ -8,18 +8,30 @@ import {
   userLessonAttemptsTable, titlesTable, auditLogsTable, userTitlesTable
 } from "@workspace/db/schema";
 import { eq, and, desc, sql, inArray } from "drizzle-orm";
-import { authenticateToken, requireAdmin } from "../middleware/auth";
+import { authenticateToken } from "../middleware/auth";
 import { writeAuditLog } from "../lib/audit";
 import { revokeAllSessions } from "../lib/sessions";
 import { hashFlag } from "../lib/flags";
 import { logger } from "../lib/logger";
 import { filterAllowedUpdates } from "../lib/rbac";
+import {
+  canEditResource,
+  hasPermission,
+  isUserRole,
+  requireAnyPermission,
+  requirePermission,
+  requireStaff,
+  USER_ROLES,
+  type UserRole,
+} from "../lib/permissions";
 
 const router = Router();
-router.use(authenticateToken, requireAdmin);
+// Staff-only floor. Every route below additionally declares the specific
+// permission it needs — this `use` is the backstop, not the authorisation.
+router.use(authenticateToken, requireStaff);
 
 // GET /api/admin/dashboard
-router.get("/dashboard", async (_req, res) => {
+router.get("/dashboard", requirePermission("admin.panel"), async (_req, res) => {
   const [users, ctfs, lessons, competitions, titles] = await Promise.all([
     db.select().from(usersTable),
     db.select().from(ctfTasksTable),
@@ -83,7 +95,7 @@ router.get("/dashboard", async (_req, res) => {
 });
 
 // GET /api/admin/users
-router.get("/users", async (req, res) => {
+router.get("/users", requirePermission("users.read"), async (req, res) => {
   const { search } = req.query as { search?: string };
   let users = await db.select().from(usersTable);
   if (search) users = users.filter(u => u.nickname.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()));
@@ -92,7 +104,7 @@ router.get("/users", async (req, res) => {
 });
 
 // GET /api/admin/audit-logs
-router.get("/audit-logs", async (_req, res) => {
+router.get("/audit-logs", requirePermission("audit.read"), async (_req, res) => {
   const logs = await db.select().from(auditLogsTable).orderBy(desc(auditLogsTable.createdAt)).limit(200);
   res.json({
     logs: logs.map(log => ({
@@ -110,7 +122,7 @@ router.get("/audit-logs", async (_req, res) => {
 });
 
 // POST /api/admin/users/:id/block
-router.post("/users/:id/block", async (req, res) => {
+router.post("/users/:id/block", requirePermission("users.block"), async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid user id" });
   await db.update(usersTable).set({ isBlocked: true }).where(eq(usersTable.id, id));
@@ -120,7 +132,7 @@ router.post("/users/:id/block", async (req, res) => {
 });
 
 // POST /api/admin/users/:id/unblock
-router.post("/users/:id/unblock", async (req, res) => {
+router.post("/users/:id/unblock", requirePermission("users.block"), async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid user id" });
   await db.update(usersTable).set({ isBlocked: false }).where(eq(usersTable.id, id));
@@ -129,7 +141,7 @@ router.post("/users/:id/unblock", async (req, res) => {
 });
 
 // POST /api/admin/users/recalculate-points
-router.post("/users/recalculate-points", async (req, res) => {
+router.post("/users/recalculate-points", requirePermission("system.maintenance"), async (req, res) => {
   try {
     const users = await db.select().from(usersTable);
     const titles = await db.select().from(titlesTable);
@@ -189,7 +201,7 @@ router.post("/users/recalculate-points", async (req, res) => {
 });
 
 // GET /api/admin/ctf
-router.get("/ctf", async (_req, res) => {
+router.get("/ctf", requirePermission("ctf.read.all"), async (_req, res) => {
   const challenges = await db.select().from(ctfTasksTable);
   const solves = await db.select({ ctfId: ctfAttemptsTable.ctfId }).from(ctfAttemptsTable).where(eq(ctfAttemptsTable.solved, true));
   const solveCounts = solves.reduce((acc, s) => {
@@ -207,31 +219,48 @@ router.get("/ctf", async (_req, res) => {
 
 // POST /api/admin/ctf
 // GET /api/admin/ctf/:id
-router.get("/ctf/:id", async (req, res) => {
+router.get("/ctf/:id", requirePermission("ctf.read.all"), async (req, res) => {
   const id = Number(req.params.id);
   const [task] = await db.select().from(ctfTasksTable).where(eq(ctfTasksTable.id, id)).limit(1);
   if (!task) return res.status(404).json({ error: "Not found" });
   res.json(task);
 });
 
-router.post("/ctf", async (req, res) => {
+router.post("/ctf", requirePermission("ctf.create"), async (req, res) => {
   const { name, nameUz, nameRu, description, descriptionUz, descriptionRu, category, difficulty, points, hint, flag, fileUrl } = req.body;
-  if (!name || !description || !category || !difficulty || !points || !flag) return res.status(400).json({ error: "Missing required fields" });
+  if (!name || !description || !category || !difficulty || !flag) return res.status(400).json({ error: "Missing required fields" });
+
+  const parsedPoints = Number(points);
+  if (!Number.isFinite(parsedPoints) || parsedPoints < 0) return res.status(400).json({ error: "Points must be a non-negative number" });
+
+  // Authors submit drafts; only someone with `ctf.publish` makes them live.
+  const canPublish = hasPermission(req.user!.role, "ctf.publish");
+
   const [task] = await db.insert(ctfTasksTable).values({
-    name, nameUz: nameUz || null, nameRu: nameRu || null, 
-    description, descriptionUz: descriptionUz || null, descriptionRu: descriptionRu || null, 
-    category, difficulty, points: Number(points), hint, flag: hashFlag(String(flag)), fileUrl,
+    name, nameUz: nameUz || null, nameRu: nameRu || null,
+    description, descriptionUz: descriptionUz || null, descriptionRu: descriptionRu || null,
+    category, difficulty, points: parsedPoints, hint, flag: hashFlag(String(flag)), fileUrl,
     hintCost: 10,
+    authorId: req.user!.userId,
+    isPublished: canPublish,
   }).returning();
-  await writeAuditLog(req, "ctf.create", "ctf", task.id, { name: task.name, category: task.category, difficulty: task.difficulty });
+  await writeAuditLog(req, "ctf.create", "ctf", task.id, { name: task.name, category: task.category, difficulty: task.difficulty, isPublished: task.isPublished });
   res.status(201).json(task);
 });
 
 // PATCH /api/admin/ctf/:id
 async function updateCtfHandler(req: Request, res: Response) {
   const id = Number(req.params.id);
-  const userRole = (req as any).user?.role || "admin";
-  
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid CTF id" });
+  const userRole: UserRole = req.user!.role;
+
+  const [existing] = await db.select({ authorId: ctfTasksTable.authorId })
+    .from(ctfTasksTable).where(eq(ctfTasksTable.id, id)).limit(1);
+  if (!existing) return res.status(404).json({ error: "CTF not found" });
+  if (!canEditResource(userRole, "ctf", existing.authorId, req.user!.userId)) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+
   // Filter updates based on RBAC
   const updates = filterAllowedUpdates(userRole, "ctf_tasks", req.body);
 
@@ -251,11 +280,11 @@ async function updateCtfHandler(req: Request, res: Response) {
   res.json(updated);
 }
 
-router.patch("/ctf/:id", updateCtfHandler);
-router.put("/ctf/:id", updateCtfHandler);
+router.patch("/ctf/:id", requireAnyPermission("ctf.update.own", "ctf.update.any"), updateCtfHandler);
+router.put("/ctf/:id", requireAnyPermission("ctf.update.own", "ctf.update.any"), updateCtfHandler);
 
 // DELETE /api/admin/ctf/:id
-router.delete("/ctf/:id", async (req, res) => {
+router.delete("/ctf/:id", requirePermission("ctf.delete"), async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid CTF id" });
 
@@ -334,11 +363,11 @@ async function unblockCtfUserHandler(req: Request, res: Response) {
   res.json({ success: true, message: "CTF user unblocked" });
 }
 
-router.post("/ctf/:id/unblock-user", unblockCtfUserHandler);
-router.post("/ctf/:id/unblock-user/:userId", unblockCtfUserHandler);
+router.post("/ctf/:id/unblock-user", requirePermission("blocks.manage"), unblockCtfUserHandler);
+router.post("/ctf/:id/unblock-user/:userId", requirePermission("blocks.manage"), unblockCtfUserHandler);
 
 // GET /api/admin/blocked
-router.get("/blocked", async (_req, res) => {
+router.get("/blocked", requirePermission("blocks.manage"), async (_req, res) => {
   const blockedCtf = await db.select().from(ctfAttemptsTable).where(eq(ctfAttemptsTable.blocked, true));
   const users = await db.select().from(usersTable);
   const ctfs = await db.select().from(ctfTasksTable);
@@ -373,7 +402,7 @@ router.get("/blocked", async (_req, res) => {
   res.json({ blockedCtf: blockedCtfResult, blockedLessons: blockedLessonResult });
 });
 
-router.get("/blocked-tasks", async (_req, res) => {
+router.get("/blocked-tasks", requirePermission("blocks.manage"), async (_req, res) => {
   const blockedCtf = await db.select().from(ctfAttemptsTable).where(eq(ctfAttemptsTable.blocked, true));
   const users = await db.select().from(usersTable);
   const ctfs = await db.select().from(ctfTasksTable);
@@ -427,11 +456,11 @@ async function unblockTaskHandler(req: Request, res: Response) {
   res.json({ success: true, message: "Task unblocked" });
 }
 
-router.post("/unblock", unblockTaskHandler);
-router.post("/blocked-tasks/:type/:taskId/unblock/:userId", unblockTaskHandler);
+router.post("/unblock", requirePermission("blocks.manage"), unblockTaskHandler);
+router.post("/blocked-tasks/:type/:taskId/unblock/:userId", requirePermission("blocks.manage"), unblockTaskHandler);
 
 // POST /api/admin/competitions
-router.post("/competitions", async (req, res) => {
+router.post("/competitions", requirePermission("competitions.manage"), async (req, res) => {
   const { name, description, type, startTime, endTime, ctfIds, inviteCode } = req.body;
   if (!name || !startTime || !endTime) return res.status(400).json({ error: "Missing fields" });
   const start = new Date(startTime);
@@ -460,21 +489,29 @@ router.post("/competitions", async (req, res) => {
 });
 
 // PATCH /api/admin/competitions/:id
+/** Parses a client-supplied timestamp, rejecting anything that is not a real date. */
+function parseTimestamp(value: unknown): Date | null {
+  if (typeof value !== "string" && typeof value !== "number") return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 async function updateCompetitionHandler(req: Request, res: Response) {
   const id = Number(req.params.id);
-  const userRole = (req as any).user?.role || "admin";
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid competition id" });
+  const userRole: UserRole = req.user!.role;
 
   // Filter updates based on RBAC
   const updates = filterAllowedUpdates(userRole, "competitions", req.body);
 
-  if (updates.startTime) {
-    const start = new Date(updates.startTime);
-    if (Number.isNaN(start.getTime())) return res.status(400).json({ error: "Invalid start time" });
+  if (updates.startTime !== undefined) {
+    const start = parseTimestamp(updates.startTime);
+    if (!start) return res.status(400).json({ error: "Invalid start time" });
     updates.startTime = start;
   }
-  if (updates.endTime) {
-    const end = new Date(updates.endTime);
-    if (Number.isNaN(end.getTime())) return res.status(400).json({ error: "Invalid end time" });
+  if (updates.endTime !== undefined) {
+    const end = parseTimestamp(updates.endTime);
+    if (!end) return res.status(400).json({ error: "Invalid end time" });
     updates.endTime = end;
   }
   if (updates.inviteCode !== undefined) updates.inviteCode = String(updates.inviteCode).trim() || null;
@@ -486,8 +523,8 @@ async function updateCompetitionHandler(req: Request, res: Response) {
   res.json(updated);
 }
 
-router.patch("/competitions/:id", updateCompetitionHandler);
-router.put("/competitions/:id", updateCompetitionHandler);
+router.patch("/competitions/:id", requirePermission("competitions.manage"), updateCompetitionHandler);
+router.put("/competitions/:id", requirePermission("competitions.manage"), updateCompetitionHandler);
 
 // POST /api/admin/competitions/:id/users
 async function addCompetitionUserHandler(req: Request, res: Response) {
@@ -502,11 +539,11 @@ async function addCompetitionUserHandler(req: Request, res: Response) {
   res.json({ success: true, message: "User added to competition" });
 }
 
-router.post("/competitions/:id/users", addCompetitionUserHandler);
-router.post("/competitions/:id/users/:userId", addCompetitionUserHandler);
+router.post("/competitions/:id/users", requirePermission("competitions.manage"), addCompetitionUserHandler);
+router.post("/competitions/:id/users/:userId", requirePermission("competitions.manage"), addCompetitionUserHandler);
 
 // GET /api/admin/lessons
-router.get("/lessons", async (_req, res) => {
+router.get("/lessons", requirePermission("lessons.read.all"), async (_req, res) => {
   const lessons = await db.select({
     id: lessonsTable.id, title: lessonsTable.title, titleUz: lessonsTable.titleUz, titleRu: lessonsTable.titleRu,
     categoryId: lessonsTable.categoryId, points: lessonsTable.points, createdAt: lessonsTable.createdAt,
@@ -516,7 +553,7 @@ router.get("/lessons", async (_req, res) => {
 });
 
 // GET /api/admin/lessons/:id
-router.get("/lessons/:id", async (req, res) => {
+router.get("/lessons/:id", requirePermission("lessons.read.all"), async (req, res) => {
   const id = Number(req.params.id);
   const [lesson] = await db.select().from(lessonsTable).where(eq(lessonsTable.id, id)).limit(1);
   if (!lesson) return res.status(404).json({ error: "Lesson not found" });
@@ -525,7 +562,7 @@ router.get("/lessons/:id", async (req, res) => {
 });
 
 // POST /api/admin/lessons
-router.post("/lessons", async (req, res) => {
+router.post("/lessons", requirePermission("lessons.create"), async (req, res) => {
   const { title, titleUz, titleRu, content, contentUz, contentRu, categoryId, points, questions } = req.body;
   if (!title || !content || !categoryId) return res.status(400).json({ error: "Missing fields" });
 
@@ -541,6 +578,9 @@ router.post("/lessons", async (req, res) => {
     title, titleUz: titleUz || null, titleRu: titleRu || null,
     content, contentUz: contentUz || null, contentRu: contentRu || null,
     categoryId: category.id, points: Number(points) || 50,
+    authorId: req.user!.userId,
+    // Authors submit drafts; only someone with `lessons.publish` makes them live.
+    isPublished: hasPermission(req.user!.role, "lessons.publish"),
   }).returning();
 
   if (questions && Array.isArray(questions)) {
@@ -561,7 +601,15 @@ router.post("/lessons", async (req, res) => {
 // PATCH /api/admin/lessons/:id
 async function updateLessonHandler(req: Request, res: Response) {
   const id = Number(req.params.id);
-  const userRole = (req as any).user?.role || "admin";
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid lesson id" });
+  const userRole: UserRole = req.user!.role;
+
+  const [existing] = await db.select({ authorId: lessonsTable.authorId })
+    .from(lessonsTable).where(eq(lessonsTable.id, id)).limit(1);
+  if (!existing) return res.status(404).json({ error: "Lesson not found" });
+  if (!canEditResource(userRole, "lessons", existing.authorId, req.user!.userId)) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
 
   // Filter updates based on RBAC
   const updates = filterAllowedUpdates(userRole, "lessons", req.body);
@@ -594,11 +642,61 @@ async function updateLessonHandler(req: Request, res: Response) {
   res.json(updated);
 }
 
-router.patch("/lessons/:id", updateLessonHandler);
-router.put("/lessons/:id", updateLessonHandler);
+router.patch("/lessons/:id", requireAnyPermission("lessons.update.own", "lessons.update.any"), updateLessonHandler);
+router.put("/lessons/:id", requireAnyPermission("lessons.update.own", "lessons.update.any"), updateLessonHandler);
+
+// POST /api/admin/ctf/:id/publish — flip a draft live, or take it back down.
+router.post("/ctf/:id/publish", requirePermission("ctf.publish"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid CTF id" });
+  const isPublished = req.body?.isPublished !== false;
+
+  const [updated] = await db.update(ctfTasksTable).set({ isPublished }).where(eq(ctfTasksTable.id, id)).returning();
+  if (!updated) return res.status(404).json({ error: "CTF not found" });
+
+  await writeAuditLog(req, isPublished ? "ctf.publish" : "ctf.unpublish", "ctf", id);
+  res.json({ success: true, isPublished: updated.isPublished });
+});
+
+// POST /api/admin/lessons/:id/publish
+router.post("/lessons/:id/publish", requirePermission("lessons.publish"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid lesson id" });
+  const isPublished = req.body?.isPublished !== false;
+
+  const [updated] = await db.update(lessonsTable).set({ isPublished }).where(eq(lessonsTable.id, id)).returning();
+  if (!updated) return res.status(404).json({ error: "Lesson not found" });
+
+  await writeAuditLog(req, isPublished ? "lesson.publish" : "lesson.unpublish", "lesson", id);
+  res.json({ success: true, isPublished: updated.isPublished });
+});
+
+// PATCH /api/admin/users/:id/role — assign user / author / moderator / admin.
+router.patch("/users/:id/role", requirePermission("users.role"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid user id" });
+
+  const { role } = req.body ?? {};
+  if (!isUserRole(role)) {
+    return res.status(400).json({ error: `Role must be one of: ${USER_ROLES.join(", ")}` });
+  }
+  // Removing your own admin rights locks you out of undoing it.
+  if (id === req.user!.userId && role !== "admin") {
+    return res.status(400).json({ error: "You cannot demote yourself" });
+  }
+
+  const [updated] = await db.update(usersTable).set({ role }).where(eq(usersTable.id, id)).returning();
+  if (!updated) return res.status(404).json({ error: "User not found" });
+
+  // The role is read from the database per request, so this takes effect at
+  // once; the sessions are dropped so the new role starts from a clean slate.
+  const revokedCount = await revokeAllSessions(id, "role_changed");
+  await writeAuditLog(req, "user.role_change", "user", id, { role, revokedSessionCount: revokedCount });
+  res.json({ success: true, role: updated.role, revokedSessionCount: revokedCount });
+});
 
 // DELETE /api/admin/lessons/:id
-router.delete("/lessons/:id", async (req, res) => {
+router.delete("/lessons/:id", requirePermission("lessons.delete"), async (req, res) => {
   const id = Number(req.params.id);
   await db.delete(lessonQuestionsTable).where(eq(lessonQuestionsTable.lessonId, id));
   await db.delete(userLessonAttemptsTable).where(eq(userLessonAttemptsTable.lessonId, id));

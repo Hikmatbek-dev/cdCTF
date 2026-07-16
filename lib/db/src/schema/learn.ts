@@ -21,6 +21,12 @@ export const lessonsTable = pgTable("lessons", {
   contentRu: text("content_ru"),
   categoryId: integer("category_id").notNull().references(() => learnCategoriesTable.id),
   points: integer("points").notNull().default(50),
+  // Who wrote it — drives the `lessons.update.own` permission. Null for
+  // everything created before authorship existed; only `.any` holders edit those.
+  authorId: integer("author_id").references(() => usersTable.id, { onDelete: "set null" }),
+  // Defaults to published so existing rows stay visible; the author create path
+  // sets it false explicitly so drafts need an admin to publish them.
+  isPublished: boolean("is_published").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

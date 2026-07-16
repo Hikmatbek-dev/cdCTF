@@ -9,7 +9,7 @@ const router = Router();
 // GET /api/learn/categories
 router.get("/categories", optionalAuth, async (req, res) => {
   const categories = await db.select().from(learnCategoriesTable);
-  const allLessons = await db.select().from(lessonsTable);
+  const allLessons = await db.select().from(lessonsTable).where(eq(lessonsTable.isPublished, true));
   const userId = req.user?.userId;
 
   let completedMap = new Map<number, number>();
@@ -40,7 +40,8 @@ router.get("/lessons", optionalAuth, async (req, res) => {
     id: lessonsTable.id, title: lessonsTable.title, titleUz: lessonsTable.titleUz, titleRu: lessonsTable.titleRu,
     categoryId: lessonsTable.categoryId, points: lessonsTable.points, createdAt: lessonsTable.createdAt,
     categoryName: learnCategoriesTable.name,
-  }).from(lessonsTable).leftJoin(learnCategoriesTable, eq(lessonsTable.categoryId, learnCategoriesTable.id));
+  }).from(lessonsTable).leftJoin(learnCategoriesTable, eq(lessonsTable.categoryId, learnCategoriesTable.id))
+    .where(eq(lessonsTable.isPublished, true));
 
   if (category) lessons = lessons.filter(l => l.categoryName === category);
 
@@ -73,7 +74,7 @@ router.get("/lessons/:id", optionalAuth, async (req, res) => {
     categoryId: lessonsTable.categoryId, points: lessonsTable.points, createdAt: lessonsTable.createdAt,
     categoryName: learnCategoriesTable.name,
   }).from(lessonsTable).leftJoin(learnCategoriesTable, eq(lessonsTable.categoryId, learnCategoriesTable.id))
-    .where(eq(lessonsTable.id, id)).limit(1);
+    .where(and(eq(lessonsTable.id, id), eq(lessonsTable.isPublished, true))).limit(1);
 
   if (!lesson) return res.status(404).json({ error: "Not found" });
 
@@ -98,7 +99,8 @@ async function startLessonTestHandler(req: Request, res: Response) {
 
   if (!Number.isInteger(lessonId) || lessonId <= 0) return res.status(400).json({ error: "Invalid lesson id" });
 
-  const [lesson] = await db.select().from(lessonsTable).where(eq(lessonsTable.id, lessonId)).limit(1);
+  const [lesson] = await db.select().from(lessonsTable)
+    .where(and(eq(lessonsTable.id, lessonId), eq(lessonsTable.isPublished, true))).limit(1);
   if (!lesson) return res.status(404).json({ error: "Not found" });
 
   let [attempt] = await db.select().from(userLessonAttemptsTable)

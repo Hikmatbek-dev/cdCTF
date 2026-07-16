@@ -4,6 +4,7 @@ import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { findActiveSession, touchSession } from "../lib/sessions";
+import { isUserRole, normalizeRole, type UserRole } from "../lib/permissions";
 import { logger } from "../lib/logger";
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -34,13 +35,8 @@ if (!JWT_SECRET) {
 
 const effectiveJwtSecret = JWT_SECRET || "cdctf_dev_secret_change_me";
 
-export type UserRole = "admin" | "user";
-
-const USER_ROLES: readonly string[] = ["admin", "user"];
-
-export function normalizeRole(role: string): UserRole {
-  return role === "admin" ? "admin" : "user";
-}
+export type { UserRole };
+export { normalizeRole };
 
 export interface AuthPayload {
   userId: number;
@@ -73,7 +69,7 @@ function verifyClaims(token: string): TokenClaims | null {
     }) as Partial<TokenClaims>;
 
     if (!Number.isInteger(payload.userId)) return null;
-    if (typeof payload.role !== "string" || !USER_ROLES.includes(payload.role)) return null;
+    if (!isUserRole(payload.role)) return null;
     if (typeof payload.jti !== "string" || !payload.jti) return null;
 
     return payload as TokenClaims;

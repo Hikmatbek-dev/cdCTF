@@ -19,6 +19,12 @@ export const ctfTasksTable = pgTable("ctf_tasks", {
   flag: text("flag").notNull(),
   fileUrl: text("file_url"),
   fileId: integer("file_id").references(() => ctfFilesTable.id),
+  // Who wrote it — drives the `ctf.update.own` permission. Null for everything
+  // created before authorship existed; only `.any` holders edit those.
+  authorId: integer("author_id").references(() => usersTable.id, { onDelete: "set null" }),
+  // Defaults to published so existing rows stay visible; the author create path
+  // sets it false explicitly so drafts need an admin to publish them.
+  isPublished: boolean("is_published").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

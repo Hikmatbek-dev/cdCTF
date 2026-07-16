@@ -17,7 +17,8 @@ router.get("/", optionalAuth, async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 25, 100);
   const userId = req.user?.userId;
 
-  let challenges = await db.select().from(ctfTasksTable);
+  // Drafts are visible only through the admin routes.
+  let challenges = await db.select().from(ctfTasksTable).where(eq(ctfTasksTable.isPublished, true));
 
   if (category && category !== "All") challenges = challenges.filter(c => c.category === category);
   if (difficulty && difficulty !== "All") challenges = challenges.filter(c => c.difficulty === difficulty);
@@ -79,7 +80,9 @@ router.get("/:id", optionalAuth, async (req, res) => {
 
   if (!Number.isInteger(ctfId) || ctfId <= 0) return res.status(400).json({ error: "Invalid CTF id" });
 
-  const [challenge] = await db.select().from(ctfTasksTable).where(eq(ctfTasksTable.id, ctfId)).limit(1);
+  const [challenge] = await db.select().from(ctfTasksTable)
+    .where(and(eq(ctfTasksTable.id, ctfId), eq(ctfTasksTable.isPublished, true)))
+    .limit(1);
   if (!challenge) return res.status(404).json({ error: "Not found" });
 
   let userAttempt = null;
@@ -117,7 +120,10 @@ async function submitFlagHandler(req: Request, res: Response) {
 
   try {
     const result = await db.transaction(async (tx) => {
-      const [challenge] = await tx.select().from(ctfTasksTable).where(eq(ctfTasksTable.id, ctfId)).limit(1);
+      // Published-only: a draft must not be solvable by anyone who guesses its id.
+      const [challenge] = await tx.select().from(ctfTasksTable)
+        .where(and(eq(ctfTasksTable.id, ctfId), eq(ctfTasksTable.isPublished, true)))
+        .limit(1);
       if (!challenge) return { status: 404, data: { error: "Not found" } };
 
       const [attempt] = await tx.select().from(ctfAttemptsTable)
