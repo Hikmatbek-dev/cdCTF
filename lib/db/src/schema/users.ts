@@ -15,6 +15,13 @@ export const usersTable = pgTable("users", {
   isBlocked: boolean("is_blocked").notNull().default(false),
   passwordResetToken: text("password_reset_token"),
   passwordResetExpires: timestamp("password_reset_expires", { withTimezone: true }),
+  // TOTP shared secret, encrypted at rest. Present but with `totpEnabled` false
+  // means an enrolment was started and never confirmed.
+  totpSecret: text("totp_secret"),
+  totpEnabled: boolean("totp_enabled").notNull().default(false),
+  // Time-step of the last accepted code. A TOTP code stays valid for its whole
+  // window, so without this an observer could replay one within ~30 seconds.
+  totpLastUsedStep: integer("totp_last_used_step"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

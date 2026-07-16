@@ -12,6 +12,7 @@ set -u
 DB=cp_manual_$$
 export DATABASE_URL="postgresql:///$DB?host=/var/run/postgresql"
 export JWT_SECRET="test_secret_at_least_32_chars_long_xxxx"
+export TOTP_ENCRYPTION_KEY="test_totp_key_at_least_32_chars_xxxxx"
 export PORT=8099
 export NODE_ENV=development
 
@@ -51,7 +52,7 @@ echo "==> Build"
 (cd "$ROOT/artifacts/api-server" && npm run build > /dev/null 2>&1) || exit 1
 
 # lesson-test-honest reuses the lesson that lesson-test-exploit seeds, so order matters.
-SUITES="lesson-test-exploit lesson-test-honest auth-sessions roles-permissions"
+SUITES="lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor"
 FAILED=""
 
 for suite in $SUITES; do

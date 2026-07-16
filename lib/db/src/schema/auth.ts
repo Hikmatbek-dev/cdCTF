@@ -42,5 +42,18 @@ export const loginHistoryTable = pgTable("login_history", {
   index("login_history_ip_address_idx").on(table.ipAddress),
 ]);
 
+// Single-use recovery codes for when the authenticator app is gone. Stored as
+// hashes, never in the clear — they are password-equivalents.
+export const userBackupCodesTable = pgTable("user_backup_codes", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
+  codeHash: text("code_hash").notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  index("user_backup_codes_user_id_idx").on(table.userId),
+]);
+
 export type UserSession = typeof userSessionsTable.$inferSelect;
 export type LoginHistoryEntry = typeof loginHistoryTable.$inferSelect;
+export type UserBackupCode = typeof userBackupCodesTable.$inferSelect;

@@ -13,6 +13,7 @@ const FAILED_LOGIN_SUSPICIOUS_THRESHOLD = 3;
 export type LoginFailureReason =
   | "unknown_user"
   | "bad_password"
+  | "bad_totp"
   | "blocked"
   | "email_unverified";
 

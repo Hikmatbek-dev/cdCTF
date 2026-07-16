@@ -78,5 +78,20 @@ export async function ensureDatabaseShape() {
   await pool.query("CREATE INDEX IF NOT EXISTS ctf_tasks_author_id_idx ON ctf_tasks(author_id)");
   await pool.query("CREATE INDEX IF NOT EXISTS lessons_author_id_idx ON lessons(author_id)");
 
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret text");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled boolean NOT NULL DEFAULT false");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_last_used_step integer");
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_backup_codes (
+      id serial PRIMARY KEY,
+      user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      code_hash text NOT NULL,
+      used_at timestamptz,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query("CREATE INDEX IF NOT EXISTS user_backup_codes_user_id_idx ON user_backup_codes(user_id)");
+
   logger.info("Database shape verified");
 }

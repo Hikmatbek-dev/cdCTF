@@ -28,6 +28,7 @@ and run the script directly — but see the rate-limit note below.
 | `lesson-test-honest.sh` | The fix must not break the feature: 5/5 passes, 4/5 passes at the 0.8 threshold, 3/5 fails, and a completed lesson cannot be restarted to farm points again. |
 | `auth-sessions.sh` | `jti` in the token, session list, device labels, login history, logout revocation, revoke-all, blocked user rejected immediately, role read fresh from the DB, password change revoking other sessions. |
 | `roles-permissions.sh` | The full matrix for user / author / moderator / admin: what each may do and — more importantly — what each must not. Includes author drafts staying out of the public list and authors not being able to raise their own points or publish themselves. |
+| `two-factor.sh` | TOTP enrolment, the login handshake, replay protection, and backup codes. Generates real codes from the enrolment secret with otplib, the way a phone would. Also asserts the secret is encrypted at rest, the backup codes are stored hashed, and an `mfaToken` cannot be used as a session. |
 
 ## Two traps worth knowing
 
@@ -40,4 +41,15 @@ by hand and see a wall of 401s, check for a 429 first.
 **Order matters.** `lesson-test-honest.sh` reuses the lesson that
 `lesson-test-exploit.sh` seeds. Both assume a fresh database — the 3-attempt cap
 will otherwise fail later cases for reasons unrelated to what they assert.
+
+**`two-factor.sh` sleeps twice, ~30s each, and that is not padding.** A TOTP code
+is pinned to a 30-second step, and the replay guard rejects any step at or before
+the last accepted one. Enrolling consumes the current step, so the next code the
+test needs genuinely does not exist yet. A real user's next login is minutes
+later; the test has to wait the window out.
+
+The suites also assume `DATABASE_URL` points at a database reachable by `psql`
+with the same credentials — several assertions read the database directly to
+check what was *stored* (that the TOTP secret is ciphertext, that backup codes
+are hashes), which is the part an HTTP response cannot show you.
 </content>

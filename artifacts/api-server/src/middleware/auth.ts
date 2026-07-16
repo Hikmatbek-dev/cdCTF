@@ -10,6 +10,11 @@ import { logger } from "../lib/logger";
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_ISSUER = "cdctf-api";
 const JWT_AUDIENCE = "cdctf-web";
+// A distinct audience for the half-authenticated token handed out between a
+// correct password and a correct 2FA code. Session verification demands
+// `cdctf-web`, so an MFA token can never be presented as a session.
+const MFA_JWT_AUDIENCE = "cdctf-mfa";
+const MFA_TOKEN_TTL_SECONDS = 5 * 60;
 export const AUTH_COOKIE_NAME = "cdctf_session";
 const DEFAULT_SESSION_DAYS = 30;
 
@@ -144,6 +149,32 @@ export function generateToken(userId: number, role: string, tokenId: string): st
     issuer: JWT_ISSUER,
     jwtid: tokenId,
   });
+}
+
+/**
+ * Proves only that the password step succeeded. Carries no role and cannot
+ * authenticate a request — it is exchanged for a session by POST /auth/2fa/verify.
+ */
+export function generateMfaToken(userId: number): string {
+  return jwt.sign({ userId }, effectiveJwtSecret, {
+    algorithm: "HS256",
+    audience: MFA_JWT_AUDIENCE,
+    expiresIn: MFA_TOKEN_TTL_SECONDS,
+    issuer: JWT_ISSUER,
+  });
+}
+
+export function verifyMfaToken(token: string): number | null {
+  try {
+    const payload = jwt.verify(token, effectiveJwtSecret, {
+      algorithms: ["HS256"],
+      issuer: JWT_ISSUER,
+      audience: MFA_JWT_AUDIENCE,
+    }) as { userId?: unknown };
+    return Number.isInteger(payload.userId) ? (payload.userId as number) : null;
+  } catch {
+    return null;
+  }
 }
 
 function getRequestToken(req: Request) {

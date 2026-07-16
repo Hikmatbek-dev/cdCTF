@@ -1,12 +1,21 @@
-import { Router } from "express";
+import { Router, type Response } from "express";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import { usersTable } from "@workspace/db/schema";
-import { and, eq, or, sql } from "drizzle-orm";
-import { AUTH_COOKIE_NAME, AUTH_SESSION_MAX_AGE_MS, generateToken, authenticateToken, optionalAuth } from "../middleware/auth";
+import { usersTable, userBackupCodesTable } from "@workspace/db/schema";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
+import {
+  AUTH_COOKIE_NAME,
+  AUTH_SESSION_MAX_AGE_MS,
+  generateToken,
+  generateMfaToken,
+  verifyMfaToken,
+  authenticateToken,
+  optionalAuth,
+} from "../middleware/auth";
 import { createRateLimiter } from "../middleware/security";
 import { sendVerificationEmail, verifyTurnstileToken, sendPasswordResetEmail } from "../lib/integrations";
+import { writeAuditLog } from "../lib/audit";
 import {
   createSession,
   listLoginHistory,
@@ -19,9 +28,25 @@ import {
   suspiciousLoginReasons,
   type LoginFailureReason,
 } from "../lib/sessions";
+import {
+  backupCodeMatches,
+  createTotpSecret,
+  decryptSecret,
+  encryptSecret,
+  generateBackupCodes,
+  hashBackupCode,
+  totpUri,
+  verifyTotp,
+} from "../lib/mfa";
 
 const router = Router();
 const authRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20, keyPrefix: "auth" });
+// The login 2FA step is the brute-force target: unauthenticated, and a 6-digit
+// space with a ~90s window. It gets a tight budget of its own.
+const mfaVerifyRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 10, keyPrefix: "mfa_verify" });
+// Enrolment and management already require a live session, so they only need to
+// stop an authenticated attacker grinding codes — not share the verify budget.
+const mfaManageRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 30, keyPrefix: "mfa_manage" });
 const emailDeliveryRequired = process.env.EMAIL_VERIFICATION_REQUIRED === "true";
 
 function authCookieOptions() {
@@ -69,6 +94,58 @@ function validateRegister(body: Record<string, unknown>) {
     return "Password must be at least 10 chars and include uppercase, lowercase, number, and symbol";
   }
   return null;
+}
+
+type PublicUser = {
+  id: number; nickname: string; email: string; avatarUrl: string | null;
+  points: number; role: string; emailVerified: boolean; isBlocked: boolean; createdAt: Date;
+};
+
+/** The only shape of a user that may leave the server. */
+function publicUser(user: typeof usersTable.$inferSelect): PublicUser {
+  return {
+    id: user.id, nickname: user.nickname, email: user.email, avatarUrl: user.avatarUrl,
+    points: user.points, role: user.role, emailVerified: user.emailVerified,
+    isBlocked: user.isBlocked, createdAt: user.createdAt,
+  };
+}
+
+type LoginContext = {
+  identifier: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  deviceLabel: string;
+};
+
+/** Final step of every successful login, whether or not 2FA was involved. */
+async function issueSession(res: Response, user: typeof usersTable.$inferSelect, ctx: LoginContext) {
+  // Must run before this login is recorded, otherwise the new IP/device it is
+  // checking for would already be in the history and never look new.
+  const suspicious = await suspiciousLoginReasons({ userId: user.id, ipAddress: ctx.ipAddress, deviceLabel: ctx.deviceLabel });
+
+  const tokenId = randomUUID();
+  await createSession({
+    userId: user.id,
+    tokenId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    deviceLabel: ctx.deviceLabel,
+    expiresAt: new Date(Date.now() + AUTH_SESSION_MAX_AGE_MS),
+  });
+  const token = generateToken(user.id, user.role, tokenId);
+
+  await recordLoginAttempt({
+    userId: user.id, identifier: ctx.identifier, ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent, deviceLabel: ctx.deviceLabel,
+    success: true, suspiciousReasons: suspicious,
+  });
+
+  res.cookie(AUTH_COOKIE_NAME, token, authCookieOptions());
+  return res.json({
+    token,
+    user: publicUser(user),
+    suspiciousLogin: suspicious.length > 0 ? { reasons: suspicious } : null,
+  });
 }
 
 function validateLogin(body: Record<string, unknown>) {
@@ -161,32 +238,182 @@ router.post("/login", authRateLimit, async (req, res) => {
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) return rejectLogin(user.id, "bad_password", 401, "Invalid credentials");
 
-  // Must run before this login is recorded, otherwise the new IP/device it is
-  // checking for would already be in the history and never look new.
-  const suspicious = await suspiciousLoginReasons({ userId: user.id, ipAddress, deviceLabel });
+  // Password is right but not sufficient. Nothing is recorded in login_history
+  // yet — the attempt resolves at /2fa/verify, one way or the other.
+  if (user.totpEnabled) {
+    return res.json({ requires2fa: true, mfaToken: generateMfaToken(user.id) });
+  }
 
-  const tokenId = randomUUID();
-  await createSession({
-    userId: user.id,
-    tokenId,
-    ipAddress,
-    userAgent,
-    deviceLabel,
-    expiresAt: new Date(Date.now() + AUTH_SESSION_MAX_AGE_MS),
-  });
-  const token = generateToken(user.id, user.role, tokenId);
+  return issueSession(res, user, { identifier, ipAddress, userAgent, deviceLabel });
+});
+
+// POST /api/auth/2fa/verify — exchange an mfaToken plus a code for a session.
+// Accepts either a 6-digit TOTP code or a single-use backup code.
+router.post("/2fa/verify", mfaVerifyRateLimit, async (req, res) => {
+  const { mfaToken, code } = req.body ?? {};
+  if (typeof mfaToken !== "string" || typeof code !== "string" || !code.trim()) {
+    return res.status(400).json({ error: "Token and code are required" });
+  }
+
+  const userId = verifyMfaToken(mfaToken);
+  if (!userId) return res.status(401).json({ error: "Invalid or expired session. Sign in again." });
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+  if (!user || !user.totpEnabled || !user.totpSecret) return res.status(401).json({ error: "Invalid or expired session. Sign in again." });
+  if (user.isBlocked) return res.status(403).json({ error: "Account blocked" });
+
+  const ipAddress = req.ip ?? null;
+  const userAgent = req.headers["user-agent"] ?? null;
+  const deviceLabel = parseDeviceLabel(userAgent ?? undefined);
+  const ctx = { identifier: user.nickname, ipAddress, userAgent, deviceLabel };
+
+  const secret = decryptSecret(user.totpSecret);
+  if (!secret) return res.status(500).json({ error: "Internal server error" });
+
+  const totp = verifyTotp({ secret, token: code, afterTimeStep: user.totpLastUsedStep });
+  if (totp.valid) {
+    // Record the accepted step so this exact code cannot be replayed.
+    await db.update(usersTable).set({ totpLastUsedStep: totp.timeStep }).where(eq(usersTable.id, user.id));
+    return issueSession(res, user, ctx);
+  }
+
+  // Not a live TOTP code — try the backup codes.
+  const unused = await db.select().from(userBackupCodesTable)
+    .where(and(eq(userBackupCodesTable.userId, user.id), isNull(userBackupCodesTable.usedAt)));
+  const match = unused.find(entry => backupCodeMatches(code, entry.codeHash));
+
+  if (match) {
+    // Burn it first: a code that raced two requests must only work once.
+    const consumed = await db.update(userBackupCodesTable)
+      .set({ usedAt: new Date() })
+      .where(and(eq(userBackupCodesTable.id, match.id), isNull(userBackupCodesTable.usedAt)))
+      .returning({ id: userBackupCodesTable.id });
+
+    if (consumed.length > 0) {
+      const remaining = unused.length - 1;
+      await writeAuditLog(req, "2fa.backup_code_used", "user", user.id, { remaining });
+      return issueSession(res, user, ctx);
+    }
+  }
 
   await recordLoginAttempt({
-    userId: user.id, identifier, ipAddress, userAgent, deviceLabel,
-    success: true, suspiciousReasons: suspicious,
+    userId: user.id, identifier: user.nickname, ipAddress, userAgent, deviceLabel,
+    success: false, failureReason: "bad_totp",
+  });
+  return res.status(401).json({ error: "Invalid code" });
+});
+
+// GET /api/auth/2fa/status
+router.get("/2fa/status", authenticateToken, async (req, res) => {
+  const [user] = await db.select({ totpEnabled: usersTable.totpEnabled })
+    .from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
+  if (!user) return res.status(404).json({ error: "User not found" });
+
+  const [{ count }] = await db.select({ count: sql<number>`count(*)::int` })
+    .from(userBackupCodesTable)
+    .where(and(eq(userBackupCodesTable.userId, req.user!.userId), isNull(userBackupCodesTable.usedAt)));
+
+  res.json({ enabled: user.totpEnabled, backupCodesRemaining: count });
+});
+
+// POST /api/auth/2fa/setup — start enrolment. Does nothing until /2fa/enable
+// confirms the user can actually produce a code from the secret.
+router.post("/2fa/setup", authenticateToken, mfaManageRateLimit, async (req, res) => {
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
+  if (!user) return res.status(404).json({ error: "User not found" });
+  if (user.totpEnabled) return res.status(409).json({ error: "Two-factor authentication is already enabled" });
+
+  const secret = createTotpSecret();
+  await db.update(usersTable)
+    .set({ totpSecret: encryptSecret(secret), totpLastUsedStep: null })
+    .where(eq(usersTable.id, user.id));
+
+  res.json({ secret, otpauthUri: totpUri(secret, user.nickname) });
+});
+
+// POST /api/auth/2fa/enable — confirm enrolment and hand back the backup codes.
+router.post("/2fa/enable", authenticateToken, mfaManageRateLimit, async (req, res) => {
+  const { code } = req.body ?? {};
+  if (typeof code !== "string" || !code.trim()) return res.status(400).json({ error: "Code is required" });
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
+  if (!user) return res.status(404).json({ error: "User not found" });
+  if (user.totpEnabled) return res.status(409).json({ error: "Two-factor authentication is already enabled" });
+  if (!user.totpSecret) return res.status(400).json({ error: "Start setup first" });
+
+  const secret = decryptSecret(user.totpSecret);
+  if (!secret) return res.status(500).json({ error: "Internal server error" });
+
+  const totp = verifyTotp({ secret, token: code, afterTimeStep: null });
+  if (!totp.valid) return res.status(400).json({ error: "Invalid code" });
+
+  const codes = generateBackupCodes();
+  await db.transaction(async tx => {
+    await tx.update(usersTable)
+      .set({ totpEnabled: true, totpLastUsedStep: totp.timeStep })
+      .where(eq(usersTable.id, user.id));
+    await tx.delete(userBackupCodesTable).where(eq(userBackupCodesTable.userId, user.id));
+    await tx.insert(userBackupCodesTable).values(
+      codes.map(plain => ({ userId: user.id, codeHash: hashBackupCode(plain) })),
+    );
   });
 
-  res.cookie(AUTH_COOKIE_NAME, token, authCookieOptions());
-  res.json({
-    token,
-    user: { id: user.id, nickname: user.nickname, email: user.email, avatarUrl: user.avatarUrl, points: user.points, role: user.role, emailVerified: user.emailVerified, isBlocked: user.isBlocked, createdAt: user.createdAt },
-    suspiciousLogin: suspicious.length > 0 ? { reasons: suspicious } : null,
+  await writeAuditLog(req, "2fa.enabled", "user", user.id);
+  // The only time these are ever readable — they are stored hashed.
+  res.json({ success: true, backupCodes: codes });
+});
+
+// POST /api/auth/2fa/disable — password plus a live code, because turning the
+// protection off is exactly what a session thief would want to do.
+router.post("/2fa/disable", authenticateToken, mfaManageRateLimit, async (req, res) => {
+  const { password, code } = req.body ?? {};
+  if (typeof password !== "string" || typeof code !== "string") {
+    return res.status(400).json({ error: "Password and code are required" });
+  }
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
+  if (!user) return res.status(404).json({ error: "User not found" });
+  if (!user.totpEnabled || !user.totpSecret) return res.status(400).json({ error: "Two-factor authentication is not enabled" });
+
+  if (!await bcrypt.compare(password, user.passwordHash)) return res.status(400).json({ error: "Current password incorrect" });
+
+  const secret = decryptSecret(user.totpSecret);
+  if (!secret) return res.status(500).json({ error: "Internal server error" });
+  if (!verifyTotp({ secret, token: code, afterTimeStep: user.totpLastUsedStep }).valid) {
+    return res.status(400).json({ error: "Invalid code" });
+  }
+
+  await db.transaction(async tx => {
+    await tx.update(usersTable)
+      .set({ totpEnabled: false, totpSecret: null, totpLastUsedStep: null })
+      .where(eq(usersTable.id, user.id));
+    await tx.delete(userBackupCodesTable).where(eq(userBackupCodesTable.userId, user.id));
   });
+
+  await writeAuditLog(req, "2fa.disabled", "user", user.id);
+  res.json({ success: true });
+});
+
+// POST /api/auth/2fa/backup-codes — regenerate, invalidating the old set.
+router.post("/2fa/backup-codes", authenticateToken, mfaManageRateLimit, async (req, res) => {
+  const { password } = req.body ?? {};
+  if (typeof password !== "string") return res.status(400).json({ error: "Password is required" });
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
+  if (!user) return res.status(404).json({ error: "User not found" });
+  if (!user.totpEnabled) return res.status(400).json({ error: "Two-factor authentication is not enabled" });
+  if (!await bcrypt.compare(password, user.passwordHash)) return res.status(400).json({ error: "Current password incorrect" });
+
+  const codes = generateBackupCodes();
+  await db.transaction(async tx => {
+    await tx.delete(userBackupCodesTable).where(eq(userBackupCodesTable.userId, user.id));
+    await tx.insert(userBackupCodesTable).values(
+      codes.map(plain => ({ userId: user.id, codeHash: hashBackupCode(plain) })),
+    );
+  });
+
+  await writeAuditLog(req, "2fa.backup_codes_regenerated", "user", user.id);
+  res.json({ success: true, backupCodes: codes });
 });
 
 router.post("/logout", authenticateToken, async (req, res) => {
