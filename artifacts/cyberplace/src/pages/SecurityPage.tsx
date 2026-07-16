@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ShieldCheck, ShieldOff, Monitor, History, KeyRound, Trash2, Copy, AlertTriangle, Link2 } from "lucide-react";
+import { ShieldCheck, ShieldOff, Monitor, History, KeyRound, Trash2, Copy, AlertTriangle, Link2, Fingerprint } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -328,6 +328,94 @@ function LoginHistorySection() {
   );
 }
 
+function PasskeysSection() {
+  const { t, lang } = useLang();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [name, setName] = useState("");
+
+  const passkeys = useQuery({ queryKey: ["passkeys"], queryFn: api.listPasskeys });
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["passkeys"] });
+
+  const add = useMutation({
+    mutationFn: () => api.registerPasskey(name),
+    onSuccess: result => {
+      setName("");
+      refresh();
+      toast({ title: t(`Added "${result.name}"`, `"${result.name}" qo'shildi`, `Добавлен «${result.name}»`) });
+    },
+    onError: error => {
+      // A user closing the platform prompt throws here; that is not a failure
+      // worth shouting about.
+      if (error instanceof DOMException && (error.name === "NotAllowedError" || error.name === "AbortError")) return;
+      toast({
+        title: t("Failed", "Xato", "Ошибка"),
+        description: api.errorMessage(error, t("Could not add the passkey", "Passkey qo'shilmadi", "Не удалось добавить passkey")),
+        variant: "destructive",
+      });
+    },
+  });
+  const remove = useMutation({ mutationFn: api.deletePasskey, onSuccess: refresh });
+
+  if (!api.passkeysSupported()) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {t("This browser does not support passkeys.", "Bu brauzer passkey'ni qo'llab-quvvatlamaydi.", "Этот браузер не поддерживает passkey.")}
+      </p>
+    );
+  }
+
+  if (passkeys.isLoading) return <Skeleton className="h-20 w-full" />;
+
+  const list = passkeys.data?.passkeys ?? [];
+  const format = (iso: string) => new Date(iso).toLocaleDateString(lang === "uz" ? "uz-UZ" : lang === "ru" ? "ru-RU" : "en-GB");
+
+  return (
+    <div className="space-y-4">
+      <ul className="space-y-2">
+        {list.map(passkey => (
+          <li key={passkey.id} className="flex items-center justify-between gap-3 p-3 bg-muted/40 rounded-xl">
+            <div className="min-w-0">
+              <div className="font-bold text-sm truncate">{passkey.name}</div>
+              <div className="text-xs text-muted-foreground">
+                {passkey.lastUsedAt
+                  ? `${t("last used", "oxirgi ishlatilgan", "использован")} ${format(passkey.lastUsedAt)}`
+                  : t("never used", "ishlatilmagan", "не использован")}
+                {passkey.backedUp && ` · ${t("synced", "sinxronlangan", "синхронизирован")}`}
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => remove.mutate(passkey.id)}
+              disabled={remove.isPending}
+              aria-label={t("Remove passkey", "Passkey'ni o'chirish", "Удалить passkey")}
+            >
+              <Trash2 className="w-4 h-4" aria-hidden="true" />
+            </Button>
+          </li>
+        ))}
+      </ul>
+
+      <div className="flex gap-2 pt-3 border-t border-border">
+        <div className="flex-1">
+          <label htmlFor="passkey-name" className="sr-only">{t("Name", "Nom", "Название")}</label>
+          <input
+            id="passkey-name"
+            value={name}
+            onChange={event => setName(event.target.value)}
+            placeholder={t("e.g. My phone", "masalan: Mening telefonim", "напр. Мой телефон")}
+            className="w-full px-3 py-2 bg-background border border-border rounded-lg"
+          />
+        </div>
+        <Button onClick={() => add.mutate()} disabled={add.isPending}>
+          {t("Add passkey", "Passkey qo'shish", "Добавить passkey")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 const PROVIDER_LABELS: Record<string, string> = { google: "Google", github: "GitHub", discord: "Discord" };
 
 function LinkedAccountsSection() {
@@ -525,6 +613,14 @@ export default function SecurityPage() {
           description={t("A code from your phone, on top of your password.", "Parolingiz ustiga telefoningizdagi kod.", "Код с телефона в дополнение к паролю.")}
         >
           <TwoFactorSection />
+        </Section>
+
+        <Section
+          icon={Fingerprint}
+          title={t("Passkeys", "Passkey'lar", "Passkey")}
+          description={t("Sign in with your fingerprint, face or a security key — no password.", "Barmoq izi, yuz yoki xavfsizlik kaliti bilan kiring — parolsiz.", "Входите по отпечатку, лицу или ключу безопасности — без пароля.")}
+        >
+          <PasskeysSection />
         </Section>
 
         <Section

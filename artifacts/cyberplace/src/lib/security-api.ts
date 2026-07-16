@@ -103,6 +103,52 @@ export type LoginHistoryEntry = {
 export const listLoginHistory = (limit = 25) =>
   call<{ entries: LoginHistoryEntry[] }>(`/auth/login-history?limit=${limit}`);
 
+// --- Passkeys --------------------------------------------------------------
+
+export type Passkey = {
+  id: number;
+  name: string;
+  deviceType: string | null;
+  backedUp: boolean;
+  lastUsedAt: string | null;
+  createdAt: string;
+};
+
+export const listPasskeys = () => call<{ passkeys: Passkey[] }>("/auth/passkeys");
+export const deletePasskey = (id: number) => call<{ success: true }>(`/auth/passkeys/${id}`, { method: "DELETE" });
+
+/** Whether this browser can do WebAuthn at all — the UI hides itself if not. */
+export function passkeysSupported(): boolean {
+  return typeof window !== "undefined" && Boolean(window.PublicKeyCredential);
+}
+
+export async function registerPasskey(name: string): Promise<{ name: string }> {
+  const { startRegistration } = await import("@simplewebauthn/browser");
+  const options = await call<Parameters<typeof startRegistration>[0]["optionsJSON"]>(
+    "/auth/passkeys/register/options",
+    { method: "POST" },
+  );
+  // Opens the platform's own prompt — Touch ID, Windows Hello, a security key.
+  const attestation = await startRegistration({ optionsJSON: options });
+  return call<{ name: string }>("/auth/passkeys/register/verify", {
+    method: "POST",
+    body: JSON.stringify({ ...attestation, name }),
+  });
+}
+
+export async function loginWithPasskey(): Promise<LoginResult> {
+  const { startAuthentication } = await import("@simplewebauthn/browser");
+  const options = await call<Parameters<typeof startAuthentication>[0]["optionsJSON"]>(
+    "/auth/passkeys/login/options",
+    { method: "POST" },
+  );
+  const assertion = await startAuthentication({ optionsJSON: options });
+  return call<LoginResult>("/auth/passkeys/login/verify", {
+    method: "POST",
+    body: JSON.stringify(assertion),
+  });
+}
+
 // --- OAuth -----------------------------------------------------------------
 
 export type OAuthAccount = { provider: string; providerEmail: string | null; createdAt: string };

@@ -88,8 +88,32 @@ export const oauthAccountsTable = pgTable("oauth_accounts", {
   index("oauth_accounts_user_id_idx").on(table.userId),
 ]);
 
+// A registered WebAuthn credential. The private key never leaves the
+// authenticator; all we hold is the public key and a replay counter.
+export const passkeysTable = pgTable("passkeys", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
+  // Base64URL. Unique across every account: a credential identifies exactly one.
+  credentialId: text("credential_id").notNull().unique(),
+  publicKey: text("public_key").notNull(),
+  /**
+   * Signature counter. Authenticators that implement it increment on every use;
+   * a counter that goes backwards means the credential was cloned.
+   */
+  counter: integer("counter").notNull().default(0),
+  transports: text("transports"),
+  deviceType: text("device_type"),
+  backedUp: boolean("backed_up").notNull().default(false),
+  name: text("name").notNull(),
+  lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  index("passkeys_user_id_idx").on(table.userId),
+]);
+
 export type UserSession = typeof userSessionsTable.$inferSelect;
 export type ApiToken = typeof apiTokensTable.$inferSelect;
 export type OAuthAccount = typeof oauthAccountsTable.$inferSelect;
+export type Passkey = typeof passkeysTable.$inferSelect;
 export type LoginHistoryEntry = typeof loginHistoryTable.$inferSelect;
 export type UserBackupCode = typeof userBackupCodesTable.$inferSelect;

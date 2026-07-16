@@ -310,6 +310,46 @@ export function verifyOAuthState(token: string): OAuthStateClaims | null {
   }
 }
 
+const WEBAUTHN_CHALLENGE_AUDIENCE = "cdctf-webauthn";
+
+export type WebAuthnChallengeClaims = {
+  challenge: string;
+  mode: "register" | "authenticate";
+  /** Present only for `register`: the account the credential will belong to. */
+  userId?: number;
+};
+
+/**
+ * Signs a WebAuthn challenge into a cookie rather than storing it server-side.
+ * The challenge is what makes the authenticator's signature meaningful — accept
+ * one we did not issue, or reuse one, and the signature proves nothing.
+ */
+export function generateWebAuthnChallengeToken(claims: WebAuthnChallengeClaims, ttlSeconds: number): string {
+  return jwt.sign(claims, effectiveJwtSecret, {
+    algorithm: "HS256",
+    audience: WEBAUTHN_CHALLENGE_AUDIENCE,
+    expiresIn: ttlSeconds,
+    issuer: JWT_ISSUER,
+  });
+}
+
+export function verifyWebAuthnChallengeToken(token: string): WebAuthnChallengeClaims | null {
+  try {
+    const payload = jwt.verify(token, effectiveJwtSecret, {
+      algorithms: ["HS256"],
+      issuer: JWT_ISSUER,
+      audience: WEBAUTHN_CHALLENGE_AUDIENCE,
+    }) as Partial<WebAuthnChallengeClaims>;
+
+    if (typeof payload.challenge !== "string" || !payload.challenge) return null;
+    if (payload.mode !== "register" && payload.mode !== "authenticate") return null;
+    if (payload.mode === "register" && !Number.isInteger(payload.userId)) return null;
+    return payload as WebAuthnChallengeClaims;
+  } catch {
+    return null;
+  }
+}
+
 function getRequestToken(req: Request) {
   const auth = req.headers.authorization;
   if (auth?.startsWith("Bearer ")) return auth.slice(7);

@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useLocation } from "wouter";
-import { Shield, Lock, User, ArrowRight } from "lucide-react";
+import { Shield, Lock, User, ArrowRight, Fingerprint } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
@@ -108,6 +108,19 @@ export default function LoginPage() {
     mutationFn: () => api.verifyTwoFactor(mfaToken!, code),
     onSuccess: finish,
     onError: fail,
+  });
+
+  const passkeyMutation = useMutation({
+    mutationFn: api.loginWithPasskey,
+    onSuccess: result => {
+      if (result.requires2fa) setMfaToken(result.mfaToken);
+      else finish(result);
+    },
+    onError: error => {
+      // The user dismissing the platform prompt lands here. Not an error.
+      if (error instanceof DOMException && (error.name === "NotAllowedError" || error.name === "AbortError")) return;
+      fail(error);
+    },
   });
 
   const form = useForm<FormData>({
@@ -265,11 +278,28 @@ export default function LoginPage() {
             )}
 
             {/* Only rendered for providers the server actually has keys for. */}
-            {!mfaToken && (providers.data?.providers.length ?? 0) > 0 && (
+            {!mfaToken && (api.passkeysSupported() || (providers.data?.providers.length ?? 0) > 0) && (
               <div className="mt-8 pt-8 border-t border-white/5">
                 <p className="text-center text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 mb-4">
                   {t("OR_CONTINUE_WITH", "YOKI DAVOM ETING", "ИЛИ ВОЙДИТЕ ЧЕРЕЗ")}
                 </p>
+
+                {/* Hidden entirely on browsers without WebAuthn. */}
+                {api.passkeysSupported() && (
+                  <button
+                    type="button"
+                    onClick={() => passkeyMutation.mutate()}
+                    disabled={passkeyMutation.isPending}
+                    data-testid="button-passkey"
+                    className="w-full h-12 mb-3 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/40 hover:bg-white/10 transition-all text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-white flex items-center justify-center gap-2"
+                  >
+                    <Fingerprint className="w-4 h-4" aria-hidden="true" />
+                    {passkeyMutation.isPending
+                      ? t("WAITING...", "KUTILMOQDA...", "ОЖИДАНИЕ...")
+                      : t("PASSKEY", "PASSKEY", "PASSKEY")}
+                  </button>
+                )}
+                {(providers.data?.providers.length ?? 0) > 0 && (
                 <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${providers.data!.providers.length}, minmax(0, 1fr))` }}>
                   {providers.data!.providers.map(provider => (
                     <button
@@ -283,6 +313,7 @@ export default function LoginPage() {
                     </button>
                   ))}
                 </div>
+                )}
               </div>
             )}
           </div>

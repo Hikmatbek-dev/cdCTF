@@ -124,5 +124,22 @@ export async function ensureDatabaseShape() {
   await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS oauth_accounts_provider_account_idx ON oauth_accounts(provider, provider_account_id)");
   await pool.query("CREATE INDEX IF NOT EXISTS oauth_accounts_user_id_idx ON oauth_accounts(user_id)");
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS passkeys (
+      id serial PRIMARY KEY,
+      user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      credential_id text NOT NULL UNIQUE,
+      public_key text NOT NULL,
+      counter integer NOT NULL DEFAULT 0,
+      transports text,
+      device_type text,
+      backed_up boolean NOT NULL DEFAULT false,
+      name text NOT NULL,
+      last_used_at timestamptz,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query("CREATE INDEX IF NOT EXISTS passkeys_user_id_idx ON passkeys(user_id)");
+
   logger.info("Database shape verified");
 }

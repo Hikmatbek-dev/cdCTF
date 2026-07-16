@@ -1,8 +1,8 @@
-import { Router, type Response } from "express";
+import { Router, type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import { usersTable, userBackupCodesTable, apiTokensTable, oauthAccountsTable } from "@workspace/db/schema";
+import { usersTable, userBackupCodesTable, apiTokensTable, oauthAccountsTable, passkeysTable } from "@workspace/db/schema";
 import { and, eq, isNull, or, sql } from "drizzle-orm";
 import {
   AUTH_COOKIE_NAME,
@@ -18,6 +18,8 @@ import {
   normalizeRole,
   generateOAuthState,
   verifyOAuthState,
+  generateWebAuthnChallengeToken,
+  verifyWebAuthnChallengeToken,
 } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/security";
 import { sendVerificationEmail, verifyTurnstileToken, sendPasswordResetEmail } from "../lib/integrations";
@@ -68,6 +70,25 @@ import {
   isProviderConfigured,
   suggestNickname,
 } from "../lib/oauth";
+import {
+  generateAuthenticationOptions,
+  generateRegistrationOptions,
+  verifyAuthenticationResponse,
+  verifyRegistrationResponse,
+} from "@simplewebauthn/server";
+import {
+  RP_NAME,
+  WEBAUTHN_CHALLENGE_COOKIE,
+  WEBAUTHN_CHALLENGE_TTL_SECONDS,
+  defaultPasskeyName,
+  deletePasskey,
+  expectedOrigin,
+  findPasskeyByCredentialId,
+  listPasskeys,
+  parseTransports,
+  recordPasskeyUse,
+  rpID,
+} from "../lib/passkeys";
 
 const router = Router();
 const authRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20, keyPrefix: "auth" });
@@ -275,6 +296,191 @@ router.post("/login", authRateLimit, async (req, res) => {
   }
 
   return issueSession(res, user, { identifier, ipAddress, userAgent, deviceLabel });
+});
+
+// --- Passkeys (WebAuthn) ---------------------------------------------------
+
+function challengeCookieOptions() {
+  const { maxAge: _maxAge, ...base } = authCookieOptions();
+  return { ...base, maxAge: WEBAUTHN_CHALLENGE_TTL_SECONDS * 1000 };
+}
+
+function takeChallenge(req: Request, res: Response, mode: "register" | "authenticate") {
+  const cookie = req.cookies?.[WEBAUTHN_CHALLENGE_COOKIE];
+  // One challenge, one attempt: clear it whether or not it turns out valid.
+  res.clearCookie(WEBAUTHN_CHALLENGE_COOKIE, { ...challengeCookieOptions(), maxAge: undefined });
+  if (typeof cookie !== "string") return null;
+  const claims = verifyWebAuthnChallengeToken(cookie);
+  return claims && claims.mode === mode ? claims : null;
+}
+
+// POST /api/auth/passkeys/register/options
+router.post("/passkeys/register/options", authenticateToken, requireSession, mfaManageRateLimit, async (req, res) => {
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
+  if (!user) return res.status(404).json({ error: "User not found" });
+
+  const existing = await listPasskeys(user.id);
+  const options = await generateRegistrationOptions({
+    rpName: RP_NAME,
+    rpID: rpID(),
+    userName: user.nickname,
+    userDisplayName: user.nickname,
+    attestationType: "none",
+    // Stops the same authenticator being enrolled twice under two entries.
+    excludeCredentials: existing.map(passkey => ({
+      id: passkey.credentialId,
+      transports: parseTransports(passkey.transports),
+    })),
+    authenticatorSelection: { residentKey: "preferred", userVerification: "preferred" },
+  });
+
+  res.cookie(
+    WEBAUTHN_CHALLENGE_COOKIE,
+    generateWebAuthnChallengeToken({ challenge: options.challenge, mode: "register", userId: user.id }, WEBAUTHN_CHALLENGE_TTL_SECONDS),
+    challengeCookieOptions(),
+  );
+  res.json(options);
+});
+
+// POST /api/auth/passkeys/register/verify
+router.post("/passkeys/register/verify", authenticateToken, requireSession, mfaManageRateLimit, async (req, res) => {
+  const claims = takeChallenge(req, res, "register");
+  if (!claims) return res.status(400).json({ error: "Challenge expired. Start again." });
+  // The challenge is bound to the account that asked for it.
+  if (claims.userId !== req.user!.userId) return res.status(400).json({ error: "Challenge does not belong to this session" });
+
+  let verification;
+  try {
+    verification = await verifyRegistrationResponse({
+      response: req.body,
+      expectedChallenge: claims.challenge,
+      expectedOrigin: expectedOrigin(),
+      expectedRPID: rpID(),
+      requireUserVerification: false,
+    });
+  } catch (err) {
+    logger.warn({ err }, "Passkey registration verification failed");
+    return res.status(400).json({ error: "Could not verify this passkey" });
+  }
+
+  if (!verification.verified) return res.status(400).json({ error: "Could not verify this passkey" });
+
+  const { credential, credentialDeviceType, credentialBackedUp } = verification.registrationInfo;
+  const name = typeof req.body?.name === "string" && req.body.name.trim()
+    ? req.body.name.trim().slice(0, 64)
+    : defaultPasskeyName(credentialDeviceType, req.headers["user-agent"]);
+
+  try {
+    await db.insert(passkeysTable).values({
+      userId: req.user!.userId,
+      credentialId: credential.id,
+      publicKey: Buffer.from(credential.publicKey).toString("base64url"),
+      counter: credential.counter,
+      transports: credential.transports?.join(",") ?? null,
+      deviceType: credentialDeviceType,
+      backedUp: credentialBackedUp,
+      name,
+    });
+  } catch {
+    // The unique index on credentialId — this authenticator is already enrolled.
+    return res.status(409).json({ error: "This passkey is already registered" });
+  }
+
+  await writeAuditLog(req, "passkey.register", "user", req.user!.userId, { name });
+  res.status(201).json({ success: true, name });
+});
+
+// POST /api/auth/passkeys/login/options — usernameless: the authenticator tells
+// us which credential it holds, so no identifier is asked for up front.
+router.post("/passkeys/login/options", authRateLimit, async (_req, res) => {
+  const options = await generateAuthenticationOptions({
+    rpID: rpID(),
+    userVerification: "preferred",
+  });
+
+  res.cookie(
+    WEBAUTHN_CHALLENGE_COOKIE,
+    generateWebAuthnChallengeToken({ challenge: options.challenge, mode: "authenticate" }, WEBAUTHN_CHALLENGE_TTL_SECONDS),
+    challengeCookieOptions(),
+  );
+  res.json(options);
+});
+
+// POST /api/auth/passkeys/login/verify
+router.post("/passkeys/login/verify", authRateLimit, async (req, res) => {
+  const claims = takeChallenge(req, res, "authenticate");
+  if (!claims) return res.status(400).json({ error: "Challenge expired. Start again." });
+
+  const credentialId = typeof req.body?.id === "string" ? req.body.id : null;
+  if (!credentialId) return res.status(400).json({ error: "Invalid passkey response" });
+
+  const passkey = await findPasskeyByCredentialId(credentialId);
+  if (!passkey) return res.status(401).json({ error: "Unknown passkey" });
+
+  let verification;
+  try {
+    verification = await verifyAuthenticationResponse({
+      response: req.body,
+      expectedChallenge: claims.challenge,
+      expectedOrigin: expectedOrigin(),
+      expectedRPID: rpID(),
+      credential: {
+        id: passkey.credentialId,
+        publicKey: new Uint8Array(Buffer.from(passkey.publicKey, "base64url")),
+        counter: passkey.counter,
+        transports: parseTransports(passkey.transports),
+      },
+      requireUserVerification: false,
+    });
+  } catch (err) {
+    logger.warn({ err }, "Passkey authentication verification failed");
+    return res.status(401).json({ error: "Could not verify this passkey" });
+  }
+
+  if (!verification.verified) return res.status(401).json({ error: "Could not verify this passkey" });
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, passkey.userId)).limit(1);
+  if (!user) return res.status(401).json({ error: "Unknown passkey" });
+  if (user.isBlocked) return res.status(403).json({ error: "Account blocked" });
+
+  await recordPasskeyUse(passkey.id, verification.authenticationInfo.newCounter);
+
+  const ipAddress = req.ip ?? null;
+  const userAgent = req.headers["user-agent"] ?? null;
+  const ctx = { identifier: user.nickname, ipAddress, userAgent, deviceLabel: parseDeviceLabel(userAgent ?? undefined) };
+
+  // A passkey is already two factors — something you have, plus the device's own
+  // user verification. It does not, however, override a TOTP the owner enabled
+  // here, so the same rule as OAuth applies.
+  if (user.totpEnabled) return res.json({ requires2fa: true, mfaToken: generateMfaToken(user.id) });
+
+  return issueSession(res, user, ctx);
+});
+
+// GET /api/auth/passkeys
+router.get("/passkeys", authenticateToken, requireSession, async (req, res) => {
+  const passkeys = await listPasskeys(req.user!.userId);
+  res.json({
+    passkeys: passkeys.map(passkey => ({
+      id: passkey.id,
+      name: passkey.name,
+      deviceType: passkey.deviceType,
+      backedUp: passkey.backedUp,
+      lastUsedAt: passkey.lastUsedAt,
+      createdAt: passkey.createdAt,
+    })),
+  });
+});
+
+// DELETE /api/auth/passkeys/:id
+router.delete("/passkeys/:id", authenticateToken, requireSession, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid passkey id" });
+
+  if (!await deletePasskey(id, req.user!.userId)) return res.status(404).json({ error: "Passkey not found" });
+
+  await writeAuditLog(req, "passkey.delete", "user", req.user!.userId, { passkeyId: id });
+  res.json({ success: true });
 });
 
 // --- OAuth -----------------------------------------------------------------
