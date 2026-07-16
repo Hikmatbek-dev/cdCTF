@@ -1,7 +1,7 @@
 #!/bin/bash
 # Personal access tokens: creation, scopes, and — the point of the exercise —
 # everything a token must NOT be able to do, including when minted by an admin.
-API=http://localhost:8099/api
+API=http://localhost:${API_PORT:-8099}/api
 PASS='Str0ng!Passw0rd'
 
 pass() { echo "  ✅ $1"; }

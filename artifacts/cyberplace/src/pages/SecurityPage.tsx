@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ShieldCheck, ShieldOff, Monitor, History, KeyRound, Trash2, Copy, AlertTriangle } from "lucide-react";
+import { ShieldCheck, ShieldOff, Monitor, History, KeyRound, Trash2, Copy, AlertTriangle, Link2 } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -328,6 +328,72 @@ function LoginHistorySection() {
   );
 }
 
+const PROVIDER_LABELS: Record<string, string> = { google: "Google", github: "GitHub", discord: "Discord" };
+
+function LinkedAccountsSection() {
+  const { t, lang } = useLang();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const providers = useQuery({ queryKey: ["oauth-providers"], queryFn: api.oauthProviders });
+  const linked = useQuery({ queryKey: ["oauth-accounts"], queryFn: api.linkedOAuthAccounts });
+
+  const unlink = useMutation({
+    mutationFn: api.unlinkOAuth,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["oauth-accounts"] }),
+    onError: error => toast({
+      title: t("Failed", "Xato", "Ошибка"),
+      description: api.errorMessage(error, t("Could not unlink", "Uzib bo'lmadi", "Не удалось отвязать")),
+      variant: "destructive",
+    }),
+  });
+
+  if (providers.isLoading || linked.isLoading) return <Skeleton className="h-20 w-full" />;
+
+  const available = providers.data?.providers ?? [];
+  if (available.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {t("No sign-in providers are configured.", "Hech qanday kirish provayderi sozlanmagan.", "Провайдеры входа не настроены.")}
+      </p>
+    );
+  }
+
+  const accounts = linked.data?.accounts ?? [];
+  const format = (iso: string) => new Date(iso).toLocaleDateString(lang === "uz" ? "uz-UZ" : lang === "ru" ? "ru-RU" : "en-GB");
+
+  return (
+    <ul className="space-y-2">
+      {available.map(provider => {
+        const account = accounts.find(item => item.provider === provider);
+        return (
+          <li key={provider} className="flex items-center justify-between gap-3 p-3 bg-muted/40 rounded-xl">
+            <div className="min-w-0">
+              <div className="font-bold text-sm">{PROVIDER_LABELS[provider] ?? provider}</div>
+              <div className="text-xs text-muted-foreground truncate">
+                {account
+                  ? `${account.providerEmail ?? t("Linked", "Bog'langan", "Привязан")} · ${format(account.createdAt)}`
+                  : t("Not linked", "Bog'lanmagan", "Не привязан")}
+              </div>
+            </div>
+            {account
+              ? (
+                <Button size="sm" variant="ghost" onClick={() => unlink.mutate(provider)} disabled={unlink.isPending}>
+                  {t("Unlink", "Uzish", "Отвязать")}
+                </Button>
+              )
+              : (
+                <Button size="sm" variant="outline" onClick={() => api.startOAuth(provider, "link")}>
+                  {t("Link", "Bog'lash", "Привязать")}
+                </Button>
+              )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 function ApiTokensSection() {
   const { t, lang } = useLang();
   const { toast } = useToast();
@@ -475,6 +541,14 @@ export default function SecurityPage() {
           description={t("Recent attempts on your account, successful or not.", "Hisobingizga so'nggi urinishlar — muvaffaqiyatli yoki yo'q.", "Недавние попытки входа в ваш аккаунт.")}
         >
           <LoginHistorySection />
+        </Section>
+
+        <Section
+          icon={Link2}
+          title={t("Linked accounts", "Bog'langan hisoblar", "Привязанные аккаунты")}
+          description={t("Sign in with a provider instead of a password.", "Parol o'rniga provayder orqali kiring.", "Входите через провайдера вместо пароля.")}
+        >
+          <LinkedAccountsSection />
         </Section>
 
         <Section

@@ -2,7 +2,7 @@
 # TOTP enrolment, the 2FA login handshake, replay protection, and backup codes.
 # Real codes are generated from the enrolment secret with otplib, the same way an
 # authenticator app would.
-API=http://localhost:8099/api
+API=http://localhost:${API_PORT:-8099}/api
 PASS='Str0ng!Passw0rd'
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 

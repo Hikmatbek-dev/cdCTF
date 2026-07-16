@@ -269,6 +269,47 @@ export function verifyMfaToken(token: string): number | null {
   }
 }
 
+const OAUTH_STATE_AUDIENCE = "cdctf-oauth-state";
+
+export type OAuthStateClaims = {
+  nonce: string;
+  mode: "login" | "link";
+  /** Present only for `link`: the account the identity will be attached to. */
+  userId?: number;
+};
+
+/**
+ * Signs the OAuth `state`. Stored in a cookie and compared against the `state`
+ * the provider echoes back, which binds the callback to the browser that
+ * started the flow — without it, an attacker can hand a victim a callback URL
+ * and get their own provider identity linked to the victim's account.
+ */
+export function generateOAuthState(claims: OAuthStateClaims, ttlSeconds: number): string {
+  return jwt.sign(claims, effectiveJwtSecret, {
+    algorithm: "HS256",
+    audience: OAUTH_STATE_AUDIENCE,
+    expiresIn: ttlSeconds,
+    issuer: JWT_ISSUER,
+  });
+}
+
+export function verifyOAuthState(token: string): OAuthStateClaims | null {
+  try {
+    const payload = jwt.verify(token, effectiveJwtSecret, {
+      algorithms: ["HS256"],
+      issuer: JWT_ISSUER,
+      audience: OAUTH_STATE_AUDIENCE,
+    }) as Partial<OAuthStateClaims>;
+
+    if (typeof payload.nonce !== "string" || !payload.nonce) return null;
+    if (payload.mode !== "login" && payload.mode !== "link") return null;
+    if (payload.mode === "link" && !Number.isInteger(payload.userId)) return null;
+    return payload as OAuthStateClaims;
+  } catch {
+    return null;
+  }
+}
+
 function getRequestToken(req: Request) {
   const auth = req.headers.authorization;
   if (auth?.startsWith("Bearer ")) return auth.slice(7);

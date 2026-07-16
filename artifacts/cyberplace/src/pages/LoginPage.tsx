@@ -10,9 +10,35 @@ import { useAuth } from "@/lib/AuthContext";
 import { useLang } from "@/lib/LanguageContext";
 import { FadeIn, ScaleIn } from "@/components/PageTransition";
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import * as api from "@/lib/security-api";
+
+const PROVIDER_LABELS: Record<string, string> = {
+  google: "Google",
+  github: "GitHub",
+  discord: "Discord",
+};
+
+const OAUTH_ERRORS: Record<string, { en: string; uz: string; ru: string }> = {
+  email_already_registered: {
+    en: "That email already has an account. Sign in with your password, then link the provider from Security.",
+    uz: "Bu email bilan hisob bor. Parol bilan kiring, so'ng Xavfsizlik bo'limidan provayderni bog'lang.",
+    ru: "С этим email уже есть аккаунт. Войдите по паролю, затем привяжите провайдера в разделе Безопасность.",
+  },
+  email_not_verified: {
+    en: "Your provider did not share a verified email address.",
+    uz: "Provayder tasdiqlangan email ulashmadi.",
+    ru: "Провайдер не предоставил подтверждённый email.",
+  },
+  account_blocked: { en: "This account is blocked.", uz: "Bu hisob bloklangan.", ru: "Этот аккаунт заблокирован." },
+  provider_not_configured: { en: "That sign-in method is not available.", uz: "Bu kirish usuli mavjud emas.", ru: "Этот способ входа недоступен." },
+  invalid_state: { en: "The sign-in link expired. Please try again.", uz: "Kirish havolasi eskirdi. Qaytadan urinib ko'ring.", ru: "Ссылка для входа устарела. Попробуйте снова." },
+  access_denied: { en: "You cancelled the sign-in.", uz: "Kirishni bekor qildingiz.", ru: "Вы отменили вход." },
+  provider_error: { en: "The provider could not complete the sign-in.", uz: "Provayder kirishni yakunlay olmadi.", ru: "Провайдер не смог завершить вход." },
+  already_linked_elsewhere: { en: "That account is already linked to a different user.", uz: "Bu hisob boshqa foydalanuvchiga bog'langan.", ru: "Этот аккаунт уже привязан к другому пользователю." },
+  sign_in_first: { en: "Sign in before linking an account.", uz: "Bog'lashdan oldin kiring.", ru: "Войдите перед привязкой аккаунта." },
+};
 
 const schema = z.object({
   nickname: z.string().min(1, "Required"),
@@ -23,13 +49,30 @@ type FormData = z.infer<typeof schema>;
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   // Held between the password step and the 2FA step. Not a session: it proves
   // only that the password was right.
   const [mfaToken, setMfaToken] = useState<string | null>(null);
   const [code, setCode] = useState("");
+  const providers = useQuery({ queryKey: ["oauth-providers"], queryFn: api.oauthProviders });
+
+  // Read straight out of the URL during the first render, not from an effect.
+  // A toast fired from a mount effect is lost: <Toaster /> is a later sibling in
+  // App, so its listener is not registered yet when this component's effects run.
+  // Rendering the failure inline is both reliable and clearer for a sign-in error.
+  const [oauthError] = useState(() => new URLSearchParams(window.location.search).get("oauth_error"));
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    // An account with 2FA comes back from the callback still owing a code.
+    const handoff = params.get("mfa");
+    if (handoff) setMfaToken(handoff);
+    if (handoff || params.get("oauth_error")) window.history.replaceState({}, "", "/login");
+    // Runs once: this reads the URL the callback landed on.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function finish(result: { token: string; user: Parameters<typeof login>[0]; suspiciousLogin: { reasons: string[] } | null }) {
     login(result.user, result.token);
@@ -96,6 +139,15 @@ export default function LoginPage() {
 
         <FadeIn delay={0.2}>
           <div className="glass-card p-10 rounded-[3rem] border-white/10 shadow-2xl">
+            {oauthError && (
+              <div
+                role="alert"
+                data-testid="oauth-error"
+                className="mb-8 p-4 rounded-2xl border border-destructive/40 bg-destructive/10 text-[11px] font-bold leading-relaxed text-destructive"
+              >
+                {OAUTH_ERRORS[oauthError]?.[lang] ?? oauthError}
+              </div>
+            )}
             {mfaToken ? (
               <form
                 className="space-y-8"
@@ -210,6 +262,28 @@ export default function LoginPage() {
                 </Button>
               </form>
             </Form>
+            )}
+
+            {/* Only rendered for providers the server actually has keys for. */}
+            {!mfaToken && (providers.data?.providers.length ?? 0) > 0 && (
+              <div className="mt-8 pt-8 border-t border-white/5">
+                <p className="text-center text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 mb-4">
+                  {t("OR_CONTINUE_WITH", "YOKI DAVOM ETING", "ИЛИ ВОЙДИТЕ ЧЕРЕЗ")}
+                </p>
+                <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${providers.data!.providers.length}, minmax(0, 1fr))` }}>
+                  {providers.data!.providers.map(provider => (
+                    <button
+                      key={provider}
+                      type="button"
+                      onClick={() => api.startOAuth(provider)}
+                      data-testid={`button-oauth-${provider}`}
+                      className="h-12 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/40 hover:bg-white/10 transition-all text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-white"
+                    >
+                      {PROVIDER_LABELS[provider] ?? provider}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         </FadeIn>

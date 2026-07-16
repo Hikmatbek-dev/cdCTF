@@ -103,6 +103,23 @@ export type LoginHistoryEntry = {
 export const listLoginHistory = (limit = 25) =>
   call<{ entries: LoginHistoryEntry[] }>(`/auth/login-history?limit=${limit}`);
 
+// --- OAuth -----------------------------------------------------------------
+
+export type OAuthAccount = { provider: string; providerEmail: string | null; createdAt: string };
+
+export const oauthProviders = () => call<{ providers: string[] }>("/auth/oauth/providers");
+export const linkedOAuthAccounts = () => call<{ accounts: OAuthAccount[] }>("/auth/oauth/accounts");
+export const unlinkOAuth = (provider: string) =>
+  call<{ success: true }>(`/auth/oauth/${provider}`, { method: "DELETE" });
+
+/**
+ * OAuth is a browser redirect, not a fetch: the provider needs to render its own
+ * consent screen, and the state cookie has to be set on a top-level navigation.
+ */
+export function startOAuth(provider: string, mode?: "link") {
+  window.location.href = `/api/auth/oauth/${provider}${mode ? `?mode=${mode}` : ""}`;
+}
+
 // --- API tokens ------------------------------------------------------------
 
 export type ApiToken = {

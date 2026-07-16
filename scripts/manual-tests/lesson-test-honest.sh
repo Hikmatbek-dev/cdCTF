@@ -1,7 +1,7 @@
 #!/bin/bash
 # The fix must not break the feature: legitimate submissions still have to work.
 # Each case gets a fresh user so the 3-attempt cap never interferes.
-API=http://localhost:8099/api
+API=http://localhost:${API_PORT:-8099}/api
 PASS='Str0ng!Passw0rd'
 LESSON=1
 

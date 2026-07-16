@@ -109,5 +109,20 @@ export async function ensureDatabaseShape() {
   `);
   await pool.query("CREATE INDEX IF NOT EXISTS api_tokens_user_id_idx ON api_tokens(user_id)");
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS oauth_accounts (
+      id serial PRIMARY KEY,
+      user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      provider text NOT NULL,
+      provider_account_id text NOT NULL,
+      provider_email text,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  // The unique index is load-bearing: it is what stops one provider identity
+  // being linked to two accounts.
+  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS oauth_accounts_provider_account_idx ON oauth_accounts(provider, provider_account_id)");
+  await pool.query("CREATE INDEX IF NOT EXISTS oauth_accounts_user_id_idx ON oauth_accounts(user_id)");
+
   logger.info("Database shape verified");
 }

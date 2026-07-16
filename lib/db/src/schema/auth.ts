@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, boolean, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, boolean, timestamp, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
 // One row per issued JWT. The token carries the `tokenId` as its `jti` claim, so
@@ -73,7 +73,23 @@ export const apiTokensTable = pgTable("api_tokens", {
   index("api_tokens_user_id_idx").on(table.userId),
 ]);
 
+// A provider identity linked to an account. The unique index is the security
+// boundary: one provider identity can never be linked to two accounts.
+export const oauthAccountsTable = pgTable("oauth_accounts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
+  provider: text("provider").notNull(),
+  providerAccountId: text("provider_account_id").notNull(),
+  // For display only — "which Google account is this?". Never trusted for auth.
+  providerEmail: text("provider_email"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  uniqueIndex("oauth_accounts_provider_account_idx").on(table.provider, table.providerAccountId),
+  index("oauth_accounts_user_id_idx").on(table.userId),
+]);
+
 export type UserSession = typeof userSessionsTable.$inferSelect;
 export type ApiToken = typeof apiTokensTable.$inferSelect;
+export type OAuthAccount = typeof oauthAccountsTable.$inferSelect;
 export type LoginHistoryEntry = typeof loginHistoryTable.$inferSelect;
 export type UserBackupCode = typeof userBackupCodesTable.$inferSelect;

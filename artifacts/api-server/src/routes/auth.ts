@@ -2,7 +2,7 @@ import { Router, type Response } from "express";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import { usersTable, userBackupCodesTable, apiTokensTable } from "@workspace/db/schema";
+import { usersTable, userBackupCodesTable, apiTokensTable, oauthAccountsTable } from "@workspace/db/schema";
 import { and, eq, isNull, or, sql } from "drizzle-orm";
 import {
   AUTH_COOKIE_NAME,
@@ -16,6 +16,8 @@ import {
   requireScope,
   sessionOf,
   normalizeRole,
+  generateOAuthState,
+  verifyOAuthState,
 } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/security";
 import { sendVerificationEmail, verifyTurnstileToken, sendPasswordResetEmail } from "../lib/integrations";
@@ -53,6 +55,19 @@ import {
   type ApiScope,
 } from "../lib/api-tokens";
 import { permissionsForRole } from "../lib/permissions";
+import { logger } from "../lib/logger";
+import {
+  OAUTH_STATE_COOKIE,
+  OAUTH_STATE_TTL_SECONDS,
+  authorizeUrl,
+  configuredProviders,
+  exchangeCodeForToken,
+  fetchProfile,
+  generateStateNonce,
+  isOAuthProvider,
+  isProviderConfigured,
+  suggestNickname,
+} from "../lib/oauth";
 
 const router = Router();
 const authRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20, keyPrefix: "auth" });
@@ -260,6 +275,203 @@ router.post("/login", authRateLimit, async (req, res) => {
   }
 
   return issueSession(res, user, { identifier, ipAddress, userAgent, deviceLabel });
+});
+
+// --- OAuth -----------------------------------------------------------------
+
+function appBaseUrl() {
+  return (process.env.APP_BASE_URL ?? "http://localhost:5173").replace(/\/$/, "");
+}
+
+function oauthStateCookieOptions() {
+  const { maxAge: _maxAge, ...base } = authCookieOptions();
+  return { ...base, maxAge: OAUTH_STATE_TTL_SECONDS * 1000 };
+}
+
+/** Sends the browser back to the app with a code the UI can turn into a message. */
+function oauthFailure(res: Response, reason: string) {
+  return res.redirect(`${appBaseUrl()}/login?oauth_error=${encodeURIComponent(reason)}`);
+}
+
+/** Finds a free nickname near the provider's display name. */
+async function allocateNickname(base: string): Promise<string> {
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const candidate = attempt === 0 ? base : `${base.slice(0, 27)}_${attempt}`;
+    const [taken] = await db.select({ id: usersTable.id }).from(usersTable)
+      .where(eq(usersTable.nickname, candidate)).limit(1);
+    if (!taken) return candidate;
+  }
+  return `user_${randomUUID().slice(0, 12)}`;
+}
+
+// GET /api/auth/oauth/providers — which buttons the login page should show.
+router.get("/oauth/providers", (_req, res) => {
+  res.json({ providers: configuredProviders() });
+});
+
+// GET /api/auth/oauth/accounts — the caller's linked identities.
+router.get("/oauth/accounts", authenticateToken, requireSession, async (req, res) => {
+  const accounts = await db.select().from(oauthAccountsTable)
+    .where(eq(oauthAccountsTable.userId, req.user!.userId));
+  res.json({
+    accounts: accounts.map(account => ({
+      provider: account.provider,
+      providerEmail: account.providerEmail,
+      createdAt: account.createdAt,
+    })),
+  });
+});
+
+// GET /api/auth/oauth/:provider — start a sign-in, or a link when already signed in.
+router.get("/oauth/:provider", optionalAuth, authRateLimit, (req, res) => {
+  const provider = req.params.provider;
+  if (!isOAuthProvider(provider)) return oauthFailure(res, "unknown_provider");
+  if (!isProviderConfigured(provider)) return oauthFailure(res, "provider_not_configured");
+
+  const linking = req.query.mode === "link";
+  if (linking && req.user?.tokenType !== "session") return oauthFailure(res, "sign_in_first");
+
+  const nonce = generateStateNonce();
+  const state = generateOAuthState(
+    linking ? { nonce, mode: "link", userId: req.user!.userId } : { nonce, mode: "login" },
+    OAUTH_STATE_TTL_SECONDS,
+  );
+
+  res.cookie(OAUTH_STATE_COOKIE, state, oauthStateCookieOptions());
+  res.redirect(authorizeUrl(provider, nonce));
+});
+
+// GET /api/auth/oauth/:provider/callback
+router.get("/oauth/:provider/callback", authRateLimit, async (req, res) => {
+  const provider = req.params.provider;
+  if (!isOAuthProvider(provider)) return oauthFailure(res, "unknown_provider");
+  if (!isProviderConfigured(provider)) return oauthFailure(res, "provider_not_configured");
+
+  // The provider reports a user who declined, or a misconfiguration, here.
+  if (typeof req.query.error === "string") return oauthFailure(res, req.query.error);
+
+  const code = typeof req.query.code === "string" ? req.query.code : null;
+  const returnedState = typeof req.query.state === "string" ? req.query.state : null;
+  if (!code || !returnedState) return oauthFailure(res, "missing_code");
+
+  const stateCookie = req.cookies?.[OAUTH_STATE_COOKIE];
+  res.clearCookie(OAUTH_STATE_COOKIE, { ...oauthStateCookieOptions(), maxAge: undefined });
+
+  const claims = typeof stateCookie === "string" ? verifyOAuthState(stateCookie) : null;
+  // Both halves must agree: the signed cookie proves we issued it, and the
+  // nonce match proves this callback belongs to the browser that started.
+  if (!claims || claims.nonce !== returnedState) return oauthFailure(res, "invalid_state");
+
+  let profile;
+  try {
+    profile = await fetchProfile(provider, await exchangeCodeForToken(provider, code));
+  } catch (err) {
+    logger.error({ err, provider }, "OAuth exchange failed");
+    return oauthFailure(res, "provider_error");
+  }
+
+  const [existingLink] = await db.select().from(oauthAccountsTable)
+    .where(and(
+      eq(oauthAccountsTable.provider, provider),
+      eq(oauthAccountsTable.providerAccountId, profile.providerAccountId),
+    ))
+    .limit(1);
+
+  if (claims.mode === "link") {
+    if (existingLink && existingLink.userId !== claims.userId) return oauthFailure(res, "already_linked_elsewhere");
+    if (!existingLink) {
+      await db.insert(oauthAccountsTable).values({
+        userId: claims.userId!,
+        provider,
+        providerAccountId: profile.providerAccountId,
+        providerEmail: profile.email,
+      });
+      await writeAuditLog(req, "oauth.link", "user", claims.userId!, { provider });
+    }
+    return res.redirect(`${appBaseUrl()}/settings/security`);
+  }
+
+  const ipAddress = req.ip ?? null;
+  const userAgent = req.headers["user-agent"] ?? null;
+  const deviceLabel = parseDeviceLabel(userAgent ?? undefined);
+
+  let user;
+  if (existingLink) {
+    [user] = await db.select().from(usersTable).where(eq(usersTable.id, existingLink.userId)).limit(1);
+    if (!user) return oauthFailure(res, "provider_error");
+  } else {
+    // A provider identity we have never seen. An unverified address proves
+    // nothing — anyone can put someone else's email on a provider account.
+    if (!profile.email || !profile.emailVerified) return oauthFailure(res, "email_not_verified");
+
+    const [emailOwner] = await db.select().from(usersTable)
+      .where(eq(usersTable.email, normalizeEmail(profile.email))).limit(1);
+
+    // Deliberately no auto-linking on a matching email: it would hand the
+    // account to anyone who can get that address onto a provider profile. The
+    // owner links it themselves, from Security, while signed in.
+    if (emailOwner) return oauthFailure(res, "email_already_registered");
+
+    const nickname = await allocateNickname(suggestNickname(profile, provider));
+    [user] = await db.insert(usersTable).values({
+      nickname,
+      email: normalizeEmail(profile.email),
+      // No password: this account signs in through the provider until its owner
+      // sets one via the reset flow. A random hash is not a usable password.
+      passwordHash: await bcrypt.hash(randomUUID(), 12),
+      role: "user",
+      emailVerified: true,
+    }).returning();
+
+    await db.insert(oauthAccountsTable).values({
+      userId: user.id,
+      provider,
+      providerAccountId: profile.providerAccountId,
+      providerEmail: profile.email,
+    });
+    await writeAuditLog(req, "oauth.register", "user", user.id, { provider });
+  }
+
+  if (user.isBlocked) return oauthFailure(res, "account_blocked");
+
+  // 2FA is the account's own setting; signing in through a provider does not
+  // satisfy it. Hand the browser the same mfaToken the password flow uses.
+  if (user.totpEnabled) {
+    return res.redirect(`${appBaseUrl()}/login?mfa=${encodeURIComponent(generateMfaToken(user.id))}`);
+  }
+
+  const suspicious = await suspiciousLoginReasons({ userId: user.id, ipAddress, deviceLabel });
+  const tokenId = randomUUID();
+  await createSession({
+    userId: user.id,
+    tokenId,
+    ipAddress,
+    userAgent,
+    deviceLabel,
+    expiresAt: new Date(Date.now() + AUTH_SESSION_MAX_AGE_MS),
+  });
+  await recordLoginAttempt({
+    userId: user.id, identifier: user.nickname, ipAddress, userAgent, deviceLabel,
+    success: true, suspiciousReasons: suspicious,
+  });
+
+  res.cookie(AUTH_COOKIE_NAME, generateToken(user.id, user.role, tokenId), authCookieOptions());
+  res.redirect(`${appBaseUrl()}/ctf`);
+});
+
+// DELETE /api/auth/oauth/:provider — unlink.
+router.delete("/oauth/:provider", authenticateToken, requireSession, async (req, res) => {
+  const provider = req.params.provider;
+  if (!isOAuthProvider(provider)) return res.status(400).json({ error: "Unknown provider" });
+
+  const removed = await db.delete(oauthAccountsTable)
+    .where(and(eq(oauthAccountsTable.userId, req.user!.userId), eq(oauthAccountsTable.provider, provider)))
+    .returning({ id: oauthAccountsTable.id });
+
+  if (removed.length === 0) return res.status(404).json({ error: "Not linked" });
+
+  await writeAuditLog(req, "oauth.unlink", "user", req.user!.userId, { provider });
+  res.json({ success: true });
 });
 
 // POST /api/auth/2fa/verify — exchange an mfaToken plus a code for a session.

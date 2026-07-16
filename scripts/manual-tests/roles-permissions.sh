@@ -1,7 +1,7 @@
 #!/bin/bash
 # Permission matrix for the four roles. Every case asserts both directions:
 # what a role may do, and what it must not.
-API=http://localhost:8099/api
+API=http://localhost:${API_PORT:-8099}/api
 PASS='Str0ng!Passw0rd'
 
 pass() { echo "  ✅ $1"; }

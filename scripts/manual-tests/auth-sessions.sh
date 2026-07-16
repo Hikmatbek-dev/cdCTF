@@ -1,6 +1,6 @@
 #!/bin/bash
 # End-to-end check of the new session layer against a throwaway database.
-API=http://localhost:8099/api
+API=http://localhost:${API_PORT:-8099}/api
 UA_A="Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 Chrome/120.0 Safari/537.36"
 UA_B="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) AppleWebKit/605.1 Safari/604.1"
 PASS='Str0ng!Passw0rd'
