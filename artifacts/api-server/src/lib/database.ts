@@ -33,5 +33,41 @@ export async function ensureDatabaseShape() {
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token text");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires timestamptz");
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_sessions (
+      id serial PRIMARY KEY,
+      user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_id text NOT NULL UNIQUE,
+      ip_address text,
+      user_agent text,
+      device_label text,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      last_seen_at timestamptz NOT NULL DEFAULT now(),
+      expires_at timestamptz NOT NULL,
+      revoked_at timestamptz,
+      revoked_reason text
+    )
+  `);
+  await pool.query("CREATE INDEX IF NOT EXISTS user_sessions_user_id_idx ON user_sessions(user_id)");
+  await pool.query("CREATE INDEX IF NOT EXISTS user_sessions_expires_at_idx ON user_sessions(expires_at)");
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS login_history (
+      id serial PRIMARY KEY,
+      user_id integer REFERENCES users(id) ON DELETE SET NULL,
+      identifier text NOT NULL,
+      ip_address text,
+      user_agent text,
+      device_label text,
+      success boolean NOT NULL,
+      failure_reason text,
+      suspicious boolean NOT NULL DEFAULT false,
+      suspicious_reasons text,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query("CREATE INDEX IF NOT EXISTS login_history_user_id_created_at_idx ON login_history(user_id, created_at)");
+  await pool.query("CREATE INDEX IF NOT EXISTS login_history_ip_address_idx ON login_history(ip_address)");
+
   logger.info("Database shape verified");
 }

@@ -159,6 +159,7 @@ router.get("/:id", optionalAuth, async (req, res) => {
 });
 
 import { filterAllowedUpdates } from "../lib/rbac";
+import { revokeAllSessions } from "../lib/sessions";
 
 // PATCH /api/users/:id
 router.patch("/:id", authenticateToken, async (req, res) => {
@@ -186,7 +187,12 @@ router.patch("/:id", authenticateToken, async (req, res) => {
 
   try {
     const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, id)).returning();
-    res.json({ 
+
+    // Role and block changes are enforced per-request from the DB, but a blocked
+    // account should not keep listing live sessions either.
+    if (updates.isBlocked === true) await revokeAllSessions(id, "user_blocked");
+
+    res.json({
       id: updated.id, 
       nickname: updated.nickname, 
       email: updated.email, 

@@ -3,10 +3,22 @@ import bcrypt from "bcryptjs";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db/schema";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import { AUTH_COOKIE_NAME, AUTH_SESSION_MAX_AGE_MS, generateToken, authenticateToken, optionalAuth } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/security";
 import { sendVerificationEmail, verifyTurnstileToken, sendPasswordResetEmail } from "../lib/integrations";
+import {
+  createSession,
+  listLoginHistory,
+  listSessions,
+  parseDeviceLabel,
+  recordLoginAttempt,
+  revokeAllSessions,
+  revokeSessionById,
+  revokeSessionByTokenId,
+  suspiciousLoginReasons,
+  type LoginFailureReason,
+} from "../lib/sessions";
 
 const router = Router();
 const authRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20, keyPrefix: "auth" });
@@ -61,7 +73,7 @@ function validateRegister(body: Record<string, unknown>) {
 
 function validateLogin(body: Record<string, unknown>) {
   const { nickname, password } = body;
-  if (typeof nickname !== "string" || !normalizeNickname(nickname)) return "Nickname required";
+  if (typeof nickname !== "string" || !normalizeNickname(nickname)) return "Login required";
   if (typeof password !== "string" || !password) return "Password required";
   return null;
 }
@@ -123,28 +135,116 @@ router.post("/login", authRateLimit, async (req, res) => {
   if (err) return res.status(400).json({ error: err });
 
   const body = req.body as { nickname: string; password: string };
-  const nickname = normalizeNickname(body.nickname);
+  const identifier = normalizeNickname(body.nickname);
+  const email = normalizeEmail(identifier);
   const password = body.password;
 
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.nickname, nickname)).limit(1);
-  if (!user) return res.status(401).json({ error: "Invalid credentials" });
-  if (user.isBlocked) return res.status(403).json({ error: "Account blocked" });
-  if (!user.emailVerified && user.role !== "admin") return res.status(403).json({ error: "Email not verified" });
+  const ipAddress = req.ip ?? null;
+  const userAgent = req.headers["user-agent"] ?? null;
+  const deviceLabel = parseDeviceLabel(userAgent ?? undefined);
+
+  async function rejectLogin(userId: number | null, failureReason: LoginFailureReason, status: number, message: string) {
+    await recordLoginAttempt({ userId, identifier, ipAddress, userAgent, deviceLabel, success: false, failureReason });
+    return res.status(status).json({ error: message });
+  }
+
+  const [user] = await db.select().from(usersTable).where(
+    or(
+      eq(usersTable.nickname, identifier),
+      eq(usersTable.email, email),
+    ),
+  ).limit(1);
+  if (!user) return rejectLogin(null, "unknown_user", 401, "Invalid credentials");
+  if (user.isBlocked) return rejectLogin(user.id, "blocked", 403, "Account blocked");
+  if (!user.emailVerified && user.role !== "admin") return rejectLogin(user.id, "email_unverified", 403, "Email not verified");
 
   const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) return res.status(401).json({ error: "Invalid credentials" });
+  if (!valid) return rejectLogin(user.id, "bad_password", 401, "Invalid credentials");
 
-  const token = generateToken(user.id, user.role);
+  // Must run before this login is recorded, otherwise the new IP/device it is
+  // checking for would already be in the history and never look new.
+  const suspicious = await suspiciousLoginReasons({ userId: user.id, ipAddress, deviceLabel });
+
+  const tokenId = randomUUID();
+  await createSession({
+    userId: user.id,
+    tokenId,
+    ipAddress,
+    userAgent,
+    deviceLabel,
+    expiresAt: new Date(Date.now() + AUTH_SESSION_MAX_AGE_MS),
+  });
+  const token = generateToken(user.id, user.role, tokenId);
+
+  await recordLoginAttempt({
+    userId: user.id, identifier, ipAddress, userAgent, deviceLabel,
+    success: true, suspiciousReasons: suspicious,
+  });
+
   res.cookie(AUTH_COOKIE_NAME, token, authCookieOptions());
   res.json({
     token,
     user: { id: user.id, nickname: user.nickname, email: user.email, avatarUrl: user.avatarUrl, points: user.points, role: user.role, emailVerified: user.emailVerified, isBlocked: user.isBlocked, createdAt: user.createdAt },
+    suspiciousLogin: suspicious.length > 0 ? { reasons: suspicious } : null,
   });
 });
 
-router.post("/logout", authenticateToken, (_req, res) => {
+router.post("/logout", authenticateToken, async (req, res) => {
+  await revokeSessionByTokenId(req.user!.tokenId, "logout");
   res.clearCookie(AUTH_COOKIE_NAME, authCookieClearOptions());
   res.json({ success: true, message: "Logged out" });
+});
+
+// GET /api/auth/sessions — device management: every live session for the caller.
+router.get("/sessions", authenticateToken, async (req, res) => {
+  const sessions = await listSessions(req.user!.userId);
+  res.json({
+    sessions: sessions.map(s => ({
+      id: s.id,
+      deviceLabel: s.deviceLabel,
+      ipAddress: s.ipAddress,
+      createdAt: s.createdAt,
+      lastSeenAt: s.lastSeenAt,
+      expiresAt: s.expiresAt,
+      isCurrent: s.tokenId === req.user!.tokenId,
+    })),
+  });
+});
+
+// DELETE /api/auth/sessions/:id — sign a single device out.
+router.delete("/sessions/:id", authenticateToken, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid session id" });
+
+  const revoked = await revokeSessionById(id, req.user!.userId, "revoked_by_user");
+  if (!revoked) return res.status(404).json({ error: "Session not found" });
+
+  if (id === req.user!.sessionId) res.clearCookie(AUTH_COOKIE_NAME, authCookieClearOptions());
+  res.json({ success: true });
+});
+
+// POST /api/auth/sessions/revoke-all — sign out everywhere except this device.
+router.post("/sessions/revoke-all", authenticateToken, async (req, res) => {
+  const count = await revokeAllSessions(req.user!.userId, "revoked_by_user", req.user!.tokenId);
+  res.json({ success: true, revokedCount: count });
+});
+
+// GET /api/auth/login-history — the caller's own login attempts, newest first.
+router.get("/login-history", authenticateToken, async (req, res) => {
+  const limit = Math.min(Math.max(Number(req.query.limit) || 25, 1), 100);
+  const entries = await listLoginHistory(req.user!.userId, limit);
+  res.json({
+    entries: entries.map(e => ({
+      id: e.id,
+      ipAddress: e.ipAddress,
+      deviceLabel: e.deviceLabel,
+      success: e.success,
+      failureReason: e.failureReason,
+      suspicious: e.suspicious,
+      suspiciousReasons: e.suspiciousReasons ? e.suspiciousReasons.split(",") : [],
+      createdAt: e.createdAt,
+    })),
+  });
 });
 
 router.get("/session", optionalAuth, async (req, res) => {
@@ -241,6 +341,9 @@ router.post("/reset-password", authRateLimit, async (req, res) => {
   const passwordHash = await bcrypt.hash(password, 12);
   await db.update(usersTable).set({ passwordHash, passwordResetToken: null, passwordResetExpires: null }).where(eq(usersTable.id, user.id));
 
+  // A reset means the account may have been compromised — drop every session.
+  await revokeAllSessions(user.id, "password_reset");
+
   res.json({ success: true, message: "Password has been reset" });
 });
 
@@ -262,7 +365,10 @@ router.post("/change-password", authenticateToken, async (req, res) => {
   const passwordHash = await bcrypt.hash(newPassword, 12);
   await db.update(usersTable).set({ passwordHash }).where(eq(usersTable.id, user.id));
 
-  res.json({ success: true, message: "Password updated" });
+  // Keep the caller signed in, but drop every other device.
+  const revokedCount = await revokeAllSessions(user.id, "password_changed", req.user!.tokenId);
+
+  res.json({ success: true, message: "Password updated", revokedSessionCount: revokedCount });
 });
 
 export default router;

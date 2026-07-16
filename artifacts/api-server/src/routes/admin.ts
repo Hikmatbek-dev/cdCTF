@@ -10,6 +10,7 @@ import {
 import { eq, and, desc, sql, inArray } from "drizzle-orm";
 import { authenticateToken, requireAdmin } from "../middleware/auth";
 import { writeAuditLog } from "../lib/audit";
+import { revokeAllSessions } from "../lib/sessions";
 import { hashFlag } from "../lib/flags";
 import { logger } from "../lib/logger";
 import { filterAllowedUpdates } from "../lib/rbac";
@@ -113,8 +114,9 @@ router.post("/users/:id/block", async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid user id" });
   await db.update(usersTable).set({ isBlocked: true }).where(eq(usersTable.id, id));
-  await writeAuditLog(req, "user.block", "user", id);
-  res.json({ success: true, message: "User blocked" });
+  const revokedCount = await revokeAllSessions(id, "user_blocked");
+  await writeAuditLog(req, "user.block", "user", id, { revokedSessionCount: revokedCount });
+  res.json({ success: true, message: "User blocked", revokedSessionCount: revokedCount });
 });
 
 // POST /api/admin/users/:id/unblock
