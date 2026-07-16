@@ -2,11 +2,11 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, ctfAttemptsTable, userLessonAttemptsTable, userTitlesTable, titlesTable } from "@workspace/db/schema";
 import { eq, and, desc, like, or, sql } from "drizzle-orm";
-import { optionalAuth } from "../middleware/auth";
+import { optionalAuth, requireScope } from "../middleware/auth";
 
 const router = Router();
 
-router.get("/", optionalAuth, async (req, res) => {
+router.get("/", optionalAuth, requireScope("scoreboard:read"), async (req, res) => {
   const page = Math.max(Number(req.query.page) || 1, 1);
   const limit = Math.min(Number(req.query.limit) || 25, 100);
   const search = typeof req.query.search === "string" ? req.query.search.trim() : "";

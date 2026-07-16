@@ -78,9 +78,21 @@ export function isStaff(role: UserRole): boolean {
   return hasPermission(role, "admin.panel");
 }
 
+const API_TOKEN_REFUSED = "This endpoint requires an interactive session";
+
+/**
+ * API tokens are user-level by construction: no scope grants a staff permission,
+ * so a token minted by an admin still cannot administer anything. Checked here
+ * rather than per-route, so it holds for every permission-gated endpoint.
+ */
+function staffCapable(req: Request): boolean {
+  return req.user?.tokenType === "session";
+}
+
 export function requirePermission(permission: Permission) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+    if (!staffCapable(req)) return res.status(403).json({ error: API_TOKEN_REFUSED });
     if (!hasPermission(req.user.role, permission)) return res.status(403).json({ error: "Forbidden" });
     next();
   };
@@ -90,6 +102,7 @@ export function requirePermission(permission: Permission) {
 export function requireAnyPermission(...permissions: Permission[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+    if (!staffCapable(req)) return res.status(403).json({ error: API_TOKEN_REFUSED });
     if (!permissions.some(permission => hasPermission(req.user!.role, permission))) {
       return res.status(403).json({ error: "Forbidden" });
     }
@@ -99,6 +112,7 @@ export function requireAnyPermission(...permissions: Permission[]) {
 
 export function requireStaff(req: Request, res: Response, next: NextFunction) {
   if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+  if (!staffCapable(req)) return res.status(403).json({ error: API_TOKEN_REFUSED });
   if (!isStaff(req.user.role)) return res.status(403).json({ error: "Forbidden" });
   next();
 }

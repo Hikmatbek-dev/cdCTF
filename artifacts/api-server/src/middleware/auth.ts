@@ -4,6 +4,13 @@ import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { findActiveSession, touchSession } from "../lib/sessions";
+import {
+  findActiveApiToken,
+  looksLikeApiToken,
+  parseScopes,
+  touchApiToken,
+  type ApiScope,
+} from "../lib/api-tokens";
 import { isUserRole, normalizeRole, type UserRole } from "../lib/permissions";
 import { logger } from "../lib/logger";
 
@@ -43,13 +50,28 @@ const effectiveJwtSecret = JWT_SECRET || "cdctf_dev_secret_change_me";
 export type { UserRole };
 export { normalizeRole };
 
-export interface AuthPayload {
+/** A real interactive login: cookie or session JWT, backed by `user_sessions`. */
+export interface SessionAuth {
+  tokenType: "session";
   userId: number;
   role: UserRole;
   /** `jti` of the backing row in `user_sessions`. */
   tokenId: string;
   sessionId: number;
 }
+
+/** A personal access token. Always user-level, whatever the account's role. */
+export interface ApiTokenAuth {
+  tokenType: "api";
+  userId: number;
+  role: UserRole;
+  apiTokenId: number;
+  scopes: ApiScope[];
+}
+
+// A union rather than optional fields on purpose: a route that needs a real
+// session cannot reach for `tokenId` without first proving it has one.
+export type AuthPayload = SessionAuth | ApiTokenAuth;
 
 interface TokenClaims {
   userId: number;
@@ -90,24 +112,20 @@ function verifyClaims(token: string): TokenClaims | null {
  * than trusted from the token, so blocking a user or demoting an admin takes
  * effect immediately instead of when their 30-day token happens to expire.
  */
-async function resolveSession(token: string): Promise<AuthPayload | null> {
+async function resolveSession(token: string): Promise<SessionAuth | null> {
   const claims = verifyClaims(token);
   if (!claims) return null;
 
   const session = await findActiveSession(claims.jti);
   if (!session || session.userId !== claims.userId) return null;
 
-  const [user] = await db.select({
-    id: usersTable.id,
-    role: usersTable.role,
-    isBlocked: usersTable.isBlocked,
-  }).from(usersTable).where(eq(usersTable.id, session.userId)).limit(1);
-
-  if (!user || user.isBlocked) return null;
+  const user = await loadLiveUser(session.userId);
+  if (!user) return null;
 
   await touchSession(session);
 
   return {
+    tokenType: "session",
     userId: user.id,
     role: normalizeRole(user.role),
     tokenId: session.tokenId,
@@ -115,11 +133,44 @@ async function resolveSession(token: string): Promise<AuthPayload | null> {
   };
 }
 
+async function resolveApiToken(token: string): Promise<ApiTokenAuth | null> {
+  const row = await findActiveApiToken(token);
+  if (!row) return null;
+
+  const user = await loadLiveUser(row.userId);
+  if (!user) return null;
+
+  await touchApiToken(row);
+
+  return {
+    tokenType: "api",
+    userId: user.id,
+    role: normalizeRole(user.role),
+    apiTokenId: row.id,
+    scopes: parseScopes(row.scopes),
+  };
+}
+
+/** The role and blocked flag always come from the database, never the token. */
+async function loadLiveUser(userId: number) {
+  const [user] = await db.select({
+    id: usersTable.id,
+    role: usersTable.role,
+    isBlocked: usersTable.isBlocked,
+  }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+
+  return user && !user.isBlocked ? user : null;
+}
+
+async function resolveAuth(token: string): Promise<AuthPayload | null> {
+  return looksLikeApiToken(token) ? resolveApiToken(token) : resolveSession(token);
+}
+
 export async function authenticateToken(req: Request, res: Response, next: NextFunction) {
   const token = getRequestToken(req);
   if (!token) return res.status(401).json({ error: "Unauthorized" });
 
-  const auth = await resolveSession(token);
+  const auth = await resolveAuth(token);
   if (!auth) return res.status(401).json({ error: "Invalid token" });
 
   req.user = auth;
@@ -129,7 +180,7 @@ export async function authenticateToken(req: Request, res: Response, next: NextF
 export async function optionalAuth(req: Request, _res: Response, next: NextFunction) {
   const token = getRequestToken(req);
   if (token) {
-    const auth = await resolveSession(token);
+    const auth = await resolveAuth(token);
     if (auth) req.user = auth;
   }
   next();
@@ -137,8 +188,49 @@ export async function optionalAuth(req: Request, _res: Response, next: NextFunct
 
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+  if (req.user.tokenType !== "session") return res.status(403).json({ error: "This endpoint requires an interactive session" });
   if (req.user.role !== "admin") return res.status(403).json({ error: "Forbidden" });
   next();
+}
+
+/**
+ * Gate for anything an API token must never do: change credentials, manage 2FA,
+ * or manage sessions. A leaked token should not be able to take over the account
+ * it came from.
+ */
+export function requireSession(req: Request, res: Response, next: NextFunction) {
+  if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+  if (req.user.tokenType !== "session") {
+    return res.status(403).json({ error: "This endpoint requires an interactive session" });
+  }
+  next();
+}
+
+/** Narrows to a session, for routes already behind `requireSession`. */
+export function sessionOf(req: Request): SessionAuth {
+  if (req.user?.tokenType !== "session") {
+    // Unreachable behind requireSession; throwing beats returning a wrong shape.
+    throw new Error("sessionOf called on a request without a session");
+  }
+  return req.user;
+}
+
+/**
+ * Narrows API tokens only.
+ *
+ * It deliberately does not authenticate: whether the route is public, optional,
+ * or session-gated is decided by the `optionalAuth`/`authenticateToken` in front
+ * of it. Rejecting anonymous callers here would silently close every public
+ * route this is attached to.
+ */
+export function requireScope(scope: ApiScope) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (req.user?.tokenType !== "api") return next();
+    if (!req.user.scopes.includes(scope)) {
+      return res.status(403).json({ error: `Token is missing the '${scope}' scope` });
+    }
+    next();
+  };
 }
 
 export function generateToken(userId: number, role: string, tokenId: string): string {

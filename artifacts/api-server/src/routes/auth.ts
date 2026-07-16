@@ -2,7 +2,7 @@ import { Router, type Response } from "express";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import { usersTable, userBackupCodesTable } from "@workspace/db/schema";
+import { usersTable, userBackupCodesTable, apiTokensTable } from "@workspace/db/schema";
 import { and, eq, isNull, or, sql } from "drizzle-orm";
 import {
   AUTH_COOKIE_NAME,
@@ -12,6 +12,9 @@ import {
   verifyMfaToken,
   authenticateToken,
   optionalAuth,
+  requireSession,
+  requireScope,
+  sessionOf,
 } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/security";
 import { sendVerificationEmail, verifyTurnstileToken, sendPasswordResetEmail } from "../lib/integrations";
@@ -38,6 +41,16 @@ import {
   totpUri,
   verifyTotp,
 } from "../lib/mfa";
+import {
+  API_SCOPES,
+  TOKEN_PREFIX,
+  generateApiToken,
+  isApiScope,
+  listApiTokens,
+  parseScopes,
+  revokeApiToken,
+  type ApiScope,
+} from "../lib/api-tokens";
 
 const router = Router();
 const authRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20, keyPrefix: "auth" });
@@ -318,7 +331,7 @@ router.get("/2fa/status", authenticateToken, async (req, res) => {
 
 // POST /api/auth/2fa/setup — start enrolment. Does nothing until /2fa/enable
 // confirms the user can actually produce a code from the secret.
-router.post("/2fa/setup", authenticateToken, mfaManageRateLimit, async (req, res) => {
+router.post("/2fa/setup", authenticateToken, requireSession, mfaManageRateLimit, async (req, res) => {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
   if (!user) return res.status(404).json({ error: "User not found" });
   if (user.totpEnabled) return res.status(409).json({ error: "Two-factor authentication is already enabled" });
@@ -332,7 +345,7 @@ router.post("/2fa/setup", authenticateToken, mfaManageRateLimit, async (req, res
 });
 
 // POST /api/auth/2fa/enable — confirm enrolment and hand back the backup codes.
-router.post("/2fa/enable", authenticateToken, mfaManageRateLimit, async (req, res) => {
+router.post("/2fa/enable", authenticateToken, requireSession, mfaManageRateLimit, async (req, res) => {
   const { code } = req.body ?? {};
   if (typeof code !== "string" || !code.trim()) return res.status(400).json({ error: "Code is required" });
 
@@ -365,7 +378,7 @@ router.post("/2fa/enable", authenticateToken, mfaManageRateLimit, async (req, re
 
 // POST /api/auth/2fa/disable — password plus a live code, because turning the
 // protection off is exactly what a session thief would want to do.
-router.post("/2fa/disable", authenticateToken, mfaManageRateLimit, async (req, res) => {
+router.post("/2fa/disable", authenticateToken, requireSession, mfaManageRateLimit, async (req, res) => {
   const { password, code } = req.body ?? {};
   if (typeof password !== "string" || typeof code !== "string") {
     return res.status(400).json({ error: "Password and code are required" });
@@ -395,7 +408,7 @@ router.post("/2fa/disable", authenticateToken, mfaManageRateLimit, async (req, r
 });
 
 // POST /api/auth/2fa/backup-codes — regenerate, invalidating the old set.
-router.post("/2fa/backup-codes", authenticateToken, mfaManageRateLimit, async (req, res) => {
+router.post("/2fa/backup-codes", authenticateToken, requireSession, mfaManageRateLimit, async (req, res) => {
   const { password } = req.body ?? {};
   if (typeof password !== "string") return res.status(400).json({ error: "Password is required" });
 
@@ -416,14 +429,14 @@ router.post("/2fa/backup-codes", authenticateToken, mfaManageRateLimit, async (r
   res.json({ success: true, backupCodes: codes });
 });
 
-router.post("/logout", authenticateToken, async (req, res) => {
-  await revokeSessionByTokenId(req.user!.tokenId, "logout");
+router.post("/logout", authenticateToken, requireSession, async (req, res) => {
+  await revokeSessionByTokenId(sessionOf(req).tokenId, "logout");
   res.clearCookie(AUTH_COOKIE_NAME, authCookieClearOptions());
   res.json({ success: true, message: "Logged out" });
 });
 
 // GET /api/auth/sessions — device management: every live session for the caller.
-router.get("/sessions", authenticateToken, async (req, res) => {
+router.get("/sessions", authenticateToken, requireSession, async (req, res) => {
   const sessions = await listSessions(req.user!.userId);
   res.json({
     sessions: sessions.map(s => ({
@@ -433,27 +446,104 @@ router.get("/sessions", authenticateToken, async (req, res) => {
       createdAt: s.createdAt,
       lastSeenAt: s.lastSeenAt,
       expiresAt: s.expiresAt,
-      isCurrent: s.tokenId === req.user!.tokenId,
+      isCurrent: s.tokenId === sessionOf(req).tokenId,
     })),
   });
 });
 
 // DELETE /api/auth/sessions/:id — sign a single device out.
-router.delete("/sessions/:id", authenticateToken, async (req, res) => {
+router.delete("/sessions/:id", authenticateToken, requireSession, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid session id" });
 
   const revoked = await revokeSessionById(id, req.user!.userId, "revoked_by_user");
   if (!revoked) return res.status(404).json({ error: "Session not found" });
 
-  if (id === req.user!.sessionId) res.clearCookie(AUTH_COOKIE_NAME, authCookieClearOptions());
+  if (id === sessionOf(req).sessionId) res.clearCookie(AUTH_COOKIE_NAME, authCookieClearOptions());
   res.json({ success: true });
 });
 
 // POST /api/auth/sessions/revoke-all — sign out everywhere except this device.
-router.post("/sessions/revoke-all", authenticateToken, async (req, res) => {
-  const count = await revokeAllSessions(req.user!.userId, "revoked_by_user", req.user!.tokenId);
+router.post("/sessions/revoke-all", authenticateToken, requireSession, async (req, res) => {
+  const count = await revokeAllSessions(req.user!.userId, "revoked_by_user", sessionOf(req).tokenId);
   res.json({ success: true, revokedCount: count });
+});
+
+// GET /api/auth/api-tokens — the caller's live tokens. The secret is never
+// returned again after creation; `prefix` is what identifies one in a list.
+router.get("/api-tokens", authenticateToken, requireSession, async (req, res) => {
+  const tokens = await listApiTokens(req.user!.userId);
+  res.json({
+    tokens: tokens.map(token => ({
+      id: token.id,
+      name: token.name,
+      prefix: `${TOKEN_PREFIX}${token.prefix}…`,
+      scopes: parseScopes(token.scopes),
+      lastUsedAt: token.lastUsedAt,
+      expiresAt: token.expiresAt,
+      createdAt: token.createdAt,
+    })),
+    availableScopes: API_SCOPES,
+  });
+});
+
+// POST /api/auth/api-tokens — mint one. The only time the secret is readable.
+router.post("/api-tokens", authenticateToken, requireSession, async (req, res) => {
+  const { name, scopes, expiresInDays } = req.body ?? {};
+
+  if (typeof name !== "string" || !name.trim() || name.length > 64) {
+    return res.status(400).json({ error: "Name is required (1-64 characters)" });
+  }
+  if (!Array.isArray(scopes) || scopes.length === 0) {
+    return res.status(400).json({ error: "At least one scope is required" });
+  }
+  const invalid = scopes.filter(scope => !isApiScope(scope));
+  if (invalid.length > 0) {
+    return res.status(400).json({ error: `Unknown scope(s): ${invalid.join(", ")}. Valid: ${API_SCOPES.join(", ")}` });
+  }
+
+  let expiresAt: Date | null = null;
+  if (expiresInDays !== undefined && expiresInDays !== null) {
+    const days = Number(expiresInDays);
+    if (!Number.isFinite(days) || days <= 0 || days > 365) {
+      return res.status(400).json({ error: "expiresInDays must be between 1 and 365" });
+    }
+    expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  }
+
+  const existing = await listApiTokens(req.user!.userId);
+  if (existing.length >= 20) return res.status(409).json({ error: "Token limit reached (20). Revoke one first." });
+
+  const { token, tokenHash, prefix } = generateApiToken();
+  const [created] = await db.insert(apiTokensTable).values({
+    userId: req.user!.userId,
+    name: name.trim(),
+    tokenHash,
+    prefix,
+    scopes: [...new Set(scopes as ApiScope[])].join(","),
+    expiresAt,
+  }).returning();
+
+  await writeAuditLog(req, "api_token.create", "api_token", created.id, { name: created.name, scopes });
+  res.status(201).json({
+    id: created.id,
+    name: created.name,
+    scopes: parseScopes(created.scopes),
+    expiresAt: created.expiresAt,
+    // Shown once. There is no way to recover it — only the hash is stored.
+    token,
+  });
+});
+
+// DELETE /api/auth/api-tokens/:id
+router.delete("/api-tokens/:id", authenticateToken, requireSession, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid token id" });
+
+  if (!await revokeApiToken(id, req.user!.userId)) return res.status(404).json({ error: "Token not found" });
+
+  await writeAuditLog(req, "api_token.revoke", "api_token", id);
+  res.json({ success: true });
 });
 
 // GET /api/auth/login-history — the caller's own login attempts, newest first.
@@ -495,7 +585,7 @@ router.get("/session", optionalAuth, async (req, res) => {
   });
 });
 
-router.get("/me", authenticateToken, async (req, res) => {
+router.get("/me", authenticateToken, requireScope("profile:read"), async (req, res) => {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
   if (!user) return res.status(404).json({ error: "User not found" });
   res.json({ id: user.id, nickname: user.nickname, email: user.email, avatarUrl: user.avatarUrl, points: user.points, role: user.role, emailVerified: user.emailVerified, isBlocked: user.isBlocked, createdAt: user.createdAt });
@@ -574,7 +664,7 @@ router.post("/reset-password", authRateLimit, async (req, res) => {
   res.json({ success: true, message: "Password has been reset" });
 });
 
-router.post("/change-password", authenticateToken, async (req, res) => {
+router.post("/change-password", authenticateToken, requireSession, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   if (typeof oldPassword !== "string" || typeof newPassword !== "string") {
     return res.status(400).json({ error: "Passwords required" });
@@ -593,7 +683,7 @@ router.post("/change-password", authenticateToken, async (req, res) => {
   await db.update(usersTable).set({ passwordHash }).where(eq(usersTable.id, user.id));
 
   // Keep the caller signed in, but drop every other device.
-  const revokedCount = await revokeAllSessions(user.id, "password_changed", req.user!.tokenId);
+  const revokedCount = await revokeAllSessions(user.id, "password_changed", sessionOf(req).tokenId);
 
   res.json({ success: true, message: "Password updated", revokedSessionCount: revokedCount });
 });

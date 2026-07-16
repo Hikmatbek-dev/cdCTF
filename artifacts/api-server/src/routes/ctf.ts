@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from "express";
 import { db } from "@workspace/db";
 import { ctfTasksTable, ctfAttemptsTable, usersTable, userTitlesTable, titlesTable } from "@workspace/db/schema";
 import { eq, and, sql } from "drizzle-orm";
-import { authenticateToken, optionalAuth } from "../middleware/auth";
+import { authenticateToken, optionalAuth, requireScope } from "../middleware/auth";
 import { hashFlag, isHashedFlag, verifyFlag } from "../lib/flags";
 import { createRateLimiter } from "../middleware/security";
 import { logger } from "../lib/logger";
@@ -11,7 +11,7 @@ const router = Router();
 const flagRateLimit = createRateLimiter({ windowMs: 1 * 60 * 1000, max: 10, keyPrefix: "flag" });
 
 // GET /api/ctf
-router.get("/", optionalAuth, async (req, res) => {
+router.get("/", optionalAuth, requireScope("ctf:read"), async (req, res) => {
   const { category, difficulty, search, solved } = req.query as Record<string, string>;
   const page = Math.max(Number(req.query.page) || 1, 1);
   const limit = Math.min(Number(req.query.limit) || 25, 100);
@@ -74,7 +74,7 @@ router.get("/", optionalAuth, async (req, res) => {
 });
 
 // GET /api/ctf/:id
-router.get("/:id", optionalAuth, async (req, res) => {
+router.get("/:id", optionalAuth, requireScope("ctf:read"), async (req, res) => {
   const ctfId = Number(req.params.id);
   const userId = req.user?.userId;
 
@@ -182,10 +182,10 @@ async function submitFlagHandler(req: Request, res: Response) {
 }
 
 // POST /api/ctf/:id/submit
-router.post("/:id/submit", authenticateToken, flagRateLimit, submitFlagHandler);
+router.post("/:id/submit", authenticateToken, requireScope("ctf:submit"), flagRateLimit, submitFlagHandler);
 
 // Backward-compatible alias.
-router.post("/:id/flag", authenticateToken, flagRateLimit, submitFlagHandler);
+router.post("/:id/flag", authenticateToken, requireScope("ctf:submit"), flagRateLimit, submitFlagHandler);
 
 async function checkAndAwardTitle(userId: number, category: string) {
   const categoryTitleMap: Record<string, string> = {

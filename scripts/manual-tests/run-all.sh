@@ -52,7 +52,7 @@ echo "==> Build"
 (cd "$ROOT/artifacts/api-server" && npm run build > /dev/null 2>&1) || exit 1
 
 # lesson-test-honest reuses the lesson that lesson-test-exploit seeds, so order matters.
-SUITES="lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor"
+SUITES="lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens"
 FAILED=""
 
 for suite in $SUITES; do
