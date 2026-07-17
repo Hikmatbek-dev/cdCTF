@@ -46,6 +46,21 @@ export async function ensureDatabaseShape() {
     )
   `);
 
+  // Mirrors lib/db/src/schema/rate-limits.ts. Both halves are required: this is
+  // what production runs, that is what the tests and types come from, and
+  // schema-parity.sh fails if they disagree.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS rate_limits (
+      key text PRIMARY KEY,
+      count integer NOT NULL DEFAULT 0,
+      reset_at timestamptz NOT NULL
+    )
+  `);
+  await createIndexSafely(
+    "rate_limits_reset_at_idx",
+    "CREATE INDEX IF NOT EXISTS rate_limits_reset_at_idx ON rate_limits(reset_at)",
+  );
+
   await pool.query("ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS file_id integer REFERENCES ctf_files(id)");
   await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS invite_code text");
   await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS competitions_invite_code_idx ON competitions(invite_code) WHERE invite_code IS NOT NULL");

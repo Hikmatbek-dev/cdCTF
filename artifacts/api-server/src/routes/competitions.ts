@@ -13,7 +13,9 @@ import { awardPoints } from "../lib/scoring";
 const router = Router();
 // Same budget as the standalone CTF submit route — without it this endpoint is a
 // rate-limit-free path to the very same flag check.
-const flagRateLimit = createRateLimiter({ windowMs: 1 * 60 * 1000, max: 10, keyPrefix: "flag" });
+// "shared": stopping flag grinding is the point, so the budget cannot reset
+// each time the platform hands the attacker a different instance.
+const flagRateLimit = createRateLimiter({ windowMs: 1 * 60 * 1000, max: 10, keyPrefix: "flag", store: "shared" });
 
 function getStatus(startTime: Date, endTime: Date): "upcoming" | "active" | "ended" {
   const now = new Date();

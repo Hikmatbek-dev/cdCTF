@@ -1,5 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import type { CorsOptions } from "cors";
+import { pool } from "@workspace/db";
+import { logger } from "../lib/logger";
 
 const DEFAULT_ALLOWED_ORIGINS = [
   "http://localhost:3000",
@@ -69,44 +71,119 @@ export function securityHeaders(_req: Request, res: Response, next: NextFunction
   next();
 }
 
-type RateLimitEntry = {
-  count: number;
-  resetAt: number;
-};
-
-const buckets = new Map<string, RateLimitEntry>();
+type MemoryEntry = { count: number; resetAt: number };
+const buckets = new Map<string, MemoryEntry>();
 
 // Entries are only ever overwritten when the same IP comes back, so without a
 // sweep every one-shot IP leaks a Map entry for the lifetime of the process.
 const SWEEP_INTERVAL_MS = 5 * 60 * 1000;
-
-function sweepExpiredBuckets() {
+const sweepTimer = setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of buckets) {
     if (entry.resetAt <= now) buckets.delete(key);
   }
-}
-
-const sweepTimer = setInterval(sweepExpiredBuckets, SWEEP_INTERVAL_MS);
+}, SWEEP_INTERVAL_MS);
 // Never hold the process open just to sweep an in-memory cache.
 sweepTimer.unref?.();
 
-export function createRateLimiter(options: { windowMs: number; max: number; keyPrefix: string }) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const now = Date.now();
+function countRequestInMemory(key: string, windowMs: number): MemoryEntry {
+  const now = Date.now();
+  const entry = buckets.get(key);
+  if (!entry || entry.resetAt <= now) {
+    const fresh = { count: 1, resetAt: now + windowMs };
+    buckets.set(key, fresh);
+    return fresh;
+  }
+  entry.count += 1;
+  return entry;
+}
+
+/**
+ * Counts a request against its bucket and reports where that leaves it.
+ *
+ * One statement, so it is atomic without an explicit transaction: concurrent
+ * requests for the same key serialise on the row, which is the whole point —
+ * a flood is exactly when a read-then-write would lose counts to the race.
+ *
+ * An expired window is reset in the same statement rather than swept first,
+ * so a stale row never spends a request's allowance.
+ */
+async function countRequest(key: string, windowMs: number) {
+  const { rows } = await pool.query<{ count: number; reset_at: Date }>(
+    `INSERT INTO rate_limits (key, count, reset_at)
+     VALUES ($1, 1, now() + make_interval(secs => $2))
+     ON CONFLICT (key) DO UPDATE SET
+       count = CASE WHEN rate_limits.reset_at <= now() THEN 1 ELSE rate_limits.count + 1 END,
+       reset_at = CASE WHEN rate_limits.reset_at <= now() THEN now() + make_interval(secs => $2) ELSE rate_limits.reset_at END
+     RETURNING count, reset_at`,
+    [key, windowMs / 1000],
+  );
+  return rows[0];
+}
+
+// Expired rows are dead weight; nothing reads them and every key an attacker
+// invents leaves one. There is no timer to sweep them on serverless — the
+// process does not outlive the request — so a small share of requests pays for
+// the cleanup instead. Rows are kept an hour past expiry so a sweep never
+// races a window that is still being counted against.
+const SWEEP_PROBABILITY = 0.01;
+
+async function sweepExpired() {
+  await pool.query("DELETE FROM rate_limits WHERE reset_at < now() - interval '1 hour'");
+}
+
+/**
+ * @param store Which counter this bucket keeps, and it is not a tuning knob.
+ *
+ * "shared" counts in Postgres, across every instance. Use it whenever the limit
+ * IS the security control — login, TOTP, password reset. Per-instance counting
+ * there is not a weaker limit, it is a broken one: the flood that trips it is
+ * also what makes the platform add instances, each with a fresh allowance.
+ *
+ * "instance" counts in this process's memory. Use it when the limit protects
+ * THIS process — its event loop, its connections. Per-instance is the correct
+ * meaning there, and it also keeps a blanket limiter from putting a database
+ * write in front of every request, including the ones serving static files.
+ */
+export function createRateLimiter(options: {
+  windowMs: number;
+  max: number;
+  keyPrefix: string;
+  store: "shared" | "instance";
+}) {
+  return async (req: Request, res: Response, next: NextFunction) => {
     const ip = req.ip || req.socket.remoteAddress || "unknown";
     const key = `${options.keyPrefix}:${ip}`;
-    const entry = buckets.get(key);
 
-    if (!entry || entry.resetAt <= now) {
-      buckets.set(key, { count: 1, resetAt: now + options.windowMs });
+    if (options.store === "instance") {
+      const entry = countRequestInMemory(key, options.windowMs);
+      if (entry.count > options.max) {
+        res.setHeader("Retry-After", Math.max(1, Math.ceil((entry.resetAt - Date.now()) / 1000)).toString());
+        return res.status(429).json({ error: "Too many requests. Try again later." });
+      }
       return next();
     }
 
-    entry.count += 1;
-    if (entry.count > options.max) {
-      res.setHeader("Retry-After", Math.ceil((entry.resetAt - now) / 1000).toString());
+    let entry;
+    try {
+      entry = await countRequest(key, options.windowMs);
+    } catch (err) {
+      // Fail open, deliberately. Every route behind this limiter needs the
+      // database to do anything useful — a login cannot succeed without
+      // reading the user — so refusing traffic here would turn a database
+      // blip into a hard outage while buying an attacker nothing.
+      logger.error({ err, key }, "Rate limiter could not reach the database; allowing the request");
+      return next();
+    }
+
+    if (entry && entry.count > options.max) {
+      const retryAfterSec = Math.max(1, Math.ceil((entry.reset_at.getTime() - Date.now()) / 1000));
+      res.setHeader("Retry-After", retryAfterSec.toString());
       return res.status(429).json({ error: "Too many requests. Try again later." });
+    }
+
+    if (Math.random() < SWEEP_PROBABILITY) {
+      void sweepExpired().catch(err => logger.error({ err }, "Rate limit sweep failed"));
     }
 
     return next();

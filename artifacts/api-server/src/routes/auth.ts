@@ -97,13 +97,15 @@ import {
 } from "../lib/passkeys";
 
 const router = Router();
-const authRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20, keyPrefix: "auth" });
+// "shared": these are the brute-force limits, so they must hold across every
+// instance. Counting per instance made the limit meaningless on serverless.
+const authRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20, keyPrefix: "auth", store: "shared" });
 // The login 2FA step is the brute-force target: unauthenticated, and a 6-digit
 // space with a ~90s window. It gets a tight budget of its own.
-const mfaVerifyRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 10, keyPrefix: "mfa_verify" });
+const mfaVerifyRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 10, keyPrefix: "mfa_verify", store: "shared" });
 // Enrolment and management already require a live session, so they only need to
 // stop an authenticated attacker grinding codes — not share the verify budget.
-const mfaManageRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 30, keyPrefix: "mfa_manage" });
+const mfaManageRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 30, keyPrefix: "mfa_manage", store: "shared" });
 const emailDeliveryRequired = process.env.EMAIL_VERIFICATION_REQUIRED === "true";
 
 function authCookieOptions() {

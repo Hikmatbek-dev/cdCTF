@@ -9,7 +9,9 @@ import { createRateLimiter } from "../middleware/security";
 import { logger } from "../lib/logger";
 
 const router = Router();
-const flagRateLimit = createRateLimiter({ windowMs: 1 * 60 * 1000, max: 10, keyPrefix: "flag" });
+// "shared": stopping flag grinding is the point, so the budget cannot reset
+// each time the platform hands the attacker a different instance.
+const flagRateLimit = createRateLimiter({ windowMs: 1 * 60 * 1000, max: 10, keyPrefix: "flag", store: "shared" });
 
 // GET /api/ctf
 router.get("/", optionalAuth, requireScope("ctf:read"), async (req, res) => {

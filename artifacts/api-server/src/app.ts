@@ -37,7 +37,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 app.use(securityHeaders);
 app.use(cors(corsOptions));
-app.use(createRateLimiter({ windowMs: 15 * 60 * 1000, max: 600, keyPrefix: "global" }));
+// "instance": this one guards this process against being hammered, and it sits
+// in front of every request including static files — a shared counter here
+// would mean a database write per asset. The limits that are actually security
+// controls are on the auth routes, and those are shared.
+app.use(createRateLimiter({ windowMs: 15 * 60 * 1000, max: 600, keyPrefix: "global", store: "instance" }));
 app.use(cookieParser());
 app.use(express.json({ limit: REQUEST_BODY_LIMIT }));
 app.use(express.urlencoded({ extended: true, limit: REQUEST_BODY_LIMIT }));

@@ -106,18 +106,23 @@ echo "==> Build"
 
 echo "==> Port: $API_PORT"
 
-# The server is restarted between suites on purpose: the auth rate limiter
-# (20 requests / 15 min / IP) lives in memory, and running the suites
-# back-to-back from one IP exhausts it — every login then 429s and the suites
-# fail with 401s that have nothing to do with the code.
+# The auth rate limiter allows 20 requests / 15 min / IP, and every suite here
+# runs from one IP. Left alone, the suites exhaust it between them and fail with
+# 429s that say nothing about the code.
+#
+# Restarting the server used to be enough, because the counter was a Map in the
+# process. It now lives in Postgres — that was the point, so that it survives an
+# instance — and surviving a restart is the same property. So the counters are
+# truncated instead. Safe: $DB is created and dropped by this script.
 #
 # lesson-test-honest reuses the lesson that lesson-test-exploit seeds, so order matters.
-SUITES="lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens oauth passkeys scoring scoreboard profile validation captcha captcha-failclosed"
+SUITES="lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens oauth passkeys scoring scoreboard profile validation captcha captcha-failclosed rate-limit"
 FAILED=""
 
 for suite in $SUITES; do
   echo
   echo "############ $suite ############"
+  psql "$DATABASE_URL" -q -c "TRUNCATE rate_limits" > /dev/null 2>&1
   start_server "$suite"
   output=$(bash "$ROOT/scripts/manual-tests/$suite.sh" 2>&1)
   echo "$output" | grep -E "❌|🎉|⚠️"
