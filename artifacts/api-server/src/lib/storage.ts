@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { logger } from "./logger";
 
 export const MAX_CTF_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 
@@ -120,7 +121,19 @@ export async function uploadBufferToStorage(params: {
     if (isServerless) {
       const { pool } = await import("@workspace/db");
       const base64 = params.buffer.toString("base64");
-      
+
+      // Loudly, because this path works — which is the problem. Nothing fails,
+      // so a deploy missing its storage keys quietly starts packing 25MB
+      // challenge files into Postgres as base64, a third larger than the file
+      // itself, into every backup, with no sign until the database is huge.
+      logger.warn(
+        { filename: params.filename, bytes: params.buffer.length },
+        "Supabase Storage is not configured, so this upload is going into Postgres as base64. "
+          + "That is a fallback for serverless, not a place to keep files: set SUPABASE_URL and "
+          + "SUPABASE_SERVICE_ROLE_KEY.",
+      );
+
+
       const result = await pool.query(
         "INSERT INTO ctf_files (filename, content_type, content) VALUES ($1, $2, $3) RETURNING id",
         [params.filename, params.contentType, base64]
