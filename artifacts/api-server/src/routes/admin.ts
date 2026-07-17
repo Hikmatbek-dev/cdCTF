@@ -9,6 +9,21 @@ import {
 } from "@workspace/db/schema";
 import { eq, and, desc, sql, inArray } from "drizzle-orm";
 import { authenticateToken } from "../middleware/auth";
+import { validateBody } from "../middleware/validate";
+import {
+  AdminCreateCompetitionBody,
+  AdminCreateCtfBody,
+  AdminCreateLessonBody,
+  AdminUpdateCompetitionBody,
+  AdminUpdateCtfBody,
+  AdminUpdateLessonBody,
+  PublishCtfBody,
+  PublishLessonBody,
+  SetUserRoleBody,
+  UpdateCompetitionBody,
+  UpdateCtfBody,
+  UpdateLessonBody,
+} from "@workspace/api-zod";
 import { writeAuditLog } from "../lib/audit";
 import { revokeAllSessions } from "../lib/sessions";
 import { recalculateAllUsers, recalculateUsers } from "../lib/scoring";
@@ -174,7 +189,7 @@ router.get("/ctf/:id", requirePermission("ctf.read.all"), async (req, res) => {
   res.json(task);
 });
 
-router.post("/ctf", requirePermission("ctf.create"), async (req, res) => {
+router.post("/ctf", requirePermission("ctf.create"), validateBody(AdminCreateCtfBody), async (req, res) => {
   const { name, nameUz, nameRu, description, descriptionUz, descriptionRu, category, difficulty, points, hint, flag, fileUrl } = req.body;
   if (!name || !description || !category || !difficulty || !flag) return res.status(400).json({ error: "Missing required fields" });
 
@@ -228,8 +243,8 @@ async function updateCtfHandler(req: Request, res: Response) {
   res.json(updated);
 }
 
-router.patch("/ctf/:id", requireAnyPermission("ctf.update.own", "ctf.update.any"), updateCtfHandler);
-router.put("/ctf/:id", requireAnyPermission("ctf.update.own", "ctf.update.any"), updateCtfHandler);
+router.patch("/ctf/:id", requireAnyPermission("ctf.update.own", "ctf.update.any"), validateBody(UpdateCtfBody), updateCtfHandler);
+router.put("/ctf/:id", requireAnyPermission("ctf.update.own", "ctf.update.any"), validateBody(AdminUpdateCtfBody), updateCtfHandler);
 
 // DELETE /api/admin/ctf/:id
 router.delete("/ctf/:id", requirePermission("ctf.delete"), async (req, res) => {
@@ -372,7 +387,7 @@ router.post("/unblock", requirePermission("blocks.manage"), unblockTaskHandler);
 router.post("/blocked-tasks/:type/:taskId/unblock/:userId", requirePermission("blocks.manage"), unblockTaskHandler);
 
 // POST /api/admin/competitions
-router.post("/competitions", requirePermission("competitions.manage"), async (req, res) => {
+router.post("/competitions", requirePermission("competitions.manage"), validateBody(AdminCreateCompetitionBody), async (req, res) => {
   const { name, description, type, startTime, endTime, ctfIds, inviteCode } = req.body;
   if (!name || !startTime || !endTime) return res.status(400).json({ error: "Missing fields" });
   const start = new Date(startTime);
@@ -435,8 +450,8 @@ async function updateCompetitionHandler(req: Request, res: Response) {
   res.json(updated);
 }
 
-router.patch("/competitions/:id", requirePermission("competitions.manage"), updateCompetitionHandler);
-router.put("/competitions/:id", requirePermission("competitions.manage"), updateCompetitionHandler);
+router.patch("/competitions/:id", requirePermission("competitions.manage"), validateBody(UpdateCompetitionBody), updateCompetitionHandler);
+router.put("/competitions/:id", requirePermission("competitions.manage"), validateBody(AdminUpdateCompetitionBody), updateCompetitionHandler);
 
 // POST /api/admin/competitions/:id/users
 async function addCompetitionUserHandler(req: Request, res: Response) {
@@ -474,7 +489,7 @@ router.get("/lessons/:id", requirePermission("lessons.read.all"), async (req, re
 });
 
 // POST /api/admin/lessons
-router.post("/lessons", requirePermission("lessons.create"), async (req, res) => {
+router.post("/lessons", requirePermission("lessons.create"), validateBody(AdminCreateLessonBody), async (req, res) => {
   const { title, titleUz, titleRu, content, contentUz, contentRu, categoryId, points, questions } = req.body;
   if (!title || !content || !categoryId) return res.status(400).json({ error: "Missing fields" });
 
@@ -554,11 +569,11 @@ async function updateLessonHandler(req: Request, res: Response) {
   res.json(updated);
 }
 
-router.patch("/lessons/:id", requireAnyPermission("lessons.update.own", "lessons.update.any"), updateLessonHandler);
-router.put("/lessons/:id", requireAnyPermission("lessons.update.own", "lessons.update.any"), updateLessonHandler);
+router.patch("/lessons/:id", requireAnyPermission("lessons.update.own", "lessons.update.any"), validateBody(UpdateLessonBody), updateLessonHandler);
+router.put("/lessons/:id", requireAnyPermission("lessons.update.own", "lessons.update.any"), validateBody(AdminUpdateLessonBody), updateLessonHandler);
 
 // POST /api/admin/ctf/:id/publish — flip a draft live, or take it back down.
-router.post("/ctf/:id/publish", requirePermission("ctf.publish"), async (req, res) => {
+router.post("/ctf/:id/publish", requirePermission("ctf.publish"), validateBody(PublishCtfBody), async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid CTF id" });
   const isPublished = req.body?.isPublished !== false;
@@ -571,7 +586,7 @@ router.post("/ctf/:id/publish", requirePermission("ctf.publish"), async (req, re
 });
 
 // POST /api/admin/lessons/:id/publish
-router.post("/lessons/:id/publish", requirePermission("lessons.publish"), async (req, res) => {
+router.post("/lessons/:id/publish", requirePermission("lessons.publish"), validateBody(PublishLessonBody), async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid lesson id" });
   const isPublished = req.body?.isPublished !== false;
@@ -584,7 +599,7 @@ router.post("/lessons/:id/publish", requirePermission("lessons.publish"), async 
 });
 
 // PATCH /api/admin/users/:id/role — assign user / author / moderator / admin.
-router.patch("/users/:id/role", requirePermission("users.role"), async (req, res) => {
+router.patch("/users/:id/role", requirePermission("users.role"), validateBody(SetUserRoleBody), async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid user id" });
 

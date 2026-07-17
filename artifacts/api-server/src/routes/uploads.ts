@@ -1,6 +1,8 @@
 import { Router } from "express";
 import multer from "multer";
 import { authenticateToken, requireAdmin } from "../middleware/auth";
+import { validateBody } from "../middleware/validate";
+import { SignCtfFileUploadBody } from "@workspace/api-zod";
 import { MAX_CTF_FILE_SIZE_BYTES, StorageUploadError, createSignedCtfUpload, uploadBufferToStorage } from "../lib/storage";
 import { logger } from "../lib/logger";
 
@@ -12,7 +14,7 @@ const upload = multer({
   limits: { fileSize: MAX_CTF_FILE_SIZE_BYTES, files: 1 },
 });
 
-router.post("/ctf-file/sign", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/ctf-file/sign", authenticateToken, requireAdmin, validateBody(SignCtfFileUploadBody), async (req, res) => {
   const filename = typeof req.body?.filename === "string" ? req.body.filename : "challenge.bin";
   const size = Number(req.body?.size);
 

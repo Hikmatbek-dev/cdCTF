@@ -166,8 +166,10 @@ export const SubmitCtfFlagParams = zod.object({
   id: zod.coerce.number(),
 });
 
+export const submitCtfFlagBodyFlagMax = 512;
+
 export const SubmitCtfFlagBody = zod.object({
-  flag: zod.string(),
+  flag: zod.string().min(1).max(submitCtfFlagBodyFlagMax),
 });
 
 export const SubmitCtfFlagResponse = zod.object({
@@ -482,13 +484,26 @@ export const UpdateUserProfileParams = zod.object({
 export const updateUserProfileBodyNicknameMin = 3;
 export const updateUserProfileBodyNicknameMax = 32;
 
-export const UpdateUserProfileBody = zod.object({
-  nickname: zod
-    .string()
-    .min(updateUserProfileBodyNicknameMin)
-    .max(updateUserProfileBodyNicknameMax)
-    .optional(),
-});
+export const UpdateUserProfileBody = zod
+  .object({
+    nickname: zod
+      .string()
+      .min(updateUserProfileBodyNicknameMin)
+      .max(updateUserProfileBodyNicknameMax)
+      .optional(),
+    avatarUrl: zod.string().nullish(),
+    points: zod.number().optional().describe("Admin only."),
+    role: zod
+      .enum(["user", "author", "moderator", "admin"])
+      .optional()
+      .describe("Admin only."),
+    isBlocked: zod.boolean().optional().describe("Admin only."),
+    email: zod.string().email().optional().describe("Admin only."),
+    emailVerified: zod.boolean().optional().describe("Admin only."),
+  })
+  .describe(
+    "Fields this endpoint accepts. Which of them a caller may actually set depends on their role (columnPermissions in rbac.ts); anything they may not set is dropped, and a request left with nothing to update is rejected.",
+  );
 
 export const UpdateUserProfileResponse = zod.object({
   id: zod.number(),
@@ -869,10 +884,16 @@ export const AdminUnblockTaskResponse = zod.object({
 export const AdminCreateCompetitionBody = zod.object({
   name: zod.string(),
   description: zod.string().nullish(),
-  type: zod.enum(["public", "private"]),
+  type: zod.enum(["public", "private"]).optional(),
   startTime: zod.coerce.date(),
   endTime: zod.coerce.date(),
-  ctfIds: zod.array(zod.number()),
+  ctfIds: zod.array(zod.number()).optional(),
+  inviteCode: zod
+    .string()
+    .nullish()
+    .describe(
+      "Join code for a private competition. Ignored when type is public, and generated if a private competition is created without one.",
+    ),
 });
 
 /**
@@ -885,10 +906,16 @@ export const AdminUpdateCompetitionParams = zod.object({
 export const AdminUpdateCompetitionBody = zod.object({
   name: zod.string(),
   description: zod.string().nullish(),
-  type: zod.enum(["public", "private"]),
+  type: zod.enum(["public", "private"]).optional(),
   startTime: zod.coerce.date(),
   endTime: zod.coerce.date(),
-  ctfIds: zod.array(zod.number()),
+  ctfIds: zod.array(zod.number()).optional(),
+  inviteCode: zod
+    .string()
+    .nullish()
+    .describe(
+      "Join code for a private competition. Ignored when type is public, and generated if a private competition is created without one.",
+    ),
 });
 
 export const AdminUpdateCompetitionResponse = zod.object({
@@ -956,18 +983,20 @@ export const AdminCreateLessonBody = zod.object({
   contentUz: zod.string().nullish(),
   contentRu: zod.string().nullish(),
   categoryId: zod.number(),
-  points: zod.number(),
-  questions: zod.array(
-    zod.object({
-      question: zod.string(),
-      questionUz: zod.string().nullish(),
-      questionRu: zod.string().nullish(),
-      options: zod.array(zod.string()),
-      optionsUz: zod.array(zod.string()).nullish(),
-      optionsRu: zod.array(zod.string()).nullish(),
-      correctOption: zod.number(),
-    }),
-  ),
+  points: zod.number().optional(),
+  questions: zod
+    .array(
+      zod.object({
+        question: zod.string(),
+        questionUz: zod.string().nullish(),
+        questionRu: zod.string().nullish(),
+        options: zod.array(zod.string()),
+        optionsUz: zod.array(zod.string()).nullish(),
+        optionsRu: zod.array(zod.string()).nullish(),
+        correctOption: zod.number(),
+      }),
+    )
+    .optional(),
 });
 
 /**
@@ -1021,18 +1050,20 @@ export const AdminUpdateLessonBody = zod.object({
   contentUz: zod.string().nullish(),
   contentRu: zod.string().nullish(),
   categoryId: zod.number(),
-  points: zod.number(),
-  questions: zod.array(
-    zod.object({
-      question: zod.string(),
-      questionUz: zod.string().nullish(),
-      questionRu: zod.string().nullish(),
-      options: zod.array(zod.string()),
-      optionsUz: zod.array(zod.string()).nullish(),
-      optionsRu: zod.array(zod.string()).nullish(),
-      correctOption: zod.number(),
-    }),
-  ),
+  points: zod.number().optional(),
+  questions: zod
+    .array(
+      zod.object({
+        question: zod.string(),
+        questionUz: zod.string().nullish(),
+        questionRu: zod.string().nullish(),
+        options: zod.array(zod.string()),
+        optionsUz: zod.array(zod.string()).nullish(),
+        optionsRu: zod.array(zod.string()).nullish(),
+        correctOption: zod.number(),
+      }),
+    )
+    .optional(),
 });
 
 export const AdminUpdateLessonResponse = zod.object({
@@ -1368,8 +1399,9 @@ export const SetupTwoFactorResponse = zod.object({
  * The only time the backup codes are readable — they are stored hashed.
  * @summary Confirm enrolment; returns the backup codes
  */
+
 export const EnableTwoFactorBody = zod.object({
-  code: zod.string(),
+  code: zod.string().min(1),
 });
 
 export const EnableTwoFactorResponse = zod.object({
@@ -1410,10 +1442,12 @@ export const RegenerateBackupCodesResponse = zod.object({
  * Accepts either a 6-digit TOTP code or a single-use backup code.
  * @summary Exchange an mfaToken plus a code for a session
  */
+
 export const VerifyTwoFactorBody = zod.object({
   mfaToken: zod.string(),
   code: zod
     .string()
+    .min(1)
     .describe(
       "A 6-digit TOTP code, or a backup code. Case and dashes are ignored.",
     ),
@@ -1630,7 +1664,7 @@ export const createApiTokenBodyNameMax = 64;
 export const createApiTokenBodyExpiresInDaysMax = 365;
 
 export const CreateApiTokenBody = zod.object({
-  name: zod.string().max(createApiTokenBodyNameMax),
+  name: zod.string().min(1).max(createApiTokenBodyNameMax),
   scopes: zod
     .array(
       zod.enum([
@@ -1776,8 +1810,10 @@ export const SubmitCompetitionFlagParams = zod.object({
   ctfId: zod.coerce.number(),
 });
 
+export const submitCompetitionFlagBodyFlagMax = 512;
+
 export const SubmitCompetitionFlagBody = zod.object({
-  flag: zod.string(),
+  flag: zod.string().min(1).max(submitCompetitionFlagBodyFlagMax),
 });
 
 export const SubmitCompetitionFlagResponse = zod.object({
@@ -1804,9 +1840,18 @@ export const UploadCtfFileResponse = zod.object({
  * Answers 501 when object storage is not configured; fall back to /uploads/ctf-file.
  * @summary Get a signed URL to upload straight to storage
  */
+export const signCtfFileUploadBodySizeMax = 26214400;
+
 export const SignCtfFileUploadBody = zod.object({
-  filename: zod.string(),
+  filename: zod.string().optional(),
   contentType: zod.string().optional(),
+  size: zod
+    .number()
+    .min(1)
+    .max(signCtfFileUploadBodySizeMax)
+    .describe(
+      "Size of the file in bytes. Checked before a URL is signed, so an oversized upload is refused before it starts.",
+    ),
 });
 
 export const SignCtfFileUploadResponse = zod.object({

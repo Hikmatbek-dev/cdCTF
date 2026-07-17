@@ -7,6 +7,8 @@ import {
 import { eq, and, sql } from "drizzle-orm";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/security";
+import { validateBody } from "../middleware/validate";
+import { SubmitCompetitionFlagBody } from "@workspace/api-zod";
 import { verifyFlag } from "../lib/flags";
 import { awardPoints } from "../lib/scoring";
 
@@ -110,7 +112,7 @@ router.post("/:id/join", authenticateToken, async (req, res) => {
 });
 
 // POST /api/competitions/:id/ctf/:ctfId/submit
-router.post("/:id/ctf/:ctfId/submit", authenticateToken, flagRateLimit, async (req, res) => {
+router.post("/:id/ctf/:ctfId/submit", authenticateToken, flagRateLimit, validateBody(SubmitCompetitionFlagBody), async (req, res) => {
   const compId = Number(req.params.id);
   const ctfId = Number(req.params.ctfId);
   const userId = req.user!.userId;

@@ -116,7 +116,7 @@ echo "==> Port: $API_PORT"
 # truncated instead. Safe: $DB is created and dropped by this script.
 #
 # lesson-test-honest reuses the lesson that lesson-test-exploit seeds, so order matters.
-SUITES="lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens oauth passkeys scoring scoreboard profile validation captcha captcha-failclosed rate-limit"
+SUITES="lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens oauth passkeys scoring scoreboard profile validation body-fields captcha captcha-failclosed rate-limit"
 FAILED=""
 
 for suite in $SUITES; do
@@ -126,7 +126,19 @@ for suite in $SUITES; do
   start_server "$suite"
   output=$(bash "$ROOT/scripts/manual-tests/$suite.sh" 2>&1)
   echo "$output" | grep -E "❌|🎉|⚠️"
-  echo "$output" | grep -q "❌" && FAILED="$FAILED $suite"
+
+  # Three ways to fail, and only the first is obvious. A suite that dies — a
+  # syntax error, a missing binary — prints no ❌ at all, so grepping for one
+  # marked it PASSED. That happened: body-fields.sh had a quoting error, exited
+  # mid-run, and this loop called it green. So a suite must also exit 0 AND say
+  # it finished; silence is not success.
+  if echo "$output" | grep -q "❌"; then
+    FAILED="$FAILED $suite"
+  elif ! echo "$output" | grep -q "🎉"; then
+    echo "  ❌ to'plam yakuniy xulosasini chiqarmadi — yarim yo'lda o'lgan. Oxiri:"
+    echo "$output" | tail -4 | sed 's/^/      /'
+    FAILED="$FAILED $suite"
+  fi
 done
 
 echo

@@ -4,18 +4,18 @@ info:
   version: 0.1.0
   description: cdCTF API
 servers:
-  - url: /api
-    description: Base API path
+- url: /api
+  description: Base API path
 tags:
-  - name: health
-  - name: auth
-  - name: ctf
-  - name: learn
-  - name: scoreboard
-  - name: competitions
-  - name: profile
-  - name: admin
-  - name: titles
+- name: health
+- name: auth
+- name: ctf
+- name: learn
+- name: scoreboard
+- name: competitions
+- name: profile
+- name: admin
+- name: titles
 
 paths:
   /healthz:
@@ -120,11 +120,11 @@ paths:
       tags: [auth]
       summary: Verify email with token
       parameters:
-        - in: query
-          name: token
-          required: true
-          schema:
-            type: string
+      - in: query
+        name: token
+        required: true
+        schema:
+          type: string
       responses:
         "200":
           description: Email verified
@@ -146,31 +146,31 @@ paths:
       tags: [ctf]
       summary: List CTF challenges
       parameters:
-        - in: query
-          name: category
-          schema:
-            type: string
-        - in: query
-          name: difficulty
-          schema:
-            type: string
-            enum: [easy, medium, hard, insane]
-        - in: query
-          name: solved
-          schema:
-            type: boolean
-        - in: query
-          name: search
-          schema:
-            type: string
-        - in: query
-          name: minPoints
-          schema:
-            type: integer
-        - in: query
-          name: maxPoints
-          schema:
-            type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: difficulty
+        schema:
+          type: string
+          enum: [easy, medium, hard, insane]
+      - in: query
+        name: solved
+        schema:
+          type: boolean
+      - in: query
+        name: search
+        schema:
+          type: string
+      - in: query
+        name: minPoints
+        schema:
+          type: integer
+      - in: query
+        name: maxPoints
+        schema:
+          type: integer
       responses:
         "200":
           description: List of CTF challenges
@@ -187,11 +187,11 @@ paths:
       tags: [ctf]
       summary: Get a CTF challenge by ID
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: CTF challenge
@@ -212,11 +212,11 @@ paths:
       tags: [ctf]
       summary: Submit a flag for a CTF challenge
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -258,10 +258,10 @@ paths:
       tags: [learn]
       summary: List lessons
       parameters:
-        - in: query
-          name: category
-          schema:
-            type: string
+      - in: query
+        name: category
+        schema:
+          type: string
       responses:
         "200":
           description: Lessons
@@ -278,11 +278,11 @@ paths:
       tags: [learn]
       summary: Get lesson detail
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Lesson detail
@@ -303,11 +303,11 @@ paths:
       tags: [learn]
       summary: Start a lesson test (activates anti-cheat)
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Test started
@@ -328,11 +328,11 @@ paths:
       tags: [learn]
       summary: Submit lesson test answers
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -359,11 +359,11 @@ paths:
       tags: [learn]
       summary: Report ESC key press during test (anti-cheat)
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Escape handled
@@ -379,16 +379,16 @@ paths:
       tags: [scoreboard]
       summary: Get global scoreboard
       parameters:
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            default: 50
-        - in: query
-          name: offset
-          schema:
-            type: integer
-            default: 0
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          default: 50
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          default: 0
       responses:
         "200":
           description: Scoreboard entries
@@ -419,11 +419,11 @@ paths:
       tags: [competitions]
       summary: Get competition detail
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Competition detail
@@ -444,11 +444,11 @@ paths:
       tags: [competitions]
       summary: Join a competition
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Joined
@@ -469,11 +469,11 @@ paths:
       tags: [competitions]
       summary: Get competition scoreboard
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Competition scoreboard
@@ -491,11 +491,11 @@ paths:
       tags: [profile]
       summary: Get user profile
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: User profile
@@ -515,11 +515,11 @@ paths:
       tags: [profile]
       summary: Update user profile
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -546,11 +546,11 @@ paths:
       tags: [users]
       summary: Delete an account — the caller's own, or any as an admin
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Deleted
@@ -581,20 +581,20 @@ paths:
       tags: [admin]
       summary: List all users
       parameters:
-        - in: query
-          name: search
-          schema:
-            type: string
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            default: 50
-        - in: query
-          name: offset
-          schema:
-            type: integer
-            default: 0
+      - in: query
+        name: search
+        schema:
+          type: string
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          default: 50
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          default: 0
       responses:
         "200":
           description: Users list
@@ -609,11 +609,11 @@ paths:
       tags: [admin]
       summary: Block a user
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: User blocked
@@ -628,11 +628,11 @@ paths:
       tags: [admin]
       summary: Unblock a user
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: User unblocked
@@ -680,11 +680,11 @@ paths:
       tags: [admin]
       summary: Update a CTF challenge
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -704,11 +704,11 @@ paths:
       tags: [admin]
       summary: Delete a CTF challenge
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: CTF deleted
@@ -722,11 +722,11 @@ paths:
       tags: [admin]
       summary: One challenge, as stored
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Challenge
@@ -746,11 +746,11 @@ paths:
         Fields are filtered by role: an author may edit their own content but not
         its points or publish state.
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -777,16 +777,16 @@ paths:
       tags: [admin]
       summary: Unblock a user from a specific CTF
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-        - in: path
-          name: userId
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: User unblocked for CTF
@@ -814,22 +814,22 @@ paths:
       tags: [admin]
       summary: Unblock a task for a user
       parameters:
-        - in: path
-          name: type
-          required: true
-          schema:
-            type: string
-            enum: [ctf, lesson]
-        - in: path
-          name: taskId
-          required: true
-          schema:
-            type: integer
-        - in: path
-          name: userId
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: type
+        required: true
+        schema:
+          type: string
+          enum: [ctf, lesson]
+      - in: path
+        name: taskId
+        required: true
+        schema:
+          type: integer
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Task unblocked
@@ -863,11 +863,11 @@ paths:
       tags: [admin]
       summary: Update a competition
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -887,11 +887,11 @@ paths:
       tags: [admin]
       summary: Update a competition
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -917,16 +917,16 @@ paths:
       tags: [admin]
       summary: Add user to private competition
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-        - in: path
-          name: userId
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: User added
@@ -974,11 +974,11 @@ paths:
       tags: [admin]
       summary: Update a lesson
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -998,11 +998,11 @@ paths:
       tags: [admin]
       summary: Delete a lesson
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Lesson deleted
@@ -1016,11 +1016,11 @@ paths:
       tags: [admin]
       summary: One lesson with its questions and correct answers
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Lesson
@@ -1037,11 +1037,11 @@ paths:
       tags: [admin]
       summary: Update a lesson and optionally replace its questions
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -1100,11 +1100,11 @@ paths:
       tags: [auth]
       summary: Sign a single device out
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Revoked
@@ -1138,13 +1138,13 @@ paths:
       tags: [auth]
       summary: The caller's recent sign-in attempts, successful or not
       parameters:
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 25
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 25
       responses:
         "200":
           description: History
@@ -1409,11 +1409,11 @@ paths:
       tags: [auth]
       summary: Remove a passkey
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Removed
@@ -1561,16 +1561,16 @@ paths:
         signing in. Sets a signed, single-use state cookie; the callback is
         refused without it.
       parameters:
-        - in: path
-          name: provider
-          required: true
-          schema:
-            $ref: "#/components/schemas/OAuthProvider"
-        - in: query
-          name: mode
-          schema:
-            type: string
-            enum: [link]
+      - in: path
+        name: provider
+        required: true
+        schema:
+          $ref: "#/components/schemas/OAuthProvider"
+      - in: query
+        name: mode
+        schema:
+          type: string
+          enum: [link]
       responses:
         "302":
           description: Redirect to the provider, or back to /login with ?oauth_error=
@@ -1579,11 +1579,11 @@ paths:
       tags: [auth]
       summary: Unlink a provider identity
       parameters:
-        - in: path
-          name: provider
-          required: true
-          schema:
-            $ref: "#/components/schemas/OAuthProvider"
+      - in: path
+        name: provider
+        required: true
+        schema:
+          $ref: "#/components/schemas/OAuthProvider"
       responses:
         "200":
           description: Unlinked
@@ -1606,23 +1606,23 @@ paths:
         /login?oauth_error=<code>; for an account with 2FA it redirects to
         /login?mfa=<token>.
       parameters:
-        - in: path
-          name: provider
-          required: true
-          schema:
-            $ref: "#/components/schemas/OAuthProvider"
-        - in: query
-          name: code
-          schema:
-            type: string
-        - in: query
-          name: state
-          schema:
-            type: string
-        - in: query
-          name: error
-          schema:
-            type: string
+      - in: path
+        name: provider
+        required: true
+        schema:
+          $ref: "#/components/schemas/OAuthProvider"
+      - in: query
+        name: code
+        schema:
+          type: string
+      - in: query
+        name: state
+        schema:
+          type: string
+      - in: query
+        name: error
+        schema:
+          type: string
       responses:
         "302":
           description: Redirect into the app
@@ -1677,11 +1677,11 @@ paths:
       tags: [auth]
       summary: Revoke a token
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Revoked
@@ -1729,11 +1729,11 @@ paths:
       tags: [users]
       summary: Upload an avatar (2 MB max, images only)
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -1770,16 +1770,16 @@ paths:
       tags: [competitions]
       summary: Submit a flag within a competition
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-        - in: path
-          name: ctfId
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      - in: path
+        name: ctfId
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -1863,16 +1863,16 @@ paths:
       tags: [uploads]
       summary: Download a challenge attachment
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-        - in: path
-          name: filename
-          required: true
-          schema:
-            type: string
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      - in: path
+        name: filename
+        required: true
+        schema:
+          type: string
       responses:
         "200":
           description: File contents
@@ -1889,11 +1889,11 @@ paths:
       tags: [admin]
       summary: Make a draft live, or take it back down
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         content:
           application/json:
@@ -1917,11 +1917,11 @@ paths:
       tags: [admin]
       summary: Make a draft lesson live, or take it back down
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         content:
           application/json:
@@ -1949,11 +1949,11 @@ paths:
         effect at once. An admin cannot demote themselves out of the ability to
         undo it.
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -2104,10 +2104,10 @@ components:
         role:
           type: string
           enum:
-            - user
-            - author
-            - moderator
-            - admin
+          - user
+          - author
+          - moderator
+          - admin
         emailVerified:
           type: boolean
         isBlocked:
@@ -2228,6 +2228,8 @@ components:
       properties:
         flag:
           type: string
+          minLength: 1
+          maxLength: 512
       required: [flag]
 
     FlagSubmitResponse:
@@ -2609,6 +2611,31 @@ components:
           minLength: 3
           maxLength: 32
 
+        avatarUrl:
+          type: string
+          nullable: true
+        points:
+          type: integer
+          description: Admin only.
+        role:
+          type: string
+          enum:
+          - user
+          - author
+          - moderator
+          - admin
+          description: Admin only.
+        isBlocked:
+          type: boolean
+          description: Admin only.
+        email:
+          type: string
+          format: email
+          description: Admin only.
+        emailVerified:
+          type: boolean
+          description: Admin only.
+      description: Fields this endpoint accepts. Which of them a caller may actually set depends on their role (columnPermissions in rbac.ts); anything they may not set is dropped, and a request left with nothing to update is rejected.
     AvatarResponse:
       type: object
       properties:
@@ -2791,7 +2818,14 @@ components:
           type: array
           items:
             type: integer
-      required: [name, type, startTime, endTime, ctfIds]
+        inviteCode:
+          type: string
+          nullable: true
+          description: Join code for a private competition. Ignored when type is public, and generated if a private competition is created without one.
+      required:
+      - name
+      - startTime
+      - endTime
 
     CreateLessonBody:
       type: object
@@ -2846,7 +2880,10 @@ components:
               correctOption:
                 type: integer
             required: [question, options, correctOption]
-      required: [title, content, categoryId, points, questions]
+      required:
+      - title
+      - content
+      - categoryId
     SuccessResponse:
       type: object
       properties:
@@ -2860,8 +2897,8 @@ components:
       properties:
         user:
           oneOf:
-            - $ref: "#/components/schemas/User"
-            - type: "null"
+          - $ref: "#/components/schemas/User"
+          - type: "null"
         permissions:
           type: array
           description: Derived from the role server-side. Absent when signed out.
@@ -2882,8 +2919,8 @@ components:
         A correct password does not always mean a session: an account with 2FA
         gets an mfaToken to exchange at /auth/2fa/verify instead.
       oneOf:
-        - $ref: "#/components/schemas/TwoFactorRequired"
-        - $ref: "#/components/schemas/AuthResponse"
+      - $ref: "#/components/schemas/TwoFactorRequired"
+      - $ref: "#/components/schemas/AuthResponse"
 
     TwoFactorRequired:
       type: object
@@ -3031,6 +3068,7 @@ components:
       properties:
         code:
           type: string
+          minLength: 1
       required: [code]
     DisableTwoFactorBody:
       type: object
@@ -3048,6 +3086,7 @@ components:
         code:
           type: string
           description: A 6-digit TOTP code, or a backup code. Case and dashes are ignored.
+          minLength: 1
       required: [mfaToken, code]
     BackupCodesResponse:
       type: object
@@ -3174,6 +3213,7 @@ components:
         name:
           type: string
           maxLength: 64
+          minLength: 1
         scopes:
           type: array
           minItems: 1
@@ -3289,7 +3329,13 @@ components:
           type: string
         contentType:
           type: string
-      required: [filename]
+        size:
+          type: integer
+          minimum: 1
+          maximum: 26214400
+          description: Size of the file in bytes. Checked before a URL is signed, so an oversized upload is refused before it starts.
+      required:
+      - size
     SignedUploadResponse:
       type: object
       properties:

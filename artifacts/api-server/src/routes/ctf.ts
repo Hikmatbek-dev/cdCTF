@@ -6,6 +6,8 @@ import { authenticateToken, optionalAuth, requireScope } from "../middleware/aut
 import { hashFlag, isHashedFlag, verifyFlag } from "../lib/flags";
 import { awardCategoryTitle, awardPoints } from "../lib/scoring";
 import { createRateLimiter } from "../middleware/security";
+import { validateBody } from "../middleware/validate";
+import { SubmitCtfFlagBody } from "@workspace/api-zod";
 import { logger } from "../lib/logger";
 
 const router = Router();
@@ -179,10 +181,10 @@ async function submitFlagHandler(req: Request, res: Response) {
 }
 
 // POST /api/ctf/:id/submit
-router.post("/:id/submit", authenticateToken, requireScope("ctf:submit"), flagRateLimit, submitFlagHandler);
+router.post("/:id/submit", authenticateToken, requireScope("ctf:submit"), flagRateLimit, validateBody(SubmitCtfFlagBody), submitFlagHandler);
 
 // Backward-compatible alias.
-router.post("/:id/flag", authenticateToken, requireScope("ctf:submit"), flagRateLimit, submitFlagHandler);
+router.post("/:id/flag", authenticateToken, requireScope("ctf:submit"), flagRateLimit, validateBody(SubmitCtfFlagBody), submitFlagHandler);
 
 
 export default router;

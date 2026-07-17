@@ -26,7 +26,19 @@ import { validateBody } from "../middleware/validate";
 // Generated from the OpenAPI spec, so a rule cannot be stated in two places and
 // disagree — which is exactly what happened: the spec allowed a 6-character
 // password while this file demanded 10 and four character classes.
-import { LoginBody, RegisterBody } from "@workspace/api-zod";
+import {
+  ChangePasswordBody,
+  CreateApiTokenBody,
+  DisableTwoFactorBody,
+  ForgotPasswordBody,
+  LoginBody,
+  RegenerateBackupCodesBody,
+  RegisterBody,
+  ResendVerificationBody,
+  ResetPasswordBody,
+  EnableTwoFactorBody,
+  VerifyTwoFactorBody,
+} from "@workspace/api-zod";
 import type { z } from "zod";
 import { sendVerificationEmail, verifyTurnstileToken, shouldBypassTurnstileForRequest, sendPasswordResetEmail } from "../lib/integrations";
 import { writeAuditLog } from "../lib/audit";
@@ -666,7 +678,7 @@ router.delete("/oauth/:provider", authenticateToken, requireSession, async (req,
 
 // POST /api/auth/2fa/verify — exchange an mfaToken plus a code for a session.
 // Accepts either a 6-digit TOTP code or a single-use backup code.
-router.post("/2fa/verify", mfaVerifyRateLimit, async (req, res) => {
+router.post("/2fa/verify", mfaVerifyRateLimit, validateBody(VerifyTwoFactorBody), async (req, res) => {
   const { mfaToken, code } = req.body ?? {};
   if (typeof mfaToken !== "string" || typeof code !== "string" || !code.trim()) {
     return res.status(400).json({ error: "Token and code are required" });
@@ -749,7 +761,7 @@ router.post("/2fa/setup", authenticateToken, requireSession, mfaManageRateLimit,
 });
 
 // POST /api/auth/2fa/enable — confirm enrolment and hand back the backup codes.
-router.post("/2fa/enable", authenticateToken, requireSession, mfaManageRateLimit, async (req, res) => {
+router.post("/2fa/enable", authenticateToken, requireSession, mfaManageRateLimit, validateBody(EnableTwoFactorBody), async (req, res) => {
   const { code } = req.body ?? {};
   if (typeof code !== "string" || !code.trim()) return res.status(400).json({ error: "Code is required" });
 
@@ -782,7 +794,7 @@ router.post("/2fa/enable", authenticateToken, requireSession, mfaManageRateLimit
 
 // POST /api/auth/2fa/disable — password plus a live code, because turning the
 // protection off is exactly what a session thief would want to do.
-router.post("/2fa/disable", authenticateToken, requireSession, mfaManageRateLimit, async (req, res) => {
+router.post("/2fa/disable", authenticateToken, requireSession, mfaManageRateLimit, validateBody(DisableTwoFactorBody), async (req, res) => {
   const { password, code } = req.body ?? {};
   if (typeof password !== "string" || typeof code !== "string") {
     return res.status(400).json({ error: "Password and code are required" });
@@ -812,7 +824,7 @@ router.post("/2fa/disable", authenticateToken, requireSession, mfaManageRateLimi
 });
 
 // POST /api/auth/2fa/backup-codes — regenerate, invalidating the old set.
-router.post("/2fa/backup-codes", authenticateToken, requireSession, mfaManageRateLimit, async (req, res) => {
+router.post("/2fa/backup-codes", authenticateToken, requireSession, mfaManageRateLimit, validateBody(RegenerateBackupCodesBody), async (req, res) => {
   const { password } = req.body ?? {};
   if (typeof password !== "string") return res.status(400).json({ error: "Password is required" });
 
@@ -892,7 +904,7 @@ router.get("/api-tokens", authenticateToken, requireSession, async (req, res) =>
 });
 
 // POST /api/auth/api-tokens — mint one. The only time the secret is readable.
-router.post("/api-tokens", authenticateToken, requireSession, async (req, res) => {
+router.post("/api-tokens", authenticateToken, requireSession, validateBody(CreateApiTokenBody), async (req, res) => {
   const { name, scopes, expiresInDays } = req.body ?? {};
 
   if (typeof name !== "string" || !name.trim() || name.length > 64) {
@@ -1002,7 +1014,7 @@ router.get("/verify-email", async (req, res) => {
   res.json({ message: "Email verified" });
 });
 
-router.post("/resend-verification", authRateLimit, async (req, res) => {
+router.post("/resend-verification", authRateLimit, validateBody(ResendVerificationBody), async (req, res) => {
   const email = typeof req.body?.email === "string" ? normalizeEmail(req.body.email) : "";
   if (!email) return res.status(400).json({ error: "Email required" });
 
@@ -1020,7 +1032,7 @@ router.post("/resend-verification", authRateLimit, async (req, res) => {
   res.json({ success: true, message: "Verification email sent" });
 });
 
-router.post("/forgot-password", authRateLimit, async (req, res) => {
+router.post("/forgot-password", authRateLimit, validateBody(ForgotPasswordBody), async (req, res) => {
   const email = typeof req.body?.email === "string" ? normalizeEmail(req.body.email) : "";
   if (!email) return res.status(400).json({ error: "Email required" });
 
@@ -1039,7 +1051,7 @@ router.post("/forgot-password", authRateLimit, async (req, res) => {
   res.json({ success: true, message: "If an account exists, a reset link has been sent" });
 });
 
-router.post("/reset-password", authRateLimit, async (req, res) => {
+router.post("/reset-password", authRateLimit, validateBody(ResetPasswordBody), async (req, res) => {
   const { token, password } = req.body;
   if (typeof token !== "string" || !token) return res.status(400).json({ error: "Token required" });
   if (typeof password !== "string" || !isStrongPassword(password)) {
@@ -1061,7 +1073,7 @@ router.post("/reset-password", authRateLimit, async (req, res) => {
   res.json({ success: true, message: "Password has been reset" });
 });
 
-router.post("/change-password", authenticateToken, requireSession, async (req, res) => {
+router.post("/change-password", authenticateToken, requireSession, validateBody(ChangePasswordBody), async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   if (typeof oldPassword !== "string" || typeof newPassword !== "string") {
     return res.status(400).json({ error: "Passwords required" });

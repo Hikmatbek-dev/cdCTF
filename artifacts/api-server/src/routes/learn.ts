@@ -4,6 +4,8 @@ import { db } from "@workspace/db";
 import { learnCategoriesTable, lessonsTable, lessonQuestionsTable, userLessonAttemptsTable, usersTable } from "@workspace/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
+import { validateBody } from "../middleware/validate";
+import { SubmitLessonTestBody } from "@workspace/api-zod";
 import { awardPoints } from "../lib/scoring";
 const router = Router();
 
@@ -216,10 +218,10 @@ async function submitLessonTestHandler(req: Request, res: Response) {
 }
 
 // POST /api/learn/lessons/:id/test/submit
-router.post("/lessons/:id/test/submit", authenticateToken, submitLessonTestHandler);
+router.post("/lessons/:id/test/submit", authenticateToken, validateBody(SubmitLessonTestBody), submitLessonTestHandler);
 
 // Backward-compatible alias.
-router.post("/lessons/:id/submit-test", authenticateToken, submitLessonTestHandler);
+router.post("/lessons/:id/submit-test", authenticateToken, validateBody(SubmitLessonTestBody), submitLessonTestHandler);
 
 async function reportTestEscapeHandler(req: Request, res: Response) {
   const lessonId = Number(req.params.id);

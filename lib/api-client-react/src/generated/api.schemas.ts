@@ -140,6 +140,10 @@ export interface CtfStats {
 }
 
 export interface SubmitFlagBody {
+  /**
+   * @minLength 1
+   * @maxLength 512
+   */
   flag: string;
 }
 
@@ -356,12 +360,39 @@ export interface UserProfile {
   createdAt: string;
 }
 
+/**
+ * Admin only.
+ */
+export type UpdateProfileBodyRole =
+  (typeof UpdateProfileBodyRole)[keyof typeof UpdateProfileBodyRole];
+
+export const UpdateProfileBodyRole = {
+  user: "user",
+  author: "author",
+  moderator: "moderator",
+  admin: "admin",
+} as const;
+
+/**
+ * Fields this endpoint accepts. Which of them a caller may actually set depends on their role (columnPermissions in rbac.ts); anything they may not set is dropped, and a request left with nothing to update is rejected.
+ */
 export interface UpdateProfileBody {
   /**
    * @minLength 3
    * @maxLength 32
    */
   nickname?: string;
+  avatarUrl?: string | null;
+  /** Admin only. */
+  points?: number;
+  /** Admin only. */
+  role?: UpdateProfileBodyRole;
+  /** Admin only. */
+  isBlocked?: boolean;
+  /** Admin only. */
+  email?: string;
+  /** Admin only. */
+  emailVerified?: boolean;
 }
 
 export interface AvatarResponse {
@@ -457,10 +488,12 @@ export const CreateCompetitionBodyType = {
 export interface CreateCompetitionBody {
   name: string;
   description?: string | null;
-  type: CreateCompetitionBodyType;
+  type?: CreateCompetitionBodyType;
   startTime: string;
   endTime: string;
-  ctfIds: number[];
+  ctfIds?: number[];
+  /** Join code for a private competition. Ignored when type is public, and generated if a private competition is created without one. */
+  inviteCode?: string | null;
 }
 
 export type CreateLessonBodyQuestionsItem = {
@@ -481,8 +514,8 @@ export interface CreateLessonBody {
   contentUz?: string | null;
   contentRu?: string | null;
   categoryId: number;
-  points: number;
-  questions: CreateLessonBodyQuestionsItem[];
+  points?: number;
+  questions?: CreateLessonBodyQuestionsItem[];
 }
 
 export interface SuccessResponse {
@@ -613,6 +646,7 @@ export interface TwoFactorSetupResponse {
 }
 
 export interface TwoFactorCodeBody {
+  /** @minLength 1 */
   code: string;
 }
 
@@ -623,7 +657,10 @@ export interface DisableTwoFactorBody {
 
 export interface VerifyTwoFactorBody {
   mfaToken: string;
-  /** A 6-digit TOTP code, or a backup code. Case and dashes are ignored. */
+  /**
+   * A 6-digit TOTP code, or a backup code. Case and dashes are ignored.
+   * @minLength 1
+   */
   code: string;
 }
 
@@ -700,7 +737,10 @@ export interface ApiTokensResponse {
 }
 
 export interface CreateApiTokenBody {
-  /** @maxLength 64 */
+  /**
+   * @minLength 1
+   * @maxLength 64
+   */
   name: string;
   /** @minItems 1 */
   scopes: ApiScope[];
@@ -770,8 +810,14 @@ export interface UploadResponse {
 }
 
 export interface SignUploadBody {
-  filename: string;
+  filename?: string;
   contentType?: string;
+  /**
+   * Size of the file in bytes. Checked before a URL is signed, so an oversized upload is refused before it starts.
+   * @minimum 1
+   * @maximum 26214400
+   */
+  size: number;
 }
 
 export interface SignedUploadResponse {

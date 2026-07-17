@@ -9,6 +9,8 @@ import {
 } from "@workspace/db/schema";
 import { and, eq, or, sql } from "drizzle-orm";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
+import { validateBody } from "../middleware/validate";
+import { UpdateUserProfileBody } from "@workspace/api-zod";
 import { uploadBufferToStorage } from "../lib/storage";
 import { logger } from "../lib/logger";
 
@@ -214,7 +216,7 @@ import { revokeAllSessions } from "../lib/sessions";
 import { earnsPoints } from "../lib/scoring";
 
 // PATCH /api/users/:id
-router.patch("/:id", authenticateToken, async (req, res) => {
+router.patch("/:id", authenticateToken, validateBody(UpdateUserProfileBody), async (req, res) => {
   const id = Number(req.params.id);
   const userRole = req.user!.role;
 
