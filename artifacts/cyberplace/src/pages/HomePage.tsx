@@ -99,7 +99,7 @@ export default function HomePage() {
                 </div>
                 <div>
                   <h2 className="text-4xl font-black tracking-tighter uppercase leading-none mb-2">TOP_OPERATIVES</h2>
-                  <div className="text-[10px] font-black text-muted-foreground/40 tracking-[0.4em]">RANKING_SYSTEM_v4.2</div>
+                  <div className="text-[10px] font-black text-muted-foreground tracking-[0.4em]">RANKING_SYSTEM_v4.2</div>
                 </div>
               </div>
               <Link href="/scoreboard" className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:text-accent transition-colors">
@@ -182,7 +182,7 @@ export default function HomePage() {
             
             <div className="grid grid-cols-2 lg:col-span-2 gap-16">
               <div className="space-y-10">
-                <h4 className="text-xs font-black tracking-[0.3em] uppercase text-foreground/40">SITEMAP</h4>
+                <h4 className="text-xs font-black tracking-[0.3em] uppercase text-foreground/70">SITEMAP</h4>
                 <ul className="space-y-6 text-sm font-bold">
                   <li><Link href="/ctf" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2">./Missions</Link></li>
                   <li><Link href="/learn" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2">./Academy</Link></li>
@@ -191,7 +191,7 @@ export default function HomePage() {
                 </ul>
               </div>
               <div className="space-y-10">
-                <h4 className="text-xs font-black tracking-[0.3em] uppercase text-foreground/40">SYSTEM_INFO</h4>
+                <h4 className="text-xs font-black tracking-[0.3em] uppercase text-foreground/70">SYSTEM_INFO</h4>
                 <ul className="space-y-6 text-sm font-bold text-muted-foreground">
                   <li className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(0,210,255,0.5)]" /> 
@@ -205,7 +205,10 @@ export default function HomePage() {
             </div>
           </div>
           
-          <div className="pt-16 border-t border-foreground/5 flex flex-col md:flex-row justify-between items-center gap-8 text-[10px] text-muted-foreground/20 font-black uppercase tracking-[0.4em]">
+          {/* muted-foreground is already the subdued colour; the /20 on top of it
+              left these two links and the copyright at a 1.34 contrast ratio —
+              not subtle, unreadable. */}
+          <div className="pt-16 border-t border-foreground/5 flex flex-col md:flex-row justify-between items-center gap-8 text-[10px] text-muted-foreground font-black uppercase tracking-[0.4em]">
             <div>© {new Date().getFullYear()} CDCTF PLATFORM. SECURED BY BOZKURT.</div>
             <div className="flex items-center gap-12">
               <a href="#" className="hover:text-primary transition-colors">SECURITY_POLICY</a>
