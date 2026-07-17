@@ -28,7 +28,7 @@ import { validateBody } from "../middleware/validate";
 // password while this file demanded 10 and four character classes.
 import { LoginBody, RegisterBody } from "@workspace/api-zod";
 import type { z } from "zod";
-import { sendVerificationEmail, verifyTurnstileToken, sendPasswordResetEmail } from "../lib/integrations";
+import { sendVerificationEmail, verifyTurnstileToken, shouldBypassTurnstileForRequest, sendPasswordResetEmail } from "../lib/integrations";
 import { writeAuditLog } from "../lib/audit";
 import {
   createSession,
@@ -197,8 +197,7 @@ async function issueSession(res: Response, user: typeof usersTable.$inferSelect,
 
 router.post("/register", authRateLimit, validateBody(RegisterBody), async (req, res) => {
   const body = req.body as z.infer<typeof RegisterBody>;
-  const bypassLocalCaptcha = process.env.TURNSTILE_BYPASS_LOCALHOST === "true"
-    && (req.ip === "::1" || req.ip === "127.0.0.1" || req.ip?.startsWith("::ffff:127.0.0.1"));
+  const bypassLocalCaptcha = shouldBypassTurnstileForRequest(req.ip);
   const enforceTurnstile = process.env.TURNSTILE_ENFORCE === "true";
 
   if (enforceTurnstile && !bypassLocalCaptcha && (typeof body.captchaToken !== "string" || !body.captchaToken.trim())) {

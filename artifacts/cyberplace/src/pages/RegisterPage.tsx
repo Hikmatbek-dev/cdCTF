@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,8 +7,14 @@ import { Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { TurnstileWidget } from "@/components/TurnstileWidget";
 import { useToast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/LanguageContext";
+
+// The widget renders nothing without a site key, and the server only rejects a
+// missing token when TURNSTILE_ENFORCE is on. Reading the key here keeps the
+// submit button from waiting on a challenge that will never appear.
+const captchaConfigured = Boolean(import.meta.env.VITE_TURNSTILE_SITE_KEY);
 
 const schema = z.object({
   nickname: z.string().min(3, "Min 3 chars").max(32, "Max 32 chars").regex(/^[A-Za-z0-9_]+$/, "Only letters, numbers, and underscores"),
@@ -28,11 +34,23 @@ export default function RegisterPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaFailed, setCaptchaFailed] = useState(false);
+  // Bumping this remounts the widget, which is how a fresh challenge is drawn.
+  const [captchaRound, setCaptchaRound] = useState(0);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { nickname: "", email: "", password: "" },
   });
+
+  // Stable identities: TurnstileWidget lists these in an effect's dependencies,
+  // so a fresh function each render tears the challenge down and redraws it.
+  const handleTokenChange = useCallback((token: string) => {
+    setCaptchaToken(token);
+    if (token) setCaptchaFailed(false);
+  }, []);
+  const handleCaptchaError = useCallback(() => setCaptchaFailed(true), []);
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
@@ -40,10 +58,17 @@ export default function RegisterPage() {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(captchaToken ? { ...data, captchaToken } : data),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
+        // A Turnstile token is single-use and the server has now spent it, so
+        // any retry — even of an unrelated error like a taken nickname — needs
+        // a new challenge or it fails on the captcha instead of the real cause.
+        if (captchaToken) {
+          setCaptchaToken("");
+          setCaptchaRound((round) => round + 1);
+        }
         throw new Error(typeof payload?.error === "string" ? payload.error : "Registration failed");
       }
       toast({
@@ -107,7 +132,30 @@ export default function RegisterPage() {
                   <FormMessage />
                 </FormItem>
               )} />
-              <Button type="submit" className="w-full" disabled={isSubmitting} data-testid="button-submit-register">
+              {captchaConfigured && (
+                <div className="space-y-2">
+                  <TurnstileWidget
+                    key={captchaRound}
+                    onTokenChange={handleTokenChange}
+                    onError={handleCaptchaError}
+                  />
+                  {captchaFailed && (
+                    <p className="text-sm text-destructive" data-testid="text-captcha-error">
+                      {t(
+                        "Could not load the verification challenge. Refresh the page and try again.",
+                        "Tekshiruvni yuklab bo'lmadi. Sahifani yangilab, qayta urinib ko'ring.",
+                        "Не удалось загрузить проверку. Обновите страницу и попробуйте снова."
+                      )}
+                    </p>
+                  )}
+                </div>
+              )}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isSubmitting || (captchaConfigured && !captchaToken)}
+                data-testid="button-submit-register"
+              >
                 {isSubmitting ? t("Creating...", "Yaratilmoqda...", "Создание...") : t("Create Account", "Hisob Yaratish", "Создать аккаунт")}
               </Button>
             </form>

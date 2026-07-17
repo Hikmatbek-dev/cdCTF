@@ -35,7 +35,20 @@ function buildBaseUrl() {
   return `http://localhost:${process.env.PORT || 8080}`;
 }
 
-function shouldBypassTurnstileForRequest(ip?: string) {
+/**
+ * Whether this request skips the captcha entirely.
+ *
+ * Exported because /register needs the same answer, and used to decide it with
+ * its own inline copy of these conditions — which then drifted from this one.
+ * Two places deciding who may skip the captcha is one place too many.
+ */
+export function shouldBypassTurnstileForRequest(ip?: string) {
+  // Never in production, whatever the env says. The check below trusts req.ip,
+  // and `trust proxy` is on, so req.ip is only as honest as the proxy in front
+  // of us — a misconfigured one turns "localhost only" into "anyone who sends
+  // X-Forwarded-For: 127.0.0.1". A convenience switch for local dev is not
+  // worth leaving that within reach of a deploy mistake.
+  if (process.env.NODE_ENV === "production") return false;
   if (process.env.TURNSTILE_BYPASS_LOCALHOST !== "true") return false;
   return ip === "::1" || ip === "127.0.0.1" || ip?.startsWith("::ffff:127.0.0.1") === true;
 }
@@ -51,15 +64,24 @@ export async function verifyTurnstileToken(token: string, ip?: string) {
   const body = new URLSearchParams({ secret, response: token });
   if (ip) body.set("remoteip", ip);
 
-  const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  }) as unknown as FetchResponseLike;
+  // An unreachable Cloudflare, a DNS blip or a hang used to throw straight out
+  // of the route: registration answered 500 and reported to Sentry, when the
+  // honest answer is "could not verify". Failing closed is the right call here
+  // — the alternative is an outage at Cloudflare turning the captcha off.
+  try {
+    const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+      signal: AbortSignal.timeout(10_000),
+    }) as unknown as FetchResponseLike;
 
-  if (!response.ok) return { ok: false, reason: "Turnstile verification request failed" };
-  const data = await response.json() as { success?: boolean; "error-codes"?: string[] };
-  return { ok: data.success === true, reason: data["error-codes"]?.join(", ") };
+    if (!response.ok) return { ok: false, reason: "Turnstile verification request failed" };
+    const data = await response.json() as { success?: boolean; "error-codes"?: string[] };
+    return { ok: data.success === true, reason: data["error-codes"]?.join(", ") };
+  } catch (error) {
+    return { ok: false, reason: error instanceof Error ? error.message : "Turnstile is unreachable" };
+  }
 }
 
 export async function sendVerificationEmail(email: string, token: string) {

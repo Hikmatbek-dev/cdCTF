@@ -71,7 +71,16 @@ export APP_BASE_URL="http://localhost:$API_PORT"
 
 start_server() {
   if [ -n "$SERVER_PID" ]; then kill "$SERVER_PID" 2>/dev/null; sleep 1; fi
-  node "$ROOT/artifacts/api-server/dist/index.mjs" > "$LOG" 2>&1 &
+  # A suite that needs its own server config ships a <suite>.env beside it. The
+  # captcha suites need this: one asserts an enforced captcha rejects, another
+  # that an unconfigured one fails closed, and neither setting can be the one
+  # the other ten suites run under.
+  # exec, so the subshell becomes node and $! is node's own pid — otherwise the
+  # kill above hits the subshell and leaves the server holding the port.
+  ( set -a
+    [ -f "$ROOT/scripts/manual-tests/$1.env" ] && . "$ROOT/scripts/manual-tests/$1.env"
+    set +a
+    exec node "$ROOT/artifacts/api-server/dist/index.mjs" > "$LOG" 2>&1 ) &
   SERVER_PID=$!
   local waited=0
   until curl -s -o /dev/null --max-time 1 "http://localhost:$PORT/api/auth/session" 2>/dev/null; do
@@ -103,13 +112,13 @@ echo "==> Port: $API_PORT"
 # fail with 401s that have nothing to do with the code.
 #
 # lesson-test-honest reuses the lesson that lesson-test-exploit seeds, so order matters.
-SUITES="lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens oauth passkeys scoring scoreboard profile validation"
+SUITES="lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens oauth passkeys scoring scoreboard profile validation captcha captcha-failclosed"
 FAILED=""
 
 for suite in $SUITES; do
   echo
   echo "############ $suite ############"
-  start_server
+  start_server "$suite"
   output=$(bash "$ROOT/scripts/manual-tests/$suite.sh" 2>&1)
   echo "$output" | grep -E "❌|🎉|⚠️"
   echo "$output" | grep -q "❌" && FAILED="$FAILED $suite"
