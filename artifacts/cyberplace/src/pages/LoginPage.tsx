@@ -222,18 +222,18 @@ export default function LoginPage() {
                 <FormField control={form.control} name="nickname" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">{t("OPERATIVE_ID", "TAXALLUS", "НИКНЕЙМ")}</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/40" />
-                        <input 
-                          {...field} 
-                          placeholder="your_nickname" 
-                          data-testid="input-nickname" 
-                          autoComplete="username" 
+                    <div className="relative">
+                      <User aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/40" />
+                      <FormControl>
+                        <input
+                          {...field}
+                          placeholder="your_nickname"
+                          data-testid="input-nickname"
+                          autoComplete="username"
                           className="w-full pl-12 pr-6 h-14 bg-foreground/5 border border-foreground/5 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold text-sm tracking-wide placeholder:text-muted-foreground/20"
                         />
-                      </div>
-                    </FormControl>
+                      </FormControl>
+                    </div>
                     <FormMessage className="text-[10px] font-bold uppercase mt-2 ml-1" />
                   </FormItem>
                 )} />
@@ -245,19 +245,19 @@ export default function LoginPage() {
                         {t("LOST_KEY?", "UNUTDINGIZMI?", "ЗАБЫЛИ ПАРОЛЬ?")}
                       </Link>
                     </div>
-                    <FormControl>
-                      <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/40" />
-                        <input 
-                          {...field} 
-                          type="password" 
-                          placeholder="••••••••" 
-                          data-testid="input-password" 
-                          autoComplete="current-password" 
+                    <div className="relative">
+                      <Lock aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/40" />
+                      <FormControl>
+                        <input
+                          {...field}
+                          type="password"
+                          placeholder="••••••••"
+                          data-testid="input-password"
+                          autoComplete="current-password"
                           className="w-full pl-12 pr-6 h-14 bg-foreground/5 border border-foreground/5 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold text-sm tracking-wide placeholder:text-muted-foreground/20"
                         />
-                      </div>
-                    </FormControl>
+                      </FormControl>
+                    </div>
                     <FormMessage className="text-[10px] font-bold uppercase mt-2 ml-1" />
                   </FormItem>
                 )} />

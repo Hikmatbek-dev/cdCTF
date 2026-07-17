@@ -102,8 +102,19 @@ export function Navbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-muted-foreground hover:text-primary transition-all h-10 w-10 rounded-xl hover:bg-foreground/5 border border-transparent hover:border-foreground/5">
-                {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {/* The label says what the button does, not what the icon shows.
+                  A sun icon in dark mode means "switch to light" — announcing
+                  it as "sun" would leave a screen reader user to guess. */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                aria-label={theme === "dark"
+                  ? t("Switch to light mode", "Yorug' rejimga o'tish", "Переключить на светлую тему")
+                  : t("Switch to dark mode", "Qorong'i rejimga o'tish", "Переключить на тёмную тему")}
+                className="text-muted-foreground hover:text-primary transition-all h-10 w-10 rounded-xl hover:bg-foreground/5 border border-transparent hover:border-foreground/5"
+              >
+                {theme === "dark" ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}
               </Button>
             </div>
 
@@ -168,8 +179,21 @@ export function Navbar() {
               </div>
             )}
 
-            <Button variant="ghost" size="icon" className="md:hidden h-10 w-10 text-muted-foreground hover:text-foreground rounded-xl bg-foreground/5 border border-foreground/5" onClick={() => setMobileOpen(!mobileOpen)}>
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {/* aria-expanded is what tells a screen reader the menu is open;
+                swapping the hamburger for an X only says it to people who can
+                see it. aria-controls points at the panel it opens. */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden h-10 w-10 text-muted-foreground hover:text-foreground rounded-xl bg-foreground/5 border border-foreground/5"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-menu"
+              aria-label={mobileOpen
+                ? t("Close menu", "Menyuni yopish", "Закрыть меню")
+                : t("Open menu", "Menyuni ochish", "Открыть меню")}
+            >
+              {mobileOpen ? <X className="w-5 h-5" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
             </Button>
           </div>
         </div>
@@ -182,6 +206,7 @@ export function Navbar() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
+            id="mobile-menu"
             className="md:hidden mt-4 bg-card/95 backdrop-blur-2xl border border-foreground/10 rounded-[2.5rem] p-6 shadow-2xl"
           >
             <div className="space-y-2">
@@ -209,7 +234,15 @@ export function Navbar() {
                   </button>
                 ))}
               </div>
-              <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-muted-foreground hover:text-primary transition-all h-10 w-10 rounded-xl bg-foreground/5 border border-foreground/5">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                aria-label={theme === "dark"
+                  ? t("Switch to light mode", "Yorug' rejimga o'tish", "Переключить на светлую тему")
+                  : t("Switch to dark mode", "Qorong'i rejimga o'tish", "Переключить на тёмную тему")}
+                className="text-muted-foreground hover:text-primary transition-all h-10 w-10 rounded-xl bg-foreground/5 border border-foreground/5"
+              >
                 {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </Button>
             </div>

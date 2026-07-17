@@ -73,8 +73,12 @@ export default function ScoreboardPage() {
             </div>
 
             <div className="relative group">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/40 group-focus-within:text-primary transition-colors" />
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/40 group-focus-within:text-primary transition-colors" aria-hidden="true" />
+              {/* A placeholder is not a label: it vanishes as soon as you type,
+                  and screen readers are not required to announce it. */}
               <input
+                type="search"
+                aria-label={t("Search users", "Foydalanuvchilarni qidirish", "Поиск пользователей")}
                 placeholder={t("QUERY_OPERATIVE_ID...", "FOYDALANUVCHILARNI QIDIRING...", "ПОИСК_ОПЕРАТИВНИКОВ...")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}

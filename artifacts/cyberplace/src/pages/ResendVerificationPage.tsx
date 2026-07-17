@@ -87,12 +87,12 @@ export default function ResendVerificationPage() {
               <FormField control={form.control} name="email" render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("Email Address", "Email Manzili", "Email адрес")}</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <div className="relative">
+                    <Mail aria-hidden="true" className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <FormControl>
                       <Input {...field} placeholder="name@example.com" className="pl-9" />
-                    </div>
-                  </FormControl>
+                    </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )} />

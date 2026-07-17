@@ -81,8 +81,12 @@ export default function CtfListPage() {
         <FadeIn delay={0.1}>
           <div className="glass-card p-6 flex flex-wrap items-center gap-6 mb-16 rounded-[2.5rem] border-foreground/10">
             <div className="relative flex-1 min-w-[300px]">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" aria-hidden="true" />
+              {/* A placeholder is not a label: it vanishes as soon as you type,
+                  and screen readers are not required to announce it. */}
               <input
+                type="search"
+                aria-label={t("Search challenges", "Missiyalarni qidirish", "Поиск заданий")}
                 placeholder={t("SEARCH_CHALLENGES...", "MISSIA QIDIRISH...", "ПОИСК_ЗАДАНИЙ...")}
                 value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1); }}
