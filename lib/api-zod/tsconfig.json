@@ -5,7 +5,12 @@
     "declarationMap": true,
     "emitDeclarationOnly": true,
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    // The generated validators for multipart bodies reference `File`. It is a
+    // standard global in every browser and in Node 20+, but the base config's
+    // lib is es2022, which predates it. Types only — nothing reaches runtime,
+    // and this package is entirely generated.
+    "lib": ["es2022", "dom"]
   },
   "include": ["src"]
 }
