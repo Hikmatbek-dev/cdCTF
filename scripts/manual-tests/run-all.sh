@@ -5,7 +5,39 @@
 set -u
 
 DB=cp_manual_$$
-export DATABASE_URL="postgresql:///$DB?host=/var/run/postgresql"
+
+# Two ways in: a local Postgres over the unix socket (developer machines), or
+# CI_DATABASE_URL pointing at one over TCP (the CI service container). The
+# throwaway database is created either way — nothing here runs against a
+# database that already has data in it.
+if [ -n "${CI_DATABASE_URL:-}" ]; then
+  ADMIN_URL="$CI_DATABASE_URL"
+  # Swap only the database name, keeping credentials, host and any query string.
+  # `${url%/*}/$DB` looks equivalent and is not: it mangles a URL carrying
+  # ?sslmode=require, which hosted Postgres commonly does.
+  export DATABASE_URL=$(python3 -c "
+import sys, urllib.parse
+url, db = sys.argv[1], sys.argv[2]
+parts = urllib.parse.urlsplit(url)
+query = f'?{parts.query}' if parts.query else ''
+# Rebuilt by hand rather than with urlunsplit, which collapses 'scheme://' to
+# 'scheme:/' when there is no host — the shape a unix-socket URL has.
+print(f'{parts.scheme}://{parts.netloc}/{db}{query}')
+" "$CI_DATABASE_URL" "$DB")
+else
+  ADMIN_URL=""
+  export DATABASE_URL="postgresql:///$DB?host=/var/run/postgresql"
+fi
+
+create_database() {
+  if [ -n "$ADMIN_URL" ]; then psql "$ADMIN_URL" -q -c "CREATE DATABASE $DB" > /dev/null
+  else createdb "$DB"; fi
+}
+drop_database() {
+  if [ -n "$ADMIN_URL" ]; then psql "$ADMIN_URL" -q -c "DROP DATABASE IF EXISTS $DB" > /dev/null 2>&1
+  else dropdb --if-exists "$DB" 2>/dev/null; fi
+}
+
 export JWT_SECRET="test_secret_at_least_32_chars_long_xxxx"
 export TOTP_ENCRYPTION_KEY="test_totp_key_at_least_32_chars_xxxxx"
 export NODE_ENV=development
@@ -22,7 +54,7 @@ SERVER_PID=""
 cleanup() {
   [ -n "$SERVER_PID" ] && kill "$SERVER_PID" 2>/dev/null
   sleep 1
-  dropdb --if-exists "$DB" 2>/dev/null
+  drop_database
   rm -f "$LOG"
 }
 trap cleanup EXIT
@@ -57,7 +89,7 @@ start_server() {
 }
 
 echo "==> Baza: $DB"
-createdb "$DB" || exit 1
+create_database || exit 1
 (cd "$ROOT/lib/db" && npx drizzle-kit push --config ./drizzle.config.ts --force > /dev/null 2>&1) || exit 1
 
 echo "==> Build"
