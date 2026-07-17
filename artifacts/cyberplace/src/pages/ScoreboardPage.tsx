@@ -58,7 +58,7 @@ export default function ScoreboardPage() {
         <div className="mb-20">
           <FadeIn>
             <div className="flex items-center gap-8 mb-12">
-              <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-accent/20 border border-white/10 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-primary/10 backdrop-blur-md animate-float">
+              <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-accent/20 border border-foreground/10 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-primary/10 backdrop-blur-md animate-float">
                 <Trophy className="w-10 h-10 text-primary" />
               </div>
               <div>
@@ -78,7 +78,7 @@ export default function ScoreboardPage() {
                 placeholder={t("QUERY_OPERATIVE_ID...", "FOYDALANUVCHILARNI QIDIRING...", "ПОИСК_ОПЕРАТИВНИКОВ...")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full h-20 pl-16 pr-8 bg-white/5 border border-white/5 rounded-[2rem] font-bold uppercase tracking-[0.2em] focus:border-primary focus:ring-8 focus:ring-primary/5 transition-all text-sm placeholder:text-muted-foreground/20"
+                className="w-full h-20 pl-16 pr-8 bg-foreground/5 border border-foreground/5 rounded-[2rem] font-bold uppercase tracking-[0.2em] focus:border-primary focus:ring-8 focus:ring-primary/5 transition-all text-sm placeholder:text-muted-foreground/20"
               />
             </div>
           </FadeIn>
@@ -113,16 +113,16 @@ export default function ScoreboardPage() {
               exit={{ opacity: 0 }}
               className="space-y-4"
             >
-              {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-24 bg-white/5 rounded-[2rem]" />)}
+              {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-24 bg-foreground/5 rounded-[2rem]" />)}
             </motion.div>
           ) : entries.length === 0 ? (
             <motion.div 
               key="empty"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="glass-card py-40 text-center rounded-[3rem] border-white/5"
+              className="glass-card py-40 text-center rounded-[3rem] border-foreground/5"
             >
-               <div className="w-20 h-20 bg-white/5 border border-white/5 rounded-3xl flex items-center justify-center mx-auto mb-8">
+               <div className="w-20 h-20 bg-foreground/5 border border-foreground/5 rounded-3xl flex items-center justify-center mx-auto mb-8">
                 <Target className="w-10 h-10 text-muted-foreground/20" />
                </div>
                <p className="text-xs font-black uppercase tracking-[0.4em] text-muted-foreground/30">{t("ZERO_RECORDS_MATCH_QUERY", "NATIJALAR TOPILMADI", "РЕЗУЛЬТАТЫ_НЕ_НАЙДЕНЫ")}</p>
@@ -134,21 +134,21 @@ export default function ScoreboardPage() {
               animate={{ opacity: 1 }}
               className="space-y-4"
             >
-              <div className="glass-card p-2 rounded-[3.5rem] border-white/5 bg-white/[0.01] mb-16 shadow-2xl">
+              <div className="glass-card p-2 rounded-[3.5rem] border-foreground/5 bg-foreground/[0.01] mb-16 shadow-2xl">
                 {entries.map((entry, i) => {
                   const isMe = user?.id === entry.userId;
                   const rank = entry.rank;
                   const titles = normalizeArray<string>(entry.titles, ["titles", "data", "items"]);
                   
                   const isTop3 = rank <= 3;
-                  const rankColor = rank === 1 ? "text-yellow-500" : rank === 2 ? "text-slate-400" : rank === 3 ? "text-amber-600" : "text-white/20";
+                  const rankColor = rank === 1 ? "text-yellow-500" : rank === 2 ? "text-slate-400" : rank === 3 ? "text-amber-600" : "text-foreground/20";
                   const rankGlow = rank === 1 ? "shadow-yellow-500/20" : rank === 2 ? "shadow-slate-400/20" : rank === 3 ? "shadow-amber-600/20" : "";
 
                   return (
                     <FadeIn key={entry.userId} delay={i * 0.03}>
                       <Link href={`/profile/${entry.userId}`}>
                         <div
-                          className={`group flex items-center gap-8 p-6 md:p-8 transition-all duration-500 cursor-pointer rounded-[2.5rem] mb-2 last:mb-0 hover:bg-white/5 hover:scale-[1.01] active:scale-[0.99] border border-transparent ${
+                          className={`group flex items-center gap-8 p-6 md:p-8 transition-all duration-500 cursor-pointer rounded-[2.5rem] mb-2 last:mb-0 hover:bg-foreground/5 hover:scale-[1.01] active:scale-[0.99] border border-transparent ${
                             isMe ? "bg-primary/[0.08] border-primary/20 shadow-xl shadow-primary/5" : ""
                           }`}
                         >
@@ -158,7 +158,7 @@ export default function ScoreboardPage() {
                           </div>
                           
                           {/* Avatar */}
-                          <div className={`w-16 h-16 md:w-20 md:h-20 bg-white/5 border-2 border-white/5 rounded-3xl flex items-center justify-center text-2xl font-black text-primary shrink-0 transition-all duration-500 overflow-hidden shadow-2xl ${isMe ? "border-primary/40 shadow-primary/20" : "group-hover:border-primary/40 group-hover:shadow-primary/20"}`}>
+                          <div className={`w-16 h-16 md:w-20 md:h-20 bg-foreground/5 border-2 border-foreground/5 rounded-3xl flex items-center justify-center text-2xl font-black text-primary shrink-0 transition-all duration-500 overflow-hidden shadow-2xl ${isMe ? "border-primary/40 shadow-primary/20" : "group-hover:border-primary/40 group-hover:shadow-primary/20"}`}>
                             {entry.avatarUrl ? (
                               <img src={entry.avatarUrl} alt={entry.nickname} className="w-full h-full object-cover" />
                             ) : <span>{entry.nickname[0].toUpperCase()}</span>}
@@ -179,7 +179,7 @@ export default function ScoreboardPage() {
                             </div>
                             <div className="flex flex-wrap gap-2">
                               {titles.slice(0, 2).map(title => (
-                                <span key={title} className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 bg-white/5 border border-white/5 px-3 py-1 rounded-xl group-hover:border-primary/30 transition-all">
+                                <span key={title} className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 bg-foreground/5 border border-foreground/5 px-3 py-1 rounded-xl group-hover:border-primary/30 transition-all">
                                   {title}
                                 </span>
                               ))}
@@ -190,7 +190,7 @@ export default function ScoreboardPage() {
                           <div className="text-right shrink-0">
                             <div className="flex items-center justify-end gap-2 text-primary mb-2">
                               <Zap className="w-4 h-4 fill-current" />
-                              <div className="text-3xl md:text-5xl font-black tabular-nums leading-none tracking-tighter text-white">{entry.points}</div>
+                              <div className="text-3xl md:text-5xl font-black tabular-nums leading-none tracking-tighter text-foreground">{entry.points}</div>
                             </div>
                             <div className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/20">
                               {entry.solvedCtfCount} SOLVES_LOGGED

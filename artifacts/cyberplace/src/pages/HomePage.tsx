@@ -24,7 +24,7 @@ export default function HomePage() {
         {/* Hero Section */}
         <section className="mb-48 text-center relative">
           <ScaleIn>
-            <div className="inline-flex items-center justify-center w-28 h-28 rounded-[3rem] bg-gradient-to-br from-primary/20 to-accent/20 border border-white/10 mb-12 animate-float shadow-2xl backdrop-blur-md">
+            <div className="inline-flex items-center justify-center w-28 h-28 rounded-[3rem] bg-gradient-to-br from-primary/20 to-accent/20 border border-foreground/10 mb-12 animate-float shadow-2xl backdrop-blur-md">
               <Shield className="w-14 h-14 text-primary" />
             </div>
           </ScaleIn>
@@ -36,7 +36,7 @@ export default function HomePage() {
             className="text-8xl sm:text-[10rem] font-black tracking-tighter mb-8 leading-none"
           >
             <span className="gradient-text">cd</span>
-            <span className="text-white/10 ml-2">CTF</span>
+            <span className="text-foreground/10 ml-2">CTF</span>
           </motion.h1>
           
           <FadeIn delay={0.2}>
@@ -112,7 +112,7 @@ export default function HomePage() {
           <div className="grid gap-6">
             {scoreboardEntries.map((entry, i) => (
               <FadeIn key={entry.userId} delay={i * 0.05}>
-                <div className="glass-card group flex items-center justify-between hover:bg-white/[0.02]">
+                <div className="glass-card group flex items-center justify-between hover:bg-foreground/[0.02]">
                   <div className="flex items-center gap-8">
                     <span className="text-xs font-black text-muted-foreground/10 w-8">{ (i + 1).toString().padStart(2, '0') }</span>
                     <div className="relative">
@@ -137,7 +137,7 @@ export default function HomePage() {
                       <div className="text-xl font-black tabular-nums">{entry.points.toLocaleString()}</div>
                     </div>
                     <Link href={`/profile/${entry.userId}`}>
-                      <button className="text-[10px] font-black border border-white/5 bg-white/5 px-8 py-4 rounded-2xl hover:border-primary/50 hover:text-primary transition-all uppercase tracking-[0.2em] backdrop-blur-md">
+                      <button className="text-[10px] font-black border border-foreground/5 bg-foreground/5 px-8 py-4 rounded-2xl hover:border-primary/50 hover:text-primary transition-all uppercase tracking-[0.2em] backdrop-blur-md">
                         PROFILE
                       </button>
                     </Link>
@@ -150,14 +150,14 @@ export default function HomePage() {
       </div>
 
       {/* Industrial Footer */}
-      <footer className="border-t border-white/5 pt-32 pb-16 bg-card/30 relative overflow-hidden backdrop-blur-3xl">
+      <footer className="border-t border-foreground/5 pt-32 pb-16 bg-card/30 relative overflow-hidden backdrop-blur-3xl">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-4 gap-24 mb-32">
             <div className="lg:col-span-2">
               <div className="flex items-center gap-4 mb-10">
                 <div className="text-5xl font-black tracking-tighter">
                   <span className="gradient-text">cd</span>
-                  <span className="text-white/10">CTF</span>
+                  <span className="text-foreground/10">CTF</span>
                 </div>
               </div>
               <p className="text-lg text-muted-foreground font-medium leading-relaxed mb-12 max-w-xl">
@@ -182,7 +182,7 @@ export default function HomePage() {
             
             <div className="grid grid-cols-2 lg:col-span-2 gap-16">
               <div className="space-y-10">
-                <h4 className="text-xs font-black tracking-[0.3em] uppercase text-white/40">SITEMAP</h4>
+                <h4 className="text-xs font-black tracking-[0.3em] uppercase text-foreground/40">SITEMAP</h4>
                 <ul className="space-y-6 text-sm font-bold">
                   <li><Link href="/ctf" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2">./Missions</Link></li>
                   <li><Link href="/learn" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2">./Academy</Link></li>
@@ -191,7 +191,7 @@ export default function HomePage() {
                 </ul>
               </div>
               <div className="space-y-10">
-                <h4 className="text-xs font-black tracking-[0.3em] uppercase text-white/40">SYSTEM_INFO</h4>
+                <h4 className="text-xs font-black tracking-[0.3em] uppercase text-foreground/40">SYSTEM_INFO</h4>
                 <ul className="space-y-6 text-sm font-bold text-muted-foreground">
                   <li className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(0,210,255,0.5)]" /> 
@@ -205,7 +205,7 @@ export default function HomePage() {
             </div>
           </div>
           
-          <div className="pt-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8 text-[10px] text-muted-foreground/20 font-black uppercase tracking-[0.4em]">
+          <div className="pt-16 border-t border-foreground/5 flex flex-col md:flex-row justify-between items-center gap-8 text-[10px] text-muted-foreground/20 font-black uppercase tracking-[0.4em]">
             <div>© {new Date().getFullYear()} CDCTF PLATFORM. SECURED BY BOZKURT.</div>
             <div className="flex items-center gap-12">
               <a href="#" className="hover:text-primary transition-colors">SECURITY_POLICY</a>

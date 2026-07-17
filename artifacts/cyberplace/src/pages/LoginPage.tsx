@@ -142,7 +142,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md relative z-10">
         <ScaleIn>
           <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-[2rem] bg-gradient-to-br from-primary/20 to-accent/20 border border-white/10 mb-8 animate-float shadow-2xl backdrop-blur-md">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-[2rem] bg-gradient-to-br from-primary/20 to-accent/20 border border-foreground/10 mb-8 animate-float shadow-2xl backdrop-blur-md">
               <Shield className="w-10 h-10 text-primary" />
             </div>
             <h1 className="text-4xl font-black tracking-tighter uppercase leading-none mb-4">{t("AUTHENTICATE", "KIRISH", "АУТЕНТИФИКАЦИЯ")}</h1>
@@ -151,7 +151,7 @@ export default function LoginPage() {
         </ScaleIn>
 
         <FadeIn delay={0.2}>
-          <div className="glass-card p-10 rounded-[3rem] border-white/10 shadow-2xl">
+          <div className="glass-card p-10 rounded-[3rem] border-foreground/10 shadow-2xl">
             {oauthError && (
               <div
                 role="alert"
@@ -184,7 +184,7 @@ export default function LoginPage() {
                       autoComplete="one-time-code"
                       inputMode="text"
                       autoFocus
-                      className="w-full pl-12 pr-6 h-14 bg-white/5 border border-white/5 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold text-sm tracking-wide placeholder:text-muted-foreground/20"
+                      className="w-full pl-12 pr-6 h-14 bg-foreground/5 border border-foreground/5 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold text-sm tracking-wide placeholder:text-muted-foreground/20"
                     />
                   </div>
                   <p className="text-[10px] text-muted-foreground/60 mt-3 ml-1 leading-relaxed">
@@ -230,7 +230,7 @@ export default function LoginPage() {
                           placeholder="your_nickname" 
                           data-testid="input-nickname" 
                           autoComplete="username" 
-                          className="w-full pl-12 pr-6 h-14 bg-white/5 border border-white/5 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold text-sm tracking-wide placeholder:text-muted-foreground/20"
+                          className="w-full pl-12 pr-6 h-14 bg-foreground/5 border border-foreground/5 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold text-sm tracking-wide placeholder:text-muted-foreground/20"
                         />
                       </div>
                     </FormControl>
@@ -254,7 +254,7 @@ export default function LoginPage() {
                           placeholder="••••••••" 
                           data-testid="input-password" 
                           autoComplete="current-password" 
-                          className="w-full pl-12 pr-6 h-14 bg-white/5 border border-white/5 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold text-sm tracking-wide placeholder:text-muted-foreground/20"
+                          className="w-full pl-12 pr-6 h-14 bg-foreground/5 border border-foreground/5 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold text-sm tracking-wide placeholder:text-muted-foreground/20"
                         />
                       </div>
                     </FormControl>
@@ -279,7 +279,7 @@ export default function LoginPage() {
 
             {/* Only rendered for providers the server actually has keys for. */}
             {!mfaToken && (api.passkeysSupported() || (providers.data?.providers.length ?? 0) > 0) && (
-              <div className="mt-8 pt-8 border-t border-white/5">
+              <div className="mt-8 pt-8 border-t border-foreground/5">
                 <p className="text-center text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 mb-4">
                   {t("OR_CONTINUE_WITH", "YOKI DAVOM ETING", "ИЛИ ВОЙДИТЕ ЧЕРЕЗ")}
                 </p>
@@ -291,7 +291,7 @@ export default function LoginPage() {
                     onClick={() => passkeyMutation.mutate()}
                     disabled={passkeyMutation.isPending}
                     data-testid="button-passkey"
-                    className="w-full h-12 mb-3 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/40 hover:bg-white/10 transition-all text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-white flex items-center justify-center gap-2"
+                    className="w-full h-12 mb-3 rounded-2xl bg-foreground/5 border border-foreground/5 hover:border-primary/40 hover:bg-foreground/10 transition-all text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground flex items-center justify-center gap-2"
                   >
                     <Fingerprint className="w-4 h-4" aria-hidden="true" />
                     {passkeyMutation.isPending
@@ -307,7 +307,7 @@ export default function LoginPage() {
                       type="button"
                       onClick={() => api.startOAuth(provider)}
                       data-testid={`button-oauth-${provider}`}
-                      className="h-12 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/40 hover:bg-white/10 transition-all text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-white"
+                      className="h-12 rounded-2xl bg-foreground/5 border border-foreground/5 hover:border-primary/40 hover:bg-foreground/10 transition-all text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground"
                     >
                       {PROVIDER_LABELS[provider] ?? provider}
                     </button>
