@@ -20,13 +20,21 @@ export interface MessageResponse {
 
 export interface RegisterBody {
   /**
+   * Letters, numbers and underscores only.
    * @minLength 3
    * @maxLength 32
+   * @pattern ^[A-Za-z0-9_]+$
    */
   nickname: string;
   email: string;
-  /** @minLength 6 */
+  /**
+   * At least 10 characters, with a lowercase letter, an uppercase letter, a digit and a symbol.
+   * @minLength 10
+   * @pattern ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{10,}$
+   */
   password: string;
+  /** Cloudflare Turnstile token. Required only when TURNSTILE_ENFORCE is on. */
+  captchaToken?: string;
 }
 
 export interface LoginBody {
@@ -561,8 +569,9 @@ export interface LoginHistoryResponse {
 export interface ChangePasswordBody {
   oldPassword: string;
   /**
-   * 10+ chars with upper, lower, digit and symbol.
+   * At least 10 characters, with a lowercase letter, an uppercase letter, a digit and a symbol.
    * @minLength 10
+   * @pattern ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{10,}$
    */
   newPassword: string;
 }
@@ -579,7 +588,11 @@ export interface ForgotPasswordBody {
 
 export interface ResetPasswordBody {
   token: string;
-  /** @minLength 10 */
+  /**
+   * At least 10 characters, with a lowercase letter, an uppercase letter, a digit and a symbol.
+   * @minLength 10
+   * @pattern ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{10,}$
+   */
   password: string;
 }
 

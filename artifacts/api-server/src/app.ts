@@ -76,6 +76,19 @@ app.use("/api", (req: Request, res: Response) => {
   res.status(404).json({ error: `Cannot ${req.method} ${req.originalUrl.split("?")[0]}` });
 });
 
+/**
+ * An http-errors-style error that already knows its status and has a message
+ * meant for the client. `expose` is the library's own signal for that — an
+ * internal failure never sets it, so this cannot leak one.
+ */
+function isExposedClientError(err: unknown): err is { status: number; message: string } {
+  return typeof err === "object" && err !== null
+    && "expose" in err && err.expose === true
+    && "status" in err && typeof err.status === "number"
+    && err.status >= 400 && err.status < 500
+    && "message" in err && typeof err.message === "string";
+}
+
 app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
   // A rejected Origin is a policy decision, not a server fault — answering 500
   // here also meant every scanner hit burned a Sentry event.
@@ -92,6 +105,14 @@ app.use((err: unknown, req: express.Request, res: express.Response, _next: expre
 
   if (typeof err === "object" && err !== null && "type" in err && err.type === "entity.too.large") {
     return res.status(413).json({ error: `Request body is too large. Limit is ${REQUEST_BODY_LIMIT}.` });
+  }
+
+  // body-parser and friends throw http-errors: a status, and `expose` meaning
+  // "this message is safe to show the client". Malformed JSON is the common one
+  // — it was answering 500 and reporting to Sentry, when it is simply a bad
+  // request that no server change would fix.
+  if (isExposedClientError(err)) {
+    return res.status(err.status).json({ error: err.message });
   }
 
   logger.error({ err }, "Unhandled request error");

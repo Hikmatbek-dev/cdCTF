@@ -22,6 +22,12 @@ import {
   verifyWebAuthnChallengeToken,
 } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/security";
+import { validateBody } from "../middleware/validate";
+// Generated from the OpenAPI spec, so a rule cannot be stated in two places and
+// disagree — which is exactly what happened: the spec allowed a 6-character
+// password while this file demanded 10 and four character classes.
+import { LoginBody, RegisterBody } from "@workspace/api-zod";
+import type { z } from "zod";
 import { sendVerificationEmail, verifyTurnstileToken, sendPasswordResetEmail } from "../lib/integrations";
 import { writeAuditLog } from "../lib/audit";
 import {
@@ -133,19 +139,7 @@ function isStrongPassword(password: string) {
     && /[^A-Za-z0-9]/.test(password);
 }
 
-function validateRegister(body: Record<string, unknown>) {
-  const { nickname, email, password } = body;
-  if (typeof nickname !== "string") return "Nickname must be 3-32 chars";
-  const normalizedNickname = normalizeNickname(nickname);
-  if (normalizedNickname.length < 3 || normalizedNickname.length > 32 || !/^[A-Za-z0-9_]+$/.test(normalizedNickname)) {
-    return "Nickname must be 3-32 chars and use only letters, numbers, or underscores";
-  }
-  if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(email))) return "Invalid email";
-  if (typeof password !== "string" || !isStrongPassword(password)) {
-    return "Password must be at least 10 chars and include uppercase, lowercase, number, and symbol";
-  }
-  return null;
-}
+
 
 type PublicUser = {
   id: number; nickname: string; email: string; avatarUrl: string | null;
@@ -199,18 +193,10 @@ async function issueSession(res: Response, user: typeof usersTable.$inferSelect,
   });
 }
 
-function validateLogin(body: Record<string, unknown>) {
-  const { nickname, password } = body;
-  if (typeof nickname !== "string" || !normalizeNickname(nickname)) return "Login required";
-  if (typeof password !== "string" || !password) return "Password required";
-  return null;
-}
 
-router.post("/register", authRateLimit, async (req, res) => {
-  const err = validateRegister(req.body);
-  if (err) return res.status(400).json({ error: err });
 
-  const body = req.body as { nickname: string; email: string; password: string; captchaToken?: string };
+router.post("/register", authRateLimit, validateBody(RegisterBody), async (req, res) => {
+  const body = req.body as z.infer<typeof RegisterBody>;
   const bypassLocalCaptcha = process.env.TURNSTILE_BYPASS_LOCALHOST === "true"
     && (req.ip === "::1" || req.ip === "127.0.0.1" || req.ip?.startsWith("::ffff:127.0.0.1"));
   const enforceTurnstile = process.env.TURNSTILE_ENFORCE === "true";
@@ -258,11 +244,8 @@ router.post("/register", authRateLimit, async (req, res) => {
   });
 });
 
-router.post("/login", authRateLimit, async (req, res) => {
-  const err = validateLogin(req.body);
-  if (err) return res.status(400).json({ error: err });
-
-  const body = req.body as { nickname: string; password: string };
+router.post("/login", authRateLimit, validateBody(LoginBody), async (req, res) => {
+  const body = req.body as z.infer<typeof LoginBody>;
   const identifier = normalizeNickname(body.nickname);
   const email = normalizeEmail(identifier);
   const password = body.password;

@@ -2051,12 +2051,22 @@ components:
           type: string
           minLength: 3
           maxLength: 32
+          pattern: "^[A-Za-z0-9_]+$"
+          description: Letters, numbers and underscores only.
         email:
           type: string
           format: email
-        password:
+        password: &id001
           type: string
-          minLength: 6
+          minLength: 10
+          pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{10,}$"
+          description: >-
+            At least 10 characters, with a lowercase letter, an uppercase letter, a digit
+            and a symbol.
+        captchaToken:
+          type: string
+          description: >-
+            Cloudflare Turnstile token. Required only when TURNSTILE_ENFORCE is on.
       required: [nickname, email, password]
 
     LoginBody:
@@ -2966,10 +2976,7 @@ components:
       properties:
         oldPassword:
           type: string
-        newPassword:
-          type: string
-          minLength: 10
-          description: 10+ chars with upper, lower, digit and symbol.
+        newPassword: *id001
       required: [oldPassword, newPassword]
     ChangePasswordResponse:
       type: object
@@ -2993,9 +3000,7 @@ components:
       properties:
         token:
           type: string
-        password:
-          type: string
-          minLength: 10
+        password: *id001
       required: [token, password]
     PasswordBody:
       type: object

@@ -103,7 +103,7 @@ echo "==> Port: $API_PORT"
 # fail with 401s that have nothing to do with the code.
 #
 # lesson-test-honest reuses the lesson that lesson-test-exploit seeds, so order matters.
-SUITES="lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens oauth passkeys scoring scoreboard profile"
+SUITES="lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens oauth passkeys scoring scoreboard profile validation"
 FAILED=""
 
 for suite in $SUITES; do

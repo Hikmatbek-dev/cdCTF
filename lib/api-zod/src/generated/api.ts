@@ -20,15 +20,34 @@ export const HealthCheckResponse = zod.object({
 export const registerBodyNicknameMin = 3;
 export const registerBodyNicknameMax = 32;
 
-export const registerBodyPasswordMin = 6;
+export const registerBodyNicknameRegExp = new RegExp("^[A-Za-z0-9_]+$");
+export const registerBodyPasswordMin = 10;
+
+export const registerBodyPasswordRegExp = new RegExp(
+  "^(?=.\*[a-z])(?=.\*[A-Z])(?=.\*\\d)(?=.\*[^A-Za-z0-9]).{10,}$",
+);
 
 export const RegisterBody = zod.object({
   nickname: zod
     .string()
     .min(registerBodyNicknameMin)
-    .max(registerBodyNicknameMax),
+    .max(registerBodyNicknameMax)
+    .regex(registerBodyNicknameRegExp)
+    .describe("Letters, numbers and underscores only."),
   email: zod.string().email(),
-  password: zod.string().min(registerBodyPasswordMin),
+  password: zod
+    .string()
+    .min(registerBodyPasswordMin)
+    .regex(registerBodyPasswordRegExp)
+    .describe(
+      "At least 10 characters, with a lowercase letter, an uppercase letter, a digit and a symbol.",
+    ),
+  captchaToken: zod
+    .string()
+    .optional()
+    .describe(
+      "Cloudflare Turnstile token. Required only when TURNSTILE_ENFORCE is on.",
+    ),
 });
 
 /**
@@ -1257,12 +1276,19 @@ export const GetLoginHistoryResponse = zod.object({
  */
 export const changePasswordBodyNewPasswordMin = 10;
 
+export const changePasswordBodyNewPasswordRegExp = new RegExp(
+  "^(?=.\*[a-z])(?=.\*[A-Z])(?=.\*\\d)(?=.\*[^A-Za-z0-9]).{10,}$",
+);
+
 export const ChangePasswordBody = zod.object({
   oldPassword: zod.string(),
   newPassword: zod
     .string()
     .min(changePasswordBodyNewPasswordMin)
-    .describe("10+ chars with upper, lower, digit and symbol."),
+    .regex(changePasswordBodyNewPasswordRegExp)
+    .describe(
+      "At least 10 characters, with a lowercase letter, an uppercase letter, a digit and a symbol.",
+    ),
 });
 
 export const ChangePasswordResponse = zod.object({
@@ -1289,9 +1315,19 @@ export const ForgotPasswordResponse = zod.object({
  */
 export const resetPasswordBodyPasswordMin = 10;
 
+export const resetPasswordBodyPasswordRegExp = new RegExp(
+  "^(?=.\*[a-z])(?=.\*[A-Z])(?=.\*\\d)(?=.\*[^A-Za-z0-9]).{10,}$",
+);
+
 export const ResetPasswordBody = zod.object({
   token: zod.string(),
-  password: zod.string().min(resetPasswordBodyPasswordMin),
+  password: zod
+    .string()
+    .min(resetPasswordBodyPasswordMin)
+    .regex(resetPasswordBodyPasswordRegExp)
+    .describe(
+      "At least 10 characters, with a lowercase letter, an uppercase letter, a digit and a symbol.",
+    ),
 });
 
 export const ResetPasswordResponse = zod.object({
