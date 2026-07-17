@@ -80,6 +80,9 @@ interface TokenClaims {
 }
 
 declare global {
+  // Declaration merging is how Express is extended; there is no ES-module form
+  // of it, so the rule has nothing to offer here.
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       user?: AuthPayload;

@@ -31,7 +31,7 @@ export default function AdminUsersPage() {
     blockUser.mutate({ id }, {
       onSuccess: () => { 
         toast({ title: t("User blocked", "Foydalanuvchi bloklandi", "Пользователь заблокирован") }); 
-        qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey({ search: search || undefined }) }); 
+        void qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey({ search: search || undefined }) });
       },
       onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
     });
@@ -41,7 +41,7 @@ export default function AdminUsersPage() {
     unblockUser.mutate({ id }, {
       onSuccess: () => { 
         toast({ title: t("User unblocked", "Foydalanuvchi blokdan chiqdi", "Пользователь разблокирован") }); 
-        qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey({ search: search || undefined }) }); 
+        void qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey({ search: search || undefined }) });
       },
       onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
     });
@@ -62,7 +62,7 @@ export default function AdminUsersPage() {
       });
       if (!res.ok) throw new Error();
       toast({ title: t("Points recalculated", "Ballar qayta hisoblandi", "Баллы пересчитаны") });
-      qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey({ search: search || undefined }) });
+      void qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey({ search: search || undefined }) });
     } catch (err) {
       toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" });
     } finally {

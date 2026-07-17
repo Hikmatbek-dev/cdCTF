@@ -68,7 +68,7 @@ export default function ProfileEditPage() {
         onSuccess: (res) => {
           updateUser({ ...user, ...res });
           toast({ title: t("Profile updated!", "Profil yangilandi!", "Профиль обновлён!") });
-          qc.invalidateQueries({ queryKey: getGetUserProfileQueryKey(user.id) });
+          void qc.invalidateQueries({ queryKey: getGetUserProfileQueryKey(user.id) });
         },
         onError: (err: unknown) => {
           const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Error";

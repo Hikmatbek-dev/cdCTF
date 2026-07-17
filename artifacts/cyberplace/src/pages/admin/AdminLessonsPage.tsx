@@ -72,7 +72,7 @@ export default function AdminLessonsPage() {
   const openCreate = () => { setEditingId(null); form.reset({ title: "", content: "", categoryId: categoryList[0]?.id ?? 1, points: 50, questions: [{ question: "", options: ["", "", "", ""], correctOption: 0 }] }); setShowForm(true); };
 
   const onSubmit = (data: FormData) => {
-    const invalidate = () => { qc.invalidateQueries({ queryKey: ["admin-lessons"] }); setShowForm(false); };
+    const invalidate = () => { void qc.invalidateQueries({ queryKey: ["admin-lessons"] }); setShowForm(false); };
     if (editingId) {
       updateLesson.mutate({ id: editingId, data }, {
         onSuccess: () => { toast({ title: t("Lesson updated!", "Dars yangilandi!", "Урок обновлён!") }); invalidate(); },
@@ -89,7 +89,7 @@ export default function AdminLessonsPage() {
   const handleDelete = (id: number) => {
     if (!confirm(t("Delete this lesson?", "O'chirish?", "Удалить?"))) return;
     deleteLesson.mutate({ id }, {
-      onSuccess: () => { toast({ title: t("Deleted", "O'chirildi", "Удалено") }); qc.invalidateQueries({ queryKey: ["admin-lessons"] }); },
+      onSuccess: () => { toast({ title: t("Deleted", "O'chirildi", "Удалено") }); void qc.invalidateQueries({ queryKey: ["admin-lessons"] }); },
       onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
     });
   };

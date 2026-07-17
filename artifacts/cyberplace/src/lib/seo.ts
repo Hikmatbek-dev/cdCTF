@@ -256,7 +256,7 @@ export function SeoManager() {
     upsertLink("alternate", canonical, { hreflang: "ru" });
     upsertLink("alternate", canonical, { hreflang: "en" });
 
-    upsertStructuredData(config.structuredData as unknown[]);
+    upsertStructuredData(config.structuredData);
   }, [lang, location]);
 
   return null;

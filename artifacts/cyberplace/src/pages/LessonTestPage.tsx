@@ -34,6 +34,32 @@ export default function LessonTestPage() {
   const submitTest = useSubmitLessonTest();
   const reportEscape = useReportTestEscape();
 
+  /**
+   * Puts the candidate back in fullscreen, and only stands down the warning if
+   * that actually happened. The browser can refuse — permission, no user
+   * gesture — and clearing the warning regardless would end the enforcement
+   * while leaving the test out of fullscreen, which is the thing it exists to
+   * prevent.
+   */
+  const returnToFullscreen = async () => {
+    try {
+      await document.documentElement.requestFullscreen?.();
+    } catch {
+      toast({
+        title: t("Could not return to fullscreen", "To'liq ekranga qaytib bo'lmadi", "Не удалось вернуться в полноэкранный режим"),
+        description: t(
+          "Allow fullscreen for this site, then try again.",
+          "Ushbu saytga to'liq ekranga ruxsat bering va qayta urinib ko'ring.",
+          "Разрешите полноэкранный режим для сайта и попробуйте снова.",
+        ),
+        variant: "destructive",
+      });
+      return;
+    }
+    setEscapeWarning(false);
+    if (countdownRef.current) clearInterval(countdownRef.current);
+  };
+
   useEffect(() => {
     const handleFullscreenChange = () => {
       const isFullscreen = Boolean(document.fullscreenElement);
@@ -46,7 +72,7 @@ export default function LessonTestPage() {
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
-      if (document.fullscreenElement) document.exitFullscreen?.();
+      if (document.fullscreenElement) void document.exitFullscreen?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, result, fullscreenStarted]);
@@ -132,7 +158,7 @@ export default function LessonTestPage() {
       {
         onSuccess: (res) => {
           setResult(res);
-          if (document.fullscreenElement) document.exitFullscreen?.();
+          if (document.fullscreenElement) void document.exitFullscreen?.();
         },
         onError: () => toast({ title: "Error submitting test", variant: "destructive" }),
       }
@@ -232,7 +258,12 @@ export default function LessonTestPage() {
           </div>
           <div className="flex items-center gap-3">
             <span className="font-mono text-sm flex items-center gap-1"><Timer className="w-3.5 h-3.5" /> {countdown}s</span>
-            <Button size="sm" variant="secondary" onClick={() => { document.documentElement.requestFullscreen?.(); setEscapeWarning(false); clearInterval(countdownRef.current!); }}>
+            {/* Only clear the warning if fullscreen actually came back.
+                requestFullscreen rejects — denied permission, no user gesture —
+                and this used to ignore that: the warning cleared and the
+                countdown stopped either way, so a refused request left the
+                candidate out of fullscreen with the enforcement switched off. */}
+            <Button size="sm" variant="secondary" onClick={() => { void returnToFullscreen(); }}>
               {t("Return to Fullscreen", "Qaytish", "Вернуться")}
             </Button>
           </div>

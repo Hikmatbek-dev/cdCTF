@@ -33,9 +33,17 @@ export default function ProfilePage() {
 
   const handleShare = () => {
     const url = window.location.href;
-    navigator.clipboard.writeText(url).then(() => {
-      toast({ title: t("Link copied!", "Havola nusxalandi!", "Ссылка скопирована!") });
-    });
+    // The clipboard API rejects on a denied permission or a non-secure context,
+    // and this had no catch: the copy failed, the success toast never fired, and
+    // the user was told nothing at all.
+    navigator.clipboard.writeText(url).then(
+      () => toast({ title: t("Link copied!", "Havola nusxalandi!", "Ссылка скопирована!") }),
+      () => toast({
+        title: t("Could not copy the link", "Havolani nusxalab bo'lmadi", "Не удалось скопировать ссылку"),
+        description: url,
+        variant: "destructive",
+      }),
+    );
   };
 
   if (isLoading || (isAuthenticated && !id)) {

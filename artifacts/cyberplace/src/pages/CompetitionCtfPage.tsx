@@ -56,8 +56,8 @@ export default function CompetitionCtfPage() {
         toast({ title: t("Wrong flag", "Noto'g'ri flag", "Неверный флаг"), description: `${t("Attempts left:", "Qolgan urinishlar:", "Осталось попыток:")} ${3 - data.wrongAttempts}`, variant: "destructive" });
       }
       setFlag("");
-      qc.invalidateQueries({ queryKey: getGetCompetitionScoreboardQueryKey(competitionId) });
-      qc.invalidateQueries({ queryKey: getGetCtfChallengeQueryKey(ctfId) });
+      void qc.invalidateQueries({ queryKey: getGetCompetitionScoreboardQueryKey(competitionId) });
+      void qc.invalidateQueries({ queryKey: getGetCtfChallengeQueryKey(ctfId) });
     } catch (error) {
       toast({ title: error instanceof Error ? error.message : "Submit failed", variant: "destructive" });
     } finally {

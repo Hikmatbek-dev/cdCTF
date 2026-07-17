@@ -128,7 +128,9 @@ export default function LoginPage() {
     defaultValues: { nickname: "", password: "" },
   });
 
-  const onSubmit = async (data: FormData) => loginMutation.mutate(data);
+  // Not async: mutate() is fire-and-forget and returns void, so the promise this
+  // used to hand back resolved before the login had done anything.
+  const onSubmit = (data: FormData) => loginMutation.mutate(data);
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-background relative overflow-hidden">

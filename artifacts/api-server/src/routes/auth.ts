@@ -218,7 +218,7 @@ router.post("/register", authRateLimit, validateBody(RegisterBody), async (req, 
     return res.status(400).json({ error: "Captcha is required" });
   }
   if (!bypassLocalCaptcha && typeof body.captchaToken === "string" && body.captchaToken.trim()) {
-    const captchaResult = await verifyTurnstileToken(body.captchaToken!, req.ip);
+    const captchaResult = await verifyTurnstileToken(body.captchaToken, req.ip);
     if (enforceTurnstile && !captchaResult.ok) return res.status(400).json({ error: "Captcha verification failed" });
   }
 
@@ -588,7 +588,7 @@ router.get("/oauth/:provider/callback", authRateLimit, async (req, res) => {
         providerAccountId: profile.providerAccountId,
         providerEmail: profile.email,
       });
-      await writeAuditLog(req, "oauth.link", "user", claims.userId!, { provider });
+      await writeAuditLog(req, "oauth.link", "user", claims.userId, { provider });
     }
     return res.redirect(`${appBaseUrl()}/settings/security`);
   }

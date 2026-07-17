@@ -37,10 +37,10 @@ export default function CtfDetailPage() {
         onSuccess: (res) => {
           if (res.correct) {
             toast({ title: t("Correct! Flag accepted!", "To'g'ri! Flag qabul qilindi!", "Верно! Флаг принят!"), description: `+${res.pointsEarned ?? challenge?.points} pts` });
-            qc.invalidateQueries({ queryKey: getGetCtfChallengeQueryKey(id) });
+            void qc.invalidateQueries({ queryKey: getGetCtfChallengeQueryKey(id) });
           } else if (res.blocked) {
             toast({ title: t("You are blocked!", "Bloklandingiz!", "Вы заблокированы!"), description: t("3 wrong attempts. Contact admin.", "3 marta xato. Adminga murojaat qiling.", "3 ошибки. Обратитесь к администратору."), variant: "destructive" });
-            qc.invalidateQueries({ queryKey: getGetCtfChallengeQueryKey(id) });
+            void qc.invalidateQueries({ queryKey: getGetCtfChallengeQueryKey(id) });
           } else {
             toast({ title: t("Wrong flag", "Noto'g'ri flag", "Неверный флаг"), description: `${t("Attempts left:", "Qolgan urinishlar:", "Осталось попыток:")} ${3 - res.wrongAttempts}`, variant: "destructive" });
           }

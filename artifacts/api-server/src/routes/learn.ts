@@ -15,7 +15,7 @@ router.get("/categories", optionalAuth, async (req, res) => {
   const allLessons = await db.select().from(lessonsTable).where(eq(lessonsTable.isPublished, true));
   const userId = req.user?.userId;
 
-  let completedMap = new Map<number, number>();
+  const completedMap = new Map<number, number>();
   if (userId) {
     const attempts = await db.select().from(userLessonAttemptsTable)
       .where(and(eq(userLessonAttemptsTable.userId, userId), eq(userLessonAttemptsTable.status, "completed")));
@@ -106,7 +106,7 @@ async function startLessonTestHandler(req: Request, res: Response) {
     .where(and(eq(lessonsTable.id, lessonId), eq(lessonsTable.isPublished, true))).limit(1);
   if (!lesson) return res.status(404).json({ error: "Not found" });
 
-  let [attempt] = await db.select().from(userLessonAttemptsTable)
+  const [attempt] = await db.select().from(userLessonAttemptsTable)
     .where(and(eq(userLessonAttemptsTable.userId, userId), eq(userLessonAttemptsTable.lessonId, lessonId))).limit(1);
 
   if (attempt?.blocked) return res.status(403).json({ error: "Lesson is blocked" });
@@ -229,7 +229,7 @@ async function reportTestEscapeHandler(req: Request, res: Response) {
 
   if (!Number.isInteger(lessonId) || lessonId <= 0) return res.status(400).json({ error: "Invalid lesson id" });
 
-  let [attempt] = await db.select().from(userLessonAttemptsTable)
+  const [attempt] = await db.select().from(userLessonAttemptsTable)
     .where(and(eq(userLessonAttemptsTable.userId, userId), eq(userLessonAttemptsTable.lessonId, lessonId))).limit(1);
 
   if (!attempt) return res.status(400).json({ error: "No active test" });

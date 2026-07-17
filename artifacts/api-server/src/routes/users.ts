@@ -228,7 +228,15 @@ router.patch("/:id", authenticateToken, validateBody(UpdateUserProfileBody), asy
   const updates = filterAllowedUpdates(userRole, "users", req.body);
 
   if (updates.nickname) {
-    const normalizedNickname = String(updates.nickname).trim();
+    // filterAllowedUpdates returns Record<string, unknown>, so the type proves
+    // nothing here. String() would turn an object into the literal string
+    // "[object Object]" and store it as someone's nickname. The validator
+    // rejects that before this runs — this says so instead of depending on it
+    // quietly.
+    if (typeof updates.nickname !== "string") {
+      return res.status(400).json({ error: "Nickname must be a string" });
+    }
+    const normalizedNickname = updates.nickname.trim();
     if (normalizedNickname.length < 3 || normalizedNickname.length > 32 || !/^[A-Za-z0-9_]+$/.test(normalizedNickname)) {
       return res.status(400).json({ error: "Nickname must be 3-32 chars and use only letters, numbers, or underscores" });
     }

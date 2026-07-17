@@ -88,17 +88,17 @@ function TwoFactorSection() {
   const startSetup = useMutation({ mutationFn: api.twoFactorSetup, onSuccess: setSetup, onError: fail });
   const enable = useMutation({
     mutationFn: () => api.twoFactorEnable(code),
-    onSuccess: result => { setCodes(result.backupCodes); setSetup(null); setCode(""); refresh(); },
+    onSuccess: result => { setCodes(result.backupCodes); setSetup(null); setCode(""); void refresh(); },
     onError: fail,
   });
   const disable = useMutation({
     mutationFn: () => api.twoFactorDisable(password, code),
-    onSuccess: () => { setPassword(""); setCode(""); refresh(); toast({ title: t("Two-factor disabled", "2FA o'chirildi", "2FA отключена") }); },
+    onSuccess: () => { setPassword(""); setCode(""); void refresh(); toast({ title: t("Two-factor disabled", "2FA o'chirildi", "2FA отключена") }); },
     onError: fail,
   });
   const regenerate = useMutation({
     mutationFn: () => api.regenerateBackupCodes(password),
-    onSuccess: result => { setCodes(result.backupCodes); setPassword(""); refresh(); },
+    onSuccess: result => { setCodes(result.backupCodes); setPassword(""); void refresh(); },
     onError: fail,
   });
 
@@ -219,7 +219,7 @@ function SessionsSection() {
   const revokeOthers = useMutation({
     mutationFn: api.revokeOtherSessions,
     onSuccess: result => {
-      refresh();
+      void refresh();
       toast({ title: t(`Signed out ${result.revokedCount} device(s)`, `${result.revokedCount} ta qurilma chiqarildi`, `Выведено устройств: ${result.revokedCount}`) });
     },
   });
@@ -341,7 +341,7 @@ function PasskeysSection() {
     mutationFn: () => api.registerPasskey(name),
     onSuccess: result => {
       setName("");
-      refresh();
+      void refresh();
       toast({ title: t(`Added "${result.name}"`, `"${result.name}" qo'shildi`, `Добавлен «${result.name}»`) });
     },
     onError: error => {
@@ -495,7 +495,7 @@ function ApiTokensSection() {
 
   const create = useMutation({
     mutationFn: () => api.createApiToken(name, scopes, null),
-    onSuccess: result => { setFresh(result.token); setName(""); setScopes([]); refresh(); },
+    onSuccess: result => { setFresh(result.token); setName(""); setScopes([]); void refresh(); },
     onError: error => toast({
       title: t("Failed", "Xato", "Ошибка"),
       description: api.errorMessage(error, t("Could not create token", "Token yaratilmadi", "Не удалось создать токен")),

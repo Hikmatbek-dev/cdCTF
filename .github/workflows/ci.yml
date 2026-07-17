@@ -33,6 +33,10 @@ jobs:
 
       - run: pnpm run typecheck
 
+      # Type-aware rules, so this catches what tsc cannot: an un-awaited promise
+      # whose rejection nothing ever sees.
+      - run: pnpm run lint
+
       # The spec drifted for months because nothing compared it to the server.
       - name: OpenAPI spec matches the routes
         run: python3 scripts/manual-tests/spec-drift.py

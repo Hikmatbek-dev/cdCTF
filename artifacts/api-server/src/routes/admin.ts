@@ -441,7 +441,14 @@ async function updateCompetitionHandler(req: Request, res: Response) {
     if (!end) return res.status(400).json({ error: "Invalid end time" });
     updates.endTime = end;
   }
-  if (updates.inviteCode !== undefined) updates.inviteCode = String(updates.inviteCode).trim() || null;
+  // Same reason as the nickname in users.ts: updates is Record<string, unknown>,
+  // so String() would happily store "[object Object]" as a join code.
+  if (updates.inviteCode !== undefined && updates.inviteCode !== null) {
+    if (typeof updates.inviteCode !== "string") {
+      return res.status(400).json({ error: "inviteCode must be a string" });
+    }
+    updates.inviteCode = updates.inviteCode.trim() || null;
+  }
 
   if (Object.keys(updates).length === 0) return res.status(400).json({ error: "Nothing to update or no permission" });
 
