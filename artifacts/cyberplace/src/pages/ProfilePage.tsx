@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useRoute, Link, useLocation } from "wouter";
-import { Trophy, Flag, BookOpen, Target, Calendar, CheckCircle2, Share2, Shield } from "lucide-react";
+import { Trophy, BookOpen, Target, Calendar, Share2, Shield } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
 import { useGetUserProfile, getGetUserProfileQueryKey } from "@workspace/api-client-react";

@@ -8,7 +8,7 @@ import { useGetScoreboard, getGetScoreboardQueryKey } from "@workspace/api-clien
 import { useAuth } from "@/lib/AuthContext";
 import { normalizeArray } from "@/lib/api-shapes";
 import { motion, AnimatePresence } from "framer-motion";
-import { FadeIn, ScaleIn } from "@/components/PageTransition";
+import { FadeIn } from "@/components/PageTransition";
 
 export default function ScoreboardPage() {
   const { t } = useLang();

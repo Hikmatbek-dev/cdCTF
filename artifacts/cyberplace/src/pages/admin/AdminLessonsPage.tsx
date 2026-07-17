@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { useLang } from "@/lib/LanguageContext";
 import { normalizeLearnCategories, normalizeLessons } from "@/lib/api-shapes";
-import { useListLessons, getListLessonsQueryKey, useListLearnCategories, getListLearnCategoriesQueryKey, useAdminCreateLesson, useAdminUpdateLesson, useAdminDeleteLesson } from "@workspace/api-client-react";
+import { useListLearnCategories, getListLearnCategoriesQueryKey, useAdminCreateLesson, useAdminUpdateLesson, useAdminDeleteLesson } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 

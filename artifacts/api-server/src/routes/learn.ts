@@ -1,8 +1,8 @@
 import { Router, type Request, type Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "@workspace/db";
-import { learnCategoriesTable, lessonsTable, lessonQuestionsTable, userLessonAttemptsTable, usersTable } from "@workspace/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { learnCategoriesTable, lessonsTable, lessonQuestionsTable, userLessonAttemptsTable } from "@workspace/db/schema";
+import { eq, and } from "drizzle-orm";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import { SubmitLessonTestBody } from "@workspace/api-zod";

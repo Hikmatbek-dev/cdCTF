@@ -2,11 +2,7 @@ import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import multer from "multer";
 import { db } from "@workspace/db";
-import {
-  usersTable, ctfAttemptsTable, ctfTasksTable, userLessonAttemptsTable,
-  lessonsTable, competitionUsersTable, competitionsTable, competitionSolvesTable,
-  userTitlesTable, titlesTable,
-} from "@workspace/db/schema";
+import { usersTable, ctfAttemptsTable, ctfTasksTable, userLessonAttemptsTable, lessonsTable, competitionUsersTable, userTitlesTable, titlesTable } from "@workspace/db/schema";
 import { and, eq, or, sql } from "drizzle-orm";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";

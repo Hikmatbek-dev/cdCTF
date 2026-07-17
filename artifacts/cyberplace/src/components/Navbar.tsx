@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/AuthContext";
 import { useLang, Language } from "@/lib/LanguageContext";
 import { useTheme } from "@/lib/ThemeContext";
-import { Menu, X, Sun, Moon, ChevronDown, LogOut, User, Settings, LayoutDashboard, Shield, ShieldCheck } from "lucide-react";
+import { Menu, X, Sun, Moon, ChevronDown, LogOut, User, LayoutDashboard, Shield, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import {

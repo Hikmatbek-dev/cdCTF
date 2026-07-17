@@ -4,7 +4,7 @@ import {
   competitionsTable, competitionTasksTable, competitionUsersTable,
   competitionSolvesTable, ctfTasksTable, ctfAttemptsTable, usersTable,
 } from "@workspace/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/security";
 import { validateBody } from "../middleware/validate";

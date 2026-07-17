@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Search, Filter, CheckCircle2, Lock, Shield, Zap, Target } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Search, CheckCircle2, Shield, Zap, Target } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
@@ -10,7 +9,7 @@ import { useLang } from "@/lib/LanguageContext";
 import { useListCtfChallenges, getListCtfChallengesQueryKey } from "@workspace/api-client-react";
 import { normalizeCtfChallenges } from "@/lib/api-shapes";
 import { motion, AnimatePresence } from "framer-motion";
-import { FadeIn, ScaleIn } from "@/components/PageTransition";
+import { FadeIn } from "@/components/PageTransition";
 
 const CATEGORIES = [
   "All", "Web", "Crypto", "Reverse", "Forensics", "Pwn", "OSINT", 

@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { db } from "@workspace/db";
-import { ctfTasksTable, ctfAttemptsTable, usersTable, userTitlesTable, titlesTable } from "@workspace/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { ctfTasksTable, ctfAttemptsTable, titlesTable } from "@workspace/db/schema";
+import { eq, and } from "drizzle-orm";
 import { authenticateToken, optionalAuth, requireScope } from "../middleware/auth";
 import { hashFlag, isHashedFlag, verifyFlag } from "../lib/flags";
 import { awardCategoryTitle, awardPoints } from "../lib/scoring";

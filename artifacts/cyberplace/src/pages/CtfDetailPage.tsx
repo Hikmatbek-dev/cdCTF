@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { useRoute } from "wouter";
-import { Download, Flag, AlertTriangle, CheckCircle2, Lock, ExternalLink, Shield, Zap, Target, Cpu } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Download, Flag, AlertTriangle, CheckCircle2, Lock, ExternalLink, Zap, Cpu } from "lucide-react";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/LanguageContext";
 import { useGetCtfChallenge, getGetCtfChallengeQueryKey, useSubmitCtfFlag, useGetScoreboard } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { FadeIn, ScaleIn } from "@/components/PageTransition";
 
 export default function CtfDetailPage() {

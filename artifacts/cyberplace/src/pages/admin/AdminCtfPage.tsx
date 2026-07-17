@@ -13,7 +13,7 @@ import { AdminSidebar } from "@/components/AdminSidebar";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 import { useLang } from "@/lib/LanguageContext";
 import { normalizeCtfChallenges } from "@/lib/api-shapes";
-import { useListCtfChallenges, getListCtfChallengesQueryKey, useAdminCreateCtf, useAdminUpdateCtf, useAdminDeleteCtf } from "@workspace/api-client-react";
+import { useAdminCreateCtf, useAdminUpdateCtf, useAdminDeleteCtf } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 

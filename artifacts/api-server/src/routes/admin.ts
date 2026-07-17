@@ -1,13 +1,8 @@
 import { Router, type Request, type Response } from "express";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import {
-  usersTable, ctfTasksTable, ctfAttemptsTable,
-  lessonsTable, lessonQuestionsTable, learnCategoriesTable,
-  competitionsTable, competitionTasksTable, competitionUsersTable, competitionSolvesTable,
-  userLessonAttemptsTable, titlesTable, auditLogsTable, userTitlesTable
-} from "@workspace/db/schema";
-import { eq, and, desc, sql, inArray } from "drizzle-orm";
+import { usersTable, ctfTasksTable, ctfAttemptsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable } from "@workspace/db/schema";
+import { eq, and, desc } from "drizzle-orm";
 import { authenticateToken } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import {
