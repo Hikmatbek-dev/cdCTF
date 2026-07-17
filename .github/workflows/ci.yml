@@ -79,3 +79,12 @@ jobs:
         run: bash scripts/manual-tests/run-all.sh
         env:
           CI_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cdctf_test
+
+      # Production builds its database from supabase-schema.sql + the DDL in
+      # database.ts. The suites above build theirs with drizzle-kit push, which
+      # never runs against production. Two definitions, and until now nothing
+      # compared them — a divergence would pass CI and 500 in production.
+      - name: Test and production schemas agree
+        run: bash scripts/manual-tests/schema-parity.sh
+        env:
+          CI_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cdctf_test
