@@ -58,10 +58,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then((session: SessionResponse) => {
         if (cancelled) return;
         if (session.user) {
-          // Admin override: bozkurtshadow should have 0 points
-          if (session.user.nickname.toLowerCase() === "bozkurtshadow") {
-            session.user.points = 0;
-          }
+          // The server decides who scores (users.excludedFromScoring) and sends
+          // the points already zeroed. A second rule here, keyed off a nickname,
+          // was one rename away from disagreeing with it.
           setUser(session.user);
           setPermissions(session.permissions ?? []);
           localStorage.setItem("cdctf_user", JSON.stringify(session.user));

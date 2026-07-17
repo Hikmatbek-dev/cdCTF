@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, boolean, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -22,8 +22,18 @@ export const usersTable = pgTable("users", {
   // Time-step of the last accepted code. A TOTP code stays valid for its whole
   // window, so without this an observer could replay one within ~30 seconds.
   totpLastUsedStep: integer("totp_last_used_step"),
+  /**
+   * Staff and demo accounts that solve challenges without appearing on the
+   * scoreboard. Replaces a hardcoded nickname comparison that was repeated in
+   * six files — a rename would have silently started paying that account.
+   */
+  excludedFromScoring: boolean("excluded_from_scoring").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, table => [
+  // The scoreboard's exact filter and sort: non-blocked users, role 'user',
+  // ordered by points. One index serves all three.
+  index("users_leaderboard_idx").on(table.role, table.isBlocked, table.points),
+]);
 
 export const insertUserSchema = createInsertSchema(usersTable).omit({
   id: true,

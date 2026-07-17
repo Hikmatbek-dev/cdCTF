@@ -1,6 +1,26 @@
 import { pool } from "@workspace/db";
 import { logger } from "./logger";
 
+/**
+ * Creates an index, tolerating the one thing that can legitimately stop it.
+ *
+ * A unique index fails if the table already holds rows that violate it — and it
+ * may, because nothing enforced these pairs before. Rather than delete a user's
+ * data at boot, or let the server refuse to start, this logs exactly what is
+ * wrong and carries on without the index. The invariant stays unenforced until
+ * someone looks, which is the honest outcome.
+ */
+async function createIndexSafely(name: string, statement: string) {
+  try {
+    await pool.query(statement);
+  } catch (err) {
+    logger.error(
+      { err, index: name },
+      `Could not create index ${name}. If this is a unique index, the table already contains duplicate rows — find and merge them, then restart. The invariant is NOT enforced until then.`,
+    );
+  }
+}
+
 export async function ensureDatabaseShape() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS audit_logs (
@@ -75,8 +95,21 @@ export async function ensureDatabaseShape() {
   await pool.query("ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS is_published boolean NOT NULL DEFAULT true");
   await pool.query("ALTER TABLE lessons ADD COLUMN IF NOT EXISTS author_id integer REFERENCES users(id) ON DELETE SET NULL");
   await pool.query("ALTER TABLE lessons ADD COLUMN IF NOT EXISTS is_published boolean NOT NULL DEFAULT true");
-  await pool.query("CREATE INDEX IF NOT EXISTS ctf_tasks_author_id_idx ON ctf_tasks(author_id)");
-  await pool.query("CREATE INDEX IF NOT EXISTS lessons_author_id_idx ON lessons(author_id)");
+
+  // One-time backfill, guarded by the column's own absence: the accounts that
+  // the old hardcoded nickname check excluded keep being excluded, but if an
+  // admin later clears the flag it stays cleared. Backfilling unconditionally
+  // would silently undo that on every boot.
+  const { rowCount: hasExclusionColumn } = await pool.query(
+    "SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'excluded_from_scoring'",
+  );
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS excluded_from_scoring boolean NOT NULL DEFAULT false");
+  if (!hasExclusionColumn) {
+    const { rowCount } = await pool.query(
+      "UPDATE users SET excluded_from_scoring = true WHERE nickname = 'bozkurtshadow'",
+    );
+    logger.info({ rowCount }, "Backfilled excluded_from_scoring from the previous hardcoded nickname");
+  }
 
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret text");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled boolean NOT NULL DEFAULT false");
@@ -141,5 +174,41 @@ export async function ensureDatabaseShape() {
   `);
   await pool.query("CREATE INDEX IF NOT EXISTS passkeys_user_id_idx ON passkeys(user_id)");
 
-  logger.info("Database shape verified");
+  // Indexes for the tables that predate this file. Postgres does not index a
+  // foreign key for you, and none of these had one — every lookup was a full
+  // scan. Each column here is one the server actually filters on.
+  const indexes: Array<[string, string]> = [
+    ["ctf_tasks_author_id_idx", "CREATE INDEX IF NOT EXISTS ctf_tasks_author_id_idx ON ctf_tasks(author_id)"],
+    ["ctf_tasks_published_idx", "CREATE INDEX IF NOT EXISTS ctf_tasks_published_idx ON ctf_tasks(is_published)"],
+    ["ctf_attempts_ctf_id_idx", "CREATE INDEX IF NOT EXISTS ctf_attempts_ctf_id_idx ON ctf_attempts(ctf_id)"],
+    ["ctf_attempts_solved_idx", "CREATE INDEX IF NOT EXISTS ctf_attempts_solved_idx ON ctf_attempts(user_id) WHERE solved"],
+    ["ctf_attempts_blocked_idx", "CREATE INDEX IF NOT EXISTS ctf_attempts_blocked_idx ON ctf_attempts(ctf_id) WHERE blocked"],
+    ["lessons_category_id_idx", "CREATE INDEX IF NOT EXISTS lessons_category_id_idx ON lessons(category_id)"],
+    ["lessons_author_id_idx", "CREATE INDEX IF NOT EXISTS lessons_author_id_idx ON lessons(author_id)"],
+    ["lessons_published_idx", "CREATE INDEX IF NOT EXISTS lessons_published_idx ON lessons(is_published)"],
+    ["lesson_questions_lesson_id_idx", "CREATE INDEX IF NOT EXISTS lesson_questions_lesson_id_idx ON lesson_questions(lesson_id)"],
+    ["user_lesson_attempts_lesson_id_idx", "CREATE INDEX IF NOT EXISTS user_lesson_attempts_lesson_id_idx ON user_lesson_attempts(lesson_id)"],
+    ["user_lesson_attempts_status_idx", "CREATE INDEX IF NOT EXISTS user_lesson_attempts_status_idx ON user_lesson_attempts(status)"],
+    ["user_titles_title_id_idx", "CREATE INDEX IF NOT EXISTS user_titles_title_id_idx ON user_titles(title_id)"],
+    ["competition_users_user_id_idx", "CREATE INDEX IF NOT EXISTS competition_users_user_id_idx ON competition_users(user_id)"],
+    ["competition_solves_competition_id_idx", "CREATE INDEX IF NOT EXISTS competition_solves_competition_id_idx ON competition_solves(competition_id)"],
+    ["audit_logs_created_at_idx", "CREATE INDEX IF NOT EXISTS audit_logs_created_at_idx ON audit_logs(created_at)"],
+    ["audit_logs_actor_user_id_idx", "CREATE INDEX IF NOT EXISTS audit_logs_actor_user_id_idx ON audit_logs(actor_user_id)"],
+    // The scoreboard's exact filter and sort in one index.
+    ["users_leaderboard_idx", "CREATE INDEX IF NOT EXISTS users_leaderboard_idx ON users(role, is_blocked, points)"],
+
+    // Unique: these pairs are what every route already assumes. They may fail on
+    // an existing database that collected duplicates while nothing enforced them
+    // — createIndexSafely says so loudly rather than deleting anything.
+    ["ctf_attempts_user_ctf_idx", "CREATE UNIQUE INDEX IF NOT EXISTS ctf_attempts_user_ctf_idx ON ctf_attempts(user_id, ctf_id)"],
+    ["user_lesson_attempts_user_lesson_idx", "CREATE UNIQUE INDEX IF NOT EXISTS user_lesson_attempts_user_lesson_idx ON user_lesson_attempts(user_id, lesson_id)"],
+    ["user_titles_user_title_idx", "CREATE UNIQUE INDEX IF NOT EXISTS user_titles_user_title_idx ON user_titles(user_id, title_id)"],
+    ["competition_tasks_competition_ctf_idx", "CREATE UNIQUE INDEX IF NOT EXISTS competition_tasks_competition_ctf_idx ON competition_tasks(competition_id, ctf_id)"],
+    ["competition_users_competition_user_idx", "CREATE UNIQUE INDEX IF NOT EXISTS competition_users_competition_user_idx ON competition_users(competition_id, user_id)"],
+    ["competition_solves_competition_ctf_user_idx", "CREATE UNIQUE INDEX IF NOT EXISTS competition_solves_competition_ctf_user_idx ON competition_solves(competition_id, ctf_id, user_id)"],
+  ];
+
+  for (const [name, statement] of indexes) await createIndexSafely(name, statement);
+
+  logger.info({ indexCount: indexes.length }, "Database shape verified");
 }

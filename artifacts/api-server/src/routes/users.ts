@@ -45,16 +45,13 @@ router.get("/me/dashboard", authenticateToken, async (req, res) => {
       .where(eq(userTitlesTable.userId, userId)),
   ]);
 
-  const rank = (user.role === "admin" || user.nickname === "bozkurtshadow") ? 0 : [...allUsers].sort((a, b) => b.points - a.points).findIndex(item => item.id === userId) + 1;
-
-  // Reset points for bozkurtshadow if needed
-  if (user.nickname === "bozkurtshadow" && user.points > 0) {
-    await db.update(usersTable).set({ points: 0 }).where(eq(usersTable.id, userId));
-    user.points = 0;
-  }
+  // A GET used to repair this user's points here — a non-idempotent read, and
+  // unnecessary now that awardPoints simply never pays an excluded account. Use
+  // POST /admin/users/recalculate-points to fix historical rows.
+  const rank = earnsPoints(user) ? [...allUsers].sort((a, b) => b.points - a.points).findIndex(item => item.id === userId) + 1 : 0;
 
   res.json({
-    user: { id: user.id, nickname: user.nickname, points: (user.role === "admin" || user.nickname === "bozkurtshadow") ? 0 : user.points, rank },
+    user: { id: user.id, nickname: user.nickname, points: earnsPoints(user) ? user.points : 0, rank },
     progress: {
       solvedCtfCount: solvedCtf.length,
       completedLessonCount: completedLessons.length,
@@ -76,7 +73,7 @@ async function getProfileData(id: number, requestingUserId?: number, requestingU
   // Get rank
   const allUsers = await db.select().from(usersTable).where(and(eq(usersTable.isBlocked, false), eq(usersTable.role, "user")));
   const sorted = allUsers.sort((a, b) => b.points - a.points);
-  const rank = (user.role === "admin" || user.nickname === "bozkurtshadow") ? 0 : sorted.findIndex(u => u.id === id) + 1;
+  const rank = earnsPoints(user) ? sorted.findIndex(u => u.id === id) + 1 : 0;
 
   // Solved CTF
   const solvedAttempts = await db.select().from(ctfAttemptsTable).where(and(eq(ctfAttemptsTable.userId, id), eq(ctfAttemptsTable.solved, true)));
@@ -124,7 +121,7 @@ async function getProfileData(id: number, requestingUserId?: number, requestingU
 
   return {
     id: user.id, nickname: user.nickname, email: canViewPrivate ? user.email : "", avatarUrl: user.avatarUrl,
-    points: (user.role === "admin" || user.nickname === "bozkurtshadow") ? 0 : user.points, 
+    points: earnsPoints(user) ? user.points : 0,
     role: user.role, emailVerified: user.emailVerified, isBlocked: user.isBlocked,
     createdAt: user.createdAt, rank,
     titles: userTitles.map(t => ({ id: t.id ?? 0, name: t.name ?? "Title", category: t.category ?? "Misc", points: t.points ?? 0, earnedAt: t.earnedAt })),
@@ -160,6 +157,7 @@ router.get("/:id", optionalAuth, async (req, res) => {
 
 import { filterAllowedUpdates } from "../lib/rbac";
 import { revokeAllSessions } from "../lib/sessions";
+import { earnsPoints } from "../lib/scoring";
 
 // PATCH /api/users/:id
 router.patch("/:id", authenticateToken, async (req, res) => {

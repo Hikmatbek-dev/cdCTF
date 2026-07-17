@@ -4,6 +4,7 @@ import { db } from "@workspace/db";
 import { learnCategoriesTable, lessonsTable, lessonQuestionsTable, userLessonAttemptsTable, usersTable } from "@workspace/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
+import { awardPoints } from "../lib/scoring";
 const router = Router();
 
 // GET /api/learn/categories
@@ -197,19 +198,11 @@ async function submitLessonTestHandler(req: Request, res: Response) {
     // `status` back to "in_progress", which would re-open the points award and
     // let a user bank the lesson's points once per allowed attempt.
     if (passed && !attempt.completedAt) {
-      pointsEarned = lesson?.points ?? 0;
       await tx.update(userLessonAttemptsTable)
         .set({ status: "completed", completedAt: new Date(), updatedAt: new Date() })
         .where(eq(userLessonAttemptsTable.id, attempt.id));
 
-      const [currentUser] = await tx.select({ nickname: usersTable.nickname, role: usersTable.role })
-        .from(usersTable)
-        .where(eq(usersTable.id, userId))
-        .limit(1);
-
-      if (currentUser && currentUser.role !== "admin" && currentUser.nickname !== "bozkurtshadow") {
-        await tx.update(usersTable).set({ points: sql`${usersTable.points} + ${pointsEarned}` }).where(eq(usersTable.id, userId));
-      }
+      pointsEarned = await awardPoints(tx, userId, lesson?.points ?? 0);
     } else if (!passed) {
       await tx.update(userLessonAttemptsTable)
         .set({ status: "failed", updatedAt: new Date() })

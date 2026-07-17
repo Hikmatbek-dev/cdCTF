@@ -8,6 +8,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/security";
 import { verifyFlag } from "../lib/flags";
+import { awardPoints } from "../lib/scoring";
 
 const router = Router();
 // Same budget as the standalone CTF submit route — without it this endpoint is a
@@ -171,16 +172,9 @@ router.post("/:id/ctf/:ctfId/submit", authenticateToken, flagRateLimit, async (r
       await tx.update(ctfAttemptsTable).set({ solved: true, solvedAt: new Date(), updatedAt: new Date() }).where(eq(ctfAttemptsTable.id, attempt.id));
     }
 
-    const [currentUser] = await tx.select({ nickname: usersTable.nickname, role: usersTable.role })
-      .from(usersTable)
-      .where(eq(usersTable.id, userId))
-      .limit(1);
+    const pointsEarned = await awardPoints(tx, userId, challenge.points);
 
-    if (currentUser && currentUser.role !== "admin" && currentUser.nickname !== "bozkurtshadow") {
-      await tx.update(usersTable).set({ points: sql`${usersTable.points} + ${challenge.points}` }).where(eq(usersTable.id, userId));
-    }
-
-    return { status: 200, data: { correct: true, alreadySolved: false, pointsEarned: challenge.points } };
+    return { status: 200, data: { correct: true, alreadySolved: false, pointsEarned } };
   });
 
   res.status(outcome.status).json(outcome.data);

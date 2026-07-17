@@ -11,6 +11,7 @@ import { eq, and, desc, sql, inArray } from "drizzle-orm";
 import { authenticateToken } from "../middleware/auth";
 import { writeAuditLog } from "../lib/audit";
 import { revokeAllSessions } from "../lib/sessions";
+import { recalculateAllUsers, recalculateUsers } from "../lib/scoring";
 import { hashFlag } from "../lib/flags";
 import { logger } from "../lib/logger";
 import { filterAllowedUpdates } from "../lib/rbac";
@@ -142,62 +143,9 @@ router.post("/users/:id/unblock", requirePermission("users.block"), async (req, 
 
 // POST /api/admin/users/recalculate-points
 router.post("/users/recalculate-points", requirePermission("system.maintenance"), async (req, res) => {
-  try {
-    const users = await db.select().from(usersTable);
-    const titles = await db.select().from(titlesTable);
-    const ctfs = await db.select().from(ctfTasksTable);
-
-    for (const user of users) {
-      // 1. Recalculate CTF solve points
-      const ctfSolves = await db.select({ points: ctfTasksTable.points, category: ctfTasksTable.category })
-        .from(ctfAttemptsTable)
-        .innerJoin(ctfTasksTable, eq(ctfAttemptsTable.ctfId, ctfTasksTable.id))
-        .where(and(eq(ctfAttemptsTable.userId, user.id), eq(ctfAttemptsTable.solved, true)));
-      
-      const ctfTotal = ctfSolves.reduce((sum, s) => sum + s.points, 0);
-
-      // 2. Recalculate Lesson points
-      const lessonSolves = await db.select({ points: lessonsTable.points })
-        .from(userLessonAttemptsTable)
-        .innerJoin(lessonsTable, eq(userLessonAttemptsTable.lessonId, lessonsTable.id))
-        .where(and(eq(userLessonAttemptsTable.userId, user.id), eq(userLessonAttemptsTable.status, "completed")));
-      
-      const lessonTotal = lessonSolves.reduce((sum, s) => sum + s.points, 0);
-
-      // 3. Recalculate Titles
-      // First, get current titles for this user
-      await db.delete(userTitlesTable).where(eq(userTitlesTable.userId, user.id));
-      
-      let titleTotal = 0;
-      const categoryCounts = ctfSolves.reduce((acc, s) => {
-        acc[s.category] = (acc[s.category] ?? 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-
-      for (const [category, count] of Object.entries(categoryCounts)) {
-        if (count >= 3) {
-          const title = titles.find(t => t.category === category);
-          if (title) {
-            await db.insert(userTitlesTable).values({ userId: user.id, titleId: title.id });
-            titleTotal += title.points;
-          }
-        }
-      }
-
-      // 4. Update total points
-      let total = ctfTotal + lessonTotal + titleTotal;
-      if (user.role === "admin" || user.nickname === "bozkurtshadow") {
-        total = 0;
-      }
-      await db.update(usersTable).set({ points: total }).where(eq(usersTable.id, user.id));
-    }
-    
-    await writeAuditLog(req, "users.recalculate_points", "system", 0);
-    res.json({ success: true, message: "All user points and titles have been fully synchronized with current data" });
-  } catch (error) {
-    logger.error({ err: error }, "Error recalculating user points");
-    res.status(500).json({ error: "Internal server error" });
-  }
+  const count = await recalculateAllUsers();
+  await writeAuditLog(req, "users.recalculate_points", "system", undefined, { userCount: count });
+  res.json({ success: true, message: `Recalculated points for ${count} users` });
 });
 
 // GET /api/admin/ctf
@@ -303,46 +251,10 @@ router.delete("/ctf/:id", requirePermission("ctf.delete"), async (req, res) => {
     await db.delete(competitionTasksTable).where(eq(competitionTasksTable.ctfId, id));
     await db.delete(ctfTasksTable).where(eq(ctfTasksTable.id, id));
 
-    // 3. Recalculate points for affected users to ensure accuracy (including titles)
-    if (solverIds.length > 0) {
-      const titles = await db.select().from(titlesTable);
-      for (const userId of solverIds) {
-        // CTF Points
-        const ctfSolves = await db.select({ points: ctfTasksTable.points, category: ctfTasksTable.category })
-          .from(ctfAttemptsTable)
-          .innerJoin(ctfTasksTable, eq(ctfAttemptsTable.ctfId, ctfTasksTable.id))
-          .where(and(eq(ctfAttemptsTable.userId, userId), eq(ctfAttemptsTable.solved, true)));
-        const ctfTotal = ctfSolves.reduce((sum, s) => sum + s.points, 0);
-
-        // Lesson Points
-        const lessonSolves = await db.select({ points: lessonsTable.points })
-          .from(userLessonAttemptsTable)
-          .innerJoin(lessonsTable, eq(userLessonAttemptsTable.lessonId, lessonsTable.id))
-          .where(and(eq(userLessonAttemptsTable.userId, userId), eq(userLessonAttemptsTable.status, "completed")));
-        const lessonTotal = lessonSolves.reduce((sum, s) => sum + s.points, 0);
-
-        // Titles
-        await db.delete(userTitlesTable).where(eq(userTitlesTable.userId, userId));
-        let titleTotal = 0;
-        const categoryCounts = ctfSolves.reduce((acc, s) => {
-          acc[s.category] = (acc[s.category] ?? 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
-
-        for (const [category, count] of Object.entries(categoryCounts)) {
-          if (count >= 3) {
-            const title = titles.find(t => t.category === category);
-            if (title) {
-              await db.insert(userTitlesTable).values({ userId, titleId: title.id });
-              titleTotal += title.points;
-            }
-          }
-        }
-
-        // Update User
-        await db.update(usersTable).set({ points: ctfTotal + lessonTotal + titleTotal }).where(eq(usersTable.id, userId));
-      }
-    }
+    // One shared implementation. This block used to be a ~40-line copy of the
+    // one above — and had lost the rule that excluded accounts score zero, so
+    // deleting a challenge handed every admin a non-zero score.
+    if (solverIds.length > 0) await recalculateUsers(solverIds);
 
     await writeAuditLog(req, "ctf.delete", "ctf", id, { name: challenge.name, affectedUsers: solverIds.length });
     res.json({ success: true, message: "CTF deleted and user points synchronized" });
