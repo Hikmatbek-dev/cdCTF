@@ -41,6 +41,11 @@ jobs:
       - name: OpenAPI spec matches the routes
         run: python3 scripts/manual-tests/spec-drift.py
 
+      # Turnstile shipped dead because none of its three variables were written
+      # down, so nothing told anyone to switch it on.
+      - name: Every env var is documented
+        run: python3 scripts/manual-tests/env-documented.py
+
   test:
     name: API tests
     runs-on: ubuntu-latest
