@@ -36,12 +36,17 @@ const jsonPath = join(here, "..", "content", "lessons.json");
 
 async function main() {
   const url = process.env.DATABASE_URL;
-  if (!url) {
-    console.error("DATABASE_URL kerak");
+  const data: Data = JSON.parse(readFileSync(jsonPath, "utf8"));
+  // With DATABASE_URL, connect by URL. Without it, fall back to the standard
+  // PG* variables (PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE), which pg
+  // reads automatically. That path avoids URL-encoding a password — a single
+  // '+' or '@' in a URL password silently corrupts it and looks like a wrong
+  // password.
+  if (!url && !process.env.PGHOST) {
+    console.error("DATABASE_URL yoki PGHOST/PGUSER/PGPASSWORD kerak");
     process.exit(1);
   }
-  const data: Data = JSON.parse(readFileSync(jsonPath, "utf8"));
-  const pool = new Pool({ connectionString: url });
+  const pool = url ? new Pool({ connectionString: url }) : new Pool();
 
   // Resolve each category to an id, creating it only if absent.
   const catId = new Map<string, number>();
