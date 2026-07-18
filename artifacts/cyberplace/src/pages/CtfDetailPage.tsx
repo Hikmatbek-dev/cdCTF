@@ -222,7 +222,7 @@ export default function CtfDetailPage() {
                   </form>
                   <div className="mt-8 flex items-center justify-center gap-4">
                     <div className="h-px flex-1 bg-foreground/5" />
-                    <p className="text-[9px] font-black uppercase tracking-[0.4em] text-muted-foreground/20">Standard Format: FLAG{"{"}&bull;&bull;&bull;&bull;{"}"}</p>
+                    <p className="text-[9px] font-black uppercase tracking-[0.4em] text-muted-foreground/20">Standard Format: flag{"{"}md5{"}"}</p>
                     <div className="h-px flex-1 bg-foreground/5" />
                   </div>
                 </div>

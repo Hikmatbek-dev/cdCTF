@@ -254,7 +254,7 @@ export default function AdminCtfPage() {
                   <FormItem><FormLabel>{t("Name (EN)", "Nomi (EN)", "Название (EN)")}</FormLabel><FormControl><Input {...field} data-testid="input-ctf-name" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="flag" render={({ field }) => (
-                  <FormItem><FormLabel>{t("Flag", "Flag", "Флаг")}</FormLabel><FormControl><Input {...field} placeholder={editingId ? t("Leave empty to keep current", "Joriy flagni saqlash uchun bo'sh qoldiring", "Оставьте приблизительно так, чтобы сохранить") : "Flag{...}"} className="font-mono" data-testid="input-ctf-flag" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>{t("Flag", "Flag", "Флаг")}</FormLabel><FormControl><Input {...field} placeholder={editingId ? t("Leave empty to keep current", "Joriy flagni saqlash uchun bo'sh qoldiring", "Оставьте приблизительно так, чтобы сохранить") : "flag{...}"} className="font-mono" data-testid="input-ctf-flag" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="nameUz" render={({ field }) => (
 	                  <FormItem><FormLabel>{t("Name (UZ)", "Nomi (UZ)", "Название (UZ)")}</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
