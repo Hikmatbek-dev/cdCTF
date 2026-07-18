@@ -71,9 +71,11 @@ export default function HomePage() {
         {/* Feature Grid */}
         <section className="mb-48 grid md:grid-cols-3 gap-8">
           {[
-            { icon: Target, title: "REAL-WORLD OPS", desc: "Simulate advanced persistent threats in a sandboxed environment." },
-            { icon: Cpu, title: "CORE_ENGINE", desc: "Powered by proprietary vulnerability research and analysis tools." },
-            { icon: Trophy, title: "ELITE_RANKING", desc: "Compete with the top 0.1% of security researchers globally." }
+            // The titles stay in the terminal-style English the whole site uses;
+            // the descriptions are prose, and everything else prose is translated.
+            { icon: Target, title: "REAL-WORLD OPS", desc: t("Simulate advanced persistent threats in a sandboxed environment.", "Xavfsiz muhitda ilg'or, doimiy tahdidlarni simulyatsiya qiling.", "Моделируйте продвинутые постоянные угрозы в изолированной среде.") },
+            { icon: Cpu, title: "CORE_ENGINE", desc: t("Powered by proprietary vulnerability research and analysis tools.", "Maxsus zaiflik tadqiqoti va tahlil vositalari asosida.", "На основе собственных инструментов исследования и анализа уязвимостей.") },
+            { icon: Trophy, title: "ELITE_RANKING", desc: t("Compete with the top 0.1% of security researchers globally.", "Dunyodagi eng kuchli 0.1% xavfsizlik tadqiqotchilari bilan bellashing.", "Соревнуйтесь с лучшими 0.1% исследователей безопасности в мире.") }
           ].map((feature, i) => (
             <FadeIn key={i} delay={i * 0.1 + 0.6}>
               <div className="glass-card h-full group">

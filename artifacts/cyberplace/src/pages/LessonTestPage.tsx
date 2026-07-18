@@ -160,7 +160,7 @@ export default function LessonTestPage() {
           setResult(res);
           if (document.fullscreenElement) void document.exitFullscreen?.();
         },
-        onError: () => toast({ title: "Error submitting test", variant: "destructive" }),
+        onError: () => toast({ title: t("Error submitting test", "Testni yuborishda xatolik", "Ошибка при отправке теста"), variant: "destructive" }),
       }
     );
   };

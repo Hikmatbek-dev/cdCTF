@@ -235,7 +235,7 @@ export default function AdminLessonsPage() {
                             });
                             setShowForm(true);
                           } catch (e) {
-                            toast({ title: "Failed to load lesson details", variant: "destructive" });
+                            toast({ title: t("Failed to load lesson details", "Dars ma'lumotlarini yuklab bo'lmadi", "Не удалось загрузить данные урока"), variant: "destructive" });
                           }
                         }} className="h-7 w-7 p-0" data-testid={`button-edit-lesson-${lesson.id}`}><Pencil className="w-3.5 h-3.5" /></Button>
                         <Button size="sm" variant="ghost" onClick={() => handleDelete(lesson.id)} className="h-7 w-7 p-0 text-destructive hover:text-destructive" data-testid={`button-delete-lesson-${lesson.id}`}><Trash2 className="w-3.5 h-3.5" /></Button>
