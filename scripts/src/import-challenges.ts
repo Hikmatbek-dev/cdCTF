@@ -49,6 +49,21 @@ async function main() {
   let added = 0;
   let skipped = 0;
   try {
+    // Bring the table up to what this importer writes, in case the target
+    // database predates these columns (production is built from an older
+    // supabase-schema.sql; the app's ensureDatabaseShape adds is_published only
+    // on the next deploy). Every statement is IF NOT EXISTS — a no-op when the
+    // column already exists — and matches the app's own definitions.
+    for (const alter of [
+      "ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS name_uz text",
+      "ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS name_ru text",
+      "ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS description_uz text",
+      "ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS description_ru text",
+      "ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS is_published boolean NOT NULL DEFAULT true",
+    ]) {
+      await pool.query(alter);
+    }
+
     for (const c of challenges) {
       const exists = await pool.query("SELECT 1 FROM ctf_tasks WHERE name = $1 LIMIT 1", [c.name]);
       if (exists.rowCount) {

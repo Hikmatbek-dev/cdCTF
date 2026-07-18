@@ -51,6 +51,25 @@ async function main() {
   // Resolve each category to an id, creating it only if absent.
   const catId = new Map<string, number>();
   try {
+    // Bring the tables up to what this importer writes, in case the target
+    // database predates these columns. Each is IF NOT EXISTS, so it is a no-op
+    // when the column already exists, and matches the app's own schema.
+    for (const alter of [
+      "ALTER TABLE learn_categories ADD COLUMN IF NOT EXISTS name_uz text",
+      "ALTER TABLE learn_categories ADD COLUMN IF NOT EXISTS name_ru text",
+      "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS title_uz text",
+      "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS title_ru text",
+      "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS content_uz text",
+      "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS content_ru text",
+      "ALTER TABLE lessons ADD COLUMN IF NOT EXISTS is_published boolean NOT NULL DEFAULT true",
+      "ALTER TABLE lesson_questions ADD COLUMN IF NOT EXISTS question_uz text",
+      "ALTER TABLE lesson_questions ADD COLUMN IF NOT EXISTS question_ru text",
+      "ALTER TABLE lesson_questions ADD COLUMN IF NOT EXISTS options_uz jsonb",
+      "ALTER TABLE lesson_questions ADD COLUMN IF NOT EXISTS options_ru jsonb",
+    ]) {
+      await pool.query(alter);
+    }
+
     for (const c of data.categories) {
       const existing = await pool.query(
         "SELECT id FROM learn_categories WHERE name = $1 LIMIT 1", [c.name]);
