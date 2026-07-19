@@ -8,12 +8,16 @@ import { useStartLessonTest, useSubmitLessonTest, useReportTestEscape } from "@w
 import { useToast } from "@/hooks/use-toast";
 import { normalizeArray } from "@/lib/api-shapes";
 
-type TestQuestion = { id: number; question: string; options: string[] };
+type TestQuestion = {
+  id: number;
+  question: string; questionUz?: string | null; questionRu?: string | null;
+  options: string[]; optionsUz?: string[] | null; optionsRu?: string[] | null;
+};
 
 export default function LessonTestPage() {
   const [, params] = useRoute("/learn/:id/test");
   const id = Number(params?.id);
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -281,10 +285,14 @@ export default function LessonTestPage() {
         {/* Questions */}
         <div className="space-y-6">
           {questionList.map((q, qi) => {
-            const options = normalizeArray<string>(q.options, ["options", "data", "items"]);
+            // Questions and their options are stored per language; pick the set
+            // matching the UI, falling back to English when a translation is absent.
+            const rawOptions = lang === "uz" && q.optionsUz ? q.optionsUz : lang === "ru" && q.optionsRu ? q.optionsRu : q.options;
+            const options = normalizeArray<string>(rawOptions, ["options", "data", "items"]);
+            const questionText = t(q.question, q.questionUz ?? undefined, q.questionRu ?? undefined);
             return (
             <div key={q.id} className="p-5 rounded-xl border border-border bg-card" data-testid={`card-question-${qi}`}>
-              <p className="font-medium mb-4 text-sm">{qi + 1}. {q.question}</p>
+              <p className="font-medium mb-4 text-sm">{qi + 1}. {questionText}</p>
               <div className="space-y-2">
                 {options.map((opt, oi) => (
                   <button

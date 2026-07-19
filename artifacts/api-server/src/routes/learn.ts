@@ -133,8 +133,12 @@ async function startLessonTestHandler(req: Request, res: Response) {
   res.json({
     sessionId,
     attemptsLeft,
+    // Trilingual: the client shows the question and options in the UI language.
+    // correctOption is deliberately NOT sent — the client must not know the answer.
     questions: questions.map(q => ({
-      id: q.id, question: q.question, options: q.options,
+      id: q.id,
+      question: q.question, questionUz: q.questionUz, questionRu: q.questionRu,
+      options: q.options, optionsUz: q.optionsUz, optionsRu: q.optionsRu,
     })),
   });
 }

@@ -87,6 +87,8 @@ export interface CtfChallenge {
   solvedCount: number;
   isSolved: boolean;
   isBlocked: boolean;
+  nameUz?: string | null;
+  nameRu?: string | null;
 }
 
 export type CtfChallengeDetailDifficulty =

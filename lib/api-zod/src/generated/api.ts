@@ -127,6 +127,8 @@ export const ListCtfChallengesResponseItem = zod.object({
   solvedCount: zod.number(),
   isSolved: zod.boolean(),
   isBlocked: zod.boolean(),
+  nameUz: zod.string().nullish(),
+  nameRu: zod.string().nullish(),
 });
 export const ListCtfChallengesResponse = zod.array(
   ListCtfChallengesResponseItem,
@@ -385,6 +387,8 @@ export const GetCompetitionResponse = zod.object({
       solvedCount: zod.number(),
       isSolved: zod.boolean(),
       isBlocked: zod.boolean(),
+      nameUz: zod.string().nullish(),
+      nameRu: zod.string().nullish(),
     }),
   ),
   certificateUrl: zod.string().nullish(),

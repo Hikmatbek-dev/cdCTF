@@ -69,7 +69,7 @@ export default function LearnPage() {
                       className={`w-full flex items-center justify-between px-6 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedCategory === cat.name ? "bg-primary/10 text-primary border border-primary/20" : "text-muted-foreground hover:bg-muted"}`}
                       data-testid={`button-category-${cat.id}`}
                     >
-                      <span className="truncate">{cat.name}</span>
+                      <span className="truncate">{t(cat.name, cat.nameUz ?? undefined, cat.nameRu ?? undefined)}</span>
                       <span className="text-[9px] font-black opacity-30">{cat.completedCount}/{cat.lessonCount}</span>
                     </button>
                   ))}
@@ -118,7 +118,7 @@ export default function LearnPage() {
                               <span className="text-[8px] font-black uppercase tracking-widest bg-primary/20 text-primary px-3 py-1 rounded-full">CERTIFIED</span>
                             )}
                           </div>
-                          <h3 className="text-2xl font-black tracking-tight uppercase group-hover:text-primary transition-colors leading-none" data-testid={`text-lesson-title-${lesson.id}`}>{lesson.title}</h3>
+                          <h3 className="text-2xl font-black tracking-tight uppercase group-hover:text-primary transition-colors leading-none" data-testid={`text-lesson-title-${lesson.id}`}>{t(lesson.title, lesson.titleUz ?? undefined, lesson.titleRu ?? undefined)}</h3>
                         </div>
                       </div>
 

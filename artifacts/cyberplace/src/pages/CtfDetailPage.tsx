@@ -111,7 +111,7 @@ export default function CtfDetailPage() {
             
             <h1 className="text-5xl md:text-8xl font-black tracking-tighter uppercase leading-none mb-12" data-testid="text-challenge-name">
               <span className="text-foreground/20 mr-4">MISSION:</span>
-              <span className="gradient-text">{challenge.name}</span>
+              <span className="gradient-text">{t(challenge.name, challenge.nameUz ?? undefined, challenge.nameRu ?? undefined)}</span>
             </h1>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-10 border-y border-foreground/5">
@@ -142,7 +142,7 @@ export default function CtfDetailPage() {
                   {t("MISSION_BRIEFING", "TAVSIF", "БРИФИНГ_МИССИИ")}
                 </h2>
                 <p className="text-xl leading-relaxed text-foreground/80 whitespace-pre-wrap font-medium tracking-tight" data-testid="text-description">
-                  {challenge.description}
+                  {t(challenge.description, challenge.descriptionUz ?? undefined, challenge.descriptionRu ?? undefined)}
                 </p>
               </div>
             </FadeIn>

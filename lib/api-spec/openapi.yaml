@@ -2138,6 +2138,12 @@ components:
           type: boolean
         isBlocked:
           type: boolean
+        nameUz:
+          type: string
+          nullable: true
+        nameRu:
+          type: string
+          nullable: true
       required: [id, name, category, difficulty, points, solvedCount, isSolved, isBlocked]
 
     CtfChallengeDetail:

@@ -190,7 +190,7 @@ export default function CtfListPage() {
                         {/* Title Section */}
                         <div className="mb-auto">
                           <div className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 mb-3 block">{ch.category}</div>
-                          <h3 className="text-3xl font-black tracking-tighter group-hover:text-primary transition-colors leading-none uppercase mb-6 break-words">{ch.name}</h3>
+                          <h3 className="text-3xl font-black tracking-tighter group-hover:text-primary transition-colors leading-none uppercase mb-6 break-words">{t(ch.name, ch.nameUz ?? undefined, ch.nameRu ?? undefined)}</h3>
                         </div>
                         
                         {/* Stats Section */}
