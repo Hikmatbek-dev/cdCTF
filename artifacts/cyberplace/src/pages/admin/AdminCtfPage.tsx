@@ -13,7 +13,7 @@ import { AdminSidebar } from "@/components/AdminSidebar";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 import { useLang } from "@/lib/LanguageContext";
 import { normalizeCtfChallenges } from "@/lib/api-shapes";
-import { useListCtfChallenges, getListCtfChallengesQueryKey, useAdminCreateCtf, useAdminUpdateCtf, useAdminDeleteCtf } from "@workspace/api-client-react";
+import { useAdminCreateCtf, useAdminUpdateCtf, useAdminDeleteCtf } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 
@@ -112,7 +112,7 @@ export default function AdminCtfPage() {
         descriptionUz: data.descriptionUz || data.description_uz || "",
         descriptionRu: data.descriptionRu || data.description_ru || "",
         category: data.category || "Web",
-        difficulty: (data.difficulty as any) || "easy",
+        difficulty: (data.difficulty) || "easy",
         points: data.points || 100,
         flag: "",
         fileUrl: data.fileUrl || data.file_url || "",
@@ -134,7 +134,7 @@ export default function AdminCtfPage() {
       delete payload.flag;
     }
     
-    const invalidate = () => { qc.invalidateQueries({ queryKey: ["admin-ctfs"] }); setShowForm(false); };
+    const invalidate = () => { void qc.invalidateQueries({ queryKey: ["admin-ctfs"] }); setShowForm(false); };
     if (editingId) {
       updateCtf.mutate({ id: editingId, data: payload }, {
         onSuccess: () => { toast({ title: t("CTF updated!", "CTF yangilandi!", "CTF обновлён!") }); invalidate(); },
@@ -151,7 +151,7 @@ export default function AdminCtfPage() {
   const handleDelete = (id: number) => {
     if (!confirm(t("Delete this challenge?", "O'chirish?", "Удалить?"))) return;
     deleteCtf.mutate({ id }, {
-      onSuccess: () => { toast({ title: t("Deleted", "O'chirildi", "Удалено") }); qc.invalidateQueries({ queryKey: ["admin-ctfs"] }); },
+      onSuccess: () => { toast({ title: t("Deleted", "O'chirildi", "Удалено") }); void qc.invalidateQueries({ queryKey: ["admin-ctfs"] }); },
       onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
     });
   };
@@ -254,7 +254,7 @@ export default function AdminCtfPage() {
                   <FormItem><FormLabel>{t("Name (EN)", "Nomi (EN)", "Название (EN)")}</FormLabel><FormControl><Input {...field} data-testid="input-ctf-name" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="flag" render={({ field }) => (
-                  <FormItem><FormLabel>{t("Flag", "Flag", "Флаг")}</FormLabel><FormControl><Input {...field} placeholder={editingId ? t("Leave empty to keep current", "Joriy flagni saqlash uchun bo'sh qoldiring", "Оставьте приблизительно так, чтобы сохранить") : "Flag{...}"} className="font-mono" data-testid="input-ctf-flag" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>{t("Flag", "Flag", "Флаг")}</FormLabel><FormControl><Input {...field} placeholder={editingId ? t("Leave empty to keep current", "Joriy flagni saqlash uchun bo'sh qoldiring", "Оставьте приблизительно так, чтобы сохранить") : "flag{...}"} className="font-mono" data-testid="input-ctf-flag" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="nameUz" render={({ field }) => (
 	                  <FormItem><FormLabel>{t("Name (UZ)", "Nomi (UZ)", "Название (UZ)")}</FormLabel><FormControl><Input {...field} value={field.value ?? ""} /></FormControl></FormItem>
@@ -344,7 +344,7 @@ export default function AdminCtfPage() {
                     <td className="px-4 py-3 text-muted-foreground">{ch.solvedCount}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center gap-1 justify-end">
-                        <Button size="sm" variant="ghost" onClick={() => openEdit(ch as Parameters<typeof openEdit>[0])} className="h-7 w-7 p-0" data-testid={`button-edit-ctf-${ch.id}`}><Pencil className="w-3.5 h-3.5" /></Button>
+                        <Button size="sm" variant="ghost" onClick={() => openEdit(ch)} className="h-7 w-7 p-0" data-testid={`button-edit-ctf-${ch.id}`}><Pencil className="w-3.5 h-3.5" /></Button>
                         <Button size="sm" variant="ghost" onClick={() => handleDelete(ch.id)} className="h-7 w-7 p-0 text-destructive hover:text-destructive" data-testid={`button-delete-ctf-${ch.id}`}><Trash2 className="w-3.5 h-3.5" /></Button>
                       </div>
                     </td>

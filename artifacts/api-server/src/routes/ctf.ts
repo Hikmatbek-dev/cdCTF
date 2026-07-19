@@ -1,23 +1,29 @@
 import { Router, type Request, type Response } from "express";
 import { db } from "@workspace/db";
-import { ctfTasksTable, ctfAttemptsTable, usersTable, userTitlesTable, titlesTable } from "@workspace/db/schema";
-import { eq, and, sql } from "drizzle-orm";
-import { authenticateToken, optionalAuth } from "../middleware/auth";
+import { ctfTasksTable, ctfAttemptsTable, titlesTable } from "@workspace/db/schema";
+import { eq, and } from "drizzle-orm";
+import { authenticateToken, optionalAuth, requireScope } from "../middleware/auth";
 import { hashFlag, isHashedFlag, verifyFlag } from "../lib/flags";
+import { awardCategoryTitle, awardPoints } from "../lib/scoring";
 import { createRateLimiter } from "../middleware/security";
+import { validateBody } from "../middleware/validate";
+import { SubmitCtfFlagBody } from "@workspace/api-zod";
 import { logger } from "../lib/logger";
 
 const router = Router();
-const flagRateLimit = createRateLimiter({ windowMs: 1 * 60 * 1000, max: 10, keyPrefix: "flag" });
+// "shared": stopping flag grinding is the point, so the budget cannot reset
+// each time the platform hands the attacker a different instance.
+const flagRateLimit = createRateLimiter({ windowMs: 1 * 60 * 1000, max: 10, keyPrefix: "flag", store: "shared" });
 
 // GET /api/ctf
-router.get("/", optionalAuth, async (req, res) => {
+router.get("/", optionalAuth, requireScope("ctf:read"), async (req, res) => {
   const { category, difficulty, search, solved } = req.query as Record<string, string>;
   const page = Math.max(Number(req.query.page) || 1, 1);
   const limit = Math.min(Number(req.query.limit) || 25, 100);
   const userId = req.user?.userId;
 
-  let challenges = await db.select().from(ctfTasksTable);
+  // Drafts are visible only through the admin routes.
+  let challenges = await db.select().from(ctfTasksTable).where(eq(ctfTasksTable.isPublished, true));
 
   if (category && category !== "All") challenges = challenges.filter(c => c.category === category);
   if (difficulty && difficulty !== "All") challenges = challenges.filter(c => c.difficulty === difficulty);
@@ -73,13 +79,15 @@ router.get("/", optionalAuth, async (req, res) => {
 });
 
 // GET /api/ctf/:id
-router.get("/:id", optionalAuth, async (req, res) => {
+router.get("/:id", optionalAuth, requireScope("ctf:read"), async (req, res) => {
   const ctfId = Number(req.params.id);
   const userId = req.user?.userId;
 
   if (!Number.isInteger(ctfId) || ctfId <= 0) return res.status(400).json({ error: "Invalid CTF id" });
 
-  const [challenge] = await db.select().from(ctfTasksTable).where(eq(ctfTasksTable.id, ctfId)).limit(1);
+  const [challenge] = await db.select().from(ctfTasksTable)
+    .where(and(eq(ctfTasksTable.id, ctfId), eq(ctfTasksTable.isPublished, true)))
+    .limit(1);
   if (!challenge) return res.status(404).json({ error: "Not found" });
 
   let userAttempt = null;
@@ -117,7 +125,10 @@ async function submitFlagHandler(req: Request, res: Response) {
 
   try {
     const result = await db.transaction(async (tx) => {
-      const [challenge] = await tx.select().from(ctfTasksTable).where(eq(ctfTasksTable.id, ctfId)).limit(1);
+      // Published-only: a draft must not be solvable by anyone who guesses its id.
+      const [challenge] = await tx.select().from(ctfTasksTable)
+        .where(and(eq(ctfTasksTable.id, ctfId), eq(ctfTasksTable.isPublished, true)))
+        .limit(1);
       if (!challenge) return { status: 404, data: { error: "Not found" } };
 
       const [attempt] = await tx.select().from(ctfAttemptsTable)
@@ -132,24 +143,22 @@ async function submitFlagHandler(req: Request, res: Response) {
           await tx.update(ctfTasksTable).set({ flag: hashFlag(challenge.flag) }).where(eq(ctfTasksTable.id, ctfId));
         }
 
-        const pointsToAward = challenge.points;
-
-        const [currentUser] = await tx.select({ nickname: usersTable.nickname, role: usersTable.role })
-          .from(usersTable)
-          .where(eq(usersTable.id, userId))
-          .limit(1);
-
         if (!attempt) {
           await tx.insert(ctfAttemptsTable).values({ userId, ctfId, solved: true, solvedAt: new Date(), wrongAttempts: 0, updatedAt: new Date() });
         } else {
           await tx.update(ctfAttemptsTable).set({ solved: true, solvedAt: new Date(), updatedAt: new Date() }).where(eq(ctfAttemptsTable.id, attempt.id));
         }
 
-        if (currentUser && currentUser.role !== "admin" && currentUser.nickname !== "bozkurtshadow") {
-          await tx.update(usersTable).set({ points: sql`${usersTable.points} + ${pointsToAward}` }).where(eq(usersTable.id, userId));
-        }
-        
-        return { status: 200, data: { correct: true, blocked: false, pointsEarned: pointsToAward } };
+        const pointsEarned = await awardPoints(tx, userId, challenge.points);
+        // Inside the transaction, and awaited. This used to be a fire-and-forget
+        // `void checkAndAwardTitle(...)` after the commit: it escaped the request
+        // entirely, so a failure surfaced as an unhandled rejection, and on
+        // serverless the lambda could freeze before it ran and silently drop the
+        // title. It also re-read the challenge and indexed [0] on a result that
+        // is empty if the challenge was deleted meanwhile.
+        const titlePoints = await awardCategoryTitle(tx, userId, challenge.category);
+
+        return { status: 200, data: { correct: true, blocked: false, pointsEarned: pointsEarned + titlePoints } };
       } else {
         const wrongAttempts = (attempt?.wrongAttempts ?? 0) + 1;
         const isBlocked = wrongAttempts >= 3;
@@ -164,10 +173,6 @@ async function submitFlagHandler(req: Request, res: Response) {
       }
     });
 
-    if (result.data.correct && (result.data as any).pointsEarned) {
-      void checkAndAwardTitle(userId, (await db.select({ cat: ctfTasksTable.category }).from(ctfTasksTable).where(eq(ctfTasksTable.id, ctfId)).limit(1))[0].cat);
-    }
-
     res.status(result.status).json(result.data);
   } catch (error) {
     logger.error({ err: error }, "Flag submission error");
@@ -176,45 +181,10 @@ async function submitFlagHandler(req: Request, res: Response) {
 }
 
 // POST /api/ctf/:id/submit
-router.post("/:id/submit", authenticateToken, flagRateLimit, submitFlagHandler);
+router.post("/:id/submit", authenticateToken, requireScope("ctf:submit"), flagRateLimit, validateBody(SubmitCtfFlagBody), submitFlagHandler);
 
 // Backward-compatible alias.
-router.post("/:id/flag", authenticateToken, flagRateLimit, submitFlagHandler);
+router.post("/:id/flag", authenticateToken, requireScope("ctf:submit"), flagRateLimit, validateBody(SubmitCtfFlagBody), submitFlagHandler);
 
-async function checkAndAwardTitle(userId: number, category: string) {
-  const categoryTitleMap: Record<string, string> = {
-    Crypto: "Kriptograf", Web: "Web Hacker", Reverse: "Reverse Engineer",
-    Forensics: "Forensics Analyst", Pwn: "Binary Exploiter", OSINT: "OSINT Hunter",
-    Steganography: "Stego Master",
-  };
-
-  const titleName = categoryTitleMap[category];
-  if (!titleName) return;
-
-  const [title] = await db.select().from(titlesTable).where(eq(titlesTable.category, category)).limit(1);
-  if (!title) return;
-
-  const [existing] = await db.select().from(userTitlesTable).where(and(eq(userTitlesTable.userId, userId), eq(userTitlesTable.titleId, title.id))).limit(1);
-  if (existing) return;
-
-  // Check if user has solved 3+ CTFs in this category
-  const solvedInCategory = await db.select({ ctfId: ctfAttemptsTable.ctfId })
-    .from(ctfAttemptsTable)
-    .innerJoin(ctfTasksTable, and(eq(ctfAttemptsTable.ctfId, ctfTasksTable.id), eq(ctfTasksTable.category, category)))
-    .where(and(eq(ctfAttemptsTable.userId, userId), eq(ctfAttemptsTable.solved, true)));
-
-  if (solvedInCategory.length >= 3) {
-    await db.insert(userTitlesTable).values({ userId, titleId: title.id });
-    
-    const [currentUser] = await db.select({ nickname: usersTable.nickname, role: usersTable.role })
-      .from(usersTable)
-      .where(eq(usersTable.id, userId))
-      .limit(1);
-
-    if (currentUser && currentUser.role !== "admin" && currentUser.nickname !== "bozkurtshadow") {
-      await db.update(usersTable).set({ points: sql`${usersTable.points} + ${title.points}` }).where(eq(usersTable.id, userId));
-    }
-  }
-}
 
 export default router;

@@ -20,6 +20,7 @@ import CompetitionsPage from "@/pages/CompetitionsPage";
 import CompetitionDetailPage from "@/pages/CompetitionDetailPage";
 import ProfilePage from "@/pages/ProfilePage";
 import ProfileEditPage from "@/pages/ProfileEditPage";
+import SecurityPage from "@/pages/SecurityPage";
 import DashboardPage from "@/pages/DashboardPage";
 import AdminDashboardPage from "@/pages/admin/AdminDashboardPage";
 import AdminUsersPage from "@/pages/admin/AdminUsersPage";
@@ -34,15 +35,40 @@ import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import NotFound from "@/pages/not-found";
 
+/**
+ * Shown while the session check is in flight. Without it a guard would decide on
+ * a half-known state and bounce a signed-in user to /login on every refresh.
+ */
+function AuthPending() {
+  return (
+    <div className="min-h-screen flex items-center justify-center" role="status" aria-live="polite">
+      <span className="sr-only">Loading</span>
+      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
+/** Any staff role — the panel itself decides what each of them may touch. */
 function AdminRoute({ component: Component }: { component: React.ComponentType }) {
-  const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, isStaff, isLoading } = useAuth();
+  if (isLoading) return <AuthPending />;
   if (!isAuthenticated) return <Redirect to="/login" />;
-  if (!isAdmin) return <Redirect to="/" />;
+  if (!isStaff) return <Redirect to="/" />;
+  return <Component />;
+}
+
+/** For pages only one specific permission should reach. */
+function PermissionRoute({ component: Component, permission }: { component: React.ComponentType; permission: string }) {
+  const { isAuthenticated, can, isLoading } = useAuth();
+  if (isLoading) return <AuthPending />;
+  if (!isAuthenticated) return <Redirect to="/login" />;
+  if (!can(permission)) return <Redirect to="/admin/dashboard" />;
   return <Component />;
 }
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+  if (isLoading) return <AuthPending />;
   if (!isAuthenticated) return <Redirect to="/login" />;
   return <Component />;
 }
@@ -112,6 +138,9 @@ function Router() {
           <Route path="/dashboard">
             {() => <PageTransition><ProtectedRoute component={DashboardPage} /></PageTransition>}
           </Route>
+          <Route path="/settings/security">
+            {() => <PageTransition><ProtectedRoute component={SecurityPage} /></PageTransition>}
+          </Route>
           <Route path="/profile/edit">
             {() => <PageTransition><ProtectedRoute component={ProfileEditPage} /></PageTransition>}
           </Route>
@@ -126,22 +155,22 @@ function Router() {
             {() => <PageTransition><AdminRoute component={AdminDashboardPage} /></PageTransition>}
           </Route>
           <Route path="/admin/users">
-            {() => <PageTransition><AdminRoute component={AdminUsersPage} /></PageTransition>}
+            {() => <PageTransition><PermissionRoute component={AdminUsersPage} permission="users.read" /></PageTransition>}
           </Route>
           <Route path="/admin/ctf">
-            {() => <PageTransition><AdminRoute component={AdminCtfPage} /></PageTransition>}
+            {() => <PageTransition><PermissionRoute component={AdminCtfPage} permission="ctf.read.all" /></PageTransition>}
           </Route>
           <Route path="/admin/competitions">
-            {() => <PageTransition><AdminRoute component={AdminCompetitionsPage} /></PageTransition>}
+            {() => <PageTransition><PermissionRoute component={AdminCompetitionsPage} permission="competitions.manage" /></PageTransition>}
           </Route>
           <Route path="/admin/lessons">
-            {() => <PageTransition><AdminRoute component={AdminLessonsPage} /></PageTransition>}
+            {() => <PageTransition><PermissionRoute component={AdminLessonsPage} permission="lessons.read.all" /></PageTransition>}
           </Route>
           <Route path="/admin/blocked">
-            {() => <PageTransition><AdminRoute component={AdminBlockedPage} /></PageTransition>}
+            {() => <PageTransition><PermissionRoute component={AdminBlockedPage} permission="blocks.manage" /></PageTransition>}
           </Route>
           <Route path="/admin/audit">
-            {() => <PageTransition><AdminRoute component={AdminAuditPage} /></PageTransition>}
+            {() => <PageTransition><PermissionRoute component={AdminAuditPage} permission="audit.read" /></PageTransition>}
           </Route>
           <Route component={NotFound} />
         </Switch>

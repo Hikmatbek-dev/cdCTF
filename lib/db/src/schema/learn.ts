@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, boolean, timestamp, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -21,8 +21,18 @@ export const lessonsTable = pgTable("lessons", {
   contentRu: text("content_ru"),
   categoryId: integer("category_id").notNull().references(() => learnCategoriesTable.id),
   points: integer("points").notNull().default(50),
+  // Who wrote it — drives the `lessons.update.own` permission. Null for
+  // everything created before authorship existed; only `.any` holders edit those.
+  authorId: integer("author_id").references(() => usersTable.id, { onDelete: "set null" }),
+  // Defaults to published so existing rows stay visible; the author create path
+  // sets it false explicitly so drafts need an admin to publish them.
+  isPublished: boolean("is_published").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, table => [
+  index("lessons_category_id_idx").on(table.categoryId),
+  index("lessons_author_id_idx").on(table.authorId),
+  index("lessons_published_idx").on(table.isPublished),
+]);
 
 export const lessonQuestionsTable = pgTable("lesson_questions", {
   id: serial("id").primaryKey(),
@@ -35,7 +45,9 @@ export const lessonQuestionsTable = pgTable("lesson_questions", {
   optionsRu: jsonb("options_ru").$type<string[]>(),
   correctOption: integer("correct_option").notNull(),
   orderIndex: integer("order_index").notNull().default(0),
-});
+}, table => [
+  index("lesson_questions_lesson_id_idx").on(table.lessonId),
+]);
 
 export const userLessonAttemptsTable = pgTable("user_lesson_attempts", {
   id: serial("id").primaryKey(),
@@ -50,7 +62,12 @@ export const userLessonAttemptsTable = pgTable("user_lesson_attempts", {
   blockedAt: timestamp("blocked_at", { withTimezone: true }),
   completedAt: timestamp("completed_at", { withTimezone: true }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, table => [
+  // One attempt row per (user, lesson) — the intent everywhere in learn.ts.
+  uniqueIndex("user_lesson_attempts_user_lesson_idx").on(table.userId, table.lessonId),
+  index("user_lesson_attempts_lesson_id_idx").on(table.lessonId),
+  index("user_lesson_attempts_status_idx").on(table.status),
+]);
 
 export const insertLessonSchema = createInsertSchema(lessonsTable).omit({ id: true, createdAt: true });
 export type InsertLesson = z.infer<typeof insertLessonSchema>;

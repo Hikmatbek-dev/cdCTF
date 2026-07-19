@@ -120,24 +120,24 @@ export default function ResetPasswordPage() {
               <FormField control={form.control} name="password" render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("New Password", "Yangi Parol", "Новый пароль")}</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <div className="relative">
+                    <Lock aria-hidden="true" className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <FormControl>
                       <Input {...field} type="password" placeholder="••••••••" className="pl-9" />
-                    </div>
-                  </FormControl>
+                    </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="confirmPassword" render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("Confirm Password", "Parolni tasdiqlang", "Подтвердите пароль")}</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <div className="relative">
+                    <Lock aria-hidden="true" className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <FormControl>
                       <Input {...field} type="password" placeholder="••••••••" className="pl-9" />
-                    </div>
-                  </FormControl>
+                    </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )} />

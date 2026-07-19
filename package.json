@@ -1,17 +1,22 @@
 {
   "name": "workspace",
   "version": "0.0.0",
+  "packageManager": "pnpm@10.33.0",
   "license": "MIT",
   "scripts": {
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock'",
     "build": "corepack pnpm run typecheck && corepack pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "corepack pnpm run typecheck:libs && corepack pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
+    "lint": "eslint artifacts/api-server/src artifacts/cyberplace/src lib/db/src",
     "dev": "./run.sh"
   },
   "private": true,
   "devDependencies": {
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "prettier": "^3.8.1",
     "typescript": "~5.9.2",
-    "prettier": "^3.8.1"
+    "typescript-eslint": "^8.64.0"
   }
 }

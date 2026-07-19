@@ -1,20 +1,25 @@
 import { Link, useLocation } from "wouter";
 import { LayoutDashboard, Users, Flag, Trophy, BookOpen, AlertTriangle, ChevronLeft, ShieldCheck, Terminal } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
+import { useAuth } from "@/lib/AuthContext";
 
+// Each link declares the permission its page actually requires, so an author
+// or moderator is never shown a button that answers 403.
 const ADMIN_LINKS = [
-  { href: "/admin/dashboard", icon: LayoutDashboard, label: { en: "Root Dashboard", uz: "Boshqaruv", ru: "Главная" } },
-  { href: "/admin/users", icon: Users, label: { en: "Operative Registry", uz: "Foydalanuvchilar", ru: "Пользователи" } },
-  { href: "/admin/ctf", icon: Flag, label: { en: "Mission Assets", uz: "CTF Topshiriqlari", ru: "CTF Задания" } },
-  { href: "/admin/competitions", icon: Trophy, label: { en: "Tournament Grid", uz: "Musobaqalar", ru: "Соревнования" } },
-  { href: "/admin/lessons", icon: BookOpen, label: { en: "Academic Modules", uz: "Darsliklar", ru: "Уроки" } },
-  { href: "/admin/blocked", icon: AlertTriangle, label: { en: "Incident Reports", uz: "Bloklanganlar", ru: "Заблокированные" } },
-  { href: "/admin/audit", icon: ShieldCheck, label: { en: "Audit Streams", uz: "Audit", ru: "Аудит" } },
+  { href: "/admin/dashboard", permission: "admin.panel", icon: LayoutDashboard, label: { en: "Root Dashboard", uz: "Boshqaruv", ru: "Главная" } },
+  { href: "/admin/users", permission: "users.read", icon: Users, label: { en: "Operative Registry", uz: "Foydalanuvchilar", ru: "Пользователи" } },
+  { href: "/admin/ctf", permission: "ctf.read.all", icon: Flag, label: { en: "Mission Assets", uz: "CTF Topshiriqlari", ru: "CTF Задания" } },
+  { href: "/admin/competitions", permission: "competitions.manage", icon: Trophy, label: { en: "Tournament Grid", uz: "Musobaqalar", ru: "Соревнования" } },
+  { href: "/admin/lessons", permission: "lessons.read.all", icon: BookOpen, label: { en: "Academic Modules", uz: "Darsliklar", ru: "Уроки" } },
+  { href: "/admin/blocked", permission: "blocks.manage", icon: AlertTriangle, label: { en: "Incident Reports", uz: "Bloklanganlar", ru: "Заблокированные" } },
+  { href: "/admin/audit", permission: "audit.read", icon: ShieldCheck, label: { en: "Audit Streams", uz: "Audit", ru: "Аудит" } },
 ];
 
 export function AdminSidebar() {
   const [location] = useLocation();
   const { lang, t } = useLang();
+  const { can } = useAuth();
+  const links = ADMIN_LINKS.filter(link => can(link.permission));
 
   return (
     <aside className="w-64 flex-shrink-0 border-r border-border bg-card min-h-screen pt-20 relative">
@@ -29,7 +34,7 @@ export function AdminSidebar() {
         </Link>
         
         <nav className="space-y-1">
-          {ADMIN_LINKS.map(link => {
+          {links.map(link => {
             const Icon = link.icon;
             const isActive = location.startsWith(link.href);
             return (

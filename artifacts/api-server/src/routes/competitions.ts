@@ -4,11 +4,20 @@ import {
   competitionsTable, competitionTasksTable, competitionUsersTable,
   competitionSolvesTable, ctfTasksTable, ctfAttemptsTable, usersTable,
 } from "@workspace/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
+import { createRateLimiter } from "../middleware/security";
+import { validateBody } from "../middleware/validate";
+import { SubmitCompetitionFlagBody } from "@workspace/api-zod";
 import { verifyFlag } from "../lib/flags";
+import { awardPoints } from "../lib/scoring";
 
 const router = Router();
+// Same budget as the standalone CTF submit route — without it this endpoint is a
+// rate-limit-free path to the very same flag check.
+// "shared": stopping flag grinding is the point, so the budget cannot reset
+// each time the platform hands the attacker a different instance.
+const flagRateLimit = createRateLimiter({ windowMs: 1 * 60 * 1000, max: 10, keyPrefix: "flag", store: "shared" });
 
 function getStatus(startTime: Date, endTime: Date): "upcoming" | "active" | "ended" {
   const now = new Date();
@@ -103,7 +112,7 @@ router.post("/:id/join", authenticateToken, async (req, res) => {
 });
 
 // POST /api/competitions/:id/ctf/:ctfId/submit
-router.post("/:id/ctf/:ctfId/submit", authenticateToken, async (req, res) => {
+router.post("/:id/ctf/:ctfId/submit", authenticateToken, flagRateLimit, validateBody(SubmitCompetitionFlagBody), async (req, res) => {
   const compId = Number(req.params.id);
   const ctfId = Number(req.params.ctfId);
   const userId = req.user!.userId;
@@ -125,45 +134,54 @@ router.post("/:id/ctf/:ctfId/submit", authenticateToken, async (req, res) => {
     .where(and(eq(competitionTasksTable.competitionId, compId), eq(competitionTasksTable.ctfId, ctfId))).limit(1);
   if (!task) return res.status(404).json({ error: "Challenge is not part of this competition" });
 
-  const [existingSolve] = await db.select().from(competitionSolvesTable)
-    .where(and(eq(competitionSolvesTable.competitionId, compId), eq(competitionSolvesTable.ctfId, ctfId), eq(competitionSolvesTable.userId, userId))).limit(1);
-  if (existingSolve) return res.json({ correct: true, alreadySolved: true, pointsEarned: 0 });
-
   const [challenge] = await db.select().from(ctfTasksTable).where(eq(ctfTasksTable.id, ctfId)).limit(1);
   if (!challenge) return res.status(404).json({ error: "Challenge not found" });
 
-  let [attempt] = await db.select().from(ctfAttemptsTable)
-    .where(and(eq(ctfAttemptsTable.userId, userId), eq(ctfAttemptsTable.ctfId, ctfId))).limit(1);
+  // Everything below runs in one transaction: the solve check, the insert and the
+  // points update must be atomic, or two concurrent submits both pass the
+  // "already solved?" check and the user is paid twice.
+  const outcome = await db.transaction(async tx => {
+    const [existingSolve] = await tx.select().from(competitionSolvesTable)
+      .where(and(
+        eq(competitionSolvesTable.competitionId, compId),
+        eq(competitionSolvesTable.ctfId, ctfId),
+        eq(competitionSolvesTable.userId, userId),
+      ))
+      .limit(1)
+      .for("update");
+    if (existingSolve) return { status: 200, data: { correct: true, alreadySolved: true, pointsEarned: 0 } };
 
-  if (attempt?.blocked) return res.json({ correct: false, blocked: true, wrongAttempts: attempt.wrongAttempts });
-  if (!verifyFlag(flag, challenge.flag)) {
-    const newWrongAttempts = (attempt?.wrongAttempts ?? 0) + 1;
-    const blocked = newWrongAttempts >= 3;
-    if (!attempt) {
-      await db.insert(ctfAttemptsTable).values({ userId, ctfId, wrongAttempts: newWrongAttempts, blocked, blockedAt: blocked ? new Date() : undefined, updatedAt: new Date() });
-    } else {
-      await db.update(ctfAttemptsTable).set({ wrongAttempts: newWrongAttempts, blocked, blockedAt: blocked ? new Date() : null, updatedAt: new Date() }).where(eq(ctfAttemptsTable.id, attempt.id));
+    const [attempt] = await tx.select().from(ctfAttemptsTable)
+      .where(and(eq(ctfAttemptsTable.userId, userId), eq(ctfAttemptsTable.ctfId, ctfId)))
+      .limit(1)
+      .for("update");
+
+    if (attempt?.blocked) return { status: 200, data: { correct: false, blocked: true, wrongAttempts: attempt.wrongAttempts } };
+
+    if (!verifyFlag(flag, challenge.flag)) {
+      const newWrongAttempts = (attempt?.wrongAttempts ?? 0) + 1;
+      const blocked = newWrongAttempts >= 3;
+      if (!attempt) {
+        await tx.insert(ctfAttemptsTable).values({ userId, ctfId, wrongAttempts: newWrongAttempts, blocked, blockedAt: blocked ? new Date() : undefined, updatedAt: new Date() });
+      } else {
+        await tx.update(ctfAttemptsTable).set({ wrongAttempts: newWrongAttempts, blocked, blockedAt: blocked ? new Date() : null, updatedAt: new Date() }).where(eq(ctfAttemptsTable.id, attempt.id));
+      }
+      return { status: 200, data: { correct: false, blocked, wrongAttempts: newWrongAttempts } };
     }
-    return res.json({ correct: false, blocked, wrongAttempts: newWrongAttempts });
-  }
 
-  await db.insert(competitionSolvesTable).values({ competitionId: compId, ctfId, userId, pointsEarned: challenge.points });
-  if (!attempt) {
-    await db.insert(ctfAttemptsTable).values({ userId, ctfId, solved: true, solvedAt: new Date(), updatedAt: new Date() });
-  } else if (!attempt.solved) {
-    await db.update(ctfAttemptsTable).set({ solved: true, solvedAt: new Date(), updatedAt: new Date() }).where(eq(ctfAttemptsTable.id, attempt.id));
-  }
+    await tx.insert(competitionSolvesTable).values({ competitionId: compId, ctfId, userId, pointsEarned: challenge.points });
+    if (!attempt) {
+      await tx.insert(ctfAttemptsTable).values({ userId, ctfId, solved: true, solvedAt: new Date(), updatedAt: new Date() });
+    } else if (!attempt.solved) {
+      await tx.update(ctfAttemptsTable).set({ solved: true, solvedAt: new Date(), updatedAt: new Date() }).where(eq(ctfAttemptsTable.id, attempt.id));
+    }
 
-  const [currentUser] = await db.select({ nickname: usersTable.nickname, role: usersTable.role })
-    .from(usersTable)
-    .where(eq(usersTable.id, userId))
-    .limit(1);
+    const pointsEarned = await awardPoints(tx, userId, challenge.points);
 
-  if (currentUser && currentUser.role !== "admin" && currentUser.nickname !== "bozkurtshadow") {
-    await db.update(usersTable).set({ points: sql`${usersTable.points} + ${challenge.points}` }).where(eq(usersTable.id, userId));
-  }
+    return { status: 200, data: { correct: true, alreadySolved: false, pointsEarned } };
+  });
 
-  res.json({ correct: true, alreadySolved: false, pointsEarned: challenge.points });
+  res.status(outcome.status).json(outcome.data);
 });
 
 // GET /api/competitions/:id/scoreboard

@@ -66,6 +66,12 @@ export default function LessonDetailPage() {
     );
   }
 
+  // The lesson is stored in three languages; show the one that matches the UI,
+  // falling back to English. t() already picks by language and falls back, so
+  // reusing it keeps this consistent with every other translated string.
+  const localizedTitle = t(lesson.title, lesson.titleUz ?? undefined, lesson.titleRu ?? undefined);
+  const localizedContent = t(lesson.content, lesson.contentUz ?? undefined, lesson.contentRu ?? undefined);
+
   return (
     <div className="min-h-screen bg-background pt-14">
       <div className="max-w-3xl mx-auto px-4 py-8">
@@ -75,7 +81,7 @@ export default function LessonDetailPage() {
           <ChevronRight className="w-3 h-3" />
           <span>{lesson.categoryName}</span>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-foreground">{lesson.title}</span>
+          <span className="text-foreground">{localizedTitle}</span>
         </div>
 
         {/* Header */}
@@ -90,13 +96,13 @@ export default function LessonDetailPage() {
               <span className="flex items-center gap-1 text-xs text-destructive"><Lock className="w-3.5 h-3.5" /> {t("Blocked", "Bloklangan", "Заблокировано")}</span>
             )}
           </div>
-          <h1 className="text-2xl font-bold" data-testid="text-lesson-title">{lesson.title}</h1>
+          <h1 className="text-2xl font-bold" data-testid="text-lesson-title">{localizedTitle}</h1>
           <p className="text-sm text-muted-foreground mt-1">{lesson.points} pts &bull; {lesson.attemptCount} {t("attempts", "urinish", "попыток")}</p>
         </div>
 
         {/* Content */}
         <div className="p-6 rounded-xl border border-border bg-card mb-8">
-          {renderContent(lesson.content)}
+          {renderContent(localizedContent)}
         </div>
 
         {/* Action */}

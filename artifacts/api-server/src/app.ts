@@ -7,7 +7,7 @@ import { getLocalUploadsRoot } from "./lib/storage";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { reportErrorToSentry } from "./lib/integrations";
-import { corsOptions, createRateLimiter, securityHeaders } from "./middleware/security";
+import { CorsOriginError, corsOptions, createRateLimiter, securityHeaders } from "./middleware/security";
 
 const app: Express = express();
 const REQUEST_BODY_LIMIT = process.env.REQUEST_BODY_LIMIT || "10mb";
@@ -37,7 +37,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 app.use(securityHeaders);
 app.use(cors(corsOptions));
-app.use(createRateLimiter({ windowMs: 15 * 60 * 1000, max: 600, keyPrefix: "global" }));
+// "instance": this one guards this process against being hammered, and it sits
+// in front of every request including static files — a shared counter here
+// would mean a database write per asset. The limits that are actually security
+// controls are on the auth routes, and those are shared.
+app.use(createRateLimiter({ windowMs: 15 * 60 * 1000, max: 600, keyPrefix: "global", store: "instance" }));
 app.use(cookieParser());
 app.use(express.json({ limit: REQUEST_BODY_LIMIT }));
 app.use(express.urlencoded({ extended: true, limit: REQUEST_BODY_LIMIT }));
@@ -71,7 +75,31 @@ app.get("/uploads/ctf/:filename", async (req, res, next) => {
 
 app.use("/api", router);
 
+// Unmatched API routes should answer JSON, not Express's default HTML page.
+app.use("/api", (req: Request, res: Response) => {
+  res.status(404).json({ error: `Cannot ${req.method} ${req.originalUrl.split("?")[0]}` });
+});
+
+/**
+ * An http-errors-style error that already knows its status and has a message
+ * meant for the client. `expose` is the library's own signal for that — an
+ * internal failure never sets it, so this cannot leak one.
+ */
+function isExposedClientError(err: unknown): err is { status: number; message: string } {
+  return typeof err === "object" && err !== null
+    && "expose" in err && err.expose === true
+    && "status" in err && typeof err.status === "number"
+    && err.status >= 400 && err.status < 500
+    && "message" in err && typeof err.message === "string";
+}
+
 app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  // A rejected Origin is a policy decision, not a server fault — answering 500
+  // here also meant every scanner hit burned a Sentry event.
+  if (err instanceof CorsOriginError) {
+    return res.status(403).json({ error: "Origin is not allowed" });
+  }
+
   if (err instanceof multer.MulterError) {
     const status = err.code === "LIMIT_FILE_SIZE" ? 413 : 400;
     return res.status(status).json({
@@ -81,6 +109,14 @@ app.use((err: unknown, req: express.Request, res: express.Response, _next: expre
 
   if (typeof err === "object" && err !== null && "type" in err && err.type === "entity.too.large") {
     return res.status(413).json({ error: `Request body is too large. Limit is ${REQUEST_BODY_LIMIT}.` });
+  }
+
+  // body-parser and friends throw http-errors: a status, and `expose` meaning
+  // "this message is safe to show the client". Malformed JSON is the common one
+  // — it was answering 500 and reporting to Sentry, when it is simply a bad
+  // request that no server change would fix.
+  if (isExposedClientError(err)) {
+    return res.status(err.status).json({ error: err.message });
   }
 
   logger.error({ err }, "Unhandled request error");

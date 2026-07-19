@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { useLang } from "@/lib/LanguageContext";
 import { normalizeLearnCategories, normalizeLessons } from "@/lib/api-shapes";
-import { useListLessons, getListLessonsQueryKey, useListLearnCategories, getListLearnCategoriesQueryKey, useAdminCreateLesson, useAdminUpdateLesson, useAdminDeleteLesson } from "@workspace/api-client-react";
+import { useListLearnCategories, getListLearnCategoriesQueryKey, useAdminCreateLesson, useAdminUpdateLesson, useAdminDeleteLesson } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 
@@ -72,7 +72,7 @@ export default function AdminLessonsPage() {
   const openCreate = () => { setEditingId(null); form.reset({ title: "", content: "", categoryId: categoryList[0]?.id ?? 1, points: 50, questions: [{ question: "", options: ["", "", "", ""], correctOption: 0 }] }); setShowForm(true); };
 
   const onSubmit = (data: FormData) => {
-    const invalidate = () => { qc.invalidateQueries({ queryKey: ["admin-lessons"] }); setShowForm(false); };
+    const invalidate = () => { void qc.invalidateQueries({ queryKey: ["admin-lessons"] }); setShowForm(false); };
     if (editingId) {
       updateLesson.mutate({ id: editingId, data }, {
         onSuccess: () => { toast({ title: t("Lesson updated!", "Dars yangilandi!", "Урок обновлён!") }); invalidate(); },
@@ -89,7 +89,7 @@ export default function AdminLessonsPage() {
   const handleDelete = (id: number) => {
     if (!confirm(t("Delete this lesson?", "O'chirish?", "Удалить?"))) return;
     deleteLesson.mutate({ id }, {
-      onSuccess: () => { toast({ title: t("Deleted", "O'chirildi", "Удалено") }); qc.invalidateQueries({ queryKey: ["admin-lessons"] }); },
+      onSuccess: () => { toast({ title: t("Deleted", "O'chirildi", "Удалено") }); void qc.invalidateQueries({ queryKey: ["admin-lessons"] }); },
       onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
     });
   };
@@ -235,7 +235,7 @@ export default function AdminLessonsPage() {
                             });
                             setShowForm(true);
                           } catch (e) {
-                            toast({ title: "Failed to load lesson details", variant: "destructive" });
+                            toast({ title: t("Failed to load lesson details", "Dars ma'lumotlarini yuklab bo'lmadi", "Не удалось загрузить данные урока"), variant: "destructive" });
                           }
                         }} className="h-7 w-7 p-0" data-testid={`button-edit-lesson-${lesson.id}`}><Pencil className="w-3.5 h-3.5" /></Button>
                         <Button size="sm" variant="ghost" onClick={() => handleDelete(lesson.id)} className="h-7 w-7 p-0 text-destructive hover:text-destructive" data-testid={`button-delete-lesson-${lesson.id}`}><Trash2 className="w-3.5 h-3.5" /></Button>

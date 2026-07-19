@@ -53,7 +53,7 @@ export default function AdminCompetitionsPage() {
 
   const onSubmit = (data: FormData) => {
     createComp.mutate({ data: { ...data, ctfIds: selectedCtfs, description: data.description || null, startTime: new Date(data.startTime).toISOString(), endTime: new Date(data.endTime).toISOString() } }, {
-      onSuccess: () => { toast({ title: t("Competition created!", "Musobaqa yaratildi!", "Соревнование создано!") }); qc.invalidateQueries({ queryKey: getListCompetitionsQueryKey() }); setShowForm(false); setSelectedCtfs([]); },
+      onSuccess: () => { toast({ title: t("Competition created!", "Musobaqa yaratildi!", "Соревнование создано!") }); void qc.invalidateQueries({ queryKey: getListCompetitionsQueryKey() }); setShowForm(false); setSelectedCtfs([]); },
       onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
     });
   };

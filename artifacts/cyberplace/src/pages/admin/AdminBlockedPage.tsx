@@ -21,14 +21,14 @@ export default function AdminBlockedPage() {
 
   const handleUnblockCtf = (ctfId: number, userId: number) => {
     unblockCtfUser.mutate({ id: ctfId, userId }, {
-      onSuccess: () => { toast({ title: t("Unblocked!", "Blokdan chiqdi!", "Разблокировано!") }); qc.invalidateQueries({ queryKey: getAdminGetBlockedTasksQueryKey() }); },
+      onSuccess: () => { toast({ title: t("Unblocked!", "Blokdan chiqdi!", "Разблокировано!") }); void qc.invalidateQueries({ queryKey: getAdminGetBlockedTasksQueryKey() }); },
       onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
     });
   };
 
   const handleUnblockLesson = (lessonId: number, userId: number) => {
     unblockTask.mutate({ type: "lesson", taskId: lessonId, userId }, {
-      onSuccess: () => { toast({ title: t("Unblocked!", "Blokdan chiqdi!", "Разблокировано!") }); qc.invalidateQueries({ queryKey: getAdminGetBlockedTasksQueryKey() }); },
+      onSuccess: () => { toast({ title: t("Unblocked!", "Blokdan chiqdi!", "Разблокировано!") }); void qc.invalidateQueries({ queryKey: getAdminGetBlockedTasksQueryKey() }); },
       onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
     });
   };

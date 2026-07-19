@@ -65,14 +65,21 @@
   --popover-foreground: 240 10% 3.9%;
   --popover-border: 240 5.9% 90%;
 
-  --primary: 191 100% 45%;
+  /* Deeper than the dark theme's cyan, and it has to be. This one is read two
+     ways on a white page: as a button background under white text, and as text
+     itself (.cyber-button-outline, links). At 45% lightness both landed at 2.27
+     — the "Join" button and every outline button failed WCAG AA badly. At 30%
+     both come out at 4.78. Same hue, so the brand is intact; the dark theme
+     keeps its brighter 50% because it is read against near-black. */
+  --primary: 191 100% 30%;
   --primary-foreground: 0 0% 100%;
 
   --secondary: 240 4.8% 95.9%;
   --secondary-foreground: 240 5.9% 10%;
 
   --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
+  /* 46.1% measured 4.32 against white — just under the 4.5 AA needs. */
+  --muted-foreground: 240 3.8% 43%;
 
   --accent: 262 83% 58%;
   --accent-foreground: 0 0% 100%;
@@ -142,7 +149,10 @@
 
 @layer components {
   .glass-card {
-    @apply bg-card/60 backdrop-blur-md border border-white/5 p-6 rounded-3xl shadow-2xl transition-all duration-200 hover:border-primary/30 hover:shadow-primary/5;
+    /* `border-card-border`, not `border-white/5`: white does not follow the
+       theme, so in light mode this was white on white and every card — nearly
+       every surface in the app — looked borderless. */
+    @apply bg-card/60 backdrop-blur-md border border-card-border p-6 rounded-3xl shadow-2xl transition-all duration-200 hover:border-primary/30 hover:shadow-primary/5;
     will-change: transform, border-color;
   }
   
@@ -152,6 +162,8 @@
   
   .cyber-button::after {
     content: '';
+    /* Stays white: this is the gloss sweeping across .cyber-button, which is
+       bg-primary in both themes. */
     @apply absolute inset-0 bg-white/20 translate-x-[-100%] transition-transform duration-500 skew-x-[-20deg];
   }
   

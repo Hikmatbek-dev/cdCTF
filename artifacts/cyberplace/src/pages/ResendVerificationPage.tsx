@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link } from "wouter";
-import { Shield, Mail, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Shield, Mail, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -87,12 +87,12 @@ export default function ResendVerificationPage() {
               <FormField control={form.control} name="email" render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("Email Address", "Email Manzili", "Email адрес")}</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <div className="relative">
+                    <Mail aria-hidden="true" className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <FormControl>
                       <Input {...field} placeholder="name@example.com" className="pl-9" />
-                    </div>
-                  </FormControl>
+                    </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )} />

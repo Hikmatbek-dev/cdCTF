@@ -10,7 +10,8 @@ A full-stack cybersecurity learning & CTF platform for the Uzbek community — l
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string, `SESSION_SECRET` — JWT signing secret
+- Required env: see `.env.example`. `DATABASE_URL`, `JWT_SECRET` and `TOTP_ENCRYPTION_KEY`
+  are required in production; the server refuses to start without them.
 
 ## Stack
 
@@ -41,11 +42,18 @@ A full-stack cybersecurity learning & CTF platform for the Uzbek community — l
 
 - **No zod/v4 in backend** — esbuild cannot resolve the `zod/v4` subpath; use plain JS validation or `zod` (not `/v4`) in Express routes.
 - **Contract-first API** — OpenAPI spec drives codegen; frontend uses generated React Query hooks everywhere.
-- **JWT auth** — tokens stored in localStorage; `SESSION_SECRET` env var used as signing key with fallback.
-- **Admin shortcut** — bozkurtuzb / 1234567890 is the hardcoded admin account (role=admin in DB).
+- **JWT auth** — httpOnly cookie, signed with `JWT_SECRET`. Each token carries a `jti`
+  backed by a `user_sessions` row, so tokens can actually be revoked; the role and
+  blocked flag are re-read from the database on every request.
+- **Roles** — `user` / `author` / `moderator` / `admin`, set via `PATCH /api/admin/users/:id/role`.
+  Routes ask for a named permission, not a role — see `artifacts/api-server/src/lib/permissions.ts`.
 - **Anti-cheat** — Lesson tests require fullscreen; 3 ESC key presses = lesson blocked (admin must unblock).
+  Submissions are deduplicated per question server-side — scoring the raw answer array
+  let a client send every option and score 100%.
 - **Flag validation** — 3 wrong CTF flag attempts = user blocked from that challenge (admin unblocks).
-- **Titles** — Awarded after 3 CTF solves in a category + 500pts threshold (Kriptograf, Web Hacker, etc.)
+- **Titles** — Awarded after 3 CTF solves in a category (Kriptograf, Web Hacker, etc.).
+  All scoring goes through `artifacts/api-server/src/lib/scoring.ts` — one implementation.
+- **Scoring exclusions** — `users.excluded_from_scoring`, not a hardcoded nickname.
 
 ## Product
 
@@ -58,7 +66,8 @@ A full-stack cybersecurity learning & CTF platform for the Uzbek community — l
 
 ## User preferences
 
-- Admin login: nickname=bozkurtuzb, password=1234567890 → redirected to /admin/dashboard
+- Admin sign-in redirects to /admin/dashboard. Credentials live in your password
+  manager, never in this file — anything written here is in the git history forever.
 - Footer: Telegram + Instagram links, "Founders: Bozkurtuzb & Shadow"
 - Flag format: `Flag{...}`
 - 3 languages: EN / UZ / RU (toggleable in navbar)

@@ -56,8 +56,8 @@ export default function CompetitionCtfPage() {
         toast({ title: t("Wrong flag", "Noto'g'ri flag", "Неверный флаг"), description: `${t("Attempts left:", "Qolgan urinishlar:", "Осталось попыток:")} ${3 - data.wrongAttempts}`, variant: "destructive" });
       }
       setFlag("");
-      qc.invalidateQueries({ queryKey: getGetCompetitionScoreboardQueryKey(competitionId) });
-      qc.invalidateQueries({ queryKey: getGetCtfChallengeQueryKey(ctfId) });
+      void qc.invalidateQueries({ queryKey: getGetCompetitionScoreboardQueryKey(competitionId) });
+      void qc.invalidateQueries({ queryKey: getGetCtfChallengeQueryKey(ctfId) });
     } catch (error) {
       toast({ title: error instanceof Error ? error.message : "Submit failed", variant: "destructive" });
     } finally {
@@ -143,7 +143,7 @@ export default function CompetitionCtfPage() {
             <Input
               value={flag}
               onChange={(event) => setFlag(event.target.value)}
-              placeholder="Flag{...}"
+              placeholder="flag{...}"
               className="font-mono"
             />
             <Button type="submit" disabled={!canSubmit || isSubmitting || !flag.trim()}>

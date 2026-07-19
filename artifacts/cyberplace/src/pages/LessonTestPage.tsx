@@ -8,12 +8,16 @@ import { useStartLessonTest, useSubmitLessonTest, useReportTestEscape } from "@w
 import { useToast } from "@/hooks/use-toast";
 import { normalizeArray } from "@/lib/api-shapes";
 
-type TestQuestion = { id: number; question: string; options: string[] };
+type TestQuestion = {
+  id: number;
+  question: string; questionUz?: string | null; questionRu?: string | null;
+  options: string[]; optionsUz?: string[] | null; optionsRu?: string[] | null;
+};
 
 export default function LessonTestPage() {
   const [, params] = useRoute("/learn/:id/test");
   const id = Number(params?.id);
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -34,6 +38,32 @@ export default function LessonTestPage() {
   const submitTest = useSubmitLessonTest();
   const reportEscape = useReportTestEscape();
 
+  /**
+   * Puts the candidate back in fullscreen, and only stands down the warning if
+   * that actually happened. The browser can refuse — permission, no user
+   * gesture — and clearing the warning regardless would end the enforcement
+   * while leaving the test out of fullscreen, which is the thing it exists to
+   * prevent.
+   */
+  const returnToFullscreen = async () => {
+    try {
+      await document.documentElement.requestFullscreen?.();
+    } catch {
+      toast({
+        title: t("Could not return to fullscreen", "To'liq ekranga qaytib bo'lmadi", "Не удалось вернуться в полноэкранный режим"),
+        description: t(
+          "Allow fullscreen for this site, then try again.",
+          "Ushbu saytga to'liq ekranga ruxsat bering va qayta urinib ko'ring.",
+          "Разрешите полноэкранный режим для сайта и попробуйте снова.",
+        ),
+        variant: "destructive",
+      });
+      return;
+    }
+    setEscapeWarning(false);
+    if (countdownRef.current) clearInterval(countdownRef.current);
+  };
+
   useEffect(() => {
     const handleFullscreenChange = () => {
       const isFullscreen = Boolean(document.fullscreenElement);
@@ -46,7 +76,7 @@ export default function LessonTestPage() {
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
-      if (document.fullscreenElement) document.exitFullscreen?.();
+      if (document.fullscreenElement) void document.exitFullscreen?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, result, fullscreenStarted]);
@@ -132,9 +162,9 @@ export default function LessonTestPage() {
       {
         onSuccess: (res) => {
           setResult(res);
-          if (document.fullscreenElement) document.exitFullscreen?.();
+          if (document.fullscreenElement) void document.exitFullscreen?.();
         },
-        onError: () => toast({ title: "Error submitting test", variant: "destructive" }),
+        onError: () => toast({ title: t("Error submitting test", "Testni yuborishda xatolik", "Ошибка при отправке теста"), variant: "destructive" }),
       }
     );
   };
@@ -232,7 +262,12 @@ export default function LessonTestPage() {
           </div>
           <div className="flex items-center gap-3">
             <span className="font-mono text-sm flex items-center gap-1"><Timer className="w-3.5 h-3.5" /> {countdown}s</span>
-            <Button size="sm" variant="secondary" onClick={() => { document.documentElement.requestFullscreen?.(); setEscapeWarning(false); clearInterval(countdownRef.current!); }}>
+            {/* Only clear the warning if fullscreen actually came back.
+                requestFullscreen rejects — denied permission, no user gesture —
+                and this used to ignore that: the warning cleared and the
+                countdown stopped either way, so a refused request left the
+                candidate out of fullscreen with the enforcement switched off. */}
+            <Button size="sm" variant="secondary" onClick={() => { void returnToFullscreen(); }}>
               {t("Return to Fullscreen", "Qaytish", "Вернуться")}
             </Button>
           </div>
@@ -250,10 +285,14 @@ export default function LessonTestPage() {
         {/* Questions */}
         <div className="space-y-6">
           {questionList.map((q, qi) => {
-            const options = normalizeArray<string>(q.options, ["options", "data", "items"]);
+            // Questions and their options are stored per language; pick the set
+            // matching the UI, falling back to English when a translation is absent.
+            const rawOptions = lang === "uz" && q.optionsUz ? q.optionsUz : lang === "ru" && q.optionsRu ? q.optionsRu : q.options;
+            const options = normalizeArray<string>(rawOptions, ["options", "data", "items"]);
+            const questionText = t(q.question, q.questionUz ?? undefined, q.questionRu ?? undefined);
             return (
             <div key={q.id} className="p-5 rounded-xl border border-border bg-card" data-testid={`card-question-${qi}`}>
-              <p className="font-medium mb-4 text-sm">{qi + 1}. {q.question}</p>
+              <p className="font-medium mb-4 text-sm">{qi + 1}. {questionText}</p>
               <div className="space-y-2">
                 {options.map((opt, oi) => (
                   <button

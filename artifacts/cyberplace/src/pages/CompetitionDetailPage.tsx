@@ -42,7 +42,7 @@ export default function CompetitionDetailPage() {
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : "Join failed");
       toast({ title: t("Joined competition!", "Musobaqaga qo'shildingiz!", "Вы присоединились к соревнованию!") });
-      qc.invalidateQueries({ queryKey: getGetCompetitionQueryKey(id) });
+      void qc.invalidateQueries({ queryKey: getGetCompetitionQueryKey(id) });
     } catch (error) {
       toast({ title: error instanceof Error ? error.message : "Join failed", variant: "destructive" });
     } finally {

@@ -4,18 +4,18 @@ info:
   version: 0.1.0
   description: cdCTF API
 servers:
-  - url: /api
-    description: Base API path
+- url: /api
+  description: Base API path
 tags:
-  - name: health
-  - name: auth
-  - name: ctf
-  - name: learn
-  - name: scoreboard
-  - name: competitions
-  - name: profile
-  - name: admin
-  - name: titles
+- name: health
+- name: auth
+- name: ctf
+- name: learn
+- name: scoreboard
+- name: competitions
+- name: profile
+- name: admin
+- name: titles
 
 paths:
   /healthz:
@@ -120,11 +120,11 @@ paths:
       tags: [auth]
       summary: Verify email with token
       parameters:
-        - in: query
-          name: token
-          required: true
-          schema:
-            type: string
+      - in: query
+        name: token
+        required: true
+        schema:
+          type: string
       responses:
         "200":
           description: Email verified
@@ -146,31 +146,31 @@ paths:
       tags: [ctf]
       summary: List CTF challenges
       parameters:
-        - in: query
-          name: category
-          schema:
-            type: string
-        - in: query
-          name: difficulty
-          schema:
-            type: string
-            enum: [easy, medium, hard, insane]
-        - in: query
-          name: solved
-          schema:
-            type: boolean
-        - in: query
-          name: search
-          schema:
-            type: string
-        - in: query
-          name: minPoints
-          schema:
-            type: integer
-        - in: query
-          name: maxPoints
-          schema:
-            type: integer
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: difficulty
+        schema:
+          type: string
+          enum: [easy, medium, hard, insane]
+      - in: query
+        name: solved
+        schema:
+          type: boolean
+      - in: query
+        name: search
+        schema:
+          type: string
+      - in: query
+        name: minPoints
+        schema:
+          type: integer
+      - in: query
+        name: maxPoints
+        schema:
+          type: integer
       responses:
         "200":
           description: List of CTF challenges
@@ -181,30 +181,17 @@ paths:
                 items:
                   $ref: "#/components/schemas/CtfChallenge"
 
-  /ctf/stats:
-    get:
-      operationId: getCtfStats
-      tags: [ctf]
-      summary: Get CTF stats (most solved, categories breakdown)
-      responses:
-        "200":
-          description: CTF statistics
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CtfStats"
-
   /ctf/{id}:
     get:
       operationId: getCtfChallenge
       tags: [ctf]
       summary: Get a CTF challenge by ID
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: CTF challenge
@@ -225,11 +212,11 @@ paths:
       tags: [ctf]
       summary: Submit a flag for a CTF challenge
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -250,32 +237,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /ctf/{id}/hint:
-    post:
-      operationId: useCtfHint
-      tags: [ctf]
-      summary: Use a hint for a CTF challenge (costs points)
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Hint content
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HintResponse"
-        "403":
-          description: Cannot use hint
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-  # LEARN
   /learn/categories:
     get:
       operationId: listLearnCategories
@@ -297,10 +258,10 @@ paths:
       tags: [learn]
       summary: List lessons
       parameters:
-        - in: query
-          name: category
-          schema:
-            type: string
+      - in: query
+        name: category
+        schema:
+          type: string
       responses:
         "200":
           description: Lessons
@@ -317,11 +278,11 @@ paths:
       tags: [learn]
       summary: Get lesson detail
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Lesson detail
@@ -342,11 +303,11 @@ paths:
       tags: [learn]
       summary: Start a lesson test (activates anti-cheat)
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Test started
@@ -367,11 +328,11 @@ paths:
       tags: [learn]
       summary: Submit lesson test answers
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -398,11 +359,11 @@ paths:
       tags: [learn]
       summary: Report ESC key press during test (anti-cheat)
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Escape handled
@@ -418,16 +379,16 @@ paths:
       tags: [scoreboard]
       summary: Get global scoreboard
       parameters:
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            default: 50
-        - in: query
-          name: offset
-          schema:
-            type: integer
-            default: 0
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          default: 50
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          default: 0
       responses:
         "200":
           description: Scoreboard entries
@@ -458,11 +419,11 @@ paths:
       tags: [competitions]
       summary: Get competition detail
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Competition detail
@@ -483,11 +444,11 @@ paths:
       tags: [competitions]
       summary: Join a competition
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Joined
@@ -508,11 +469,11 @@ paths:
       tags: [competitions]
       summary: Get competition scoreboard
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Competition scoreboard
@@ -530,11 +491,11 @@ paths:
       tags: [profile]
       summary: Get user profile
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: User profile
@@ -554,11 +515,11 @@ paths:
       tags: [profile]
       summary: Update user profile
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -580,22 +541,27 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 
 
-  /titles:
-    get:
-      operationId: listTitles
-      tags: [titles]
-      summary: List all available titles
+    delete:
+      operationId: deleteAccount
+      tags: [users]
+      summary: Delete an account — the caller's own, or any as an admin
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
-          description: Titles
+          description: Deleted
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Title"
-
-  # ADMIN
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /admin/dashboard:
     get:
       operationId: getAdminDashboard
@@ -615,20 +581,20 @@ paths:
       tags: [admin]
       summary: List all users
       parameters:
-        - in: query
-          name: search
-          schema:
-            type: string
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            default: 50
-        - in: query
-          name: offset
-          schema:
-            type: integer
-            default: 0
+      - in: query
+        name: search
+        schema:
+          type: string
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          default: 50
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          default: 0
       responses:
         "200":
           description: Users list
@@ -643,11 +609,11 @@ paths:
       tags: [admin]
       summary: Block a user
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: User blocked
@@ -662,11 +628,11 @@ paths:
       tags: [admin]
       summary: Unblock a user
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: User unblocked
@@ -694,17 +660,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/CtfChallengeDetail"
 
+    get:
+      operationId: listAdminCtf
+      tags: [admin]
+      summary: Every challenge, drafts included
+      responses:
+        "200":
+          description: Challenges
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCtfListResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /admin/ctf/{id}:
     put:
       operationId: adminUpdateCtf
       tags: [admin]
       summary: Update a CTF challenge
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -724,11 +704,11 @@ paths:
       tags: [admin]
       summary: Delete a CTF challenge
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: CTF deleted
@@ -737,22 +717,76 @@ paths:
               schema:
                 $ref: "#/components/schemas/MessageResponse"
 
+    get:
+      operationId: getAdminCtf
+      tags: [admin]
+      summary: One challenge, as stored
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Challenge
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCtfTask"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateCtf
+      tags: [admin]
+      summary: Update a challenge
+      description: >-
+        Fields are filtered by role: an author may edit their own content but not
+        its points or publish state.
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCtfBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCtfTask"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /admin/ctf/{id}/unblock-user/{userId}:
     post:
       operationId: adminUnblockCtfUser
       tags: [admin]
       summary: Unblock a user from a specific CTF
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-        - in: path
-          name: userId
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: User unblocked for CTF
@@ -780,22 +814,22 @@ paths:
       tags: [admin]
       summary: Unblock a task for a user
       parameters:
-        - in: path
-          name: type
-          required: true
-          schema:
-            type: string
-            enum: [ctf, lesson]
-        - in: path
-          name: taskId
-          required: true
-          schema:
-            type: integer
-        - in: path
-          name: userId
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: type
+        required: true
+        schema:
+          type: string
+          enum: [ctf, lesson]
+      - in: path
+        name: taskId
+        required: true
+        schema:
+          type: integer
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Task unblocked
@@ -829,11 +863,11 @@ paths:
       tags: [admin]
       summary: Update a competition
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -848,22 +882,51 @@ paths:
               schema:
                 $ref: "#/components/schemas/Competition"
 
+    patch:
+      operationId: updateCompetition
+      tags: [admin]
+      summary: Update a competition
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCompetitionBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Competition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ADMIN — USERS AND OPS
   /admin/competitions/{id}/users/{userId}:
     post:
       operationId: adminAddCompetitionUser
       tags: [admin]
       summary: Add user to private competition
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-        - in: path
-          name: userId
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: User added
@@ -891,17 +954,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/LessonDetail"
 
+    get:
+      operationId: listAdminLessons
+      tags: [admin]
+      summary: Every lesson, drafts included
+      responses:
+        "200":
+          description: Lessons
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminLessonListResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /admin/lessons/{id}:
     put:
       operationId: adminUpdateLesson
       tags: [admin]
       summary: Update a lesson
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -921,11 +998,11 @@ paths:
       tags: [admin]
       summary: Delete a lesson
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
       responses:
         "200":
           description: Lesson deleted
@@ -934,6 +1011,1013 @@ paths:
               schema:
                 $ref: "#/components/schemas/MessageResponse"
 
+    get:
+      operationId: getAdminLesson
+      tags: [admin]
+      summary: One lesson with its questions and correct answers
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Lesson
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminLesson"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateLesson
+      tags: [admin]
+      summary: Update a lesson and optionally replace its questions
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLessonBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminLesson"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /auth/session:
+    get:
+      operationId: getSession
+      tags: [auth]
+      summary: Current user and their permissions, or null when signed out
+      description: >-
+        Permissions are derived server-side from the role. The client must not
+        keep its own copy of the permission table, and must not trust anything
+        it cached: this is authorisation.
+      responses:
+        "200":
+          description: Session state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+
+  /auth/sessions:
+    get:
+      operationId: listSessions
+      tags: [auth]
+      summary: Every device currently signed in as the caller
+      responses:
+        "200":
+          description: Live sessions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/SessionRequired"
+
+  /auth/sessions/{id}:
+    delete:
+      operationId: revokeSession
+      tags: [auth]
+      summary: Sign a single device out
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /auth/sessions/revoke-all:
+    post:
+      operationId: revokeOtherSessions
+      tags: [auth]
+      summary: Sign out everywhere except this device
+      responses:
+        "200":
+          description: Revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RevokeAllResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/login-history:
+    get:
+      operationId: getLoginHistory
+      tags: [auth]
+      summary: The caller's recent sign-in attempts, successful or not
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 25
+      responses:
+        "200":
+          description: History
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginHistoryResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # AUTH — PASSWORD
+  /auth/change-password:
+    post:
+      operationId: changePassword
+      tags: [auth]
+      summary: Change password; signs out every other device
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordBody"
+      responses:
+        "200":
+          description: Changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangePasswordResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/forgot-password:
+    post:
+      operationId: forgotPassword
+      tags: [auth]
+      summary: Send a reset link
+      description: >-
+        Always answers the same whether or not the address is registered —
+        a differing response would be an account-enumeration oracle.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordBody"
+      responses:
+        "200":
+          description: Sent if the account exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /auth/reset-password:
+    post:
+      operationId: resetPassword
+      tags: [auth]
+      summary: Reset a password with an emailed token; revokes every session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordBody"
+      responses:
+        "200":
+          description: Reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /auth/resend-verification:
+    post:
+      operationId: resendVerification
+      tags: [auth]
+      summary: Resend the verification email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordBody"
+      responses:
+        "200":
+          description: Sent if the account exists and is unverified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /auth/2fa/status:
+    get:
+      operationId: getTwoFactorStatus
+      tags: [auth]
+      summary: Whether 2FA is on, and how many backup codes remain
+      responses:
+        "200":
+          description: Status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TwoFactorStatus"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/2fa/setup:
+    post:
+      operationId: setupTwoFactor
+      tags: [auth]
+      summary: Begin enrolment and return the secret to scan
+      description: >-
+        Does nothing on its own — /auth/2fa/enable must prove the user can
+        produce a code from this secret before 2FA turns on.
+      responses:
+        "200":
+          description: Enrolment secret
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TwoFactorSetupResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Already enabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/2fa/enable:
+    post:
+      operationId: enableTwoFactor
+      tags: [auth]
+      summary: Confirm enrolment; returns the backup codes
+      description: The only time the backup codes are readable — they are stored hashed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TwoFactorCodeBody"
+      responses:
+        "200":
+          description: Enabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackupCodesResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/2fa/disable:
+    post:
+      operationId: disableTwoFactor
+      tags: [auth]
+      summary: Turn 2FA off — needs the password and a live code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DisableTwoFactorBody"
+      responses:
+        "200":
+          description: Disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/2fa/backup-codes:
+    post:
+      operationId: regenerateBackupCodes
+      tags: [auth]
+      summary: Issue a fresh set of backup codes, invalidating the old ones
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordBody"
+      responses:
+        "200":
+          description: New codes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackupCodesResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/2fa/verify:
+    post:
+      operationId: verifyTwoFactor
+      tags: [auth]
+      summary: Exchange an mfaToken plus a code for a session
+      description: Accepts either a 6-digit TOTP code or a single-use backup code.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyTwoFactorBody"
+      responses:
+        "200":
+          description: Signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Invalid or expired code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Account blocked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # AUTH — PASSKEYS
+  /auth/passkeys:
+    get:
+      operationId: listPasskeys
+      tags: [auth]
+      summary: The caller's registered passkeys
+      responses:
+        "200":
+          description: Passkeys
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasskeysResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/passkeys/{id}:
+    delete:
+      operationId: deletePasskey
+      tags: [auth]
+      summary: Remove a passkey
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /auth/passkeys/register/options:
+    post:
+      operationId: getPasskeyRegistrationOptions
+      tags: [auth]
+      summary: WebAuthn creation options
+      description: >-
+        Pass the body straight to @simplewebauthn/browser's startRegistration.
+        The challenge is returned in a signed cookie and is single-use.
+      responses:
+        "200":
+          description: PublicKeyCredentialCreationOptionsJSON
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/passkeys/register/verify:
+    post:
+      operationId: verifyPasskeyRegistration
+      tags: [auth]
+      summary: Store a passkey after verifying the attestation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              description: The attestation from startRegistration, plus an optional `name`.
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasskeyRegisteredResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/passkeys/login/options:
+    post:
+      operationId: getPasskeyLoginOptions
+      tags: [auth]
+      summary: WebAuthn request options (usernameless)
+      description: >-
+        No identifier is asked for: the authenticator says which credential it
+        holds.
+      responses:
+        "200":
+          description: PublicKeyCredentialRequestOptionsJSON
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /auth/passkeys/login/verify:
+    post:
+      operationId: verifyPasskeyLogin
+      tags: [auth]
+      summary: Sign in with a passkey
+      description: >-
+        Answers `requires2fa` when the account also has TOTP on — a passkey does
+        not override a second factor its owner turned on here.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              description: The assertion from startAuthentication.
+      responses:
+        "200":
+          description: Signed in, or owing a 2FA code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Unknown or unverifiable passkey
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/oauth/providers:
+    get:
+      operationId: listOAuthProviders
+      tags: [auth]
+      summary: Providers this deployment has credentials for
+      description: A provider appears only once both its client id and secret are set.
+      responses:
+        "200":
+          description: Configured providers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthProvidersResponse"
+
+  /auth/oauth/accounts:
+    get:
+      operationId: listLinkedOAuthAccounts
+      tags: [auth]
+      summary: Provider identities linked to the caller
+      responses:
+        "200":
+          description: Linked accounts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthAccountsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/oauth/{provider}:
+    get:
+      operationId: startOAuth
+      tags: [auth]
+      summary: Redirect to the provider (a browser navigation, not a fetch)
+      description: >-
+        `mode=link` attaches the identity to the signed-in account instead of
+        signing in. Sets a signed, single-use state cookie; the callback is
+        refused without it.
+      parameters:
+      - in: path
+        name: provider
+        required: true
+        schema:
+          $ref: "#/components/schemas/OAuthProvider"
+      - in: query
+        name: mode
+        schema:
+          type: string
+          enum: [link]
+      responses:
+        "302":
+          description: Redirect to the provider, or back to /login with ?oauth_error=
+    delete:
+      operationId: unlinkOAuthAccount
+      tags: [auth]
+      summary: Unlink a provider identity
+      parameters:
+      - in: path
+        name: provider
+        required: true
+        schema:
+          $ref: "#/components/schemas/OAuthProvider"
+      responses:
+        "200":
+          description: Unlinked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /auth/oauth/{provider}/callback:
+    get:
+      operationId: oauthCallback
+      tags: [auth]
+      summary: Where the provider sends the browser back
+      description: >-
+        Not called by the frontend. On failure it redirects to
+        /login?oauth_error=<code>; for an account with 2FA it redirects to
+        /login?mfa=<token>.
+      parameters:
+      - in: path
+        name: provider
+        required: true
+        schema:
+          $ref: "#/components/schemas/OAuthProvider"
+      - in: query
+        name: code
+        schema:
+          type: string
+      - in: query
+        name: state
+        schema:
+          type: string
+      - in: query
+        name: error
+        schema:
+          type: string
+      responses:
+        "302":
+          description: Redirect into the app
+
+  # AUTH — API TOKENS
+  /auth/api-tokens:
+    get:
+      operationId: listApiTokens
+      tags: [auth]
+      summary: The caller's personal access tokens
+      description: The secret is never returned again — `prefix` is what identifies one.
+      responses:
+        "200":
+          description: Tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiTokensResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/SessionRequired"
+    post:
+      operationId: createApiToken
+      tags: [auth]
+      summary: Mint a token — the only time its secret is readable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApiTokenBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateApiTokenResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Token limit reached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/api-tokens/{id}:
+    delete:
+      operationId: revokeApiToken
+      tags: [auth]
+      summary: Revoke a token
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /users/me/dashboard:
+    get:
+      operationId: getMyDashboard
+      tags: [users]
+      summary: The caller's progress summary and rank
+      responses:
+        "200":
+          description: Dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/me/profile:
+    get:
+      operationId: getMyProfile
+      tags: [users]
+      summary: The caller's own profile, including their email
+      responses:
+        "200":
+          description: Profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/{id}/avatar:
+    post:
+      operationId: uploadAvatar
+      tags: [users]
+      summary: Upload an avatar (2 MB max, images only)
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+              required: [avatar]
+      responses:
+        "200":
+          description: Uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvatarResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "413":
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # COMPETITIONS
+  /competitions/{id}/ctf/{ctfId}/submit:
+    post:
+      operationId: submitCompetitionFlag
+      tags: [competitions]
+      summary: Submit a flag within a competition
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      - in: path
+        name: ctfId
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitFlagBody"
+      responses:
+        "200":
+          description: Result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompetitionSubmitResponse"
+        "403":
+          description: Not active, or not joined
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # UPLOADS
+  /uploads/ctf-file:
+    post:
+      operationId: uploadCtfFile
+      tags: [uploads]
+      summary: Upload a challenge attachment
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required: [file]
+      responses:
+        "200":
+          description: Uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /uploads/ctf-file/sign:
+    post:
+      operationId: signCtfFileUpload
+      tags: [uploads]
+      summary: Get a signed URL to upload straight to storage
+      description: Answers 501 when object storage is not configured; fall back to /uploads/ctf-file.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignUploadBody"
+      responses:
+        "200":
+          description: Signed URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignedUploadResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "501":
+          description: Object storage not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /uploads/download/{id}/{filename}:
+    get:
+      operationId: downloadCtfFile
+      tags: [uploads]
+      summary: Download a challenge attachment
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      - in: path
+        name: filename
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: File contents
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /admin/ctf/{id}/publish:
+    post:
+      operationId: publishCtf
+      tags: [admin]
+      summary: Make a draft live, or take it back down
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublishResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /admin/lessons/{id}/publish:
+    post:
+      operationId: publishLesson
+      tags: [admin]
+      summary: Make a draft lesson live, or take it back down
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublishResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /admin/users/{id}/role:
+    patch:
+      operationId: setUserRole
+      tags: [admin]
+      summary: Assign a role; revokes that user's sessions
+      description: >-
+        The role is read from the database on every request, so a change takes
+        effect at once. An admin cannot demote themselves out of the ability to
+        undo it.
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetRoleBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SetRoleResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /admin/users/recalculate-points:
+    post:
+      operationId: recalculateAllPoints
+      tags: [admin]
+      summary: Recompute every user's score from their solves
+      responses:
+        "200":
+          description: Recalculated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/audit-logs:
+    get:
+      operationId: listAuditLogs
+      tags: [admin]
+      summary: The 200 most recent audit entries
+      responses:
+        "200":
+          description: Audit log
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditLogsResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/blocked:
+    get:
+      operationId: listBlockedTasks
+      tags: [admin]
+      summary: Users blocked from a challenge or lesson
+      responses:
+        "200":
+          description: Blocked tasks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockedTasksResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 components:
   schemas:
     HealthStatus:
@@ -967,12 +2051,22 @@ components:
           type: string
           minLength: 3
           maxLength: 32
+          pattern: "^[A-Za-z0-9_]+$"
+          description: Letters, numbers and underscores only.
         email:
           type: string
           format: email
-        password:
+        password: &id001
           type: string
-          minLength: 6
+          minLength: 10
+          pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{10,}$"
+          description: >-
+            At least 10 characters, with a lowercase letter, an uppercase letter, a digit
+            and a symbol.
+        captchaToken:
+          type: string
+          description: >-
+            Cloudflare Turnstile token. Required only when TURNSTILE_ENFORCE is on.
       required: [nickname, email, password]
 
     LoginBody:
@@ -1009,7 +2103,11 @@ components:
           type: integer
         role:
           type: string
-          enum: [user, admin]
+          enum:
+          - user
+          - author
+          - moderator
+          - admin
         emailVerified:
           type: boolean
         isBlocked:
@@ -1040,6 +2138,12 @@ components:
           type: boolean
         isBlocked:
           type: boolean
+        nameUz:
+          type: string
+          nullable: true
+        nameRu:
+          type: string
+          nullable: true
       required: [id, name, category, difficulty, points, solvedCount, isSolved, isBlocked]
 
     CtfChallengeDetail:
@@ -1130,6 +2234,8 @@ components:
       properties:
         flag:
           type: string
+          minLength: 1
+          maxLength: 512
       required: [flag]
 
     FlagSubmitResponse:
@@ -1147,17 +2253,6 @@ components:
         blocked:
           type: boolean
       required: [correct, message, wrongAttempts, blocked]
-
-    HintResponse:
-      type: object
-      properties:
-        hint:
-          type: string
-        pointsDeducted:
-          type: integer
-        remainingPoints:
-          type: integer
-      required: [hint, pointsDeducted, remainingPoints]
 
     # Learn
     LearnCategory:
@@ -1522,6 +2617,31 @@ components:
           minLength: 3
           maxLength: 32
 
+        avatarUrl:
+          type: string
+          nullable: true
+        points:
+          type: integer
+          description: Admin only.
+        role:
+          type: string
+          enum:
+          - user
+          - author
+          - moderator
+          - admin
+          description: Admin only.
+        isBlocked:
+          type: boolean
+          description: Admin only.
+        email:
+          type: string
+          format: email
+          description: Admin only.
+        emailVerified:
+          type: boolean
+          description: Admin only.
+      description: Fields this endpoint accepts. Which of them a caller may actually set depends on their role (columnPermissions in rbac.ts); anything they may not set is dropped, and a request left with nothing to update is rejected.
     AvatarResponse:
       type: object
       properties:
@@ -1704,7 +2824,14 @@ components:
           type: array
           items:
             type: integer
-      required: [name, type, startTime, endTime, ctfIds]
+        inviteCode:
+          type: string
+          nullable: true
+          description: Join code for a private competition. Ignored when type is public, and generated if a private competition is created without one.
+      required:
+      - name
+      - startTime
+      - endTime
 
     CreateLessonBody:
       type: object
@@ -1759,4 +2886,795 @@ components:
               correctOption:
                 type: integer
             required: [question, options, correctOption]
-      required: [title, content, categoryId, points, questions]
+      required:
+      - title
+      - content
+      - categoryId
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required: [success]
+    SessionResponse:
+      type: object
+      properties:
+        user:
+          oneOf:
+          - $ref: "#/components/schemas/User"
+          - type: "null"
+        permissions:
+          type: array
+          description: Derived from the role server-side. Absent when signed out.
+          items:
+            type: string
+      required: [user]
+    SuspiciousLogin:
+      type: object
+      properties:
+        reasons:
+          type: array
+          items:
+            type: string
+            enum: [new_ip, new_device, recent_failed_attempts]
+      required: [reasons]
+    LoginResult:
+      description: >-
+        A correct password does not always mean a session: an account with 2FA
+        gets an mfaToken to exchange at /auth/2fa/verify instead.
+      oneOf:
+      - $ref: "#/components/schemas/TwoFactorRequired"
+      - $ref: "#/components/schemas/AuthResponse"
+
+    TwoFactorRequired:
+      type: object
+      properties:
+        requires2fa:
+          type: boolean
+          enum: [true]
+        mfaToken:
+          type: string
+          description: >-
+            Short-lived, and carries a distinct JWT audience — it cannot be used
+            as a session token.
+      required: [requires2fa, mfaToken]
+    SessionEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        deviceLabel:
+          type: string
+          nullable: true
+        ipAddress:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        lastSeenAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        isCurrent:
+          type: boolean
+      required: [id, createdAt, lastSeenAt, expiresAt, isCurrent]
+    SessionsResponse:
+      type: object
+      properties:
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/SessionEntry"
+      required: [sessions]
+    RevokeAllResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        revokedCount:
+          type: integer
+      required: [success, revokedCount]
+    LoginHistoryEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        ipAddress:
+          type: string
+          nullable: true
+        deviceLabel:
+          type: string
+          nullable: true
+        success:
+          type: boolean
+        failureReason:
+          type: string
+          nullable: true
+          enum: [unknown_user, bad_password, bad_totp, blocked, email_unverified, null]
+        suspicious:
+          type: boolean
+        suspiciousReasons:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, success, suspicious, suspiciousReasons, createdAt]
+    LoginHistoryResponse:
+      type: object
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/LoginHistoryEntry"
+      required: [entries]
+    ChangePasswordBody:
+      type: object
+      properties:
+        oldPassword:
+          type: string
+        newPassword: *id001
+      required: [oldPassword, newPassword]
+    ChangePasswordResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        revokedSessionCount:
+          type: integer
+      required: [success]
+    ForgotPasswordBody:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required: [email]
+    ResetPasswordBody:
+      type: object
+      properties:
+        token:
+          type: string
+        password: *id001
+      required: [token, password]
+    PasswordBody:
+      type: object
+      properties:
+        password:
+          type: string
+      required: [password]
+    TwoFactorStatus:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        backupCodesRemaining:
+          type: integer
+      required: [enabled, backupCodesRemaining]
+    TwoFactorSetupResponse:
+      type: object
+      properties:
+        secret:
+          type: string
+          description: Base32, for manual entry.
+        otpauthUri:
+          type: string
+          description: otpauth:// URI for a QR code.
+      required: [secret, otpauthUri]
+    TwoFactorCodeBody:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+      required: [code]
+    DisableTwoFactorBody:
+      type: object
+      properties:
+        password:
+          type: string
+        code:
+          type: string
+      required: [password, code]
+    VerifyTwoFactorBody:
+      type: object
+      properties:
+        mfaToken:
+          type: string
+        code:
+          type: string
+          description: A 6-digit TOTP code, or a backup code. Case and dashes are ignored.
+          minLength: 1
+      required: [mfaToken, code]
+    BackupCodesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        backupCodes:
+          type: array
+          description: Shown once. Stored hashed; there is no way to read them again.
+          items:
+            type: string
+      required: [backupCodes]
+    PasskeyEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        deviceType:
+          type: string
+          nullable: true
+        backedUp:
+          type: boolean
+        lastUsedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, backedUp, createdAt]
+    PasskeysResponse:
+      type: object
+      properties:
+        passkeys:
+          type: array
+          items:
+            $ref: "#/components/schemas/PasskeyEntry"
+      required: [passkeys]
+    PasskeyRegisteredResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        name:
+          type: string
+      required: [success, name]
+    OAuthProvider:
+      type: string
+      enum: [google, github, discord]
+    OAuthProvidersResponse:
+      type: object
+      properties:
+        providers:
+          type: array
+          items:
+            $ref: "#/components/schemas/OAuthProvider"
+      required: [providers]
+    OAuthAccount:
+      type: object
+      properties:
+        provider:
+          $ref: "#/components/schemas/OAuthProvider"
+        providerEmail:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [provider, createdAt]
+    OAuthAccountsResponse:
+      type: object
+      properties:
+        accounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/OAuthAccount"
+      required: [accounts]
+    ApiScope:
+      type: string
+      enum: [profile:read, ctf:read, ctf:submit, learn:read, scoreboard:read]
+    ApiTokenEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        prefix:
+          type: string
+          description: Enough to tell tokens apart, not enough to reconstruct one.
+        scopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiScope"
+        lastUsedAt:
+          type: string
+          format: date-time
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, prefix, scopes, createdAt]
+    ApiTokensResponse:
+      type: object
+      properties:
+        tokens:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiTokenEntry"
+        availableScopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiScope"
+      required: [tokens, availableScopes]
+    CreateApiTokenBody:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 64
+          minLength: 1
+        scopes:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ApiScope"
+        expiresInDays:
+          type: integer
+          minimum: 1
+          maximum: 365
+          nullable: true
+      required: [name, scopes]
+    CreateApiTokenResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiScope"
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        token:
+          type: string
+          description: Shown once. Only its hash is stored.
+      required: [id, name, scopes, token]
+    DashboardResponse:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+            nickname:
+              type: string
+            points:
+              type: integer
+            rank:
+              type: integer
+              description: 0 for accounts excluded from scoring.
+          required: [id, nickname, points, rank]
+        progress:
+          type: object
+          properties:
+            solvedCtfCount:
+              type: integer
+            completedLessonCount:
+              type: integer
+            titleCount:
+              type: integer
+          required: [solvedCtfCount, completedLessonCount, titleCount]
+        recent:
+          type: object
+          properties:
+            solvedCtf:
+              type: array
+              items:
+                type: object
+                properties:
+                  ctfId:
+                    type: integer
+                  solvedAt:
+                    type: string
+                    format: date-time
+                    nullable: true
+            completedLessons:
+              type: array
+              items:
+                type: object
+                properties:
+                  lessonId:
+                    type: integer
+                  completedAt:
+                    type: string
+                    format: date-time
+                    nullable: true
+        titles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Title"
+      required: [user, progress, recent, titles]
+    CompetitionSubmitResponse:
+      type: object
+      properties:
+        correct:
+          type: boolean
+        alreadySolved:
+          type: boolean
+        blocked:
+          type: boolean
+        wrongAttempts:
+          type: integer
+        pointsEarned:
+          type: integer
+      required: [correct]
+    UploadResponse:
+      type: object
+      properties:
+        url:
+          type: string
+        filename:
+          type: string
+      required: [url]
+    SignUploadBody:
+      type: object
+      properties:
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+          minimum: 1
+          maximum: 26214400
+          description: Size of the file in bytes. Checked before a URL is signed, so an oversized upload is refused before it starts.
+      required:
+      - size
+    SignedUploadResponse:
+      type: object
+      properties:
+        uploadUrl:
+          type: string
+        publicUrl:
+          type: string
+      required: [uploadUrl, publicUrl]
+    AdminCtfTask:
+      type: object
+      description: >-
+        The stored row. `flag` is the sha256$ hash, never the plaintext — which
+        is unrecoverable by design.
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        nameUz:
+          type: string
+          nullable: true
+        nameRu:
+          type: string
+          nullable: true
+        description:
+          type: string
+        descriptionUz:
+          type: string
+          nullable: true
+        descriptionRu:
+          type: string
+          nullable: true
+        category:
+          type: string
+        difficulty:
+          type: string
+        points:
+          type: integer
+        hint:
+          type: string
+          nullable: true
+        hintCost:
+          type: integer
+        fileUrl:
+          type: string
+          nullable: true
+        authorId:
+          type: integer
+          nullable: true
+        isPublished:
+          type: boolean
+        solvedCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, description, category, difficulty, points, isPublished]
+    AdminCtfListResponse:
+      type: object
+      properties:
+        challenges:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminCtfTask"
+      required: [challenges]
+    UpdateCtfBody:
+      type: object
+      description: >-
+        Every field is optional; anything the caller's role may not write is
+        dropped rather than rejected.
+      properties:
+        name:
+          type: string
+        nameUz:
+          type: string
+          nullable: true
+        nameRu:
+          type: string
+          nullable: true
+        description:
+          type: string
+        descriptionUz:
+          type: string
+          nullable: true
+        descriptionRu:
+          type: string
+          nullable: true
+        category:
+          type: string
+        difficulty:
+          type: string
+        points:
+          type: integer
+          description: Admin only.
+        hint:
+          type: string
+        hintCost:
+          type: integer
+          description: Admin only.
+        flag:
+          type: string
+          description: Plaintext; hashed before storage.
+        fileUrl:
+          type: string
+        isPublished:
+          type: boolean
+          description: Admin only.
+
+    PublishBody:
+      type: object
+      properties:
+        isPublished:
+          type: boolean
+          default: true
+
+    PublishResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        isPublished:
+          type: boolean
+      required: [success, isPublished]
+    AdminLessonQuestion:
+      type: object
+      properties:
+        id:
+          type: integer
+        question:
+          type: string
+        questionUz:
+          type: string
+          nullable: true
+        questionRu:
+          type: string
+          nullable: true
+        options:
+          type: array
+          items:
+            type: string
+        correctOption:
+          type: integer
+        orderIndex:
+          type: integer
+      required: [question, options, correctOption]
+    AdminLesson:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        titleUz:
+          type: string
+          nullable: true
+        titleRu:
+          type: string
+          nullable: true
+        content:
+          type: string
+        contentUz:
+          type: string
+          nullable: true
+        contentRu:
+          type: string
+          nullable: true
+        categoryId:
+          type: integer
+        categoryName:
+          type: string
+          nullable: true
+        points:
+          type: integer
+        authorId:
+          type: integer
+          nullable: true
+        isPublished:
+          type: boolean
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminLessonQuestion"
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, title, categoryId, points]
+    AdminLessonListResponse:
+      type: object
+      properties:
+        lessons:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminLesson"
+      required: [lessons]
+    UpdateLessonBody:
+      type: object
+      properties:
+        title:
+          type: string
+        titleUz:
+          type: string
+          nullable: true
+        titleRu:
+          type: string
+          nullable: true
+        content:
+          type: string
+        contentUz:
+          type: string
+          nullable: true
+        contentRu:
+          type: string
+          nullable: true
+        categoryId:
+          type: integer
+        points:
+          type: integer
+          description: Admin only.
+        isPublished:
+          type: boolean
+          description: Admin only.
+        questions:
+          type: array
+          description: Replaces the whole set when present.
+          items:
+            $ref: "#/components/schemas/AdminLessonQuestion"
+
+    UpdateCompetitionBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        type:
+          type: string
+          enum: [public, private]
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        inviteCode:
+          type: string
+          nullable: true
+
+    SetRoleBody:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [user, author, moderator, admin]
+      required: [role]
+    SetRoleResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        role:
+          type: string
+          enum: [user, author, moderator, admin]
+        revokedSessionCount:
+          type: integer
+      required: [success, role]
+    AuditLogEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        actorUserId:
+          type: integer
+          nullable: true
+        action:
+          type: string
+        targetType:
+          type: string
+        targetId:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+        ipAddress:
+          type: string
+          nullable: true
+        userAgent:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, action, targetType, createdAt]
+    AuditLogsResponse:
+      type: object
+      properties:
+        logs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditLogEntry"
+      required: [logs]
+  responses:
+    Unauthorized:
+      description: Not signed in, or the token is invalid
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Signed in, but not allowed to do this
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    SessionRequired:
+      description: >-
+        Needs an interactive session. API tokens are refused on anything that
+        changes credentials, 2FA or sessions.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    BadRequest:
+      description: Invalid input
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"

@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Camera, Lock, Trash2, Shield, User, Mail, AlertTriangle } from "lucide-react";
+import { Camera, Lock, Trash2, User, Mail, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -68,7 +68,7 @@ export default function ProfileEditPage() {
         onSuccess: (res) => {
           updateUser({ ...user, ...res });
           toast({ title: t("Profile updated!", "Profil yangilandi!", "Профиль обновлён!") });
-          qc.invalidateQueries({ queryKey: getGetUserProfileQueryKey(user.id) });
+          void qc.invalidateQueries({ queryKey: getGetUserProfileQueryKey(user.id) });
         },
         onError: (err: unknown) => {
           const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Error";
@@ -223,12 +223,12 @@ export default function ProfileEditPage() {
                 <FormField control={passwordForm.control} name="oldPassword" render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("Current Password", "Joriy Parol", "Текущий пароль")}</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <div className="relative">
+                      <Lock aria-hidden="true" className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <FormControl>
                         <Input {...field} type="password" placeholder="••••••••" className="pl-9" />
-                      </div>
-                    </FormControl>
+                      </FormControl>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -236,24 +236,24 @@ export default function ProfileEditPage() {
                   <FormField control={passwordForm.control} name="newPassword" render={({ field }) => (
                     <FormItem>
                       <FormLabel>{t("New Password", "Yangi Parol", "Новый пароль")}</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <div className="relative">
+                        <Lock aria-hidden="true" className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <FormControl>
                           <Input {...field} type="password" placeholder="••••••••" className="pl-9" />
-                        </div>
-                      </FormControl>
+                        </FormControl>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={passwordForm.control} name="confirmPassword" render={({ field }) => (
                     <FormItem>
                       <FormLabel>{t("Confirm New Password", "Yangi Parolni Tasdiqlang", "Подтвердите новый пароль")}</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <div className="relative">
+                        <Lock aria-hidden="true" className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <FormControl>
                           <Input {...field} type="password" placeholder="••••••••" className="pl-9" />
-                        </div>
-                      </FormControl>
+                        </FormControl>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )} />

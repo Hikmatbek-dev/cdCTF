@@ -48,3 +48,13 @@ Thumbs.db
 .cache/
 .local/
 .vercel
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# CTF challenge sources hold PLAINTEXT FLAGS — this repo is public, so the
+# generator, the generated JSON and the answer key must never be committed.
+# Keep them local; back them up somewhere private, not here.
+scripts/content/

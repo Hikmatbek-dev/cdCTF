@@ -1,5 +1,21 @@
 -- CyberPlace / cdCTF schema for Supabase SQL Editor.
 -- Run this once in Supabase Dashboard -> SQL Editor.
+--
+-- This file is half of how production gets its schema, not a leftover. It
+-- creates the 14 base tables; ensureDatabaseShape() in
+-- artifacts/api-server/src/lib/database.ts adds the rest at every cold start —
+-- sessions, passkeys, OAuth, API tokens, backup codes, login history, plus
+-- later columns and every index. Neither half is complete alone, and this one
+-- cannot run second: the ALTERs there need these tables to exist.
+--
+-- The tests do NOT use this file. They build the database with drizzle-kit push
+-- from lib/db/src/schema/*.ts, which never runs against production. So a column
+-- added only to the drizzle schema exists in CI and not in production, and the
+-- query using it passes every test and 500s once deployed.
+--
+-- scripts/manual-tests/schema-parity.sh builds a database each way and diffs
+-- them, so that stays impossible rather than merely untrue today. Add a table
+-- or column and you must touch BOTH sides; the suite tells you which you missed.
 
 create table if not exists users (
   id serial primary key,

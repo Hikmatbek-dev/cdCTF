@@ -45,10 +45,10 @@ export default function CompetitionsPage() {
 
         {isLoading ? (
           <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-[2.5rem] bg-white/5" />)}
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-[2.5rem] bg-foreground/5" />)}
           </div>
         ) : competitionList.length === 0 ? (
-          <div className="glass-card rounded-[2.5rem] py-24 text-center border-white/5">
+          <div className="glass-card rounded-[2.5rem] py-24 text-center border-foreground/5">
             <div className="w-20 h-20 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-6">
               <Trophy className="w-8 h-8 text-primary/40" />
             </div>
@@ -60,19 +60,19 @@ export default function CompetitionsPage() {
             {competitionList.map(comp => (
               <Link href={`/competitions/${comp.id}`} key={comp.id}>
                 <div
-                  className="group relative p-8 rounded-[2.5rem] glass-card border-white/5 hover:border-primary/30 transition-all duration-300 cursor-pointer overflow-hidden"
+                  className="group relative p-8 rounded-[2.5rem] glass-card border-foreground/5 hover:border-primary/30 transition-all duration-300 cursor-pointer overflow-hidden"
                   data-testid={`card-competition-${comp.id}`}
                 >
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors" />
                   
                   <div className="flex flex-wrap items-center gap-3 mb-6 relative z-10">
                     <span className={`inline-flex items-center px-3 py-1 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
-                      comp.status === "active" ? "bg-primary/20 text-primary border-primary/30 neon-text" : "bg-white/5 text-muted-foreground border-white/10"
+                      comp.status === "active" ? "bg-primary/20 text-primary border-primary/30 neon-text" : "bg-foreground/5 text-muted-foreground border-foreground/10"
                     }`}>
                       {comp.status}
                     </span>
                     <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg border text-[10px] font-black uppercase tracking-widest ${
-                      comp.type === "private" ? "bg-orange-500/10 text-orange-500 border-orange-500/20" : "bg-white/5 text-muted-foreground border-white/10"
+                      comp.type === "private" ? "bg-orange-500/10 text-orange-500 border-orange-500/20" : "bg-foreground/5 text-muted-foreground border-foreground/10"
                     }`}>
                       {comp.type === "private" && <Lock className="w-3 h-3" />}
                       {comp.type === "public" ? t("Public Access", "Ochiq", "Публичный") : t("Classified", "Yopiq", "Приватный")}
@@ -87,7 +87,7 @@ export default function CompetitionsPage() {
                     <p className="text-sm text-muted-foreground font-medium mb-8 line-clamp-2 max-w-2xl">{comp.description}</p>
                   )}
                   
-                  <div className="flex flex-wrap items-center justify-between gap-6 pt-6 border-t border-white/5 relative z-10">
+                  <div className="flex flex-wrap items-center justify-between gap-6 pt-6 border-t border-foreground/5 relative z-10">
                     <div className="flex items-center gap-8">
                       <div className="flex flex-col">
                         <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 leading-none mb-1">Timeframe</span>

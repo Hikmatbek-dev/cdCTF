@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same branch makes the in-flight run pointless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # No version here on purpose: action-setup reads packageManager from
+      # package.json, so CI runs the same pnpm a developer does. Pinning 10 here
+      # while local machines ran 11 is how the two silently diverge.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      # --frozen-lockfile: a lockfile that does not match package.json should
+      # fail here rather than resolve to something nobody tested.
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm run typecheck
+
+      # Type-aware rules, so this catches what tsc cannot: an un-awaited promise
+      # whose rejection nothing ever sees.
+      - run: pnpm run lint
+
+      # The spec drifted for months because nothing compared it to the server.
+      - name: OpenAPI spec matches the routes
+        run: python3 scripts/manual-tests/spec-drift.py
+
+      # Turnstile shipped dead because none of its three variables were written
+      # down, so nothing told anyone to switch it on.
+      - name: Every env var is documented
+        run: python3 scripts/manual-tests/env-documented.py
+
+  test:
+    name: API tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cdctf_test
+        ports:
+          - 5432:5432
+        # Without this the job races the database and fails on connection.
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # No version here on purpose: action-setup reads packageManager from
+      # package.json, so CI runs the same pnpm a developer does. Pinning 10 here
+      # while local machines ran 11 is how the two silently diverge.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The suites shell out to psql to assert what was actually stored — the
+      # part an HTTP response cannot show you.
+      - name: Install postgresql-client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Run the manual suites
+        run: bash scripts/manual-tests/run-all.sh
+        env:
+          CI_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cdctf_test
+
+      # Production builds its database from supabase-schema.sql + the DDL in
+      # database.ts. The suites above build theirs with drizzle-kit push, which
+      # never runs against production. Two definitions, and until now nothing
+      # compared them — a divergence would pass CI and 500 in production.
+      - name: Test and production schemas agree
+        run: bash scripts/manual-tests/schema-parity.sh
+        env:
+          CI_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cdctf_test
