@@ -5,6 +5,30 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
 import { useGetLesson, getGetLessonQueryKey } from "@workspace/api-client-react";
 
+/**
+ * Renders **bold**, *italic* and `code` inside one line.
+ *
+ * Without this the lesson body showed its markdown raw — readers saw
+ * "**Capture The Flag (CTF)**", asterisks and all. Hand-rolled for these three
+ * cases rather than pulling in a markdown library for a handful of lessons.
+ */
+function renderInline(text: string, keyPrefix: string) {
+  const tokens = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\*[^*\s][^*]*\*)/g);
+  return tokens.map((tok, i) => {
+    const key = `${keyPrefix}-${i}`;
+    if (tok.startsWith("**") && tok.endsWith("**") && tok.length > 4) {
+      return <strong key={key} className="font-semibold text-foreground">{tok.slice(2, -2)}</strong>;
+    }
+    if (tok.startsWith("`") && tok.endsWith("`") && tok.length > 2) {
+      return <code key={key} className="px-1.5 py-0.5 rounded bg-muted font-mono text-[0.9em]">{tok.slice(1, -1)}</code>;
+    }
+    if (tok.startsWith("*") && tok.endsWith("*") && tok.length > 2) {
+      return <em key={key}>{tok.slice(1, -1)}</em>;
+    }
+    return tok;
+  });
+}
+
 function renderContent(content: string) {
   const parts = content.split(/(```[\s\S]*?```)/g);
   return parts.map((part, i) => {
@@ -26,11 +50,11 @@ function renderContent(content: string) {
     return (
       <div key={i} className="prose prose-sm dark:prose-invert max-w-none">
         {part.split("\n").map((line, j) => {
-          if (line.startsWith("## ")) return <h2 key={j} className="text-lg font-semibold mt-6 mb-2">{line.slice(3)}</h2>;
-          if (line.startsWith("# ")) return <h1 key={j} className="text-xl font-bold mt-4 mb-2">{line.slice(2)}</h1>;
-          if (line.startsWith("- ")) return <li key={j} className="ml-4 text-sm">{line.slice(2)}</li>;
+          if (line.startsWith("## ")) return <h2 key={j} className="text-lg font-semibold mt-6 mb-2">{renderInline(line.slice(3), `h2-${i}-${j}`)}</h2>;
+          if (line.startsWith("# ")) return <h1 key={j} className="text-xl font-bold mt-4 mb-2">{renderInline(line.slice(2), `h1-${i}-${j}`)}</h1>;
+          if (line.startsWith("- ")) return <li key={j} className="ml-4 text-sm">{renderInline(line.slice(2), `li-${i}-${j}`)}</li>;
           if (line.trim() === "") return <br key={j} />;
-          return <p key={j} className="text-sm leading-relaxed">{line}</p>;
+          return <p key={j} className="text-sm leading-relaxed">{renderInline(line, `p-${i}-${j}`)}</p>;
         })}
       </div>
     );
