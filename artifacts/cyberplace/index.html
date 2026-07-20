@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>cdCTF | Premier CTF Platform & Cybersecurity Training</title>
-    <meta name="description" content="cdCTF is a premier cybersecurity learning platform. Master ethical hacking, web security, OSINT, cryptography, and digital forensics through hands-on CTF challenges and structured professional courses." />
-    <meta name="keywords" content="cdctf, ctf uzbekistan, cyber security training, learn hacking, ethical hacking uzbekistan, kiberxavfsizlik kurslari, hacking darslari, web security, osint training, cryptography, forensics" />
+    <title>cdCTF — Kiberxavfsizlik akademiyasi | 6 oylik dastur, sertifikat bilan</title>
+    <meta name="description" content="A hands-on, six-month cybersecurity program in Uzbek, Russian and English — real terminal commands, CTF challenges, and a cdCTF certificate at the end. Learn Linux, networking, web security, cryptography, recon and exploitation. Free to start." />
+    <meta name="keywords" content="cdctf, kiberxavfsizlik kurslari o'zbek tilida, ctf uzbekistan, hacking o'rganish, ethical hacking uzbekistan, kiberxavfsizlik sertifikati, linux o'rganish, web security, kriptografiya, penetration testing kurs, обучение кибербезопасности узбекистан" />
     <meta name="author" content="cdCTF" />
-    <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#00D2FF" />
-    
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="theme-color" content="#2dd4bf" />
+
     <link rel="canonical" href="https://cyberplace.uz/" />
     <link rel="alternate" hreflang="uz" href="https://cyberplace.uz/" />
     <link rel="alternate" hreflang="en" href="https://cyberplace.uz/" />
@@ -17,15 +17,18 @@
     <link rel="alternate" hreflang="x-default" href="https://cyberplace.uz/" />
 
     <meta property="og:site_name" content="cdCTF" />
-    <meta property="og:title" content="cdCTF | Premier CTF Platform & Cybersecurity Training" />
-    <meta property="og:description" content="Master ethical hacking with hands-on CTF challenges and structured cybersecurity courses. The #1 platform for security researchers in Uzbekistan." />
+    <meta property="og:title" content="cdCTF — Kiberxavfsizlik akademiyasi | 6 oylik dastur" />
+    <meta property="og:description" content="A hands-on, six-month cybersecurity program in Uzbek, Russian and English — real terminal commands, CTF challenges, and a certificate at the end." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://cyberplace.uz/" />
     <meta property="og:image" content="https://cyberplace.uz/logo.png" />
-    
+    <meta property="og:locale" content="uz_UZ" />
+    <meta property="og:locale:alternate" content="ru_RU" />
+    <meta property="og:locale:alternate" content="en_US" />
+
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="cdCTF | Premier CTF Platform & Cybersecurity Training" />
-    <meta name="twitter:description" content="Master ethical hacking with hands-on CTF challenges and structured cybersecurity courses." />
+    <meta name="twitter:title" content="cdCTF — Kiberxavfsizlik akademiyasi" />
+    <meta name="twitter:description" content="A hands-on, six-month cybersecurity program in Uzbek, Russian and English — with real commands, CTF, and a certificate." />
     <meta name="twitter:image" content="https://cyberplace.uz/logo.png" />
 
     <link rel="icon" type="image/jpeg" href="/icon.jpg" />
@@ -34,26 +37,88 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+    <!-- Static structured data — crawled without running the app. The React SEO
+         layer (lib/seo.ts) refines this per route and per language at runtime. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "EducationalOrganization",
+          "@id": "https://cyberplace.uz/#org",
+          "name": "cdCTF",
+          "alternateName": ["cdCTF Academy", "CyberPlace"],
+          "url": "https://cyberplace.uz/",
+          "logo": "https://cyberplace.uz/logo.png",
+          "description": "A hands-on, trilingual cybersecurity academy for the Uzbek community — a structured six-month program with real terminal commands, CTF challenges and certificates.",
+          "sameAs": ["https://t.me/cdctf_uz"],
+          "areaServed": { "@type": "Country", "name": "Uzbekistan" },
+          "knowsLanguage": ["uz", "ru", "en"]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://cyberplace.uz/#website",
+          "url": "https://cyberplace.uz/",
+          "name": "cdCTF",
+          "publisher": { "@id": "https://cyberplace.uz/#org" },
+          "inLanguage": ["uz", "ru", "en"],
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://cyberplace.uz/ctf?search={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "ItemList",
+          "name": "cdCTF cybersecurity curriculum",
+          "itemListOrder": "https://schema.org/ItemListOrderAscending",
+          "numberOfItems": 6,
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "item": { "@type": "Course", "name": "Linux Command Line for Security", "description": "The shell from first principles — navigation, the filesystem, users and sudo, permissions and SUID, searching with find and grep, and pipelines that turn separate tools into real investigations.", "provider": { "@id": "https://cyberplace.uz/#org" }, "inLanguage": ["uz","ru","en"], "isAccessibleForFree": true, "educationalLevel": "Beginner", "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "category": "Free" }, "hasCourseInstance": { "@type": "CourseInstance", "courseMode": "Online", "courseWorkload": "PT40H" } } },
+            { "@type": "ListItem", "position": 2, "item": { "@type": "Course", "name": "Networking for Security", "description": "How traffic actually moves — addressing and subnets, packet layers, ports, DNS as reconnaissance, HTTP by hand, routing, tcpdump, and what TLS certificates really prove.", "provider": { "@id": "https://cyberplace.uz/#org" }, "inLanguage": ["uz","ru","en"], "isAccessibleForFree": true, "educationalLevel": "Beginner", "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "category": "Free" }, "hasCourseInstance": { "@type": "CourseInstance", "courseMode": "Online", "courseWorkload": "PT40H" } } },
+            { "@type": "ListItem", "position": 3, "item": { "@type": "Course", "name": "Web Application Security", "description": "The web vulnerabilities that matter — SQL injection, XSS, broken authentication and access control, IDOR, file uploads, path traversal, command injection, CSRF and SSRF, driven with an intercepting proxy.", "provider": { "@id": "https://cyberplace.uz/#org" }, "inLanguage": ["uz","ru","en"], "isAccessibleForFree": true, "educationalLevel": "Intermediate", "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "category": "Free" }, "hasCourseInstance": { "@type": "CourseInstance", "courseMode": "Online", "courseWorkload": "PT45H" } } },
+            { "@type": "ListItem", "position": 4, "item": { "@type": "Course", "name": "Cryptography for Security", "description": "Cryptography as a practitioner uses it — encoding vs encryption vs hashing, cracking with John and hashcat, XOR and classical ciphers, AES and modes, RSA and public keys, Diffie-Hellman and how TLS assembles it all.", "provider": { "@id": "https://cyberplace.uz/#org" }, "inLanguage": ["uz","ru","en"], "isAccessibleForFree": true, "educationalLevel": "Intermediate", "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "category": "Free" }, "hasCourseInstance": { "@type": "CourseInstance", "courseMode": "Online", "courseWorkload": "PT45H" } } },
+            { "@type": "ListItem", "position": 5, "item": { "@type": "Course", "name": "Reconnaissance and Scanning", "description": "How to map a target — passive OSINT, host discovery, port scanning and version detection with nmap, service enumeration, matching versions to CVEs, and organising it into an attack plan.", "provider": { "@id": "https://cyberplace.uz/#org" }, "inLanguage": ["uz","ru","en"], "isAccessibleForFree": true, "educationalLevel": "Intermediate", "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "category": "Free" }, "hasCourseInstance": { "@type": "CourseInstance", "courseMode": "Online", "courseWorkload": "PT40H" } } },
+            { "@type": "ListItem", "position": 6, "item": { "@type": "Course", "name": "Exploitation and Privilege Escalation", "description": "The capstone — reverse shells, Metasploit, msfvenom payloads, Linux and Windows privilege escalation, post-exploitation and pivoting, writing the report, and a full attack chain end to end.", "provider": { "@id": "https://cyberplace.uz/#org" }, "inLanguage": ["uz","ru","en"], "isAccessibleForFree": true, "educationalLevel": "Advanced", "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "category": "Free" }, "hasCourseInstance": { "@type": "CourseInstance", "courseMode": "Online", "courseWorkload": "PT45H" } } }
+          ]
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            { "@type": "Question", "name": "What is cdCTF?", "acceptedAnswer": { "@type": "Answer", "text": "cdCTF is a hands-on cybersecurity academy for the Uzbek community. It offers a structured six-month program — Linux, networking, web security, cryptography, recon and exploitation — alongside CTF challenges, all in Uzbek, Russian and English." } },
+            { "@type": "Question", "name": "Is cdCTF free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can start learning for free — the lessons, modules and CTF challenges are open to registered users." } },
+            { "@type": "Question", "name": "What languages is cdCTF available in?", "acceptedAnswer": { "@type": "Answer", "text": "Every lesson is available in Uzbek, Russian and English. cdCTF is the first complete cybersecurity academy written in Uzbek." } },
+            { "@type": "Question", "name": "Do I get a certificate?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Pass a module's final exam with 80% or higher to earn a cdCTF certificate with your score. Finish the whole program to earn the program diploma — a credential you can show an employer, verifiable by its serial number." } },
+            { "@type": "Question", "name": "Who is cdCTF for?", "acceptedAnswer": { "@type": "Answer", "text": "Anyone who wants to learn practical cybersecurity — from complete beginners starting at the Linux command line to intermediate learners moving into web security, cryptography and exploitation." } }
+          ]
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <noscript>
       <main style="font-family: sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; line-height: 1.6;">
-        <h1>cdCTF - Advanced Cybersecurity Learning Environment</h1>
+        <h1>cdCTF — Cybersecurity Academy</h1>
         <p>
-          cdCTF is a premier platform for learning ethical hacking, web security, OSINT, cryptography, and digital forensics. 
-          Participate in CTF competitions and improve your technical skills with our structured academic modules.
+          cdCTF is a hands-on, six-month cybersecurity program in Uzbek, Russian and English.
+          Learn Linux, networking, web security, cryptography, reconnaissance and exploitation with
+          real terminal commands and CTF challenges — and earn a certificate at the end.
         </p>
         <p>
-          cdCTF - kiberxavfsizlik, ethical hacking, web hacking, OSINT va kriptografiyani o'rganish uchun O'zbekistondagi professional platforma. 
-          Amaliy CTF topshiriqlari va o'quv darslari orqali mahoratingizni oshiring.
+          cdCTF — o'zbek, rus va ingliz tilida amaliy, 6 oylik kiberxavfsizlik dasturi.
+          Linux, tarmoq, veb xavfsizlik, kriptografiya, razvedka va ekspluatatsiyani real terminal
+          buyruqlar va CTF topshiriqlar orqali o'rganing va oxirida sertifikat oling.
         </p>
-        <nav style="display: flex; gap: 20px; margin-top: 20px;">
-          <a href="/ctf">CTF Missions</a>
-          <a href="/learn">Academy</a>
-          <a href="/scoreboard">Rankings</a>
-          <a href="/competitions">Tournaments</a>
+        <nav style="display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap;">
+          <a href="/modules">Modullar</a>
+          <a href="/learn">Darslar</a>
+          <a href="/ctf">CTF</a>
+          <a href="/scoreboard">Reyting</a>
+          <a href="/competitions">Musobaqalar</a>
         </nav>
       </main>
     </noscript>

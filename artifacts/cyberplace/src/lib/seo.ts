@@ -21,6 +21,40 @@ interface SeoConfig {
 
 const text = (en: string, uz: string, ru: string): LocalizedText => ({ en, uz, ru });
 
+// The six-month curriculum as schema.org Course items, so the /modules page is
+// eligible for Google's course rich results. Mirrors the static list in
+// index.html; kept compact here since the static copy carries the full detail.
+const CURRICULUM_COURSES: { name: string; description: string; level: string; hours: number }[] = [
+  { name: "Linux Command Line for Security", description: "The shell from first principles — navigation, filesystem, users and sudo, permissions and SUID, find and grep, and pipelines.", level: "Beginner", hours: 40 },
+  { name: "Networking for Security", description: "How traffic moves — addressing, packet layers, ports, DNS recon, HTTP by hand, routing, tcpdump, and TLS certificates.", level: "Beginner", hours: 40 },
+  { name: "Web Application Security", description: "SQL injection, XSS, broken auth and access control, IDOR, uploads, path traversal, command injection, CSRF and SSRF.", level: "Intermediate", hours: 45 },
+  { name: "Cryptography for Security", description: "Encoding vs encryption vs hashing, cracking with John and hashcat, XOR and classical ciphers, AES, RSA, Diffie-Hellman and TLS.", level: "Intermediate", hours: 45 },
+  { name: "Reconnaissance and Scanning", description: "Passive OSINT, host discovery, nmap port scanning and version detection, service enumeration, and mapping versions to CVEs.", level: "Intermediate", hours: 40 },
+  { name: "Exploitation and Privilege Escalation", description: "Reverse shells, Metasploit, msfvenom, Linux and Windows privilege escalation, post-exploitation, pivoting and reporting.", level: "Advanced", hours: 45 },
+];
+
+const getCourseList = () => ({
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "cdCTF cybersecurity curriculum",
+  "numberOfItems": CURRICULUM_COURSES.length,
+  "itemListElement": CURRICULUM_COURSES.map((c, i) => ({
+    "@type": "ListItem",
+    "position": i + 1,
+    "item": {
+      "@type": "Course",
+      "name": c.name,
+      "description": c.description,
+      "provider": { "@type": "Organization", "name": SITE_NAME, "sameAs": SITE_URL },
+      "inLanguage": ["uz", "ru", "en"],
+      "isAccessibleForFree": true,
+      "educationalLevel": c.level,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "category": "Free" },
+      "hasCourseInstance": { "@type": "CourseInstance", "courseMode": "Online", "courseWorkload": `PT${c.hours}H` },
+    },
+  })),
+});
+
 const getBreadcrumbs = (items: { name: LocalizedText; item: string }[]) => ({
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
@@ -100,13 +134,35 @@ const publicRoutes: Array<{ match: (path: string) => boolean; config: SeoConfig 
     }
   },
   {
+    match: (path) => path === "/modules",
+    config: {
+      title: text(
+        "Cybersecurity Curriculum — Six-Month Program | cdCTF",
+        "Kiberxavfsizlik dasturi — 6 oylik o'quv reja | cdCTF",
+        "Программа по кибербезопасности — 6 месяцев | cdCTF",
+      ),
+      description: text(
+        "A structured six-month cybersecurity program: Linux, networking, web security, cryptography, recon and exploitation. Real terminal commands, a final exam per module, and a certificate. In Uzbek, Russian and English.",
+        "Tuzilgan 6 oylik kiberxavfsizlik dasturi: Linux, tarmoq, veb xavfsizlik, kriptografiya, razvedka va ekspluatatsiya. Real terminal buyruqlar, har modulda yakuniy imtihon va sertifikat. O'zbek, rus va ingliz tilida.",
+        "Структурированная шестимесячная программа: Linux, сети, веб-безопасность, криптография, разведка и эксплуатация. Реальные команды, итоговый экзамен по каждому модулю и сертификат. На узбекском, русском и английском.",
+      ),
+      structuredData: [
+        getBreadcrumbs([
+          { name: text("Home", "Bosh sahifa", "Главная"), item: "/" },
+          { name: text("Modules", "Modullar", "Модули"), item: "/modules" },
+        ]),
+        getCourseList(),
+      ],
+    },
+  },
+  {
     match: (path) => path === "/learn",
     config: {
-      title: text("Cybersecurity Academy & Courses | cdCTF", "Kiberxavfsizlik Akademiyasi va Kurslar | cdCTF", "Академия Кибербезопасности и Курсы | cdCTF"),
+      title: text("Cybersecurity Lessons Library | cdCTF", "Kiberxavfsizlik darslari kutubxonasi | cdCTF", "Библиотека уроков по кибербезопасности | cdCTF"),
       description: text(
-        "Learn ethical hacking with structured courses. Zero to hero paths in OSINT, Web Security, and Cryptography.",
-        "Tizimli kurslar orqali ethical hackingni o'rganing. OSINT, Web Security va Kriptografiya bo'yicha noldan professionalgacha.",
-        "Изучайте этичный хакинг через структурированные курсы. Путь от новичка до профи в OSINT, веб-безопасности и криптографии."
+        "Standalone cybersecurity lessons across every domain — Linux, networking, web, crypto, forensics and more. For the structured path, follow the six-month Modules.",
+        "Har bir yo'nalish bo'yicha alohida kiberxavfsizlik darslari — Linux, tarmoq, veb, kriptografiya, forenzika va boshqalar. Tuzilgan yo'l uchun 6 oylik Modullarni kuzating.",
+        "Отдельные уроки по кибербезопасности по всем направлениям — Linux, сети, веб, крипто, форензика и другое. Для структурированного пути смотрите шестимесячные Модули."
       ),
       structuredData: [
         getBreadcrumbs([
