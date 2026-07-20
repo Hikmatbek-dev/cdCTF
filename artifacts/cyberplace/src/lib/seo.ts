@@ -42,9 +42,9 @@ const publicRoutes: Array<{ match: (path: string) => boolean; config: SeoConfig 
         "cdCTF | Лучшая платформа CTF и обучение кибербезопасности в Узбекистане"
       ),
       description: text(
-        "cdCTF is a premier cybersecurity platform offering hands-on CTF challenges, ethical hacking courses, and real-world security training. Learn Web Security, OSINT, Cryptography and Forensics.",
-        "cdCTF - O'zbekistondagi kiberxavfsizlik platformasi. Web Security, OSINT, Kriptografiya va Forensics bo'yicha amaliy CTF topshiriqlari va professional kurslarni o'rganing.",
-        "cdCTF - ведущая платформа по кибербезопасности в Узбекистане. Изучайте веб-безопасность, OSINT, криптографию и форензику через практические CTF задания и курсы."
+        "A hands-on, six-month cybersecurity program in Uzbek, Russian and English — real terminal commands, CTF challenges, and a cdCTF certificate at the end. Learn Linux, networking, web security, cryptography, recon and exploitation.",
+        "Amaliy, 6 oylik kiberxavfsizlik dasturi — o'zbek, rus va ingliz tilida. Real terminal buyruqlar, CTF topshiriqlar va oxirida cdCTF sertifikati. Linux, tarmoq, veb xavfsizlik, kriptografiya, razvedka va ekspluatatsiyani o'rganing.",
+        "Практическая шестимесячная программа по кибербезопасности на узбекском, русском и английском — реальные команды, CTF-задания и сертификат cdCTF. Изучайте Linux, сети, веб-безопасность, криптографию, разведку и эксплуатацию."
       ),
       keywords: text(
         "ctf uzbekistan, cyber security training uzbekistan, learn hacking uzbekistan, ethical hacking uzbekistan, ctf challenges web, osint labs, crypto challenges, digital forensics training",

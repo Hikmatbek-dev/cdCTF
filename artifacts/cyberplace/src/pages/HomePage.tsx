@@ -1,221 +1,234 @@
 import { Link } from "wouter";
-import { Shield, Trophy, Send, Zap, Target, Cpu } from "lucide-react";
+import { Trophy, Send, GraduationCap, Award, Terminal, Languages, ArrowRight, ChevronRight } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
-import { useGetScoreboard } from "@workspace/api-client-react";
+import { useGetScoreboard, useListModules, getListModulesQueryKey } from "@workspace/api-client-react";
 import { normalizeArray } from "@/lib/api-shapes";
-import { motion } from "framer-motion";
-import { FadeIn, ScaleIn } from "@/components/PageTransition";
+
+type ScoreEntry = { userId: number; nickname: string; points: number };
 
 export default function HomePage() {
   const { t } = useLang();
   const { data: scoreboard } = useGetScoreboard({ limit: 5 });
-  const scoreboardEntries = normalizeArray<any>(scoreboard?.entries, ["entries", "data", "items"]);
+  const scoreboardEntries = normalizeArray<ScoreEntry>(scoreboard?.entries, ["entries", "data", "items"]);
+  const { data: modulesData } = useListModules({ query: { queryKey: getListModulesQueryKey() } });
+  const moduleCount = normalizeArray<{ id: number }>(modulesData, ["id"]).length;
+
+  const stats = [
+    { value: moduleCount > 0 ? `${moduleCount}` : "6", label: t("modules", "modul", "модулей") },
+    { value: "48+", label: t("lessons", "dars", "уроков") },
+    { value: "40+", label: t("CTF challenges", "CTF topshiriq", "CTF заданий") },
+    { value: "3", label: t("languages", "til", "языка") },
+  ];
+
+  const pillars = [
+    {
+      icon: GraduationCap,
+      title: t("A structured path", "Tuzilgan yo'l", "Структурированный путь"),
+      desc: t(
+        "A six-month curriculum from the shell to a full attack chain — Linux, networking, web, crypto, recon, exploitation. In order, one skill at a time.",
+        "Shelldan to'liq hujum zanjirigacha 6 oylik dastur — Linux, tarmoq, veb, kriptografiya, razvedka, ekspluatatsiya. Ketma-ketlikda.",
+        "Шестимесячная программа от оболочки до полной цепочки атаки — Linux, сети, веб, крипто, разведка, эксплуатация.",
+      ),
+    },
+    {
+      icon: Terminal,
+      title: t("Real commands", "Haqiqiy buyruqlar", "Настоящие команды"),
+      desc: t(
+        "Not dry theory. Every lesson has commands you run yourself and the output they really print — learn by doing on your own machine.",
+        "Quruq nazariya emas. Har bir darsda o'zingiz bajaradigan buyruqlar va ularning haqiqiy chiqishi bor — qilib o'rganing.",
+        "Не сухая теория. В каждом уроке команды, которые вы выполняете сами, и их реальный вывод — учитесь на практике.",
+      ),
+    },
+    {
+      icon: Award,
+      title: t("Certificates & a diploma", "Sertifikat va diplom", "Сертификаты и диплом"),
+      desc: t(
+        "Pass a module's exam and earn a cdCTF certificate with your score. Finish the whole program for the diploma — a credential you can show an employer.",
+        "Modul imtihonidan o'ting va balingiz yozilgan cdCTF sertifikatini oling. Butun dasturni tugatib diplom oling — ish beruvchiga ko'rsatiladigan hujjat.",
+        "Сдайте экзамен модуля и получите сертификат cdCTF с баллом. Пройдите всю программу ради диплома — документа для работодателя.",
+      ),
+    },
+    {
+      icon: Languages,
+      title: t("In your language, free", "O'z tilingizda, bepul", "На вашем языке, бесплатно"),
+      desc: t(
+        "Every lesson in Uzbek, Russian and English. The first complete cybersecurity academy for the Uzbek community — no language barrier.",
+        "Har bir dars o'zbek, rus va ingliz tilida. O'zbek jamiyati uchun birinchi to'liq kiberxavfsizlik akademiyasi — til to'sig'isiz.",
+        "Каждый урок на узбекском, русском и английском. Первая полная академия кибербезопасности для узбекского сообщества.",
+      ),
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
-      {/* Dynamic Background */}
-      <div className="fixed inset-0 mono-grid opacity-20 pointer-events-none" />
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[10%] right-[-10%] w-[60%] h-[60%] bg-primary/5 blur-[120px] rounded-full opacity-50" />
-        <div className="absolute bottom-[10%] left-[-10%] w-[60%] h-[60%] bg-accent/5 blur-[120px] rounded-full opacity-50" />
-      </div>
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Faint signature grid behind the hero. */}
+      <div className="fixed inset-0 mono-grid pointer-events-none" />
 
-      <div className="relative max-w-7xl mx-auto px-6 pt-32 sm:pt-48 pb-32">
-        {/* Hero Section */}
-        <section className="mb-48 text-center relative">
-          <ScaleIn>
-            <div className="inline-flex items-center justify-center w-28 h-28 rounded-[3rem] bg-gradient-to-br from-primary/20 to-accent/20 border border-foreground/10 mb-12 animate-float shadow-2xl backdrop-blur-md">
-              <Shield className="w-14 h-14 text-primary" />
-            </div>
-          </ScaleIn>
-          
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="text-8xl sm:text-[10rem] font-black tracking-tighter mb-8 leading-none"
-          >
-            <span className="gradient-text">cd</span>
-            <span className="text-foreground/10 ml-2">CTF</span>
-          </motion.h1>
-          
-          <FadeIn delay={0.2}>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-20 font-medium tracking-tight leading-relaxed">
-              {t(
-                "THE NEXT GENERATION OF CYBER SECURITY CHALLENGES. REWIRING THE FUTURE OF OFFENSIVE OPERATIONS.",
-                "KIBERXAVFSIZLIK CHAQIRIQLARINING YANGI AVLODI. HUJUMKOR OPERATSIYALAR KELAJAGINI QAYTA QURISH.",
-                "СЛЕДУЮЩЕЕ ПОКОЛЕНИЕ КИБЕРВЫЗОВОВ. ПЕРЕОСМЫСЛЕНИЕ БУДУЩЕГО НАСТУПАТЕЛЬНЫХ ОПЕРАЦИЙ."
-              )}
-            </p>
-          </FadeIn>
-
-          <FadeIn delay={0.4}>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
-              <Link href="/register">
-                <button className="cyber-button group h-20 px-16 text-sm">
-                  <span className="flex items-center gap-3">
-                    <Zap className="w-4 h-4" />
-                    {t("INITIATE_PROTOCOL", "TIZIMGA KIRISH", "ЗАПУСТИТЬ ПРОТОКОЛ")}
-                  </span>
-                </button>
-              </Link>
-              <Link href="/ctf">
-                <button className="cyber-button-outline h-20 px-16 text-sm">
-                  {t("EXPLORE_MISSIONS", "MISSIYALARNI KO'RISH", "ИССЛЕДОВАТЬ МИССИИ")}
-                </button>
-              </Link>
-            </div>
-          </FadeIn>
+      <div className="relative max-w-6xl mx-auto px-6">
+        {/* Hero */}
+        <section className="pt-32 sm:pt-40 pb-20 text-center">
+          <div className="eyebrow justify-center flex mb-6">
+            {t("cdCTF · Cybersecurity Academy", "cdCTF · Kiberxavfsizlik akademiyasi", "cdCTF · Академия кибербезопасности")}
+          </div>
+          <h1 className="text-5xl sm:text-7xl font-bold tracking-tight leading-[1.05] mb-6">
+            {t("Learn to hack.", "Hacking'ni o'rganing.", "Учитесь взламывать.")}<br />
+            <span className="gradient-text">{t("Learn to defend.", "Himoyani o'rganing.", "Учитесь защищать.")}</span>
+          </h1>
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+            {t(
+              "A hands-on, six-month cybersecurity program in Uzbek, Russian and English — with real terminal commands, CTF practice, and a certificate at the end.",
+              "Amaliy, 6 oylik kiberxavfsizlik dasturi — o'zbek, rus va ingliz tilida, real terminal buyruqlar, CTF mashqlar va oxirida sertifikat bilan.",
+              "Практическая шестимесячная программа по кибербезопасности на узбекском, русском и английском — с реальными командами, CTF и сертификатом.",
+            )}
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href="/modules">
+              <button className="cyber-button h-12 px-8" data-testid="button-hero-start">
+                <GraduationCap className="w-4 h-4" />
+                {t("Start learning", "O'rganishni boshlash", "Начать обучение")}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </Link>
+            <Link href="/ctf">
+              <button className="cyber-button-outline h-12 px-8" data-testid="button-hero-ctf">
+                {t("Try the CTF challenges", "CTF topshiriqlarni sinash", "Попробовать CTF")}
+              </button>
+            </Link>
+          </div>
         </section>
 
-        {/* Feature Grid */}
-        <section className="mb-48 grid md:grid-cols-3 gap-8">
-          {[
-            // The titles stay in the terminal-style English the whole site uses;
-            // the descriptions are prose, and everything else prose is translated.
-            { icon: Target, title: "REAL-WORLD OPS", desc: t("Simulate advanced persistent threats in a sandboxed environment.", "Xavfsiz muhitda ilg'or, doimiy tahdidlarni simulyatsiya qiling.", "Моделируйте продвинутые постоянные угрозы в изолированной среде.") },
-            { icon: Cpu, title: "CORE_ENGINE", desc: t("Powered by proprietary vulnerability research and analysis tools.", "Maxsus zaiflik tadqiqoti va tahlil vositalari asosida.", "На основе собственных инструментов исследования и анализа уязвимостей.") },
-            { icon: Trophy, title: "ELITE_RANKING", desc: t("Compete with the top 0.1% of security researchers globally.", "Dunyodagi eng kuchli 0.1% xavfsizlik tadqiqotchilari bilan bellashing.", "Соревнуйтесь с лучшими 0.1% исследователей безопасности в мире.") }
-          ].map((feature, i) => (
-            <FadeIn key={i} delay={i * 0.1 + 0.6}>
-              <div className="glass-card h-full group">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-8 group-hover:bg-primary/20 transition-colors border border-primary/20">
-                  <feature.icon className="w-7 h-7 text-primary" />
-                </div>
-                <h3 className="text-2xl font-black mb-4 tracking-tighter uppercase">{feature.title}</h3>
-                <p className="text-muted-foreground font-medium leading-relaxed">
-                  {feature.desc}
-                </p>
-              </div>
-            </FadeIn>
+        {/* Stats */}
+        <section className="grid grid-cols-2 sm:grid-cols-4 gap-4 pb-24">
+          {stats.map((s, i) => (
+            <div key={i} className="glass-card text-center py-6">
+              <div className="text-3xl font-bold text-primary tabular-nums">{s.value}</div>
+              <div className="text-sm text-muted-foreground mt-1">{s.label}</div>
+            </div>
           ))}
         </section>
 
-        {/* Leaderboard Section */}
-        <section className="mb-48 max-w-5xl mx-auto">
-          <FadeIn>
-            <div className="flex items-center justify-between mb-16 px-4">
-              <div className="flex items-center gap-8">
-                <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center border border-accent/20">
-                  <Trophy className="w-6 h-6 text-accent" />
+        {/* Value pillars */}
+        <section className="pb-24">
+          <div className="eyebrow mb-3">{t("Why cdCTF", "Nega cdCTF", "Почему cdCTF")}</div>
+          <h2 className="text-3xl font-bold tracking-tight mb-10">
+            {t("Not another challenge dump", "Shunchaki topshiriqlar to'plami emas", "Не просто набор заданий")}
+          </h2>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {pillars.map((p, i) => (
+              <div key={i} className="glass-card">
+                <div className="w-11 h-11 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 text-primary">
+                  <p.icon className="w-5 h-5" />
                 </div>
-                <div>
-                  <h2 className="text-4xl font-black tracking-tighter uppercase leading-none mb-2">TOP_OPERATIVES</h2>
-                  <div className="text-[10px] font-black text-muted-foreground tracking-[0.4em]">RANKING_SYSTEM_v4.2</div>
-                </div>
+                <h3 className="text-lg font-semibold mb-2">{p.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
               </div>
-              <Link href="/scoreboard" className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:text-accent transition-colors">
-                VIEW_FULL_LOGS
-                <span className="w-4 h-px bg-primary group-hover:bg-accent transition-all group-hover:w-8" />
-              </Link>
-            </div>
-          </FadeIn>
-          
-          <div className="grid gap-6">
-            {scoreboardEntries.map((entry, i) => (
-              <FadeIn key={entry.userId} delay={i * 0.05}>
-                <div className="glass-card group flex items-center justify-between hover:bg-foreground/[0.02]">
-                  <div className="flex items-center gap-8">
-                    <span className="text-xs font-black text-muted-foreground/10 w-8">{ (i + 1).toString().padStart(2, '0') }</span>
-                    <div className="relative">
-                      <div className="w-16 h-16 rounded-2xl bg-muted border border-border flex items-center justify-center font-black text-primary text-xl group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 overflow-hidden">
-                        {entry.nickname[0].toUpperCase()}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                      </div>
-                      {i < 3 && (
-                        <div className="absolute -top-2 -right-2 w-6 h-6 rounded-lg bg-accent text-white flex items-center justify-center text-[10px] font-bold shadow-lg shadow-accent/20">
-                          #{i+1}
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <span className="text-2xl font-black block group-hover:text-primary transition-colors">{entry.nickname}</span>
-                      <div className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] mt-1">Status: Active</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-16">
-                    <div className="hidden sm:block text-right">
-                      <div className="text-[9px] text-muted-foreground/40 font-black tracking-widest mb-1">XP_ACCUMULATED</div>
-                      <div className="text-xl font-black tabular-nums">{entry.points.toLocaleString()}</div>
-                    </div>
-                    <Link href={`/profile/${entry.userId}`}>
-                      <button className="text-[10px] font-black border border-foreground/5 bg-foreground/5 px-8 py-4 rounded-2xl hover:border-primary/50 hover:text-primary transition-all uppercase tracking-[0.2em] backdrop-blur-md">
-                        PROFILE
-                      </button>
-                    </Link>
-                  </div>
-                </div>
-              </FadeIn>
             ))}
           </div>
         </section>
-      </div>
 
-      {/* Industrial Footer */}
-      <footer className="border-t border-foreground/5 pt-32 pb-16 bg-card/30 relative overflow-hidden backdrop-blur-3xl">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid lg:grid-cols-4 gap-24 mb-32">
-            <div className="lg:col-span-2">
-              <div className="flex items-center gap-4 mb-10">
-                <div className="text-5xl font-black tracking-tighter">
-                  <span className="gradient-text">cd</span>
-                  <span className="text-foreground/10">CTF</span>
+        {/* Path preview → modules */}
+        <section className="pb-24">
+          <Link href="/modules">
+            <div className="glass-card group flex items-center justify-between gap-4 cursor-pointer border-primary/30">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="w-11 h-11 rounded-lg bg-primary/15 border border-primary/40 text-primary flex items-center justify-center shrink-0 neon-glow">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="eyebrow mb-1">{t("The curriculum", "O'quv dasturi", "Программа")}</div>
+                  <h3 className="text-base font-semibold group-hover:text-primary transition-colors">
+                    {t("Six modules, beginner to advanced — start now", "Olti modul, boshlang'ichdan ilg'orgacha — hoziroq boshlang", "Шесть модулей, от новичка до продвинутого — начните сейчас")}
+                  </h3>
                 </div>
               </div>
-              <p className="text-lg text-muted-foreground font-medium leading-relaxed mb-12 max-w-xl">
+              <ArrowRight className="w-5 h-5 text-primary shrink-0 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </Link>
+        </section>
+
+        {/* Scoreboard preview */}
+        {scoreboardEntries.length > 0 && (
+          <section className="pb-24">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <div className="eyebrow mb-1 flex items-center gap-2">
+                  <Trophy className="w-3.5 h-3.5" />
+                  {t("Leaderboard", "Reyting", "Рейтинг")}
+                </div>
+                <h2 className="text-2xl font-bold tracking-tight">{t("Top players", "Eng yaxshilar", "Лучшие игроки")}</h2>
+              </div>
+              <Link href="/scoreboard" className="text-sm font-medium text-primary hover:text-accent transition-colors inline-flex items-center gap-1">
+                {t("Full ranking", "To'liq reyting", "Весь рейтинг")}
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="glass-card divide-y divide-border !p-0 overflow-hidden">
+              {scoreboardEntries.map((entry, i) => (
+                <Link href={`/profile/${entry.userId}`} key={entry.userId}>
+                  <div className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-muted/40 transition-colors">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <span className={`text-sm font-semibold tabular-nums w-6 text-center shrink-0 ${i < 3 ? "text-primary" : "text-muted-foreground"}`}>
+                        {i + 1}
+                      </span>
+                      <div className="w-9 h-9 rounded-lg bg-muted border border-border flex items-center justify-center font-semibold text-primary shrink-0">
+                        {entry.nickname[0]?.toUpperCase()}
+                      </div>
+                      <span className="font-medium truncate">{entry.nickname}</span>
+                    </div>
+                    <span className="text-sm text-muted-foreground tabular-nums shrink-0">
+                      {entry.points.toLocaleString()} {t("pts", "ball", "очк.")}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+
+      {/* Footer */}
+      <footer className="border-t border-border mt-8 py-14">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="grid gap-10 sm:grid-cols-3 mb-10">
+            <div className="sm:col-span-1">
+              <div className="text-2xl font-bold tracking-tight mb-3">
+                <span className="gradient-text">cd</span><span className="text-muted-foreground">CTF</span>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mb-5">
                 {t(
-                  "Providing the technical infrastructure and challenges required for elite security research and training in the digital age.",
-                  "Raqamli asrda elita xavfsizlik tadqiqotlari va o'qitish uchun zarur bo'lgan texnik infratuzilma va vazifalarni taqdim etadi.",
-                  "Предоставление технической инфраструктуры и задач, необходимых для элитных исследований в области безопасности."
+                  "The cybersecurity academy for the Uzbek community — learn, practice, and get certified.",
+                  "O'zbek jamiyati uchun kiberxavfsizlik akademiyasi — o'rganing, mashq qiling va sertifikat oling.",
+                  "Академия кибербезопасности для узбекского сообщества — учитесь, практикуйтесь, получайте сертификат.",
                 )}
               </p>
-              <div className="flex items-center gap-6">
-                <a 
-                  href="https://t.me/cdctf_uz" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="flex items-center gap-4 px-8 py-4 bg-[#0088cc] text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] hover:opacity-90 transition-all hover:scale-105 shadow-xl shadow-[#0088cc]/20"
-                >
-                  <Send className="w-4 h-4" />
-                  TELEGRAM_COMMS
-                </a>
-              </div>
+              <a
+                href="https://t.me/cdctf_uz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0088cc] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                <Send className="w-4 h-4" />
+                Telegram
+              </a>
             </div>
-            
-            <div className="grid grid-cols-2 lg:col-span-2 gap-16">
-              <div className="space-y-10">
-                <h4 className="text-xs font-black tracking-[0.3em] uppercase text-foreground/70">SITEMAP</h4>
-                <ul className="space-y-6 text-sm font-bold">
-                  <li><Link href="/ctf" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2">./Missions</Link></li>
-                  <li><Link href="/learn" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2">./Academy</Link></li>
-                  <li><Link href="/scoreboard" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2">./Ranking</Link></li>
-                  <li><Link href="/competitions" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2">./Events</Link></li>
-                </ul>
-              </div>
-              <div className="space-y-10">
-                <h4 className="text-xs font-black tracking-[0.3em] uppercase text-foreground/70">SYSTEM_INFO</h4>
-                <ul className="space-y-6 text-sm font-bold text-muted-foreground">
-                  <li className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(0,210,255,0.5)]" /> 
-                    STATUS: OPTIMAL
-                  </li>
-                  <li>LATENCY: 14MS</li>
-                  <li>VERSION: 3.0.0_ULTRA</li>
-                  <li>ENCRYPTION: AES-256</li>
-                </ul>
-              </div>
+            <div>
+              <div className="eyebrow mb-4">{t("Learn", "O'rganish", "Обучение")}</div>
+              <ul className="space-y-2.5 text-sm">
+                <li><Link href="/modules" className="text-muted-foreground hover:text-primary transition-colors">{t("Modules", "Modullar", "Модули")}</Link></li>
+                <li><Link href="/learn" className="text-muted-foreground hover:text-primary transition-colors">{t("Lessons", "Darslar", "Уроки")}</Link></li>
+                <li><Link href="/ctf" className="text-muted-foreground hover:text-primary transition-colors">{t("CTF challenges", "CTF topshiriqlar", "CTF задания")}</Link></li>
+              </ul>
+            </div>
+            <div>
+              <div className="eyebrow mb-4">{t("Compete", "Bellashuv", "Соревнование")}</div>
+              <ul className="space-y-2.5 text-sm">
+                <li><Link href="/scoreboard" className="text-muted-foreground hover:text-primary transition-colors">{t("Leaderboard", "Reyting", "Рейтинг")}</Link></li>
+                <li><Link href="/competitions" className="text-muted-foreground hover:text-primary transition-colors">{t("Competitions", "Musobaqalar", "Соревнования")}</Link></li>
+              </ul>
             </div>
           </div>
-          
-          {/* muted-foreground is already the subdued colour; the /20 on top of it
-              left these two links and the copyright at a 1.34 contrast ratio —
-              not subtle, unreadable. */}
-          <div className="pt-16 border-t border-foreground/5 flex flex-col md:flex-row justify-between items-center gap-8 text-[10px] text-muted-foreground font-black uppercase tracking-[0.4em]">
-            <div>© {new Date().getFullYear()} CDCTF PLATFORM. SECURED BY BOZKURT.</div>
-            <div className="flex items-center gap-12">
-              <a href="#" className="hover:text-primary transition-colors">SECURITY_POLICY</a>
-              <a href="#" className="hover:text-primary transition-colors">TERMS_OF_ENGAGEMENT</a>
-            </div>
+          <div className="pt-8 border-t border-border text-sm text-muted-foreground">
+            © {new Date().getFullYear()} cdCTF
           </div>
         </div>
       </footer>
