@@ -41,7 +41,7 @@ function errorMessage(err: unknown, fallback: string) {
 }
 
 export default function ModuleExamPage() {
-  const [, params] = useRoute("/modules/:id/exam");
+  const [routeMatches, params] = useRoute("/modules/:id/exam");
   const id = Number(params?.id);
   const { t, lang } = useLang();
   const [, setLocation] = useLocation();
@@ -133,7 +133,13 @@ export default function ModuleExamPage() {
     });
   };
 
-  if (isLoading) {
+  // `!routeMatches` means the path moved off this page while it is still
+  // mounted. `id` is then NaN, the query is disabled, and `mod` is undefined —
+  // so falling through would assert "Module not found" about a module that is
+  // fine. A page whose route no longer matches knows nothing; the skeleton says
+  // that, and unlike returning null it keeps a child for the transition to
+  // animate.
+  if (!routeMatches || isLoading) {
     return (
       <div className="min-h-screen bg-background pt-28 pb-24">
         <div className="max-w-2xl mx-auto px-6 space-y-4">

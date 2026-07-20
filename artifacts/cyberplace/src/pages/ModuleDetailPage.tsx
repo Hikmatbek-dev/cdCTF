@@ -29,7 +29,7 @@ type ModuleDetail = {
 };
 
 export default function ModuleDetailPage() {
-  const [, params] = useRoute("/modules/:id");
+  const [routeMatches, params] = useRoute("/modules/:id");
   const id = Number(params?.id);
   const { t } = useLang();
 
@@ -38,7 +38,9 @@ export default function ModuleDetailPage() {
   });
   const mod = data as ModuleDetail | undefined;
 
-  if (isLoading) {
+  // See ModuleExamPage: the outgoing page outlives the route match, and neither
+  // the not-found state nor null is safe to draw then.
+  if (!routeMatches || isLoading) {
     return (
       <div className="min-h-screen bg-background pt-28 pb-24">
         <div className="max-w-3xl mx-auto px-6 space-y-4">

@@ -72,8 +72,11 @@ ESID=$(echo "$START" | python3 -c 'import sys,json; print(json.load(sys.stdin).g
 
 echo
 echo "=== ⭐ Javoblar klientga OSHKOR QILINMAYDI ==="
-LEAK=$(echo "$START" | python3 -c 'import sys,json; d=json.load(sys.stdin); print("bor" if any("correctOption" in q for q in d.get("questions",[])) else "yoʼq")')
-check "$LEAK" "yo'q" "correctOption yuborilmadi"
+# Sentinels deliberately carry no apostrophe. They used to be "bor"/"yo'q", and
+# the Python literal ended up with U+02BC while the comparison used ASCII — the
+# check failed on a character nobody can see, on a test that had actually passed.
+LEAK=$(echo "$START" | python3 -c 'import sys,json; d=json.load(sys.stdin); print("BOR" if any("correctOption" in q for q in d.get("questions",[])) else "YOQ")')
+check "$LEAK" "YOQ" "correctOption yuborilmadi"
 
 echo
 echo "=== ⭐ Takroriy javob RAD ETILADI (har variantni yuborib 100% olish yo'li) ==="
@@ -129,8 +132,8 @@ echo
 echo "=== Ommaviy tekshirish (ishga oluvchi ko'rsatganда) ==="
 VER=$(curl -s $API/learn/certificates/$SERIAL)
 check "$(echo "$VER" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("fullName"))')" "Aziz Karimov" "seriya bo'yicha topildi"
-LEAK2=$(echo "$VER" | python3 -c 'import sys,json; d=json.load(sys.stdin); print("bor" if "userId" in d or "email" in d else "yoʼq")')
-check "$LEAK2" "yo'q" "shaxsiy ma'lumot oshkor qilinmadi"
+LEAK2=$(echo "$VER" | python3 -c 'import sys,json; d=json.load(sys.stdin); print("BOR" if "userId" in d or "email" in d else "YOQ")')
+check "$LEAK2" "YOQ" "shaxsiy ma'lumot oshkor qilinmadi"
 check "$(curl -s -o /dev/null -w '%{http_code}' $API/learn/certificates/CDCTF-0000000000)" "404" "mavjud bo'lmagan seriya 404"
 
 echo

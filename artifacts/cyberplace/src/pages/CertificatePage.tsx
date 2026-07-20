@@ -11,7 +11,7 @@ import { useVerifyCertificate, getVerifyCertificateQueryKey } from "@workspace/a
  * worth issuing.
  */
 export default function CertificatePage() {
-  const [, params] = useRoute("/certificate/:serial");
+  const [routeMatches, params] = useRoute("/certificate/:serial");
   const serial = String(params?.serial ?? "");
   const { t, lang } = useLang();
 
@@ -20,7 +20,8 @@ export default function CertificatePage() {
   });
   const cert = data;
 
-  if (isLoading) {
+  // See ModuleExamPage: the outgoing page outlives the route match.
+  if (!routeMatches || isLoading) {
     return (
       <div className="min-h-screen bg-background pt-28 pb-24">
         <div className="max-w-2xl mx-auto px-6">
