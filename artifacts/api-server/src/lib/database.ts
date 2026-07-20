@@ -46,6 +46,86 @@ export async function ensureDatabaseShape() {
     )
   `);
 
+  // Modules turn the flat lesson list into courses: an ordered set of lessons
+  // that ends in an exam and, at or above pass_score, a certificate.
+  // Mirrors lib/db/src/schema/learn.ts — schema-parity.sh fails if they drift.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS modules (
+      id serial PRIMARY KEY,
+      slug text NOT NULL UNIQUE,
+      title text NOT NULL,
+      title_uz text,
+      title_ru text,
+      description text NOT NULL,
+      description_uz text,
+      description_ru text,
+      category_id integer REFERENCES learn_categories(id),
+      order_index integer NOT NULL DEFAULT 0,
+      estimated_hours integer NOT NULL DEFAULT 0,
+      difficulty text NOT NULL DEFAULT 'beginner',
+      pass_score integer NOT NULL DEFAULT 80,
+      is_published boolean NOT NULL DEFAULT true,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query("ALTER TABLE lessons ADD COLUMN IF NOT EXISTS module_id integer REFERENCES modules(id)");
+  await pool.query("ALTER TABLE lessons ADD COLUMN IF NOT EXISTS order_index integer NOT NULL DEFAULT 0");
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS module_questions (
+      id serial PRIMARY KEY,
+      module_id integer NOT NULL REFERENCES modules(id),
+      question text NOT NULL,
+      question_uz text,
+      question_ru text,
+      options jsonb NOT NULL,
+      options_uz jsonb,
+      options_ru jsonb,
+      correct_option integer NOT NULL,
+      order_index integer NOT NULL DEFAULT 0
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS module_exam_attempts (
+      id serial PRIMARY KEY,
+      user_id integer NOT NULL REFERENCES users(id),
+      module_id integer NOT NULL REFERENCES modules(id),
+      attempt_count integer NOT NULL DEFAULT 0,
+      exam_session_id text,
+      exam_started_at timestamptz,
+      best_score integer NOT NULL DEFAULT 0,
+      passed boolean NOT NULL DEFAULT false,
+      passed_at timestamptz,
+      updated_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS certificates (
+      id serial PRIMARY KEY,
+      serial text NOT NULL UNIQUE,
+      user_id integer NOT NULL REFERENCES users(id),
+      module_id integer NOT NULL REFERENCES modules(id),
+      full_name text NOT NULL,
+      score integer NOT NULL,
+      issued_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+
+  for (const [name, statement] of [
+    ["modules_published_idx", "CREATE INDEX IF NOT EXISTS modules_published_idx ON modules(is_published)"],
+    ["modules_order_idx", "CREATE INDEX IF NOT EXISTS modules_order_idx ON modules(order_index)"],
+    ["lessons_module_id_idx", "CREATE INDEX IF NOT EXISTS lessons_module_id_idx ON lessons(module_id)"],
+    ["module_questions_module_id_idx", "CREATE INDEX IF NOT EXISTS module_questions_module_id_idx ON module_questions(module_id)"],
+    ["module_exam_attempts_user_module_idx", "CREATE UNIQUE INDEX IF NOT EXISTS module_exam_attempts_user_module_idx ON module_exam_attempts(user_id, module_id)"],
+    ["module_exam_attempts_module_id_idx", "CREATE INDEX IF NOT EXISTS module_exam_attempts_module_id_idx ON module_exam_attempts(module_id)"],
+    ["certificates_user_module_idx", "CREATE UNIQUE INDEX IF NOT EXISTS certificates_user_module_idx ON certificates(user_id, module_id)"],
+    ["certificates_module_id_idx", "CREATE INDEX IF NOT EXISTS certificates_module_id_idx ON certificates(module_id)"],
+  ] as const) {
+    await createIndexSafely(name, statement);
+  }
+
   // Mirrors lib/db/src/schema/rate-limits.ts. Both halves are required: this is
   // what production runs, that is what the tests and types come from, and
   // schema-parity.sh fails if they disagree.
