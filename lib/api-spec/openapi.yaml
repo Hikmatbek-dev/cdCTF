@@ -801,6 +801,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/AdminDashboard"
 
+  /admin/learn-analytics:
+    get:
+      operationId: getLearnAnalytics
+      tags: [admin]
+      summary: The learning funnel per module — where learners drop off
+      responses:
+        "200":
+          description: Learning analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearnAnalytics"
+
   /admin/users:
     get:
       operationId: adminListUsers
@@ -3172,6 +3185,36 @@ components:
       required: [id, name, category, points]
 
     # Admin
+    LearnAnalyticsModule:
+      type: object
+      properties:
+        moduleId:
+          type: integer
+        title:
+          type: string
+        lessonCount:
+          type: integer
+        learners:
+          type: integer
+        completedAllLessons:
+          type: integer
+        examPassed:
+          type: integer
+        certified:
+          type: integer
+      required: [moduleId, title, lessonCount, learners, completedAllLessons, examPassed, certified]
+
+    LearnAnalytics:
+      type: object
+      properties:
+        modules:
+          type: array
+          items:
+            $ref: "#/components/schemas/LearnAnalyticsModule"
+        diplomasIssued:
+          type: integer
+      required: [modules, diplomasIssued]
+
     AdminDashboard:
       type: object
       properties:

@@ -1,8 +1,8 @@
 import { Router, type Request, type Response } from "express";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import { usersTable, ctfTasksTable, ctfAttemptsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable } from "@workspace/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { usersTable, ctfTasksTable, ctfAttemptsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable } from "@workspace/db/schema";
+import { eq, and, desc, inArray, isNotNull, asc } from "drizzle-orm";
 import { authenticateToken } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import {
@@ -130,6 +130,83 @@ router.get("/audit-logs", requirePermission("audit.read"), async (_req, res) => 
       createdAt: log.createdAt.toISOString(),
     })),
   });
+});
+
+// GET /api/admin/learn-analytics
+// The learning funnel per module — where learners drop off. Gated by the same
+// permission as reading all lessons, since it is the same class of data.
+router.get("/learn-analytics", requirePermission("lessons.read.all"), async (_req, res) => {
+  const modules = await db.select().from(modulesTable)
+    .where(eq(modulesTable.isPublished, true))
+    .orderBy(asc(modulesTable.orderIndex));
+  const moduleIds = modules.map(m => m.id);
+
+  // Lessons belonging to these modules, and every completed attempt on them.
+  const lessons = moduleIds.length
+    ? await db.select({ id: lessonsTable.id, moduleId: lessonsTable.moduleId })
+        .from(lessonsTable)
+        .where(and(eq(lessonsTable.isPublished, true), inArray(lessonsTable.moduleId, moduleIds)))
+    : [];
+  const lessonsByModule = new Map<number, number[]>();
+  for (const l of lessons) {
+    if (l.moduleId == null) continue;
+    const list = lessonsByModule.get(l.moduleId) ?? [];
+    list.push(l.id);
+    lessonsByModule.set(l.moduleId, list);
+  }
+
+  const lessonIds = lessons.map(l => l.id);
+  const completions = lessonIds.length
+    ? await db.select({ userId: userLessonAttemptsTable.userId, lessonId: userLessonAttemptsTable.lessonId })
+        .from(userLessonAttemptsTable)
+        .where(and(inArray(userLessonAttemptsTable.lessonId, lessonIds), isNotNull(userLessonAttemptsTable.completedAt)))
+    : [];
+  const lessonToModule = new Map(lessons.filter(l => l.moduleId != null).map(l => [l.id, l.moduleId!]));
+
+  // Per module: which users completed how many of its lessons.
+  const perModuleUserDone = new Map<number, Map<number, number>>();
+  for (const c of completions) {
+    const mid = lessonToModule.get(c.lessonId);
+    if (mid == null) continue;
+    const byUser = perModuleUserDone.get(mid) ?? new Map<number, number>();
+    byUser.set(c.userId, (byUser.get(c.userId) ?? 0) + 1);
+    perModuleUserDone.set(mid, byUser);
+  }
+
+  // Exam passes and certificates per module.
+  const exams = moduleIds.length
+    ? await db.select().from(moduleExamAttemptsTable).where(inArray(moduleExamAttemptsTable.moduleId, moduleIds))
+    : [];
+  const passedByModule = new Map<number, number>();
+  for (const e of exams) if (e.passed) passedByModule.set(e.moduleId, (passedByModule.get(e.moduleId) ?? 0) + 1);
+
+  const certs = moduleIds.length
+    ? await db.select({ moduleId: certificatesTable.moduleId }).from(certificatesTable).where(inArray(certificatesTable.moduleId, moduleIds))
+    : [];
+  const certByModule = new Map<number, number>();
+  for (const c of certs) certByModule.set(c.moduleId, (certByModule.get(c.moduleId) ?? 0) + 1);
+
+  const funnel = modules.map(m => {
+    const lessonCount = lessonsByModule.get(m.id)?.length ?? 0;
+    const byUser = perModuleUserDone.get(m.id) ?? new Map<number, number>();
+    const learners = byUser.size;                                    // completed >= 1 lesson
+    const completedAll = lessonCount > 0
+      ? [...byUser.values()].filter(n => n >= lessonCount).length     // completed every lesson
+      : 0;
+    return {
+      moduleId: m.id,
+      title: m.title,
+      lessonCount,
+      learners,
+      completedAllLessons: completedAll,
+      examPassed: passedByModule.get(m.id) ?? 0,
+      certified: certByModule.get(m.id) ?? 0,
+    };
+  });
+
+  const diplomas = await db.select({ id: programDiplomasTable.id }).from(programDiplomasTable);
+
+  res.json({ modules: funnel, diplomasIssued: diplomas.length });
 });
 
 // POST /api/admin/users/:id/block

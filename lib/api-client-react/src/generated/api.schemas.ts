@@ -530,6 +530,21 @@ export interface AvatarResponse {
   avatarUrl: string;
 }
 
+export interface LearnAnalyticsModule {
+  moduleId: number;
+  title: string;
+  lessonCount: number;
+  learners: number;
+  completedAllLessons: number;
+  examPassed: number;
+  certified: number;
+}
+
+export interface LearnAnalytics {
+  modules: LearnAnalyticsModule[];
+  diplomasIssued: number;
+}
+
 export type AdminDashboardMostSolvedCtfItem = {
   id: number;
   name: string;

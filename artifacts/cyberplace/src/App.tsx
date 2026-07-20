@@ -33,6 +33,7 @@ import AdminUsersPage from "@/pages/admin/AdminUsersPage";
 import AdminCtfPage from "@/pages/admin/AdminCtfPage";
 import AdminCompetitionsPage from "@/pages/admin/AdminCompetitionsPage";
 import AdminLessonsPage from "@/pages/admin/AdminLessonsPage";
+import AdminAnalyticsPage from "@/pages/admin/AdminAnalyticsPage";
 import AdminBlockedPage from "@/pages/admin/AdminBlockedPage";
 import AdminAuditPage from "@/pages/admin/AdminAuditPage";
 import CompetitionCtfPage from "@/pages/CompetitionCtfPage";
@@ -192,6 +193,9 @@ function Router() {
           </Route>
           <Route path="/admin/competitions">
             {() => <PageTransition><PermissionRoute component={AdminCompetitionsPage} permission="competitions.manage" /></PageTransition>}
+          </Route>
+          <Route path="/admin/analytics">
+            {() => <PageTransition><PermissionRoute component={AdminAnalyticsPage} permission="lessons.read.all" /></PageTransition>}
           </Route>
           <Route path="/admin/lessons">
             {() => <PageTransition><PermissionRoute component={AdminLessonsPage} permission="lessons.read.all" /></PageTransition>}

@@ -63,6 +63,7 @@ import type {
   GetScoreboardParams,
   HealthStatus,
   IssueCertificateBody,
+  LearnAnalytics,
   LearnCategory,
   Lesson,
   LessonDetail,
@@ -2905,6 +2906,81 @@ export function useGetAdminDashboard<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetAdminDashboardQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary The learning funnel per module — where learners drop off
+ */
+export const getGetLearnAnalyticsUrl = () => {
+  return `/api/admin/learn-analytics`;
+};
+
+export const getLearnAnalytics = async (
+  options?: RequestInit,
+): Promise<LearnAnalytics> => {
+  return customFetch<LearnAnalytics>(getGetLearnAnalyticsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetLearnAnalyticsQueryKey = () => {
+  return [`/api/admin/learn-analytics`] as const;
+};
+
+export const getGetLearnAnalyticsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLearnAnalytics>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getLearnAnalytics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetLearnAnalyticsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLearnAnalytics>>
+  > = ({ signal }) => getLearnAnalytics({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLearnAnalytics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLearnAnalyticsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLearnAnalytics>>
+>;
+export type GetLearnAnalyticsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary The learning funnel per module — where learners drop off
+ */
+
+export function useGetLearnAnalytics<
+  TData = Awaited<ReturnType<typeof getLearnAnalytics>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getLearnAnalytics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLearnAnalyticsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

@@ -795,6 +795,24 @@ export const GetAdminDashboardResponse = zod.object({
 });
 
 /**
+ * @summary The learning funnel per module — where learners drop off
+ */
+export const GetLearnAnalyticsResponse = zod.object({
+  modules: zod.array(
+    zod.object({
+      moduleId: zod.number(),
+      title: zod.string(),
+      lessonCount: zod.number(),
+      learners: zod.number(),
+      completedAllLessons: zod.number(),
+      examPassed: zod.number(),
+      certified: zod.number(),
+    }),
+  ),
+  diplomasIssued: zod.number(),
+});
+
+/**
  * @summary List all users
  */
 export const adminListUsersQueryLimitDefault = 50;

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, Flag, Trophy, BookOpen, AlertTriangle, ChevronLeft, ShieldCheck, Terminal } from "lucide-react";
+import { LayoutDashboard, Users, Flag, Trophy, BookOpen, AlertTriangle, ChevronLeft, ShieldCheck, Terminal, LineChart } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -11,6 +11,7 @@ const ADMIN_LINKS = [
   { href: "/admin/ctf", permission: "ctf.read.all", icon: Flag, label: { en: "Mission Assets", uz: "CTF Topshiriqlari", ru: "CTF Задания" } },
   { href: "/admin/competitions", permission: "competitions.manage", icon: Trophy, label: { en: "Tournament Grid", uz: "Musobaqalar", ru: "Соревнования" } },
   { href: "/admin/lessons", permission: "lessons.read.all", icon: BookOpen, label: { en: "Academic Modules", uz: "Darsliklar", ru: "Уроки" } },
+  { href: "/admin/analytics", permission: "lessons.read.all", icon: LineChart, label: { en: "Learning Analytics", uz: "Analitika", ru: "Аналитика" } },
   { href: "/admin/blocked", permission: "blocks.manage", icon: AlertTriangle, label: { en: "Incident Reports", uz: "Bloklanganlar", ru: "Заблокированные" } },
   { href: "/admin/audit", permission: "audit.read", icon: ShieldCheck, label: { en: "Audit Streams", uz: "Audit", ru: "Аудит" } },
 ];
