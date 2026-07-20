@@ -29,6 +29,84 @@ function renderInline(text: string, keyPrefix: string) {
   });
 }
 
+/** Splits `| a | b |` into its cells, dropping the empty edges. */
+function tableCells(line: string) {
+  return line.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+}
+
+/** `|---|---|` — the separator row, which carries no content of its own. */
+function isTableSeparator(line: string) {
+  return /^\|[\s:|-]+\|$/.test(line.trim()) && line.includes("-");
+}
+
+/**
+ * Renders one run of non-code lines.
+ *
+ * Written as a loop rather than a map because a table spans several lines and
+ * has to be consumed as a unit. Lessons use tables for things that genuinely
+ * are tables — port numbers, status codes, DNS record types — and before this
+ * they rendered as raw pipes, separator row and all.
+ */
+function renderLines(lines: string[], blockKey: number) {
+  const out: React.ReactNode[] = [];
+  let j = 0;
+  while (j < lines.length) {
+    const line = lines[j];
+
+    if (line.trim().startsWith("|") && j + 1 < lines.length && isTableSeparator(lines[j + 1])) {
+      const header = tableCells(line);
+      const rows: string[][] = [];
+      let k = j + 2;
+      while (k < lines.length && lines[k].trim().startsWith("|")) {
+        rows.push(tableCells(lines[k]));
+        k++;
+      }
+      out.push(
+        <div key={`t-${blockKey}-${j}`} className="my-4 overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="border-b border-border">
+                {header.map((cell, c) => (
+                  <th key={c} className="text-left font-medium py-2 pr-4 align-top">
+                    {renderInline(cell, `th-${blockKey}-${j}-${c}`)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, r) => (
+                <tr key={r} className="border-b border-border/50">
+                  {row.map((cell, c) => (
+                    <td key={c} className="py-2 pr-4 align-top text-muted-foreground">
+                      {renderInline(cell, `td-${blockKey}-${j}-${r}-${c}`)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>,
+      );
+      j = k;
+      continue;
+    }
+
+    if (line.startsWith("## ")) {
+      out.push(<h2 key={j} className="text-lg font-semibold mt-6 mb-2">{renderInline(line.slice(3), `h2-${blockKey}-${j}`)}</h2>);
+    } else if (line.startsWith("# ")) {
+      out.push(<h1 key={j} className="text-xl font-bold mt-4 mb-2">{renderInline(line.slice(2), `h1-${blockKey}-${j}`)}</h1>);
+    } else if (line.startsWith("- ")) {
+      out.push(<li key={j} className="ml-4 text-sm">{renderInline(line.slice(2), `li-${blockKey}-${j}`)}</li>);
+    } else if (line.trim() === "") {
+      out.push(<br key={j} />);
+    } else {
+      out.push(<p key={j} className="text-sm leading-relaxed">{renderInline(line, `p-${blockKey}-${j}`)}</p>);
+    }
+    j++;
+  }
+  return out;
+}
+
 function renderContent(content: string) {
   const parts = content.split(/(```[\s\S]*?```)/g);
   return parts.map((part, i) => {
@@ -49,13 +127,7 @@ function renderContent(content: string) {
     }
     return (
       <div key={i} className="prose prose-sm dark:prose-invert max-w-none">
-        {part.split("\n").map((line, j) => {
-          if (line.startsWith("## ")) return <h2 key={j} className="text-lg font-semibold mt-6 mb-2">{renderInline(line.slice(3), `h2-${i}-${j}`)}</h2>;
-          if (line.startsWith("# ")) return <h1 key={j} className="text-xl font-bold mt-4 mb-2">{renderInline(line.slice(2), `h1-${i}-${j}`)}</h1>;
-          if (line.startsWith("- ")) return <li key={j} className="ml-4 text-sm">{renderInline(line.slice(2), `li-${i}-${j}`)}</li>;
-          if (line.trim() === "") return <br key={j} />;
-          return <p key={j} className="text-sm leading-relaxed">{renderInline(line, `p-${i}-${j}`)}</p>;
-        })}
+        {renderLines(part.split("\n"), i)}
       </div>
     );
   });

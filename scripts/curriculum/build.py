@@ -50,9 +50,11 @@ def q(en, uz, ru, options, opts_uz, opts_ru, correct):
 
 # Assemble modules from their per-file authors.
 import mod01_linux  # noqa: E402
+import mod02_networking  # noqa: E402
 
 MODULE_SOURCES = [
     mod01_linux,
+    mod02_networking,
 ]
 
 
