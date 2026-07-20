@@ -141,7 +141,22 @@ export default function LessonTestPage() {
           setLoading(false);
         },
         onError: (err: unknown) => {
-          const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Error";
+          // The client throws an ApiError carrying `status` and a message built
+          // from the server's reply. This used to read err.response.data.error —
+          // an axios shape this app never produces — so it always fell through
+          // to the literal "Error". A signed-out visitor clicking "take test"
+          // saw that instead of being told to sign in.
+          const status = (err as { status?: number })?.status;
+          if (status === 401) {
+            toast({
+              title: t("Sign in to take the test", "Testni topshirish uchun tizimga kiring", "Войдите, чтобы пройти тест"),
+              variant: "destructive",
+            });
+            setLocation("/login");
+            return;
+          }
+          const msg = (err as Error)?.message
+            || t("Could not start the test", "Testni boshlab bo'lmadi", "Не удалось начать тест");
           toast({ title: msg, variant: "destructive" });
           setLocation(`/learn/${id}`);
         },
