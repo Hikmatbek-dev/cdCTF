@@ -50,42 +50,42 @@
   --radius-2xl: calc(var(--radius) + 8px);
 }
 
-/* "Deep space / cyber": a dark-first identity for a CTF platform, built to be
-   striking without the noise of the old neon-on-black scheme. One accent — a
-   teal — carries the whole brand, used as light on dark (never as small text on
-   a bright fill without a dark foreground to clear WCAG AA). The default theme
-   is dark (see ThemeContext), so `.dark` below is the star; `:root` is a
-   coherent light counterpart that keeps the same teal identity.
+/* "Premium dark": a rich, glossy identity for a CTF platform — deep violet-black
+   glass, a violet→blue gradient accent, backdrop blur, and generous glow. Two
+   hues carry the brand (violet primary, blue accent) and appear together as the
+   gradient on headings, buttons and progress. The default theme is dark (see
+   ThemeContext), so `.dark` below is the star; `:root` is a coherent light
+   counterpart.
 
-   Light mode: the teal has to work as text and button fill on a near-white
-   page, so it drops to teal-700 (~174 80% 28%), which clears AA both ways —
-   the bright teal-400 used in dark mode would fail as text on white. */
+   Light mode: violet has to work as text and button fill on a near-white page,
+   so `--primary` drops to violet-700, which clears WCAG AA — the bright
+   violet-400 used in dark mode would fail as small text on white. */
 :root {
-  --background: 210 30% 98%;
-  --foreground: 220 40% 12%;
-  --border: 214 20% 89%;
-  --input: 214 20% 86%;
-  --ring: 174 80% 28%;
+  --background: 264 30% 98%;
+  --foreground: 262 30% 12%;
+  --border: 264 20% 90%;
+  --input: 264 20% 87%;
+  --ring: 262 62% 48%;
 
   --card: 0 0% 100%;
-  --card-foreground: 220 40% 12%;
-  --card-border: 214 20% 89%;
+  --card-foreground: 262 30% 12%;
+  --card-border: 264 20% 90%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 220 40% 12%;
-  --popover-border: 214 20% 89%;
+  --popover-foreground: 262 30% 12%;
+  --popover-border: 264 20% 90%;
 
-  --primary: 174 80% 28%;
+  --primary: 262 62% 48%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 210 24% 95%;
-  --secondary-foreground: 220 40% 12%;
+  --secondary: 264 24% 95%;
+  --secondary-foreground: 262 30% 12%;
 
-  --muted: 210 24% 95%;
+  --muted: 264 24% 95%;
   /* ~5.6:1 on white. */
-  --muted-foreground: 216 14% 40%;
+  --muted-foreground: 258 12% 42%;
 
-  --accent: 188 80% 34%;
+  --accent: 221 83% 47%;
   --accent-foreground: 0 0% 100%;
 
   --destructive: 0 72% 45%;
@@ -94,65 +94,62 @@
   --app-font-sans: "Inter", system-ui, sans-serif;
   --app-font-display: "Inter", system-ui, sans-serif;
   --app-font-mono: "JetBrains Mono", ui-monospace, monospace;
-  --radius: 0.75rem;
+  --radius: 0.9rem;
 
-  /* Signature glow, tuned per theme so it reads on the surface behind it. */
-  --glow: 174 80% 28%;
-  --grid-line: 220 40% 12%;
+  --glow: 262 62% 48%;
+  --grid-line: 262 30% 12%;
   --grid-opacity: 0.035;
 
-  --cyber-cyan: 174 80% 28%;
-  --cyber-purple: 188 80% 34%;
-  --cyber-blue: 174 80% 28%;
-  --cyber-pink: 188 80% 34%;
+  --cyber-cyan: 262 62% 48%;
+  --cyber-purple: 262 62% 48%;
+  --cyber-blue: 221 83% 47%;
+  --cyber-pink: 262 62% 48%;
 }
 
-/* The primary experience. Deep navy near-black, a teal-400 accent, and the
-   cyber chrome (grid, glow, gradient cards) defined in the components layer
-   below. Teal on this surface is high-contrast light-on-dark; the button uses
-   a very dark teal-navy foreground on the teal fill, ~10:1. */
+/* The primary experience. Deep violet-black, a violet→blue accent, and the
+   glass chrome (frosted cards, glossy gradient buttons, generous glow) defined
+   in the components layer below. */
 .dark {
-  --background: 222 44% 6%;
-  --foreground: 215 40% 96%;
-  --border: 218 32% 20%;
-  --input: 218 30% 22%;
-  --ring: 172 66% 50%;
+  --background: 264 44% 6%;
+  --foreground: 255 30% 96%;
+  --border: 260 26% 22%;
+  --input: 260 24% 24%;
+  --ring: 258 90% 68%;
 
-  /* Cards are a hair lighter than the page and get a subtle top-lit gradient
-     in .glass-card, so they lift off the deep background without a heavy
-     shadow. */
-  --card: 220 38% 11%;
-  --card-foreground: 215 40% 96%;
-  --card-border: 218 32% 20%;
+  /* A dark violet, one step off the page; .glass-card frosts it and lays a
+     violet→blue sheen over the top. */
+  --card: 264 40% 10%;
+  --card-foreground: 255 30% 96%;
+  --card-border: 260 30% 26%;
 
-  --popover: 220 40% 9%;
-  --popover-foreground: 215 40% 96%;
-  --popover-border: 218 32% 20%;
+  --popover: 264 44% 8%;
+  --popover-foreground: 255 30% 96%;
+  --popover-border: 260 30% 26%;
 
-  --primary: 172 66% 50%;
-  --primary-foreground: 200 80% 6%;
+  --primary: 258 90% 68%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 220 30% 16%;
-  --secondary-foreground: 215 40% 96%;
+  --secondary: 262 30% 16%;
+  --secondary-foreground: 255 30% 96%;
 
-  --muted: 220 30% 15%;
+  --muted: 262 28% 15%;
   /* ~6:1 on the deep background. */
-  --muted-foreground: 216 24% 66%;
+  --muted-foreground: 256 20% 72%;
 
-  --accent: 187 85% 53%;
-  --accent-foreground: 200 80% 6%;
+  --accent: 217 91% 62%;
+  --accent-foreground: 0 0% 100%;
 
-  --destructive: 0 62% 52%;
+  --destructive: 0 62% 55%;
   --destructive-foreground: 0 0% 100%;
 
-  --glow: 172 66% 50%;
-  --grid-line: 180 60% 70%;
-  --grid-opacity: 0.04;
+  --glow: 258 90% 68%;
+  --grid-line: 258 60% 80%;
+  --grid-opacity: 0.045;
 
-  --cyber-cyan: 172 66% 50%;
-  --cyber-purple: 187 85% 53%;
-  --cyber-blue: 172 66% 50%;
-  --cyber-pink: 187 85% 53%;
+  --cyber-cyan: 258 90% 68%;
+  --cyber-purple: 258 90% 68%;
+  --cyber-blue: 217 91% 62%;
+  --cyber-pink: 258 90% 68%;
 }
 
 @layer base {
@@ -163,9 +160,9 @@
     @apply font-sans antialiased bg-background text-foreground selection:bg-primary/25 selection:text-foreground;
   }
 
-  /* One faint teal glow, fixed so it never repaints on scroll — the cheap way
-     to make a flat deep-navy page feel like it has depth. `pointer-events:none`
-     keeps it purely decorative. */
+  /* Two soft aurora glows — violet up top, blue to the side — fixed so they
+     never repaint on scroll. This is what makes the deep-violet page feel like
+     it has depth and light behind the glass. Purely decorative. */
   body::before {
     content: "";
     position: fixed;
@@ -173,8 +170,9 @@
     z-index: 0;
     pointer-events: none;
     background:
-      radial-gradient(60rem 40rem at 50% -10%, hsl(var(--glow) / 0.10), transparent 70%),
-      radial-gradient(50rem 30rem at 100% 0%, hsl(var(--accent) / 0.06), transparent 70%);
+      radial-gradient(70rem 45rem at 50% -12%, hsl(var(--primary) / 0.16), transparent 68%),
+      radial-gradient(55rem 35rem at 100% 5%, hsl(var(--accent) / 0.12), transparent 70%),
+      radial-gradient(45rem 30rem at 0% 100%, hsl(var(--primary) / 0.08), transparent 70%);
   }
   /* App chrome sits above the glow. */
   #root { position: relative; z-index: 1; }
@@ -185,60 +183,98 @@
 }
 
 /* The class names are historical — pages across the app already use them, so
-   redefining them here re-skins everything at once. This is the "deep space"
-   chrome: gradient cards that lift on the dark page, a teal button that glows,
-   and a monospace eyebrow label for the small caps you see above headings. */
+   redefining them here re-skins everything at once. This is the "premium dark"
+   chrome: frosted glass cards, glossy violet→blue buttons, and a gradient
+   eyebrow label for the small caps above headings. */
 @layer components {
-  /* A card that belongs on a dark surface: a subtle top-lit gradient so it
-     separates from the page, a thin border that warms to teal on hover, and a
-     faint teal glow on hover to make it feel interactive. */
+  /* Frosted glass: a violet→blue sheen laid over the (blurred) card surface, a
+     hairline highlight along the top edge, and a soft violet drop-glow so the
+     card floats above the aurora background. On hover the border and glow lift. */
   .glass-card {
-    @apply relative border border-card-border p-6 rounded-xl transition-all duration-200;
-    background-image: linear-gradient(180deg, hsl(var(--card)), hsl(var(--card) / 0.6));
-    box-shadow: 0 1px 0 0 hsl(var(--foreground) / 0.04) inset;
+    @apply relative border p-6 transition-all duration-200;
+    border-radius: 1.15rem;
+    border-color: hsl(var(--card-border));
+    background-image:
+      linear-gradient(135deg, hsl(var(--primary) / 0.10), hsl(var(--accent) / 0.05)),
+      linear-gradient(180deg, hsl(var(--card) / 0.92), hsl(var(--card) / 0.72));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow:
+      0 16px 50px -24px hsl(var(--glow) / 0.40),
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.10);
   }
   .glass-card:hover {
-    @apply border-primary/40;
-    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.15), 0 8px 40px -12px hsl(var(--glow) / 0.35);
+    border-color: hsl(var(--primary) / 0.45);
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.20),
+      0 20px 60px -20px hsl(var(--glow) / 0.55),
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.14);
   }
 
-  /* Teal fill, dark foreground, a controlled glow that intensifies on hover.
-     Sentence case and normal weight — the wow comes from the colour and the
-     glow, not from shouting in uppercase like the old buttons did. */
+  /* Glossy violet→blue fill, white text, a top highlight and a coloured drop-
+     glow that intensifies on hover. This is the signature "premium" button. */
   .cyber-button {
-    @apply inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;
-    box-shadow: 0 0 24px -6px hsl(var(--glow) / 0.55);
+    @apply inline-flex items-center justify-center gap-2 text-white px-5 py-2.5 font-semibold text-sm transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;
+    border-radius: 0.8rem;
+    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    box-shadow:
+      0 10px 28px -8px hsl(var(--glow) / 0.65),
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.25);
   }
   .cyber-button:hover:not(:disabled) {
-    box-shadow: 0 0 30px -4px hsl(var(--glow) / 0.75);
-    filter: brightness(1.08);
+    box-shadow:
+      0 14px 36px -6px hsl(var(--glow) / 0.85),
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.3);
+    filter: brightness(1.06);
   }
 
   .cyber-button-outline {
-    @apply inline-flex items-center justify-center gap-2 border border-border text-foreground px-5 py-2.5 rounded-lg font-medium text-sm transition-colors hover:bg-muted hover:border-primary/40 disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-2 border text-foreground px-5 py-2.5 font-medium text-sm transition-all disabled:opacity-50 disabled:pointer-events-none;
+    border-radius: 0.8rem;
+    border-color: hsl(var(--border));
+    background-image: linear-gradient(180deg, hsl(var(--card) / 0.6), hsl(var(--card) / 0.35));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .cyber-button-outline:hover:not(:disabled) {
+    border-color: hsl(var(--primary) / 0.5);
+    background-image: linear-gradient(180deg, hsl(var(--primary) / 0.12), hsl(var(--accent) / 0.06));
   }
 
-  /* The small monospace caps above a heading — "MODUL 06 · ILG'OR". The one
-     place uppercase + tracking earns its keep: a short eyebrow label, not a
-     whole page shouting. */
+  /* The small caps above a heading — "MODUL 06 · ILG'OR" — now a violet→blue
+     gradient instead of a flat colour, so the eyebrow carries the brand too. */
   .eyebrow {
-    @apply font-mono text-[11px] uppercase tracking-[0.18em] text-primary;
+    @apply font-mono text-[11px] uppercase tracking-[0.18em] font-semibold inline-flex items-center gap-2;
+    background-image: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    width: fit-content;
+  }
+  /* The gradient clips to the text glyphs, but an icon inside the eyebrow uses
+     currentColor — which the transparent text colour would erase. Give icons a
+     solid violet so they stay visible. */
+  .eyebrow svg {
+    color: hsl(var(--primary));
+    -webkit-text-fill-color: hsl(var(--primary));
   }
 
-  /* A real but controlled glow, for the elements that deserve emphasis (an
-     active progress bar, a featured badge). Not sprayed on every surface. */
+  /* A coloured glow for elements that deserve emphasis (an active progress bar,
+     a featured badge). Not sprayed on every surface. */
   .neon-glow {
-    box-shadow: 0 0 20px -4px hsl(var(--glow) / 0.5);
+    box-shadow: 0 0 22px -4px hsl(var(--glow) / 0.6);
   }
 
   .terminal-input {
-    @apply bg-background border border-input rounded-lg px-4 py-2.5 text-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/25;
+    @apply border border-input rounded-lg px-4 py-2.5 text-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/25;
+    background-color: hsl(var(--card) / 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
-  /* The teal accent as text; a subtle gradient into the accent hue for hero
-     headings that want a lift. */
+  /* Violet→blue gradient text for hero headings and accents. */
   .gradient-text {
-    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    background-image: linear-gradient(120deg, hsl(var(--primary)), hsl(var(--accent)));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
