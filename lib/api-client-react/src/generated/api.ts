@@ -31,6 +31,8 @@ import type {
   BackupCodesResponse,
   BadRequestResponse,
   BlockedTasksResponse,
+  Certificate,
+  CertificateVerification,
   ChangePasswordBody,
   ChangePasswordResponse,
   Competition,
@@ -47,6 +49,8 @@ import type {
   DisableTwoFactorBody,
   ErrorResponse,
   EscapeResponse,
+  ExamResult,
+  ExamStartResponse,
   FlagSubmitResponse,
   ForbiddenResponse,
   ForgotPasswordBody,
@@ -55,6 +59,7 @@ import type {
   GetPasskeyRegistrationOptions200,
   GetScoreboardParams,
   HealthStatus,
+  IssueCertificateBody,
   LearnCategory,
   Lesson,
   LessonDetail,
@@ -64,6 +69,8 @@ import type {
   LoginHistoryResponse,
   LoginResult,
   MessageResponse,
+  ModuleDetail,
+  ModuleSummary,
   NotFoundResponse,
   OAuthAccountsResponse,
   OAuthProvider,
@@ -1384,6 +1391,512 @@ export const useReportTestEscape = <
 > => {
   return useMutation(getReportTestEscapeMutationOptions(options));
 };
+
+/**
+ * @summary List published modules with the caller's progress
+ */
+export const getListModulesUrl = () => {
+  return `/api/learn/modules`;
+};
+
+export const listModules = async (
+  options?: RequestInit,
+): Promise<ModuleSummary[]> => {
+  return customFetch<ModuleSummary[]>(getListModulesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListModulesQueryKey = () => {
+  return [`/api/learn/modules`] as const;
+};
+
+export const getListModulesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listModules>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listModules>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListModulesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listModules>>> = ({
+    signal,
+  }) => listModules({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listModules>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListModulesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listModules>>
+>;
+export type ListModulesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List published modules with the caller's progress
+ */
+
+export function useListModules<
+  TData = Awaited<ReturnType<typeof listModules>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listModules>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListModulesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a module with its lessons and exam state
+ */
+export const getGetModuleUrl = (id: number) => {
+  return `/api/learn/modules/${id}`;
+};
+
+export const getModule = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ModuleDetail> => {
+  return customFetch<ModuleDetail>(getGetModuleUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetModuleQueryKey = (id: number) => {
+  return [`/api/learn/modules/${id}`] as const;
+};
+
+export const getGetModuleQueryOptions = <
+  TData = Awaited<ReturnType<typeof getModule>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getModule>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetModuleQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getModule>>> = ({
+    signal,
+  }) => getModule(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getModule>>, TError, TData> & {
+    queryKey: QueryKey;
+  };
+};
+
+export type GetModuleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getModule>>
+>;
+export type GetModuleQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get a module with its lessons and exam state
+ */
+
+export function useGetModule<
+  TData = Awaited<ReturnType<typeof getModule>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getModule>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetModuleQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Start the final exam (requires every lesson finished)
+ */
+export const getStartModuleExamUrl = (id: number) => {
+  return `/api/learn/modules/${id}/exam/start`;
+};
+
+export const startModuleExam = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ExamStartResponse> => {
+  return customFetch<ExamStartResponse>(getStartModuleExamUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getStartModuleExamMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startModuleExam>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof startModuleExam>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["startModuleExam"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof startModuleExam>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return startModuleExam(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StartModuleExamMutationResult = NonNullable<
+  Awaited<ReturnType<typeof startModuleExam>>
+>;
+
+export type StartModuleExamMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Start the final exam (requires every lesson finished)
+ */
+export const useStartModuleExam = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startModuleExam>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof startModuleExam>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getStartModuleExamMutationOptions(options));
+};
+
+/**
+ * @summary Submit final exam answers
+ */
+export const getSubmitModuleExamUrl = (id: number) => {
+  return `/api/learn/modules/${id}/exam/submit`;
+};
+
+export const submitModuleExam = async (
+  id: number,
+  submitTestBody: SubmitTestBody,
+  options?: RequestInit,
+): Promise<ExamResult> => {
+  return customFetch<ExamResult>(getSubmitModuleExamUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(submitTestBody),
+  });
+};
+
+export const getSubmitModuleExamMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitModuleExam>>,
+    TError,
+    { id: number; data: BodyType<SubmitTestBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitModuleExam>>,
+  TError,
+  { id: number; data: BodyType<SubmitTestBody> },
+  TContext
+> => {
+  const mutationKey = ["submitModuleExam"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitModuleExam>>,
+    { id: number; data: BodyType<SubmitTestBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return submitModuleExam(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitModuleExamMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitModuleExam>>
+>;
+export type SubmitModuleExamMutationBody = BodyType<SubmitTestBody>;
+export type SubmitModuleExamMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Submit final exam answers
+ */
+export const useSubmitModuleExam = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitModuleExam>>,
+    TError,
+    { id: number; data: BodyType<SubmitTestBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof submitModuleExam>>,
+  TError,
+  { id: number; data: BodyType<SubmitTestBody> },
+  TContext
+> => {
+  return useMutation(getSubmitModuleExamMutationOptions(options));
+};
+
+/**
+ * @summary Issue the certificate for a passed module
+ */
+export const getIssueCertificateUrl = (id: number) => {
+  return `/api/learn/modules/${id}/certificate`;
+};
+
+export const issueCertificate = async (
+  id: number,
+  issueCertificateBody: IssueCertificateBody,
+  options?: RequestInit,
+): Promise<Certificate> => {
+  return customFetch<Certificate>(getIssueCertificateUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(issueCertificateBody),
+  });
+};
+
+export const getIssueCertificateMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof issueCertificate>>,
+    TError,
+    { id: number; data: BodyType<IssueCertificateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof issueCertificate>>,
+  TError,
+  { id: number; data: BodyType<IssueCertificateBody> },
+  TContext
+> => {
+  const mutationKey = ["issueCertificate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof issueCertificate>>,
+    { id: number; data: BodyType<IssueCertificateBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return issueCertificate(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type IssueCertificateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof issueCertificate>>
+>;
+export type IssueCertificateMutationBody = BodyType<IssueCertificateBody>;
+export type IssueCertificateMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Issue the certificate for a passed module
+ */
+export const useIssueCertificate = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof issueCertificate>>,
+    TError,
+    { id: number; data: BodyType<IssueCertificateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof issueCertificate>>,
+  TError,
+  { id: number; data: BodyType<IssueCertificateBody> },
+  TContext
+> => {
+  return useMutation(getIssueCertificateMutationOptions(options));
+};
+
+/**
+ * @summary Verify a certificate by its serial (public)
+ */
+export const getVerifyCertificateUrl = (serial: string) => {
+  return `/api/learn/certificates/${serial}`;
+};
+
+export const verifyCertificate = async (
+  serial: string,
+  options?: RequestInit,
+): Promise<CertificateVerification> => {
+  return customFetch<CertificateVerification>(getVerifyCertificateUrl(serial), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getVerifyCertificateQueryKey = (serial: string) => {
+  return [`/api/learn/certificates/${serial}`] as const;
+};
+
+export const getVerifyCertificateQueryOptions = <
+  TData = Awaited<ReturnType<typeof verifyCertificate>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  serial: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof verifyCertificate>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getVerifyCertificateQueryKey(serial);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof verifyCertificate>>
+  > = ({ signal }) => verifyCertificate(serial, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!serial,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof verifyCertificate>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type VerifyCertificateQueryResult = NonNullable<
+  Awaited<ReturnType<typeof verifyCertificate>>
+>;
+export type VerifyCertificateQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Verify a certificate by its serial (public)
+ */
+
+export function useVerifyCertificate<
+  TData = Awaited<ReturnType<typeof verifyCertificate>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  serial: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof verifyCertificate>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getVerifyCertificateQueryOptions(serial, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get global scoreboard

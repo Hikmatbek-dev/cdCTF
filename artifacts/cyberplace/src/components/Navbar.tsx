@@ -16,7 +16,8 @@ import {
 
 const NAV_LINKS = [
   { href: "/ctf", label: { en: "CTF", uz: "CTF", ru: "CTF" } },
-  { href: "/learn", label: { en: "Academy", uz: "Akademiya", ru: "Академия" } },
+  { href: "/modules", label: { en: "Modules", uz: "Modullar", ru: "Модули" } },
+  { href: "/learn", label: { en: "Lessons", uz: "Darslar", ru: "Уроки" } },
   { href: "/scoreboard", label: { en: "Ranking", uz: "Reyting", ru: "Рейтинг" } },
   { href: "/competitions", label: { en: "Events", uz: "Tadbirlar", ru: "События" } },
 ];

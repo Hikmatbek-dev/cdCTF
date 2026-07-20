@@ -238,6 +238,109 @@ export interface EscapeResponse {
   message: string;
 }
 
+export interface ModuleSummary {
+  id: number;
+  slug: string;
+  title: string;
+  titleUz?: string | null;
+  titleRu?: string | null;
+  description: string;
+  descriptionUz?: string | null;
+  descriptionRu?: string | null;
+  difficulty: string;
+  estimatedHours: number;
+  passScore: number;
+  lessonCount: number;
+  completedCount: number;
+  examBestScore: number;
+  examPassed: boolean;
+  certificateSerial?: string | null;
+}
+
+export interface ModuleLesson {
+  id: number;
+  title: string;
+  titleUz?: string | null;
+  titleRu?: string | null;
+  points: number;
+  orderIndex: number;
+  isCompleted: boolean;
+}
+
+export type ModuleDetailExam = {
+  bestScore: number;
+  passed: boolean;
+  attemptCount: number;
+};
+
+export interface ModuleDetail {
+  id: number;
+  slug: string;
+  title: string;
+  titleUz?: string | null;
+  titleRu?: string | null;
+  description: string;
+  descriptionUz?: string | null;
+  descriptionRu?: string | null;
+  difficulty: string;
+  estimatedHours: number;
+  passScore: number;
+  examQuestionCount: number;
+  lessons: ModuleLesson[];
+  completedCount: number;
+  lessonCount: number;
+  examUnlocked: boolean;
+  exam: ModuleDetailExam;
+  certificateSerial?: string | null;
+}
+
+export interface ModuleQuestion {
+  id: number;
+  question: string;
+  questionUz?: string | null;
+  questionRu?: string | null;
+  options: string[];
+  optionsUz?: string[] | null;
+  optionsRu?: string[] | null;
+}
+
+export interface ExamStartResponse {
+  sessionId: string;
+  passScore: number;
+  questions: ModuleQuestion[];
+}
+
+export interface ExamResult {
+  score: number;
+  correct: number;
+  total: number;
+  passScore: number;
+  passed: boolean;
+  certificateAvailable: boolean;
+}
+
+export interface IssueCertificateBody {
+  /** The learner's name as it appears on their passport; printed on the certificate. */
+  fullName: string;
+}
+
+export interface Certificate {
+  serial: string;
+  fullName: string;
+  score: number;
+  issuedAt: string;
+}
+
+export interface CertificateVerification {
+  serial: string;
+  fullName: string;
+  score: number;
+  issuedAt: string;
+  moduleTitle: string;
+  moduleTitleUz?: string | null;
+  moduleTitleRu?: string | null;
+}
+
 export interface ScoreboardEntry {
   rank: number;
   userId: number;

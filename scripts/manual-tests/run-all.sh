@@ -99,7 +99,19 @@ start_server() {
 
 echo "==> Baza: $DB"
 create_database || exit 1
-(cd "$ROOT/lib/db" && npx drizzle-kit push --config ./drizzle.config.ts --force > /dev/null 2>&1) || exit 1
+(cd "$ROOT/lib/db" && npx drizzle-kit push --config ./drizzle.config.ts --force > /dev/null 2>&1)
+# `|| exit 1` on the push alone is not enough: drizzle-kit exits 0 even when it
+# never reached the database — a connection refused prints an ENOENT stack and
+# still returns success. Measured, not assumed. Left alone, every suite below
+# runs against an empty database and fails for reasons that look like code bugs.
+# So assert the schema actually landed.
+if [ "$(psql "$DATABASE_URL" -tAqc \
+      "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'" 2>/dev/null)" \
+      -lt 20 ] 2>/dev/null; then
+  echo "❌ Sxema o'rnatilmadi — baza bo'sh yoki ulanib bo'lmadi."
+  echo "   Postgres ishlayaptimi? Tekshiring: pg_isready"
+  exit 1
+fi
 
 echo "==> Build"
 (cd "$ROOT/artifacts/api-server" && npm run build > /dev/null 2>&1) || exit 1

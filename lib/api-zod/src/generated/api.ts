@@ -316,6 +316,159 @@ export const ReportTestEscapeResponse = zod.object({
 });
 
 /**
+ * @summary List published modules with the caller's progress
+ */
+export const ListModulesResponseItem = zod.object({
+  id: zod.number(),
+  slug: zod.string(),
+  title: zod.string(),
+  titleUz: zod.string().nullish(),
+  titleRu: zod.string().nullish(),
+  description: zod.string(),
+  descriptionUz: zod.string().nullish(),
+  descriptionRu: zod.string().nullish(),
+  difficulty: zod.string(),
+  estimatedHours: zod.number(),
+  passScore: zod.number(),
+  lessonCount: zod.number(),
+  completedCount: zod.number(),
+  examBestScore: zod.number(),
+  examPassed: zod.boolean(),
+  certificateSerial: zod.string().nullish(),
+});
+export const ListModulesResponse = zod.array(ListModulesResponseItem);
+
+/**
+ * @summary Get a module with its lessons and exam state
+ */
+export const GetModuleParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetModuleResponse = zod.object({
+  id: zod.number(),
+  slug: zod.string(),
+  title: zod.string(),
+  titleUz: zod.string().nullish(),
+  titleRu: zod.string().nullish(),
+  description: zod.string(),
+  descriptionUz: zod.string().nullish(),
+  descriptionRu: zod.string().nullish(),
+  difficulty: zod.string(),
+  estimatedHours: zod.number(),
+  passScore: zod.number(),
+  examQuestionCount: zod.number(),
+  lessons: zod.array(
+    zod.object({
+      id: zod.number(),
+      title: zod.string(),
+      titleUz: zod.string().nullish(),
+      titleRu: zod.string().nullish(),
+      points: zod.number(),
+      orderIndex: zod.number(),
+      isCompleted: zod.boolean(),
+    }),
+  ),
+  completedCount: zod.number(),
+  lessonCount: zod.number(),
+  examUnlocked: zod.boolean(),
+  exam: zod.object({
+    bestScore: zod.number(),
+    passed: zod.boolean(),
+    attemptCount: zod.number(),
+  }),
+  certificateSerial: zod.string().nullish(),
+});
+
+/**
+ * @summary Start the final exam (requires every lesson finished)
+ */
+export const StartModuleExamParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const StartModuleExamResponse = zod.object({
+  sessionId: zod.string(),
+  passScore: zod.number(),
+  questions: zod.array(
+    zod.object({
+      id: zod.number(),
+      question: zod.string(),
+      questionUz: zod.string().nullish(),
+      questionRu: zod.string().nullish(),
+      options: zod.array(zod.string()),
+      optionsUz: zod.array(zod.string()).nullish(),
+      optionsRu: zod.array(zod.string()).nullish(),
+    }),
+  ),
+});
+
+/**
+ * @summary Submit final exam answers
+ */
+export const SubmitModuleExamParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const SubmitModuleExamBody = zod.object({
+  sessionId: zod.string(),
+  answers: zod.array(
+    zod.object({
+      questionId: zod.number(),
+      selectedOption: zod.number(),
+    }),
+  ),
+});
+
+export const SubmitModuleExamResponse = zod.object({
+  score: zod.number(),
+  correct: zod.number(),
+  total: zod.number(),
+  passScore: zod.number(),
+  passed: zod.boolean(),
+  certificateAvailable: zod.boolean(),
+});
+
+/**
+ * @summary Issue the certificate for a passed module
+ */
+export const IssueCertificateParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const IssueCertificateBody = zod.object({
+  fullName: zod
+    .string()
+    .describe(
+      "The learner's name as it appears on their passport; printed on the certificate.",
+    ),
+});
+
+export const IssueCertificateResponse = zod.object({
+  serial: zod.string(),
+  fullName: zod.string(),
+  score: zod.number(),
+  issuedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Verify a certificate by its serial (public)
+ */
+export const VerifyCertificateParams = zod.object({
+  serial: zod.coerce.string(),
+});
+
+export const VerifyCertificateResponse = zod.object({
+  serial: zod.string(),
+  fullName: zod.string(),
+  score: zod.number(),
+  issuedAt: zod.coerce.date(),
+  moduleTitle: zod.string(),
+  moduleTitleUz: zod.string().nullish(),
+  moduleTitleRu: zod.string().nullish(),
+});
+
+/**
  * @summary Get global scoreboard
  */
 export const getScoreboardQueryLimitDefault = 50;

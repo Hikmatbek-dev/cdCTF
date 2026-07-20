@@ -15,6 +15,10 @@ import CtfDetailPage from "@/pages/CtfDetailPage";
 import LearnPage from "@/pages/LearnPage";
 import LessonDetailPage from "@/pages/LessonDetailPage";
 import LessonTestPage from "@/pages/LessonTestPage";
+import ModulesPage from "@/pages/ModulesPage";
+import ModuleDetailPage from "@/pages/ModuleDetailPage";
+import ModuleExamPage from "@/pages/ModuleExamPage";
+import CertificatePage from "@/pages/CertificatePage";
 import ScoreboardPage from "@/pages/ScoreboardPage";
 import CompetitionsPage from "@/pages/CompetitionsPage";
 import CompetitionDetailPage from "@/pages/CompetitionDetailPage";
@@ -120,6 +124,21 @@ function Router() {
           </Route>
           <Route path="/learn/:id">
             <PageTransition><LessonDetailPage /></PageTransition>
+          </Route>
+          {/* The exam path must be registered before /modules/:id, or wouter
+              matches the latter first and the exam page never renders. */}
+          <Route path="/modules/:id/exam">
+            <PageTransition><ProtectedRoute component={ModuleExamPage} /></PageTransition>
+          </Route>
+          <Route path="/modules/:id">
+            <PageTransition><ModuleDetailPage /></PageTransition>
+          </Route>
+          <Route path="/modules">
+            {() => <PageTransition><ModulesPage /></PageTransition>}
+          </Route>
+          {/* Public: a certificate has to be checkable by whoever it is shown to. */}
+          <Route path="/certificate/:serial">
+            <PageTransition><CertificatePage /></PageTransition>
           </Route>
           <Route path="/scoreboard">
             {() => <PageTransition><ScoreboardPage /></PageTransition>}

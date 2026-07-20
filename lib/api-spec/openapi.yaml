@@ -372,6 +372,165 @@ paths:
               schema:
                 $ref: "#/components/schemas/EscapeResponse"
 
+  # MODULES — an ordered course of lessons, a final exam, and a certificate.
+  /learn/modules:
+    get:
+      operationId: listModules
+      tags: [learn]
+      summary: List published modules with the caller's progress
+      responses:
+        "200":
+          description: Modules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModuleSummary"
+
+  /learn/modules/{id}:
+    get:
+      operationId: getModule
+      tags: [learn]
+      summary: Get a module with its lessons and exam state
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Module detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModuleDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /learn/modules/{id}/exam/start:
+    post:
+      operationId: startModuleExam
+      tags: [learn]
+      summary: Start the final exam (requires every lesson finished)
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Exam started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamStartResponse"
+        "403":
+          description: Lessons not finished
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /learn/modules/{id}/exam/submit:
+    post:
+      operationId: submitModuleExam
+      tags: [learn]
+      summary: Submit final exam answers
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitTestBody"
+      responses:
+        "200":
+          description: Exam result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamResult"
+        "400":
+          description: Invalid session or duplicate answer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /learn/modules/{id}/certificate:
+    post:
+      operationId: issueCertificate
+      tags: [learn]
+      summary: Issue the certificate for a passed module
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IssueCertificateBody"
+      responses:
+        "200":
+          description: Certificate (already issued)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Certificate"
+        "201":
+          description: Certificate issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Certificate"
+        "403":
+          description: Exam not passed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /learn/certificates/{serial}:
+    get:
+      operationId: verifyCertificate
+      tags: [learn]
+      summary: Verify a certificate by its serial (public)
+      parameters:
+      - in: path
+        name: serial
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Certificate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CertificateVerification"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   # SCOREBOARD
   /scoreboard:
     get:
@@ -2429,6 +2588,229 @@ components:
         message:
           type: string
       required: [escapeCount, blocked, message]
+
+    ModuleSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        title:
+          type: string
+        titleUz:
+          type: string
+          nullable: true
+        titleRu:
+          type: string
+          nullable: true
+        description:
+          type: string
+        descriptionUz:
+          type: string
+          nullable: true
+        descriptionRu:
+          type: string
+          nullable: true
+        difficulty:
+          type: string
+        estimatedHours:
+          type: integer
+        passScore:
+          type: integer
+        lessonCount:
+          type: integer
+        completedCount:
+          type: integer
+        examBestScore:
+          type: integer
+        examPassed:
+          type: boolean
+        certificateSerial:
+          type: string
+          nullable: true
+      required: [id, slug, title, description, difficulty, estimatedHours, passScore, lessonCount, completedCount, examBestScore, examPassed]
+
+    ModuleLesson:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        titleUz:
+          type: string
+          nullable: true
+        titleRu:
+          type: string
+          nullable: true
+        points:
+          type: integer
+        orderIndex:
+          type: integer
+        isCompleted:
+          type: boolean
+      required: [id, title, points, orderIndex, isCompleted]
+
+    ModuleDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        title:
+          type: string
+        titleUz:
+          type: string
+          nullable: true
+        titleRu:
+          type: string
+          nullable: true
+        description:
+          type: string
+        descriptionUz:
+          type: string
+          nullable: true
+        descriptionRu:
+          type: string
+          nullable: true
+        difficulty:
+          type: string
+        estimatedHours:
+          type: integer
+        passScore:
+          type: integer
+        examQuestionCount:
+          type: integer
+        lessons:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModuleLesson"
+        completedCount:
+          type: integer
+        lessonCount:
+          type: integer
+        examUnlocked:
+          type: boolean
+        exam:
+          type: object
+          properties:
+            bestScore:
+              type: integer
+            passed:
+              type: boolean
+            attemptCount:
+              type: integer
+          required: [bestScore, passed, attemptCount]
+        certificateSerial:
+          type: string
+          nullable: true
+      required: [id, slug, title, description, difficulty, estimatedHours, passScore, examQuestionCount, lessons, completedCount, lessonCount, examUnlocked, exam]
+
+    # No correctOption: the server never sends the answers to the client.
+    ModuleQuestion:
+      type: object
+      properties:
+        id:
+          type: integer
+        question:
+          type: string
+        questionUz:
+          type: string
+          nullable: true
+        questionRu:
+          type: string
+          nullable: true
+        options:
+          type: array
+          items:
+            type: string
+        optionsUz:
+          type: array
+          nullable: true
+          items:
+            type: string
+        optionsRu:
+          type: array
+          nullable: true
+          items:
+            type: string
+      required: [id, question, options]
+
+    ExamStartResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        passScore:
+          type: integer
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModuleQuestion"
+      required: [sessionId, passScore, questions]
+
+    ExamResult:
+      type: object
+      properties:
+        score:
+          type: integer
+        correct:
+          type: integer
+        total:
+          type: integer
+        passScore:
+          type: integer
+        passed:
+          type: boolean
+        certificateAvailable:
+          type: boolean
+      required: [score, correct, total, passScore, passed, certificateAvailable]
+
+    IssueCertificateBody:
+      type: object
+      properties:
+        fullName:
+          type: string
+          description: The learner's name as it appears on their passport; printed on the certificate.
+      required: [fullName]
+
+    Certificate:
+      type: object
+      properties:
+        serial:
+          type: string
+        fullName:
+          type: string
+        score:
+          type: integer
+        issuedAt:
+          type: string
+          format: date-time
+      required: [serial, fullName, score, issuedAt]
+
+    CertificateVerification:
+      type: object
+      properties:
+        serial:
+          type: string
+        fullName:
+          type: string
+        score:
+          type: integer
+        issuedAt:
+          type: string
+          format: date-time
+        moduleTitle:
+          type: string
+        moduleTitleUz:
+          type: string
+          nullable: true
+        moduleTitleRu:
+          type: string
+          nullable: true
+      required: [serial, fullName, score, issuedAt, moduleTitle]
 
     # Scoreboard
     ScoreboardEntry:
