@@ -55,6 +55,8 @@ import mod03_web  # noqa: E402
 import mod04_crypto  # noqa: E402
 import mod05_recon  # noqa: E402
 import mod06_exploit  # noqa: E402
+import mod07_forensics  # noqa: E402
+import mod08_ctf  # noqa: E402
 
 MODULE_SOURCES = [
     mod01_linux,
@@ -63,6 +65,8 @@ MODULE_SOURCES = [
     mod04_crypto,
     mod05_recon,
     mod06_exploit,
+    mod07_forensics,
+    mod08_ctf,
 ]
 
 
