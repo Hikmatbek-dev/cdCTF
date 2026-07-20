@@ -1,8 +1,12 @@
 import { Router, type Request, type Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "@workspace/db";
-import { learnCategoriesTable, lessonsTable, lessonQuestionsTable, userLessonAttemptsTable } from "@workspace/db/schema";
-import { eq, and } from "drizzle-orm";
+import {
+  learnCategoriesTable, lessonsTable, lessonQuestionsTable, userLessonAttemptsTable,
+  modulesTable, moduleQuestionsTable, moduleExamAttemptsTable, certificatesTable,
+} from "@workspace/db/schema";
+import { eq, and, inArray, asc } from "drizzle-orm";
+import { randomBytes } from "node:crypto";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import { SubmitLessonTestBody } from "@workspace/api-zod";
@@ -257,5 +261,305 @@ router.post("/lessons/:id/test/escape", authenticateToken, reportTestEscapeHandl
 
 // Backward-compatible alias.
 router.post("/lessons/:id/escape", authenticateToken, reportTestEscapeHandler);
+
+// ===========================================================================
+// Modules: an ordered course of lessons, a final exam, and a certificate.
+// ===========================================================================
+
+/** Progress for one learner across a set of modules, in two queries not N. */
+async function moduleProgressFor(userId: number | undefined, moduleIds: number[]) {
+  const lessonsByModule = new Map<number, number[]>();
+  const completedByModule = new Map<number, number>();
+  const examByModule = new Map<number, { bestScore: number; passed: boolean }>();
+  const certByModule = new Map<number, string>();
+  if (moduleIds.length === 0) return { lessonsByModule, completedByModule, examByModule, certByModule };
+
+  const lessons = await db.select({ id: lessonsTable.id, moduleId: lessonsTable.moduleId })
+    .from(lessonsTable)
+    .where(and(eq(lessonsTable.isPublished, true), inArray(lessonsTable.moduleId, moduleIds)));
+  for (const l of lessons) {
+    if (l.moduleId == null) continue;
+    const list = lessonsByModule.get(l.moduleId) ?? [];
+    list.push(l.id);
+    lessonsByModule.set(l.moduleId, list);
+  }
+
+  if (userId) {
+    const lessonIds = lessons.map(l => l.id);
+    if (lessonIds.length > 0) {
+      const attempts = await db.select().from(userLessonAttemptsTable)
+        .where(and(eq(userLessonAttemptsTable.userId, userId), inArray(userLessonAttemptsTable.lessonId, lessonIds)));
+      const done = new Set(attempts.filter(a => a.completedAt).map(a => a.lessonId));
+      for (const [mid, ids] of lessonsByModule) {
+        completedByModule.set(mid, ids.filter(id => done.has(id)).length);
+      }
+    }
+    const exams = await db.select().from(moduleExamAttemptsTable)
+      .where(and(eq(moduleExamAttemptsTable.userId, userId), inArray(moduleExamAttemptsTable.moduleId, moduleIds)));
+    for (const e of exams) examByModule.set(e.moduleId, { bestScore: e.bestScore, passed: e.passed });
+
+    const certs = await db.select().from(certificatesTable)
+      .where(and(eq(certificatesTable.userId, userId), inArray(certificatesTable.moduleId, moduleIds)));
+    for (const c of certs) certByModule.set(c.moduleId, c.serial);
+  }
+  return { lessonsByModule, completedByModule, examByModule, certByModule };
+}
+
+// GET /api/learn/modules
+router.get("/modules", optionalAuth, async (req, res) => {
+  const modules = await db.select().from(modulesTable)
+    .where(eq(modulesTable.isPublished, true))
+    .orderBy(asc(modulesTable.orderIndex));
+  const userId = req.user?.userId;
+  const { lessonsByModule, completedByModule, examByModule, certByModule } =
+    await moduleProgressFor(userId, modules.map(m => m.id));
+
+  res.json(modules.map(m => ({
+    id: m.id, slug: m.slug,
+    title: m.title, titleUz: m.titleUz, titleRu: m.titleRu,
+    description: m.description, descriptionUz: m.descriptionUz, descriptionRu: m.descriptionRu,
+    difficulty: m.difficulty, estimatedHours: m.estimatedHours, passScore: m.passScore,
+    lessonCount: lessonsByModule.get(m.id)?.length ?? 0,
+    completedCount: completedByModule.get(m.id) ?? 0,
+    examBestScore: examByModule.get(m.id)?.bestScore ?? 0,
+    examPassed: examByModule.get(m.id)?.passed ?? false,
+    certificateSerial: certByModule.get(m.id) ?? null,
+  })));
+});
+
+// GET /api/learn/modules/:id
+router.get("/modules/:id", optionalAuth, async (req, res) => {
+  const moduleId = Number(req.params.id);
+  if (!Number.isInteger(moduleId) || moduleId <= 0) return res.status(400).json({ error: "Invalid module id" });
+
+  const [mod] = await db.select().from(modulesTable)
+    .where(and(eq(modulesTable.id, moduleId), eq(modulesTable.isPublished, true))).limit(1);
+  if (!mod) return res.status(404).json({ error: "Not found" });
+
+  const lessons = await db.select().from(lessonsTable)
+    .where(and(eq(lessonsTable.moduleId, moduleId), eq(lessonsTable.isPublished, true)))
+    .orderBy(asc(lessonsTable.orderIndex));
+
+  const userId = req.user?.userId;
+  const completed = new Set<number>();
+  if (userId && lessons.length > 0) {
+    const attempts = await db.select().from(userLessonAttemptsTable)
+      .where(and(eq(userLessonAttemptsTable.userId, userId), inArray(userLessonAttemptsTable.lessonId, lessons.map(l => l.id))));
+    for (const a of attempts) if (a.completedAt) completed.add(a.lessonId);
+  }
+
+  let exam = { bestScore: 0, passed: false, attemptCount: 0 };
+  let certificateSerial: string | null = null;
+  if (userId) {
+    const [e] = await db.select().from(moduleExamAttemptsTable)
+      .where(and(eq(moduleExamAttemptsTable.userId, userId), eq(moduleExamAttemptsTable.moduleId, moduleId))).limit(1);
+    if (e) exam = { bestScore: e.bestScore, passed: e.passed, attemptCount: e.attemptCount };
+    const [c] = await db.select().from(certificatesTable)
+      .where(and(eq(certificatesTable.userId, userId), eq(certificatesTable.moduleId, moduleId))).limit(1);
+    certificateSerial = c?.serial ?? null;
+  }
+
+  const examQuestionCount = (await db.select({ id: moduleQuestionsTable.id }).from(moduleQuestionsTable)
+    .where(eq(moduleQuestionsTable.moduleId, moduleId))).length;
+
+  res.json({
+    id: mod.id, slug: mod.slug,
+    title: mod.title, titleUz: mod.titleUz, titleRu: mod.titleRu,
+    description: mod.description, descriptionUz: mod.descriptionUz, descriptionRu: mod.descriptionRu,
+    difficulty: mod.difficulty, estimatedHours: mod.estimatedHours, passScore: mod.passScore,
+    examQuestionCount,
+    lessons: lessons.map(l => ({
+      id: l.id, title: l.title, titleUz: l.titleUz, titleRu: l.titleRu,
+      points: l.points, orderIndex: l.orderIndex, isCompleted: completed.has(l.id),
+    })),
+    completedCount: completed.size,
+    lessonCount: lessons.length,
+    // Every lesson done is the gate for sitting the exam.
+    examUnlocked: lessons.length > 0 && completed.size === lessons.length,
+    exam, certificateSerial,
+  });
+});
+
+// POST /api/learn/modules/:id/exam/start
+router.post("/modules/:id/exam/start", authenticateToken, async (req, res) => {
+  const moduleId = Number(req.params.id);
+  const userId = req.user!.userId;
+  if (!Number.isInteger(moduleId) || moduleId <= 0) return res.status(400).json({ error: "Invalid module id" });
+
+  const [mod] = await db.select().from(modulesTable)
+    .where(and(eq(modulesTable.id, moduleId), eq(modulesTable.isPublished, true))).limit(1);
+  if (!mod) return res.status(404).json({ error: "Not found" });
+
+  const lessons = await db.select({ id: lessonsTable.id }).from(lessonsTable)
+    .where(and(eq(lessonsTable.moduleId, moduleId), eq(lessonsTable.isPublished, true)));
+  if (lessons.length === 0) return res.status(400).json({ error: "Module has no lessons yet" });
+
+  // The exam is the end of the course, so it opens only once every lesson in it
+  // is finished. Checked on the server: the button being hidden is not a rule.
+  const attempts = await db.select().from(userLessonAttemptsTable)
+    .where(and(eq(userLessonAttemptsTable.userId, userId), inArray(userLessonAttemptsTable.lessonId, lessons.map(l => l.id))));
+  const done = attempts.filter(a => a.completedAt).length;
+  if (done < lessons.length) {
+    return res.status(403).json({ error: `Finish all ${lessons.length} lessons first (${done} done)` });
+  }
+
+  const questions = await db.select().from(moduleQuestionsTable)
+    .where(eq(moduleQuestionsTable.moduleId, moduleId))
+    .orderBy(asc(moduleQuestionsTable.orderIndex));
+  if (questions.length === 0) return res.status(400).json({ error: "Module has no exam yet" });
+
+  const sessionId = uuidv4();
+  const [existing] = await db.select().from(moduleExamAttemptsTable)
+    .where(and(eq(moduleExamAttemptsTable.userId, userId), eq(moduleExamAttemptsTable.moduleId, moduleId))).limit(1);
+
+  if (existing) {
+    await db.update(moduleExamAttemptsTable).set({
+      attemptCount: existing.attemptCount + 1, examSessionId: sessionId, examStartedAt: new Date(), updatedAt: new Date(),
+    }).where(eq(moduleExamAttemptsTable.id, existing.id));
+  } else {
+    await db.insert(moduleExamAttemptsTable).values({
+      userId, moduleId, attemptCount: 1, examSessionId: sessionId, examStartedAt: new Date(),
+    });
+  }
+
+  res.json({
+    sessionId,
+    passScore: mod.passScore,
+    // correctOption is deliberately absent: the client must not hold the answers.
+    questions: questions.map(q => ({
+      id: q.id,
+      question: q.question, questionUz: q.questionUz, questionRu: q.questionRu,
+      options: q.options, optionsUz: q.optionsUz, optionsRu: q.optionsRu,
+    })),
+  });
+});
+
+// POST /api/learn/modules/:id/exam/submit
+router.post("/modules/:id/exam/submit", authenticateToken, async (req, res) => {
+  const moduleId = Number(req.params.id);
+  const userId = req.user!.userId;
+  const { sessionId, answers } = req.body as { sessionId?: string; answers?: Array<{ questionId: number; selectedOption: number }> };
+
+  if (!Number.isInteger(moduleId) || moduleId <= 0) return res.status(400).json({ error: "Invalid module id" });
+  if (typeof sessionId !== "string" || !Array.isArray(answers)) return res.status(400).json({ error: "Invalid exam payload" });
+
+  const [mod] = await db.select().from(modulesTable).where(eq(modulesTable.id, moduleId)).limit(1);
+  if (!mod) return res.status(404).json({ error: "Not found" });
+
+  const questions = await db.select().from(moduleQuestionsTable).where(eq(moduleQuestionsTable.moduleId, moduleId));
+  if (questions.length === 0) return res.status(400).json({ error: "Module has no exam" });
+  const questionMap = new Map(questions.map(q => [q.id, q]));
+
+  // Same rule as the lesson test: collapse to one answer per question before
+  // scoring, or a client can send every option for every question and score 100%.
+  const answerByQuestion = new Map<number, number>();
+  for (const answer of answers) {
+    if (typeof answer !== "object" || answer === null) return res.status(400).json({ error: "Invalid answer" });
+    const { questionId, selectedOption } = answer;
+    if (!Number.isInteger(questionId) || !Number.isInteger(selectedOption)) return res.status(400).json({ error: "Invalid answer" });
+    if (!questionMap.has(questionId)) return res.status(400).json({ error: "Answer does not belong to this exam" });
+    if (answerByQuestion.has(questionId)) return res.status(400).json({ error: "Duplicate answer for a question" });
+    answerByQuestion.set(questionId, selectedOption);
+  }
+
+  const outcome = await db.transaction(async tx => {
+    const [attempt] = await tx.select().from(moduleExamAttemptsTable)
+      .where(and(eq(moduleExamAttemptsTable.userId, userId), eq(moduleExamAttemptsTable.moduleId, moduleId)))
+      .limit(1).for("update");
+    if (!attempt || attempt.examSessionId !== sessionId) return { status: 400, data: { error: "Invalid session" } };
+
+    let correct = 0;
+    for (const [questionId, selectedOption] of answerByQuestion) {
+      if (questionMap.get(questionId)!.correctOption === selectedOption) correct++;
+    }
+    const score = Math.round((correct / questions.length) * 100);
+    const passed = score >= mod.passScore;
+
+    await tx.update(moduleExamAttemptsTable).set({
+      // Best score, so a weaker retake cannot take away a pass already earned.
+      bestScore: Math.max(attempt.bestScore, score),
+      passed: attempt.passed || passed,
+      passedAt: attempt.passedAt ?? (passed ? new Date() : null),
+      examSessionId: null,
+      updatedAt: new Date(),
+    }).where(eq(moduleExamAttemptsTable.id, attempt.id));
+
+    return {
+      status: 200,
+      data: {
+        score, correct, total: questions.length, passScore: mod.passScore, passed,
+        certificateAvailable: passed || attempt.passed,
+      },
+    };
+  });
+
+  res.status(outcome.status).json(outcome.data);
+});
+
+// POST /api/learn/modules/:id/certificate
+router.post("/modules/:id/certificate", authenticateToken, async (req, res) => {
+  const moduleId = Number(req.params.id);
+  const userId = req.user!.userId;
+  const fullNameRaw = (req.body as { fullName?: unknown })?.fullName;
+
+  if (!Number.isInteger(moduleId) || moduleId <= 0) return res.status(400).json({ error: "Invalid module id" });
+  if (typeof fullNameRaw !== "string") return res.status(400).json({ error: "Full name is required" });
+  const fullName = fullNameRaw.trim().replace(/\s+/g, " ");
+  // Printed on the certificate, so it has to be a plausible legal name rather
+  // than a handle. Letters, spaces, hyphens and apostrophes, any alphabet.
+  if (fullName.length < 3 || fullName.length > 80) {
+    return res.status(400).json({ error: "Full name must be 3-80 characters" });
+  }
+  if (!/^[\p{L}][\p{L}\s'-]*$/u.test(fullName)) {
+    return res.status(400).json({ error: "Full name may only contain letters, spaces, hyphens and apostrophes" });
+  }
+
+  const [mod] = await db.select().from(modulesTable).where(eq(modulesTable.id, moduleId)).limit(1);
+  if (!mod) return res.status(404).json({ error: "Not found" });
+
+  const [attempt] = await db.select().from(moduleExamAttemptsTable)
+    .where(and(eq(moduleExamAttemptsTable.userId, userId), eq(moduleExamAttemptsTable.moduleId, moduleId))).limit(1);
+  if (!attempt?.passed) {
+    return res.status(403).json({ error: `You need at least ${mod.passScore}% on the exam to earn a certificate` });
+  }
+
+  const [existing] = await db.select().from(certificatesTable)
+    .where(and(eq(certificatesTable.userId, userId), eq(certificatesTable.moduleId, moduleId))).limit(1);
+  if (existing) {
+    // Re-issuing only corrects the printed name; the serial and score stand.
+    if (existing.fullName !== fullName) {
+      await db.update(certificatesTable).set({ fullName }).where(eq(certificatesTable.id, existing.id));
+    }
+    return res.json({ serial: existing.serial, fullName, score: existing.score, issuedAt: existing.issuedAt });
+  }
+
+  const serial = `CDCTF-${randomBytes(5).toString("hex").toUpperCase()}`;
+  const [created] = await db.insert(certificatesTable)
+    .values({ serial, userId, moduleId, fullName, score: attempt.bestScore })
+    .returning();
+  res.status(201).json({ serial: created.serial, fullName: created.fullName, score: created.score, issuedAt: created.issuedAt });
+});
+
+// GET /api/learn/certificates/:serial — public, so a certificate can be checked
+// by anyone the holder shows it to.
+router.get("/certificates/:serial", async (req, res) => {
+  const serial = String(req.params.serial || "").trim().toUpperCase();
+  if (!/^CDCTF-[A-F0-9]{10}$/.test(serial)) return res.status(400).json({ error: "Invalid certificate serial" });
+
+  const [cert] = await db.select().from(certificatesTable).where(eq(certificatesTable.serial, serial)).limit(1);
+  if (!cert) return res.status(404).json({ error: "Certificate not found" });
+
+  const [mod] = await db.select().from(modulesTable).where(eq(modulesTable.id, cert.moduleId)).limit(1);
+  // Only what a verifier needs — no user id, no email.
+  res.json({
+    serial: cert.serial,
+    fullName: cert.fullName,
+    score: cert.score,
+    issuedAt: cert.issuedAt,
+    moduleTitle: mod?.title ?? "",
+    moduleTitleUz: mod?.titleUz ?? null,
+    moduleTitleRu: mod?.titleRu ?? null,
+  });
+});
 
 export default router;
