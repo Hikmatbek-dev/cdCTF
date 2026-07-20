@@ -146,8 +146,8 @@ export default function LoginPage() {
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-[2rem] bg-gradient-to-br from-primary/20 to-accent/20 border border-foreground/10 mb-8 animate-float shadow-2xl backdrop-blur-md">
               <Shield className="w-10 h-10 text-primary" />
             </div>
-            <h1 className="text-4xl font-black tracking-tighter uppercase leading-none mb-4">{t("AUTHENTICATE", "KIRISH", "АУТЕНТИФИКАЦИЯ")}</h1>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60">{t("SECURE GATEWAY_01 // ACCESS REQUIRED", "XAVFSIZLIK DARVOZASI_01 // RUXSAT KERAK", "ЗАЩИЩЕННЫЙ ШЛЮЗ_01")}</p>
+            <h1 className="text-3xl font-bold tracking-tight mb-2">{t("Sign in", "Kirish", "Вход")}</h1>
+            <p className="text-sm text-muted-foreground">{t("Welcome back to cdCTF.", "cdCTF'ga xush kelibsiz.", "С возвращением в cdCTF.")}</p>
           </div>
         </ScaleIn>
 
@@ -222,7 +222,7 @@ export default function LoginPage() {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <FormField control={form.control} name="nickname" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">{t("OPERATIVE_ID", "TAXALLUS", "НИКНЕЙМ")}</FormLabel>
+                    <FormLabel className="text-sm font-medium text-muted-foreground ml-1">{t("Nickname", "Taxallus", "Никнейм")}</FormLabel>
                     <div className="relative">
                       <User aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/40" />
                       <FormControl>
@@ -241,9 +241,9 @@ export default function LoginPage() {
                 <FormField control={form.control} name="password" render={({ field }) => (
                   <FormItem>
                     <div className="flex items-center justify-between ml-1 mb-2">
-                      <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t("ACCESS_KEY", "PAROL", "ПАРОЛЬ")}</FormLabel>
-                      <Link href="/forgot-password" className="text-[9px] font-black uppercase tracking-widest text-primary hover:text-accent transition-colors">
-                        {t("LOST_KEY?", "UNUTDINGIZMI?", "ЗАБЫЛИ ПАРОЛЬ?")}
+                      <FormLabel className="text-sm font-medium text-muted-foreground">{t("Password", "Parol", "Пароль")}</FormLabel>
+                      <Link href="/forgot-password" className="text-xs font-medium text-primary hover:text-accent transition-colors">
+                        {t("Forgot?", "Unutdingizmi?", "Забыли?")}
                       </Link>
                     </div>
                     <div className="relative">
@@ -263,14 +263,14 @@ export default function LoginPage() {
                   </FormItem>
                 )} />
                 
-                <Button 
-                  type="submit" 
-                  className="cyber-button w-full h-16 group" 
-                  disabled={loginMutation.isPending} 
+                <Button
+                  type="submit"
+                  className="cyber-button w-full h-12 group"
+                  disabled={loginMutation.isPending}
                   data-testid="button-submit-login"
                 >
-                  <span className="flex items-center justify-center gap-3">
-                    {loginMutation.isPending ? t("AUTHENTICATING...", "KIRILMOQDA...", "ВХОД...") : t("SIGN_IN", "KIRISH", "ВОЙТИ")}
+                  <span className="flex items-center justify-center gap-2">
+                    {loginMutation.isPending ? t("Signing in…", "Kirilmoqda…", "Вход…") : t("Sign in", "Kirish", "Войти")}
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </span>
                 </Button>
@@ -281,8 +281,8 @@ export default function LoginPage() {
             {/* Only rendered for providers the server actually has keys for. */}
             {!mfaToken && (api.passkeysSupported() || (providers.data?.providers.length ?? 0) > 0) && (
               <div className="mt-8 pt-8 border-t border-foreground/5">
-                <p className="text-center text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 mb-4">
-                  {t("OR_CONTINUE_WITH", "YOKI DAVOM ETING", "ИЛИ ВОЙДИТЕ ЧЕРЕЗ")}
+                <p className="text-center text-xs text-muted-foreground mb-4">
+                  {t("or continue with", "yoki davom eting", "или войдите через")}
                 </p>
 
                 {/* Hidden entirely on browsers without WebAuthn. */}
@@ -292,12 +292,12 @@ export default function LoginPage() {
                     onClick={() => passkeyMutation.mutate()}
                     disabled={passkeyMutation.isPending}
                     data-testid="button-passkey"
-                    className="w-full h-12 mb-3 rounded-2xl bg-foreground/5 border border-foreground/5 hover:border-primary/40 hover:bg-foreground/10 transition-all text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground flex items-center justify-center gap-2"
+                    className="w-full h-11 mb-3 rounded-lg bg-muted border border-border hover:border-primary/40 transition-colors text-sm font-medium text-muted-foreground hover:text-foreground flex items-center justify-center gap-2"
                   >
                     <Fingerprint className="w-4 h-4" aria-hidden="true" />
                     {passkeyMutation.isPending
-                      ? t("WAITING...", "KUTILMOQDA...", "ОЖИДАНИЕ...")
-                      : t("PASSKEY", "PASSKEY", "PASSKEY")}
+                      ? t("Waiting…", "Kutilmoqda…", "Ожидание…")
+                      : t("Passkey", "Passkey", "Passkey")}
                   </button>
                 )}
                 {(providers.data?.providers.length ?? 0) > 0 && (
@@ -322,16 +322,16 @@ export default function LoginPage() {
 
         <FadeIn delay={0.4}>
           <div className="mt-10 space-y-4">
-            <p className="text-center text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">
-              {t("NEW_OPERATIVE?", "HISOBINGIZ YO'QMI?", "НЕТ АККАУНТА?")}{" "}
-              <Link href="/register" className="text-primary hover:text-accent transition-colors underline underline-offset-8" data-testid="link-register">
-                {t("ENLIST_NOW", "RO'YXATDAN O'TING", "ЗАРЕГИСТРИРОВАТЬСЯ")}
+            <p className="text-center text-sm text-muted-foreground">
+              {t("No account?", "Hisobingiz yo'qmi?", "Нет аккаунта?")}{" "}
+              <Link href="/register" className="text-primary hover:text-accent transition-colors font-medium" data-testid="link-register">
+                {t("Sign up", "Ro'yxatdan o'ting", "Зарегистрироваться")}
               </Link>
             </p>
-            <p className="text-center text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/20 leading-relaxed max-w-[280px] mx-auto">
-              {t("VERIFICATION_REQUIRED_FOR_NEW_RECRUITS.", "YANGI HISOBLAR TASDIQLANISHI KERAK.", "ТРЕБУЕТСЯ ПОДТВЕРЖДЕНИЕ EMAIL.")}{" "}
+            <p className="text-center text-xs text-muted-foreground/70 leading-relaxed max-w-[300px] mx-auto">
+              {t("New accounts need email verification.", "Yangi hisoblar tasdiqlanishi kerak.", "Требуется подтверждение email.")}{" "}
               <Link href="/resend-verification" className="text-primary hover:text-accent transition-colors">
-                {t("RESEND_COMMS", "QAYTA YUBORISH", "ОТПРАВИТЬ")}
+                {t("Resend", "Qayta yuborish", "Отправить")}
               </Link>
             </p>
           </div>
