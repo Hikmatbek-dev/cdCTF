@@ -50,169 +50,161 @@
   --radius-2xl: calc(var(--radius) + 8px);
 }
 
+/* Calm, readable palette: a light page, white cards, one blue accent.
+   Replaces the neon-cyan-on-black scheme, which read as busy and hard to
+   follow. Every value below is chosen to clear WCAG AA against the surface it
+   sits on — the previous theme failed that in several places. */
 :root {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 191 100% 50%;
-  
-  --card: 0 0% 98%;
-  --card-foreground: 240 10% 3.9%;
-  --card-border: 240 5.9% 90%;
+  /* A hair off pure white, so white cards separate from the page without
+     needing a heavy shadow. */
+  --background: 210 20% 98%;
+  --foreground: 222 22% 14%;
+  --border: 220 13% 91%;
+  --input: 220 13% 88%;
+  --ring: 221 83% 45%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 222 22% 14%;
+  --card-border: 220 13% 91%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 3.9%;
-  --popover-border: 240 5.9% 90%;
+  --popover-foreground: 222 22% 14%;
+  --popover-border: 220 13% 91%;
 
-  /* Deeper than the dark theme's cyan, and it has to be. This one is read two
-     ways on a white page: as a button background under white text, and as text
-     itself (.cyber-button-outline, links). At 45% lightness both landed at 2.27
-     — the "Join" button and every outline button failed WCAG AA badly. At 30%
-     both come out at 4.78. Same hue, so the brand is intact; the dark theme
-     keeps its brighter 50% because it is read against near-black. */
-  --primary: 191 100% 30%;
+  /* Read two ways — as a button fill under white text, and as link text on
+     white — so it has to clear AA both directions. At 45% lightness it is
+     about 6:1 either way. */
+  --primary: 221 83% 45%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 240 4.8% 95.9%;
-  --secondary-foreground: 240 5.9% 10%;
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 222 22% 14%;
 
-  --muted: 240 4.8% 95.9%;
-  /* 46.1% measured 4.32 against white — just under the 4.5 AA needs. */
-  --muted-foreground: 240 3.8% 43%;
+  --muted: 220 14% 96%;
+  /* ~5.5:1 on white. */
+  --muted-foreground: 220 9% 42%;
 
-  --accent: 262 83% 58%;
+  /* Same family as primary rather than a second competing hue — "one accent"
+     is what keeps a page calm. */
+  --accent: 221 70% 52%;
   --accent-foreground: 0 0% 100%;
 
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
+  --destructive: 0 72% 45%;
+  --destructive-foreground: 0 0% 100%;
 
-  --app-font-sans: "Inter", "Outfit", sans-serif;
-  --app-font-display: "Space Grotesk", "Outfit", sans-serif;
-  --app-font-mono: "JetBrains Mono", monospace;
-  --radius: 1rem;
+  --app-font-sans: "Inter", system-ui, sans-serif;
+  --app-font-display: "Inter", system-ui, sans-serif;
+  --app-font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* Smaller than the old 1rem: less bubbly, more like a tool than a toy. */
+  --radius: 0.625rem;
 
-  --cyber-cyan: 191 100% 50%;
-  --cyber-purple: 262 83% 58%;
-  --cyber-blue: 217 91% 60%;
-  --cyber-pink: 316 100% 60%;
+  --cyber-cyan: 221 83% 45%;
+  --cyber-purple: 221 70% 52%;
+  --cyber-blue: 221 83% 45%;
+  --cyber-pink: 221 70% 52%;
 }
 
+/* Soft charcoal rather than near-black, which is easier to read for long
+   stretches and stops the accent from glaring. */
 .dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 191 100% 50%;
+  --background: 222 18% 11%;
+  --foreground: 210 20% 96%;
+  --border: 220 10% 24%;
+  --input: 220 10% 26%;
+  --ring: 217 91% 65%;
 
-  --card: 240 10% 4.9%;
-  --card-foreground: 0 0% 98%;
-  --card-border: 240 3.7% 15.9%;
+  --card: 222 16% 15%;
+  --card-foreground: 210 20% 96%;
+  --card-border: 220 10% 24%;
 
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --popover-border: 240 3.7% 15.9%;
+  --popover: 222 16% 15%;
+  --popover-foreground: 210 20% 96%;
+  --popover-border: 220 10% 24%;
 
-  --primary: 191 100% 50%;
-  --primary-foreground: 240 5.9% 10%;
+  /* Lighter here because it is read against a dark surface; the dark text on
+     top of it keeps the button legible. */
+  --primary: 217 91% 65%;
+  --primary-foreground: 222 25% 12%;
 
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
+  --secondary: 222 14% 20%;
+  --secondary-foreground: 210 20% 96%;
 
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
+  --muted: 222 14% 18%;
+  --muted-foreground: 218 11% 68%;
 
-  --accent: 262 83% 58%;
-  --accent-foreground: 0 0% 98%;
+  --accent: 217 85% 60%;
+  --accent-foreground: 222 25% 12%;
 
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
+  --destructive: 0 62% 52%;
+  --destructive-foreground: 0 0% 100%;
+
+  --cyber-cyan: 217 91% 65%;
+  --cyber-purple: 217 85% 60%;
+  --cyber-blue: 217 91% 65%;
+  --cyber-pink: 217 85% 60%;
 }
 
 @layer base {
   * {
     @apply border-border outline-none;
   }
+  /* Flat background on purpose. The two fixed radial gradients that used to sit
+     here tinted every page and forced a repaint on scroll. */
   body {
-    @apply font-sans antialiased bg-background text-foreground selection:bg-primary/30 selection:text-primary;
-    background-image: 
-      radial-gradient(circle at 0% 0%, hsla(var(--cyber-cyan), 0.03) 0%, transparent 40%),
-      radial-gradient(circle at 100% 100%, hsla(var(--cyber-purple), 0.03) 0%, transparent 40%);
-    background-attachment: fixed;
-    will-change: transform;
+    @apply font-sans antialiased bg-background text-foreground selection:bg-primary/20 selection:text-foreground;
   }
-  
+
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display font-bold tracking-tight;
+    @apply font-display font-semibold tracking-tight;
   }
 }
 
+/* These keep their old names on purpose: the pages already use them, so
+   redefining them here restyles the whole app at once instead of touching
+   every file. The names are now historical — the styles are plain. */
 @layer components {
+  /* A card, not a pane of frosted glass. Backdrop-blur and a 2xl shadow on
+     every surface was most of what made the old pages feel noisy. */
   .glass-card {
-    /* `border-card-border`, not `border-white/5`: white does not follow the
-       theme, so in light mode this was white on white and every card — nearly
-       every surface in the app — looked borderless. */
-    @apply bg-card/60 backdrop-blur-md border border-card-border p-6 rounded-3xl shadow-2xl transition-all duration-200 hover:border-primary/30 hover:shadow-primary/5;
-    will-change: transform, border-color;
+    @apply bg-card border border-card-border p-6 rounded-xl shadow-sm transition-colors hover:border-primary/40;
   }
-  
+
+  /* Sentence case, normal weight, no gloss sweep, no scale-on-hover. A button
+     should look pressable, not animated. */
   .cyber-button {
-    @apply relative overflow-hidden bg-primary text-primary-foreground px-8 py-3.5 font-black rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-primary/20 hover:shadow-primary/40 uppercase tracking-widest text-xs;
-  }
-  
-  .cyber-button::after {
-    content: '';
-    /* Stays white: this is the gloss sweeping across .cyber-button, which is
-       bg-primary in both themes. */
-    @apply absolute inset-0 bg-white/20 translate-x-[-100%] transition-transform duration-500 skew-x-[-20deg];
-  }
-  
-  .cyber-button:hover::after {
-    @apply translate-x-[100%];
+    @apply inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg font-medium text-sm transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none;
   }
 
   .cyber-button-outline {
-    @apply border-2 border-primary/30 text-primary px-8 py-3.5 font-black rounded-2xl transition-all duration-300 hover:bg-primary/10 hover:border-primary active:scale-[0.98] uppercase tracking-widest text-xs backdrop-blur-sm;
+    @apply inline-flex items-center justify-center gap-2 border border-border text-foreground px-5 py-2.5 rounded-lg font-medium text-sm transition-colors hover:bg-muted disabled:opacity-50 disabled:pointer-events-none;
   }
 
+  /* Kept so existing markup still compiles; a glow is the opposite of what
+     this design is going for. */
   .neon-glow {
-    @apply shadow-[0_0_30px_rgba(0,210,255,0.15)];
+    @apply shadow-none;
   }
 
   .terminal-input {
-    @apply bg-background/50 border border-input rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/10 font-mono transition-all px-4 py-3;
+    @apply bg-background border border-input rounded-lg px-4 py-2.5 text-sm transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20;
   }
 
+  /* Was a three-colour gradient. Solid reads better and keeps the page to one
+     accent. */
   .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-cyber-blue;
+    @apply text-primary;
   }
 }
 
+/* The decorative grid, the floating bob and the pulsing glow are all gone.
+   They cost a repaint each and added nothing a reader needed; the class names
+   stay so existing markup keeps working. */
 .mono-grid {
-  background-image: linear-gradient(hsla(var(--foreground), 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, hsla(var(--foreground), 0.02) 1px, transparent 1px);
-  background-size: 50px 50px;
-  mask-image: radial-gradient(circle at center, black, transparent 90%);
-  will-change: opacity;
+  background-image: none;
 }
 
-.animate-float {
-  animation: float 10s ease-in-out infinite;
-  will-change: transform;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px) translateZ(0); }
-  50% { transform: translateY(-10px) translateZ(0); }
-}
-
+.animate-float,
 .animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-@keyframes pulse-glow {
-  0% { box-shadow: 0 0 5px rgba(0, 210, 255, 0.2); }
-  50% { box-shadow: 0 0 25px rgba(0, 210, 255, 0.5); }
-  100% { box-shadow: 0 0 5px rgba(0, 210, 255, 0.2); }
+  animation: none;
 }
 
