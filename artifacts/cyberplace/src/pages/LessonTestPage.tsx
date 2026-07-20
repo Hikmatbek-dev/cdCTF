@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRoute, useLocation } from "wouter";
-import { AlertTriangle, Timer, CheckCircle2, XCircle } from "lucide-react";
+import { AlertTriangle, Timer, CheckCircle2, XCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useLang } from "@/lib/LanguageContext";
@@ -203,33 +203,41 @@ export default function LessonTestPage() {
     const percentage = Math.round(result.score * 100);
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="text-center max-w-sm">
-          {result.passed ? (
-            <CheckCircle2 className="w-14 h-14 text-primary mx-auto mb-4" />
-          ) : (
-            <XCircle className="w-14 h-14 text-destructive mx-auto mb-4" />
-          )}
+        <div className="glass-card text-center max-w-sm w-full">
+          <div className={`w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center ${result.passed ? "bg-primary/15 border border-primary/25 neon-glow" : "bg-destructive/10 border border-destructive/25"}`}>
+            {result.passed
+              ? <CheckCircle2 className="w-8 h-8 text-primary" />
+              : <XCircle className="w-8 h-8 text-destructive" />}
+          </div>
           <h2 className="text-2xl font-bold mb-1">
-            {result.passed ? t("Passed!", "O'tdingiz!", "Сдано!") : t("Failed", "Muvaffaqiyatsiz", "Провалено")}
+            {result.passed ? t("Passed!", "O'tdingiz!", "Сдано!") : t("Not this time", "Bu safar emas", "Не в этот раз")}
           </h2>
-          <p className="text-4xl font-mono font-bold text-primary mb-2">{percentage}%</p>
+          <p className={`text-5xl font-mono font-bold mb-2 ${result.passed ? "gradient-text" : "text-destructive"}`}>{percentage}%</p>
           <p className="text-sm text-muted-foreground mb-2">
             {result.correctCount}/{result.totalCount} {t("correct", "to'g'ri", "правильно")}
           </p>
           {result.passed && result.pointsEarned > 0 && (
-            <p className="text-sm font-medium text-primary mb-4">+{result.pointsEarned} pts</p>
+            <p className="text-sm font-semibold text-primary mb-4">+{result.pointsEarned} {t("pts", "ball", "очков")}</p>
           )}
           {!result.passed && attemptsLeft > 0 && (
             <p className="text-xs text-muted-foreground mb-4">{attemptsLeft} {t("attempts remaining", "urinish qoldi", "попыток осталось")}</p>
           )}
-          <div className="flex gap-2 justify-center">
-            <Button variant="outline" onClick={() => setLocation(`/learn/${id}`)}>
-              {t("Back to Lesson", "Darsga Qaytish", "К уроку")}
-            </Button>
-            {!result.passed && attemptsLeft > 0 && (
-              <Button onClick={() => { setResult(null); setAnswers({}); setLoading(true); startTest.mutate({ id }, { onSuccess: (res) => { setSessionId(res.sessionId); setQuestions(normalizeArray<TestQuestion>(res.questions, ["questions", "data", "items"])); setAttemptsLeft(res.attemptsLeft); setLoading(false); } }); }}>
-                {t("Try Again", "Qayta Urinish", "Попробовать снова")}
-              </Button>
+          <div className="flex gap-2 justify-center mt-5">
+            {result.passed ? (
+              <button onClick={() => setLocation(`/learn/${id}`)} className="cyber-button h-11 px-6">
+                {t("Continue", "Davom etish", "Продолжить")} <ArrowRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setLocation(`/learn/${id}`)}>
+                  {t("Back to lesson", "Darsga qaytish", "К уроку")}
+                </Button>
+                {attemptsLeft > 0 && (
+                  <Button onClick={() => { setResult(null); setAnswers({}); setLoading(true); startTest.mutate({ id }, { onSuccess: (res) => { setSessionId(res.sessionId); setQuestions(normalizeArray<TestQuestion>(res.questions, ["questions", "data", "items"])); setAttemptsLeft(res.attemptsLeft); setLoading(false); } }); }}>
+                    {t("Try again", "Qayta urinish", "Ещё раз")}
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </div>

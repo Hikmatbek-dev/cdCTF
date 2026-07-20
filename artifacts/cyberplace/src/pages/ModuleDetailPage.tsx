@@ -1,5 +1,5 @@
 import { Link, useRoute } from "wouter";
-import { ArrowLeft, CheckCircle2, Circle, Clock, Award, Lock, FileText } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Clock, Award, Lock, FileText, Play, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -69,6 +69,9 @@ export default function ModuleDetailPage() {
 
   const percent = mod.lessonCount > 0 ? Math.round((mod.completedCount / mod.lessonCount) * 100) : 0;
   const remaining = mod.lessonCount - mod.completedCount;
+  // Resume target: the first lesson not yet completed, else the first lesson.
+  const resumeLesson = mod.lessons.find(l => !l.isCompleted) ?? mod.lessons[0];
+  const started = mod.completedCount > 0;
 
   return (
     <div className="min-h-screen bg-background text-foreground pt-28 pb-24">
@@ -107,14 +110,25 @@ export default function ModuleDetailPage() {
           </div>
         </header>
 
-        <div className="border border-border rounded-xl p-5 bg-card mb-8">
+        <div className="glass-card mb-8">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium">{t("Your progress", "Sizning natijangiz", "Ваш прогресс")}</span>
             <span className="text-sm text-muted-foreground tabular-nums">
-              {mod.completedCount}/{mod.lessonCount}
+              {mod.completedCount}/{mod.lessonCount} · {percent}%
             </span>
           </div>
-          <Progress value={percent} className="h-2" />
+          <Progress value={percent} className="h-2 mb-5" />
+          {resumeLesson && !mod.certificateSerial && (
+            <Link href={`/learn/${resumeLesson.id}`}>
+              <button className="cyber-button h-11 px-6 w-full sm:w-auto" data-testid="button-resume-module">
+                <Play className="w-4 h-4 fill-current" />
+                {started
+                  ? t("Continue learning", "O'rganishni davom ettirish", "Продолжить обучение")
+                  : t("Start the first lesson", "Birinchi darsni boshlash", "Начать первый урок")}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </Link>
+          )}
         </div>
 
         <section className="mb-8">

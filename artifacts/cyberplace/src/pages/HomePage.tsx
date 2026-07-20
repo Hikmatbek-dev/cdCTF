@@ -14,8 +14,8 @@ export default function HomePage() {
   const moduleCount = normalizeArray<{ id: number }>(modulesData, ["id"]).length;
 
   const stats = [
-    { value: moduleCount > 0 ? `${moduleCount}` : "6", label: t("modules", "modul", "модулей") },
-    { value: "48+", label: t("lessons", "dars", "уроков") },
+    { value: moduleCount > 0 ? `${moduleCount}` : "8", label: t("modules", "modul", "модулей") },
+    { value: "64+", label: t("lessons", "dars", "уроков") },
     { value: "40+", label: t("CTF challenges", "CTF topshiriq", "CTF заданий") },
     { value: "3", label: t("languages", "til", "языка") },
   ];
@@ -25,9 +25,9 @@ export default function HomePage() {
       icon: GraduationCap,
       title: t("A structured path", "Tuzilgan yo'l", "Структурированный путь"),
       desc: t(
-        "A six-month curriculum from the shell to a full attack chain — Linux, networking, web, crypto, recon, exploitation. In order, one skill at a time.",
-        "Shelldan to'liq hujum zanjirigacha 6 oylik dastur — Linux, tarmoq, veb, kriptografiya, razvedka, ekspluatatsiya. Ketma-ketlikda.",
-        "Шестимесячная программа от оболочки до полной цепочки атаки — Linux, сети, веб, крипто, разведка, эксплуатация.",
+        "Eight modules from the shell to full attack chains, forensics and CTF play — Linux, networking, web, crypto, recon, exploitation, DFIR, competition. In order, one skill at a time.",
+        "Shelldan to'liq hujum zanjiri, forenzika va CTF'gacha sakkiz modul — Linux, tarmoq, veb, kriptografiya, razvedka, ekspluatatsiya, forenzika, musobaqa. Ketma-ketlikda.",
+        "Восемь модулей от оболочки до полных цепочек атаки, форензики и CTF — Linux, сети, веб, крипто, разведка, эксплуатация, DFIR, соревнования.",
       ),
     },
     {
@@ -137,7 +137,7 @@ export default function HomePage() {
                 <div className="min-w-0">
                   <div className="eyebrow mb-1">{t("The curriculum", "O'quv dasturi", "Программа")}</div>
                   <h3 className="text-base font-semibold group-hover:text-primary transition-colors">
-                    {t("Six modules, beginner to advanced — start now", "Olti modul, boshlang'ichdan ilg'orgacha — hoziroq boshlang", "Шесть модулей, от новичка до продвинутого — начните сейчас")}
+                    {t("Eight modules, beginner to advanced — start now", "Sakkiz modul, boshlang'ichdan ilg'orgacha — hoziroq boshlang", "Восемь модулей, от новичка до продвинутого — начните сейчас")}
                   </h3>
                 </div>
               </div>

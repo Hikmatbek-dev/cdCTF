@@ -62,7 +62,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`relative px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] transition-all rounded-xl overflow-hidden group ${
+                className={`relative px-5 py-2 text-sm font-medium transition-all rounded-xl overflow-hidden group ${
                   isActive(link.href)
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
@@ -77,13 +77,13 @@ export function Navbar() {
             {isStaff && (
               <Link
                 href="/admin/dashboard"
-                className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] transition-all rounded-xl ${
+                className={`px-5 py-2 text-sm font-medium transition-all rounded-xl ${
                   isActive("/admin")
                     ? "text-accent bg-accent/10"
                     : "text-muted-foreground hover:text-accent"
                 }`}
               >
-                ADMIN_TERMINAL
+                {t("Admin", "Admin", "Админ")}
               </Link>
             )}
           </div>
@@ -140,38 +140,38 @@ export function Navbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-xl border border-foreground/10 rounded-[2rem] w-64 p-2 mt-2 shadow-2xl">
                   <div className="p-4 mb-2 bg-foreground/5 rounded-2xl border border-foreground/5">
-                    <div className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] mb-1">OPERATIVE_ID</div>
-                    <div className="text-sm font-black text-foreground">{user.nickname}</div>
+                    <div className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-[0.15em] mb-1">{t("Signed in as", "Kirgan foydalanuvchi", "Вы вошли как")}</div>
+                    <div className="text-sm font-semibold text-foreground">{user.nickname}</div>
                   </div>
-                  <DropdownMenuItem asChild className="p-3 cursor-pointer rounded-xl hover:bg-foreground/5 focus:bg-foreground/5 transition-all mb-1">
-                    <Link href="/dashboard" className="flex items-center gap-4 w-full">
+                  <DropdownMenuItem asChild className="p-2.5 cursor-pointer rounded-xl hover:bg-foreground/5 focus:bg-foreground/5 transition-all mb-1">
+                    <Link href="/dashboard" className="flex items-center gap-3 w-full">
                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary"><LayoutDashboard className="w-4 h-4" /></div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-foreground/80">{t("Dashboard", "Panel", "Панель")}</span>
+                      <span className="text-sm font-medium text-foreground/90">{t("Dashboard", "Panel", "Панель")}</span>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="p-3 cursor-pointer rounded-xl hover:bg-foreground/5 focus:bg-foreground/5 transition-all mb-1">
-                    <Link href="/profile" className="flex items-center gap-4 w-full">
+                  <DropdownMenuItem asChild className="p-2.5 cursor-pointer rounded-xl hover:bg-foreground/5 focus:bg-foreground/5 transition-all mb-1">
+                    <Link href="/profile" className="flex items-center gap-3 w-full">
                       <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center text-accent"><User className="w-4 h-4" /></div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-foreground/80">{t("Profile", "Profil", "Профиль")}</span>
+                      <span className="text-sm font-medium text-foreground/90">{t("Profile", "Profil", "Профиль")}</span>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="p-3 cursor-pointer rounded-xl hover:bg-foreground/5 focus:bg-foreground/5 transition-all mb-1">
-                    <Link href="/settings/security" className="flex items-center gap-4 w-full">
+                  <DropdownMenuItem asChild className="p-2.5 cursor-pointer rounded-xl hover:bg-foreground/5 focus:bg-foreground/5 transition-all mb-1">
+                    <Link href="/settings/security" className="flex items-center gap-3 w-full">
                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary"><ShieldCheck className="w-4 h-4" /></div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-foreground/80">{t("Security", "Xavfsizlik", "Безопасность")}</span>
+                      <span className="text-sm font-medium text-foreground/90">{t("Security", "Xavfsizlik", "Безопасность")}</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-foreground/5 mx-2 my-2" />
-                  <DropdownMenuItem onClick={logout} className="p-3 cursor-pointer rounded-xl hover:bg-destructive/10 focus:bg-destructive/10 text-destructive transition-all">
+                  <DropdownMenuItem onClick={logout} className="p-2.5 cursor-pointer rounded-xl hover:bg-destructive/10 focus:bg-destructive/10 text-destructive transition-all flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center"><LogOut className="w-4 h-4" /></div>
-                    <span className="text-[10px] font-black uppercase tracking-widest ml-4">{t("Logout", "Chiqish", "Выйти")}</span>
+                    <span className="text-sm font-medium">{t("Logout", "Chiqish", "Выйти")}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <div className="flex items-center gap-3">
                 <Link href="/login">
-                  <Button variant="ghost" size="sm" className="h-10 px-6 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hidden sm:flex text-muted-foreground hover:text-foreground transition-all">
+                  <Button variant="ghost" size="sm" className="h-10 px-5 rounded-xl text-sm font-medium hidden sm:flex text-muted-foreground hover:text-foreground transition-all">
                     {t("Login", "Kirish", "Войти")}
                   </Button>
                 </Link>
@@ -219,14 +219,14 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center h-14 px-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${isActive(link.href) ? "bg-primary/10 text-primary border border-primary/20" : "text-muted-foreground hover:bg-foreground/5"}`}
+                  className={`flex items-center h-13 px-6 py-3.5 rounded-2xl text-[15px] font-medium transition-all ${isActive(link.href) ? "bg-primary/10 text-primary border border-primary/20" : "text-muted-foreground hover:bg-foreground/5"}`}
                 >
                   {link.label[lang]}
                 </Link>
               ))}
               {isStaff && (
-                <Link href="/admin/dashboard" onClick={() => setMobileOpen(false)} className="flex items-center h-14 px-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-accent hover:bg-accent/10 transition-all border border-transparent hover:border-accent/20">
-                  ADMIN_TERMINAL
+                <Link href="/admin/dashboard" onClick={() => setMobileOpen(false)} className="flex items-center h-13 px-6 py-3.5 rounded-2xl text-[15px] font-medium text-accent hover:bg-accent/10 transition-all border border-transparent hover:border-accent/20">
+                  {t("Admin", "Admin", "Админ")}
                 </Link>
               )}
             </div>

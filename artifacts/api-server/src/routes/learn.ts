@@ -81,6 +81,10 @@ router.get("/lessons/:id", optionalAuth, async (req, res) => {
     content: lessonsTable.content, contentUz: lessonsTable.contentUz, contentRu: lessonsTable.contentRu,
     categoryId: lessonsTable.categoryId, points: lessonsTable.points, createdAt: lessonsTable.createdAt,
     categoryName: learnCategoriesTable.name,
+    // moduleId lets the reader page fetch its siblings and offer prev/next
+    // navigation and a lesson stepper — the module's lessons come back ordered
+    // from GET /modules/:id, so no separate endpoint is needed.
+    moduleId: lessonsTable.moduleId,
   }).from(lessonsTable).leftJoin(learnCategoriesTable, eq(lessonsTable.categoryId, learnCategoriesTable.id))
     .where(and(eq(lessonsTable.id, id), eq(lessonsTable.isPublished, true))).limit(1);
 
