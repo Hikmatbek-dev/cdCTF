@@ -173,7 +173,7 @@ export default function LessonDetailPage() {
       <div className="max-w-3xl mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
-          <span className="hover:text-foreground cursor-pointer" onClick={() => setLocation("/learn")}>{t("Learn", "O'rganish", "Учиться")}</span>
+          <span className="hover:text-foreground cursor-pointer" onClick={() => setLocation("/modules")}>{t("Learn", "O'rganish", "Учиться")}</span>
           <ChevronRight className="w-3 h-3" />
           <span>{lesson.categoryName}</span>
           <ChevronRight className="w-3 h-3" />

@@ -14,10 +14,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// One learning entry in the primary nav — Modules, the structured curriculum.
+// The standalone-lessons library (/learn) stays reachable from the footer and
+// from deep links; two competing "learn" buttons in the header only confused
+// people about where to start.
 const NAV_LINKS = [
+  { href: "/modules", label: { en: "Learn", uz: "O'rganish", ru: "Обучение" } },
   { href: "/ctf", label: { en: "CTF", uz: "CTF", ru: "CTF" } },
-  { href: "/modules", label: { en: "Modules", uz: "Modullar", ru: "Модули" } },
-  { href: "/learn", label: { en: "Lessons", uz: "Darslar", ru: "Уроки" } },
   { href: "/scoreboard", label: { en: "Ranking", uz: "Reyting", ru: "Рейтинг" } },
   { href: "/competitions", label: { en: "Events", uz: "Tadbirlar", ru: "События" } },
 ];
