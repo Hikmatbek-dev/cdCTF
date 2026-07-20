@@ -166,6 +166,26 @@ export const certificatesTable = pgTable("certificates", {
   index("certificates_module_id_idx").on(table.moduleId),
 ]);
 
+/**
+ * A program diploma: issued once a learner has earned a certificate in every
+ * published module. Where a certificate proves one course, the diploma proves
+ * the whole six-month path — it is the headline credential of the platform, the
+ * thing a learner shows an employer.
+ *
+ * One per learner (there is only one program), so it is keyed on userId alone.
+ * `averageScore` is the mean of the module exam scores at issue time, so the
+ * diploma carries a single number that stands for the whole journey.
+ */
+export const programDiplomasTable = pgTable("program_diplomas", {
+  id: serial("id").primaryKey(),
+  serial: text("serial").notNull().unique(),
+  userId: integer("user_id").notNull().references(() => usersTable.id).unique(),
+  fullName: text("full_name").notNull(),
+  averageScore: integer("average_score").notNull(),
+  moduleCount: integer("module_count").notNull(),
+  issuedAt: timestamp("issued_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const insertLessonSchema = createInsertSchema(lessonsTable).omit({ id: true, createdAt: true });
 export type InsertLesson = z.infer<typeof insertLessonSchema>;
 export type Lesson = typeof lessonsTable.$inferSelect;
@@ -176,3 +196,4 @@ export type LearnModule = typeof modulesTable.$inferSelect;
 export type ModuleQuestion = typeof moduleQuestionsTable.$inferSelect;
 export type ModuleExamAttempt = typeof moduleExamAttemptsTable.$inferSelect;
 export type Certificate = typeof certificatesTable.$inferSelect;
+export type ProgramDiploma = typeof programDiplomasTable.$inferSelect;

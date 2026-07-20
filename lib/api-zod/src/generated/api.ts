@@ -469,6 +469,53 @@ export const VerifyCertificateResponse = zod.object({
 });
 
 /**
+ * @summary The caller's program standing and diploma state
+ */
+export const GetDiplomaStatusResponse = zod.object({
+  totalModules: zod.number(),
+  passedModules: zod.number(),
+  averageScore: zod.number(),
+  available: zod.boolean(),
+  serial: zod.string().nullish(),
+  fullName: zod.string().nullish(),
+  issuedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Issue the program diploma once every module is passed
+ */
+export const IssueDiplomaBody = zod.object({
+  fullName: zod
+    .string()
+    .describe(
+      "The learner's name as it appears on their passport; printed on the certificate.",
+    ),
+});
+
+export const IssueDiplomaResponse = zod.object({
+  serial: zod.string(),
+  fullName: zod.string(),
+  averageScore: zod.number(),
+  moduleCount: zod.number(),
+  issuedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Verify a program diploma by its serial (public)
+ */
+export const VerifyDiplomaParams = zod.object({
+  serial: zod.coerce.string(),
+});
+
+export const VerifyDiplomaResponse = zod.object({
+  serial: zod.string(),
+  fullName: zod.string(),
+  averageScore: zod.number(),
+  moduleCount: zod.number(),
+  issuedAt: zod.coerce.date(),
+});
+
+/**
  * @summary Get global scoreboard
  */
 export const getScoreboardQueryLimitDefault = 50;

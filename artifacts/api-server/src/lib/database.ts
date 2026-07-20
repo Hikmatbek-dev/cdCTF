@@ -113,6 +113,21 @@ export async function ensureDatabaseShape() {
     )
   `);
 
+  // Mirrors lib/db/src/schema/learn.ts programDiplomasTable — the whole-program
+  // credential, issued once every module is passed. userId is UNIQUE: one
+  // diploma per learner.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS program_diplomas (
+      id serial PRIMARY KEY,
+      serial text NOT NULL UNIQUE,
+      user_id integer NOT NULL UNIQUE REFERENCES users(id),
+      full_name text NOT NULL,
+      average_score integer NOT NULL,
+      module_count integer NOT NULL,
+      issued_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+
   for (const [name, statement] of [
     ["modules_published_idx", "CREATE INDEX IF NOT EXISTS modules_published_idx ON modules(is_published)"],
     ["modules_order_idx", "CREATE INDEX IF NOT EXISTS modules_order_idx ON modules(order_index)"],

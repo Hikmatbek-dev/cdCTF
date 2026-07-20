@@ -19,6 +19,8 @@ import ModulesPage from "@/pages/ModulesPage";
 import ModuleDetailPage from "@/pages/ModuleDetailPage";
 import ModuleExamPage from "@/pages/ModuleExamPage";
 import CertificatePage from "@/pages/CertificatePage";
+import DiplomaPage from "@/pages/DiplomaPage";
+import DiplomaVerifyPage from "@/pages/DiplomaVerifyPage";
 import ScoreboardPage from "@/pages/ScoreboardPage";
 import CompetitionsPage from "@/pages/CompetitionsPage";
 import CompetitionDetailPage from "@/pages/CompetitionDetailPage";
@@ -139,6 +141,15 @@ function Router() {
           {/* Public: a certificate has to be checkable by whoever it is shown to. */}
           <Route path="/certificate/:serial">
             <PageTransition><CertificatePage /></PageTransition>
+          </Route>
+          {/* The claim/status page requires auth; the /:serial verify page is
+              public. Register the verify route before the bare one so wouter
+              does not swallow the serial. */}
+          <Route path="/diploma/:serial">
+            <PageTransition><DiplomaVerifyPage /></PageTransition>
+          </Route>
+          <Route path="/diploma">
+            {() => <PageTransition><ProtectedRoute component={DiplomaPage} /></PageTransition>}
           </Route>
           <Route path="/scoreboard">
             {() => <PageTransition><ScoreboardPage /></PageTransition>}

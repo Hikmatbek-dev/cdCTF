@@ -531,6 +531,73 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /learn/diploma:
+    get:
+      operationId: getDiplomaStatus
+      tags: [learn]
+      summary: The caller's program standing and diploma state
+      responses:
+        "200":
+          description: Diploma status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiplomaStatus"
+    post:
+      operationId: issueDiploma
+      tags: [learn]
+      summary: Issue the program diploma once every module is passed
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IssueCertificateBody"
+      responses:
+        "200":
+          description: Diploma (already issued)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Diploma"
+        "201":
+          description: Diploma issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Diploma"
+        "403":
+          description: Not all modules passed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /learn/diploma/{serial}:
+    get:
+      operationId: verifyDiploma
+      tags: [learn]
+      summary: Verify a program diploma by its serial (public)
+      parameters:
+      - in: path
+        name: serial
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Diploma
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiplomaVerification"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   # SCOREBOARD
   /scoreboard:
     get:
@@ -2811,6 +2878,61 @@ components:
           type: string
           nullable: true
       required: [serial, fullName, score, issuedAt, moduleTitle]
+
+    DiplomaStatus:
+      type: object
+      properties:
+        totalModules:
+          type: integer
+        passedModules:
+          type: integer
+        averageScore:
+          type: integer
+        available:
+          type: boolean
+        serial:
+          type: string
+          nullable: true
+        fullName:
+          type: string
+          nullable: true
+        issuedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [totalModules, passedModules, averageScore, available]
+
+    Diploma:
+      type: object
+      properties:
+        serial:
+          type: string
+        fullName:
+          type: string
+        averageScore:
+          type: integer
+        moduleCount:
+          type: integer
+        issuedAt:
+          type: string
+          format: date-time
+      required: [serial, fullName, averageScore, moduleCount, issuedAt]
+
+    DiplomaVerification:
+      type: object
+      properties:
+        serial:
+          type: string
+        fullName:
+          type: string
+        averageScore:
+          type: integer
+        moduleCount:
+          type: integer
+        issuedAt:
+          type: string
+          format: date-time
+      required: [serial, fullName, averageScore, moduleCount, issuedAt]
 
     # Scoreboard
     ScoreboardEntry:

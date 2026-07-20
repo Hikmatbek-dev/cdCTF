@@ -4,6 +4,7 @@ import { db } from "@workspace/db";
 import {
   learnCategoriesTable, lessonsTable, lessonQuestionsTable, userLessonAttemptsTable,
   modulesTable, moduleQuestionsTable, moduleExamAttemptsTable, certificatesTable,
+  programDiplomasTable,
 } from "@workspace/db/schema";
 import { eq, and, inArray, asc } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
@@ -559,6 +560,123 @@ router.get("/certificates/:serial", async (req, res) => {
     moduleTitle: mod?.title ?? "",
     moduleTitleUz: mod?.titleUz ?? null,
     moduleTitleRu: mod?.titleRu ?? null,
+  });
+});
+
+// ===========================================================================
+// Program diploma: the whole-program credential, earned by passing every
+// published module. A certificate proves one course; the diploma proves the
+// path.
+// ===========================================================================
+
+/** Published modules, and which of them this learner has passed. */
+async function programStatusFor(userId: number) {
+  const modules = await db.select({ id: modulesTable.id })
+    .from(modulesTable).where(eq(modulesTable.isPublished, true));
+  const total = modules.length;
+
+  const passedById = new Map<number, number>();
+  if (total > 0) {
+    const attempts = await db.select().from(moduleExamAttemptsTable)
+      .where(and(
+        eq(moduleExamAttemptsTable.userId, userId),
+        inArray(moduleExamAttemptsTable.moduleId, modules.map(m => m.id)),
+      ));
+    for (const a of attempts) if (a.passed) passedById.set(a.moduleId, a.bestScore);
+  }
+  const passed = passedById.size;
+  const scores = [...passedById.values()];
+  const averageScore = scores.length > 0
+    ? Math.round(scores.reduce((s, n) => s + n, 0) / scores.length)
+    : 0;
+  // Complete only when there is at least one module and every one is passed.
+  const complete = total > 0 && passed === total;
+  return { total, passed, averageScore, complete };
+}
+
+// GET /api/learn/diploma — the caller's program standing and diploma state.
+router.get("/diploma", authenticateToken, async (req, res) => {
+  const userId = req.user!.userId;
+  const status = await programStatusFor(userId);
+  const [diploma] = await db.select().from(programDiplomasTable)
+    .where(eq(programDiplomasTable.userId, userId)).limit(1);
+  res.json({
+    totalModules: status.total,
+    passedModules: status.passed,
+    averageScore: status.averageScore,
+    available: status.complete,
+    serial: diploma?.serial ?? null,
+    fullName: diploma?.fullName ?? null,
+    issuedAt: diploma?.issuedAt ?? null,
+  });
+});
+
+// POST /api/learn/diploma — issue the diploma once every module is passed.
+router.post("/diploma", authenticateToken, async (req, res) => {
+  const userId = req.user!.userId;
+  const fullNameRaw = (req.body as { fullName?: unknown })?.fullName;
+
+  if (typeof fullNameRaw !== "string") return res.status(400).json({ error: "Full name is required" });
+  const fullName = fullNameRaw.trim().replace(/\s+/g, " ");
+  // Same rule as a module certificate: a real, printable legal name.
+  if (fullName.length < 3 || fullName.length > 80) {
+    return res.status(400).json({ error: "Full name must be 3-80 characters" });
+  }
+  if (!/^[\p{L}][\p{L}\s'-]*$/u.test(fullName)) {
+    return res.status(400).json({ error: "Full name may only contain letters, spaces, hyphens and apostrophes" });
+  }
+
+  const status = await programStatusFor(userId);
+  // The gate: every published module must be passed. Checked on the server, so
+  // a hidden button is never the only thing standing between a learner and the
+  // headline credential of the platform.
+  if (!status.complete) {
+    return res.status(403).json({
+      error: `Finish all modules first — ${status.passed}/${status.total} passed`,
+    });
+  }
+
+  const [existing] = await db.select().from(programDiplomasTable)
+    .where(eq(programDiplomasTable.userId, userId)).limit(1);
+  if (existing) {
+    // Re-issuing only corrects the printed name; serial and score stand.
+    if (existing.fullName !== fullName) {
+      await db.update(programDiplomasTable).set({ fullName }).where(eq(programDiplomasTable.id, existing.id));
+    }
+    return res.json({
+      serial: existing.serial, fullName, averageScore: existing.averageScore,
+      moduleCount: existing.moduleCount, issuedAt: existing.issuedAt,
+    });
+  }
+
+  // -DIP- keeps the diploma serial distinct from a module certificate's
+  // CDCTF-<hex>, so the two public verify routes never collide.
+  const serial = `CDCTF-DIP-${randomBytes(5).toString("hex").toUpperCase()}`;
+  const [created] = await db.insert(programDiplomasTable)
+    .values({ serial, userId, fullName, averageScore: status.averageScore, moduleCount: status.total })
+    .returning();
+  res.status(201).json({
+    serial: created.serial, fullName: created.fullName, averageScore: created.averageScore,
+    moduleCount: created.moduleCount, issuedAt: created.issuedAt,
+  });
+});
+
+// GET /api/learn/diploma/:serial — public verification, like a certificate.
+router.get("/diploma/:serial", async (req, res) => {
+  const serial = String(req.params.serial || "").trim().toUpperCase();
+  if (!/^CDCTF-DIP-[A-F0-9]{10}$/.test(serial)) return res.status(400).json({ error: "Invalid diploma serial" });
+
+  const [diploma] = await db.select().from(programDiplomasTable)
+    .where(eq(programDiplomasTable.serial, serial)).limit(1);
+  if (!diploma) return res.status(404).json({ error: "Diploma not found" });
+
+  // Only what a verifier needs — no user id, no email.
+  res.json({
+    serial: diploma.serial,
+    fullName: diploma.fullName,
+    averageScore: diploma.averageScore,
+    moduleCount: diploma.moduleCount,
+    issuedAt: diploma.issuedAt,
   });
 });
 

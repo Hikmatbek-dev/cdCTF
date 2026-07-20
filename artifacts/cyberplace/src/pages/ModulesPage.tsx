@@ -121,6 +121,27 @@ export default function ModulesPage() {
                 </Link>
               );
             })}
+
+            {/* The program-level pitch: finishing every module earns the diploma. */}
+            <Link href="/diploma">
+              <article
+                className="glass-card cursor-pointer group flex items-center justify-between gap-4 border-primary/30"
+                data-testid="card-diploma-cta"
+              >
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-10 h-10 rounded-lg bg-primary/15 border border-primary/40 text-primary flex items-center justify-center shrink-0 neon-glow">
+                    <GraduationCap className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="eyebrow mb-1">{t("Program diploma", "Dastur diplomi", "Диплом программы")}</div>
+                    <h2 className="text-base font-semibold group-hover:text-primary transition-colors">
+                      {t("Finish every module to earn your diploma", "Diplom uchun barcha modullarni tugating", "Пройдите все модули, чтобы получить диплом")}
+                    </h2>
+                  </div>
+                </div>
+                <Award className="w-5 h-5 text-primary shrink-0 group-hover:translate-x-0.5 transition-transform" />
+              </article>
+            </Link>
           </div>
         )}
       </div>

@@ -46,6 +46,9 @@ import type {
   CtfChallenge,
   CtfChallengeDetail,
   DashboardResponse,
+  Diploma,
+  DiplomaStatus,
+  DiplomaVerification,
   DisableTwoFactorBody,
   ErrorResponse,
   EscapeResponse,
@@ -1890,6 +1893,254 @@ export function useVerifyCertificate<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getVerifyCertificateQueryOptions(serial, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary The caller's program standing and diploma state
+ */
+export const getGetDiplomaStatusUrl = () => {
+  return `/api/learn/diploma`;
+};
+
+export const getDiplomaStatus = async (
+  options?: RequestInit,
+): Promise<DiplomaStatus> => {
+  return customFetch<DiplomaStatus>(getGetDiplomaStatusUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetDiplomaStatusQueryKey = () => {
+  return [`/api/learn/diploma`] as const;
+};
+
+export const getGetDiplomaStatusQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDiplomaStatus>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getDiplomaStatus>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetDiplomaStatusQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDiplomaStatus>>
+  > = ({ signal }) => getDiplomaStatus({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDiplomaStatus>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDiplomaStatusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDiplomaStatus>>
+>;
+export type GetDiplomaStatusQueryError = ErrorType<unknown>;
+
+/**
+ * @summary The caller's program standing and diploma state
+ */
+
+export function useGetDiplomaStatus<
+  TData = Awaited<ReturnType<typeof getDiplomaStatus>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getDiplomaStatus>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDiplomaStatusQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Issue the program diploma once every module is passed
+ */
+export const getIssueDiplomaUrl = () => {
+  return `/api/learn/diploma`;
+};
+
+export const issueDiploma = async (
+  issueCertificateBody: IssueCertificateBody,
+  options?: RequestInit,
+): Promise<Diploma> => {
+  return customFetch<Diploma>(getIssueDiplomaUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(issueCertificateBody),
+  });
+};
+
+export const getIssueDiplomaMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof issueDiploma>>,
+    TError,
+    { data: BodyType<IssueCertificateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof issueDiploma>>,
+  TError,
+  { data: BodyType<IssueCertificateBody> },
+  TContext
+> => {
+  const mutationKey = ["issueDiploma"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof issueDiploma>>,
+    { data: BodyType<IssueCertificateBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return issueDiploma(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type IssueDiplomaMutationResult = NonNullable<
+  Awaited<ReturnType<typeof issueDiploma>>
+>;
+export type IssueDiplomaMutationBody = BodyType<IssueCertificateBody>;
+export type IssueDiplomaMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Issue the program diploma once every module is passed
+ */
+export const useIssueDiploma = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof issueDiploma>>,
+    TError,
+    { data: BodyType<IssueCertificateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof issueDiploma>>,
+  TError,
+  { data: BodyType<IssueCertificateBody> },
+  TContext
+> => {
+  return useMutation(getIssueDiplomaMutationOptions(options));
+};
+
+/**
+ * @summary Verify a program diploma by its serial (public)
+ */
+export const getVerifyDiplomaUrl = (serial: string) => {
+  return `/api/learn/diploma/${serial}`;
+};
+
+export const verifyDiploma = async (
+  serial: string,
+  options?: RequestInit,
+): Promise<DiplomaVerification> => {
+  return customFetch<DiplomaVerification>(getVerifyDiplomaUrl(serial), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getVerifyDiplomaQueryKey = (serial: string) => {
+  return [`/api/learn/diploma/${serial}`] as const;
+};
+
+export const getVerifyDiplomaQueryOptions = <
+  TData = Awaited<ReturnType<typeof verifyDiploma>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  serial: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof verifyDiploma>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getVerifyDiplomaQueryKey(serial);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof verifyDiploma>>> = ({
+    signal,
+  }) => verifyDiploma(serial, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!serial,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof verifyDiploma>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type VerifyDiplomaQueryResult = NonNullable<
+  Awaited<ReturnType<typeof verifyDiploma>>
+>;
+export type VerifyDiplomaQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Verify a program diploma by its serial (public)
+ */
+
+export function useVerifyDiploma<
+  TData = Awaited<ReturnType<typeof verifyDiploma>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  serial: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof verifyDiploma>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getVerifyDiplomaQueryOptions(serial, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

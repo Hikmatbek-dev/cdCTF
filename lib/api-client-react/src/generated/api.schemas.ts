@@ -341,6 +341,32 @@ export interface CertificateVerification {
   moduleTitleRu?: string | null;
 }
 
+export interface DiplomaStatus {
+  totalModules: number;
+  passedModules: number;
+  averageScore: number;
+  available: boolean;
+  serial?: string | null;
+  fullName?: string | null;
+  issuedAt?: string | null;
+}
+
+export interface Diploma {
+  serial: string;
+  fullName: string;
+  averageScore: number;
+  moduleCount: number;
+  issuedAt: string;
+}
+
+export interface DiplomaVerification {
+  serial: string;
+  fullName: string;
+  averageScore: number;
+  moduleCount: number;
+  issuedAt: string;
+}
+
 export interface ScoreboardEntry {
   rank: number;
   userId: number;
