@@ -53,12 +53,16 @@ import mod01_linux  # noqa: E402
 import mod02_networking  # noqa: E402
 import mod03_web  # noqa: E402
 import mod04_crypto  # noqa: E402
+import mod05_recon  # noqa: E402
+import mod06_exploit  # noqa: E402
 
 MODULE_SOURCES = [
     mod01_linux,
     mod02_networking,
     mod03_web,
     mod04_crypto,
+    mod05_recon,
+    mod06_exploit,
 ]
 
 
