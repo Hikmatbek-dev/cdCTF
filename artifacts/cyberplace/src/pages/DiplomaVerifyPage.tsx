@@ -60,7 +60,7 @@ export default function DiplomaVerifyPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground pt-28 pb-24">
-      <div className="max-w-3xl mx-auto px-6">
+      <div className="max-w-5xl mx-auto px-6">
         <CredentialFrame>
           <ProgrammeDiploma
             d={{
@@ -70,6 +70,7 @@ export default function DiplomaVerifyPage() {
               serial: diploma.serial,
               issued,
               verifyUrl: `${window.location.host}/diploma/${diploma.serial}`,
+              verifyHref: `${window.location.origin}/diploma/${diploma.serial}`,
             }}
             l={{
               title: t("Diploma", "Diplom", "Диплом"),

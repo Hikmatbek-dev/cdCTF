@@ -1,5 +1,6 @@
 import { useId } from "react";
 import { ShieldCheck } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 
 /**
  * The two credentials this platform issues, in their final form.
@@ -27,7 +28,10 @@ export type CredentialData = {
   score: number;
   serial: string;
   issued: string;
+  /** Shown on the sheet — host and path, without the scheme. */
   verifyUrl: string;
+  /** Absolute URL the QR encodes. A scanner needs the scheme to open it. */
+  verifyHref: string;
   /** Scanned signature, black ink; inverted for the dark sheet. */
   signature?: string;
 };
@@ -50,23 +54,24 @@ export function CredentialFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
-function QrBlock({ dark }: { dark: string }) {
+/**
+ * A real, scannable QR of the verification URL.
+ *
+ * SVG rather than canvas so it stays sharp when the sheet is printed. Error
+ * correction is set to Q (recovers ~25%), which is the level worth paying for
+ * on a document that will be photographed off a screen or a printout — the
+ * payload is a short URL, so the extra redundancy costs almost no density.
+ */
+function QrBlock({ href, dark }: { href: string; dark: string }) {
   return (
-    <svg viewBox="0 0 21 21" className="w-full h-full" shapeRendering="crispEdges" aria-hidden="true">
-      <rect width="21" height="21" fill="#fff" />
-      {[[0, 0], [14, 0], [0, 14]].map(([x, y], k) => (
-        <g key={k}>
-          <rect x={x} y={y} width="7" height="7" fill={dark} />
-          <rect x={x + 1} y={y + 1} width="5" height="5" fill="#fff" />
-          <rect x={x + 2} y={y + 2} width="3" height="3" fill={dark} />
-        </g>
-      ))}
-      {Array.from({ length: 96 }).map((_, k) => {
-        const x = 1 + ((k * 7) % 19), y = 1 + ((k * 11) % 19);
-        if ((x < 8 && y < 8) || (x > 12 && y < 8) || (x < 8 && y > 12)) return null;
-        return <rect key={k} x={x} y={y} width="1" height="1" fill={dark} />;
-      })}
-    </svg>
+    <QRCodeSVG
+      value={href}
+      level="Q"
+      marginSize={0}
+      bgColor="#ffffff"
+      fgColor={dark}
+      className="w-full h-full"
+    />
   );
 }
 
@@ -132,7 +137,7 @@ export function ModuleCertificate({ d, l }: { d: CredentialData; l: CredentialLa
                 data-testid="text-certificate-serial">{d.serial}</div>
               <div className="font-mono text-[0.9cqw] opacity-62 mt-[6%]">{d.verifyUrl}</div>
             </div>
-            <div className="w-[6cqw] aspect-square bg-white p-[0.35cqw] shrink-0"><QrBlock dark="#0B0713" /></div>
+            <div className="w-[8cqw] aspect-square bg-white p-[0.35cqw] shrink-0"><QrBlock href={d.verifyHref} dark="#0B0713" /></div>
           </div>
         </div>
       </div>
@@ -169,8 +174,8 @@ export function ProgrammeDiploma({ d, l }: { d: CredentialData; l: CredentialLab
             ))}
 
             {/* verification, tucked into the ruled area */}
-            <div className="absolute top-[3%] right-[3%] w-[9%] aspect-square bg-white rounded p-[0.6%]">
-              <QrBlock dark="#0E0916" />
+            <div className="absolute top-[3%] right-[3%] w-[11%] aspect-square bg-white rounded p-[0.6%]">
+              <QrBlock href={d.verifyHref} dark="#0E0916" />
             </div>
 
             <div className="font-mono text-[1.25cqw] tracking-[0.42em] uppercase mb-[1.6%]"
