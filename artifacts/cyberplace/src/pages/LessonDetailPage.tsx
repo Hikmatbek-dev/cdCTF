@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRoute, useLocation, Link } from "wouter";
 import {
-  BookOpen, CheckCircle2, Lock, ChevronRight, ChevronLeft, Copy, Check,
+  BookOpen, CheckCircle2, Lock, ChevronRight, ChevronLeft, ChevronDown, Copy, Check,
   ArrowRight, GraduationCap, ListChecks,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,7 @@ function CodeBlock({ code, lang }: { code: string; lang: string }) {
         </span>
         <button
           onClick={copy}
-          className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors"
+          className="inline-flex items-center gap-1.5 min-h-[28px] px-2 -mr-2 rounded-md text-[11px] font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
           aria-label={t("Copy code", "Nusxa olish", "Копировать")}
         >
           {copied
@@ -294,14 +294,46 @@ export default function LessonDetailPage() {
             </div>
           </aside>
 
+          {/* Mobile module navigation — the sidebar stepper is desktop-only, so
+              on a phone the module context would otherwise be lost entirely. */}
+          {mod && siblings.length > 0 && (
+            <details className="lg:hidden glass-card !p-0 mb-6 overflow-hidden group">
+              <summary className="flex items-center justify-between gap-3 p-4 cursor-pointer list-none">
+                <span className="min-w-0">
+                  <span className="block text-[11px] uppercase tracking-wider text-muted-foreground truncate">{moduleTitle}</span>
+                  <span className="block text-sm font-medium mt-0.5">
+                    {t("Lesson", "Dars", "Урок")} {currentIndex + 1}/{siblings.length} · {sibDone} {t("done", "tugatilgan", "готово")}
+                  </span>
+                </span>
+                <span className="shrink-0 text-muted-foreground">
+                  <ChevronRight className="chev-closed w-5 h-5" />
+                  <ChevronDown className="chev-open w-5 h-5" />
+                </span>
+              </summary>
+              <nav className="border-t border-border p-2 space-y-0.5">
+                {siblings.map((l, i) => (
+                  <Link key={l.id} href={`/learn/${l.id}`}
+                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                      l.id === id ? "bg-primary/10 text-foreground font-medium" : "text-muted-foreground hover:bg-muted/50"
+                    }`}>
+                    {l.isCompleted
+                      ? <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                      : <span className="w-4 h-4 shrink-0 flex items-center justify-center text-[10px] tabular-nums rounded-full border border-muted-foreground/30">{i + 1}</span>}
+                    <span className="truncate">{t(l.title, l.titleUz ?? undefined, l.titleRu ?? undefined)}</span>
+                  </Link>
+                ))}
+              </nav>
+            </details>
+          )}
+
           {/* Article */}
           <article className="min-w-0 max-w-2xl">
             {/* Breadcrumb + position */}
-            <div className="flex items-center flex-wrap gap-2 text-xs text-muted-foreground mb-5">
-              <Link href="/modules" className="hover:text-foreground transition-colors">{t("Learn", "O'rganish", "Учиться")}</Link>
+            <div className="flex items-center flex-wrap gap-x-2 text-xs text-muted-foreground mb-5">
+              <Link href="/modules" className="inline-flex items-center min-h-[24px] py-1 hover:text-foreground transition-colors">{t("Learn", "O'rganish", "Учиться")}</Link>
               <ChevronRight className="w-3 h-3" />
               {mod
-                ? <Link href={`/modules/${mod.id}`} className="hover:text-foreground transition-colors">{moduleTitle}</Link>
+                ? <Link href={`/modules/${mod.id}`} className="inline-flex items-center min-h-[24px] py-1 hover:text-foreground transition-colors">{moduleTitle}</Link>
                 : <span>{lesson.categoryName}</span>}
               {currentIndex >= 0 && (
                 <>
@@ -358,8 +390,41 @@ export default function LessonDetailPage() {
                   </Button>
                 </div>
               ) : lesson.attemptCount >= 3 ? (
-                <div className="glass-card text-center">
-                  <p className="text-sm text-muted-foreground">{t("Maximum test attempts reached (3/3)", "Maksimal urinishlar soni tugadi (3/3)", "Максимум попыток достигнут (3/3)")}</p>
+                /* Out of attempts is not a dead end: the lesson stays readable,
+                   and the rest of the module is still open. Say so, and give
+                   somewhere to go. */
+                <div className="glass-card">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-muted border border-border flex items-center justify-center shrink-0">
+                      <ListChecks className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm">{t("You've used all 3 test attempts", "3 ta urinishning hammasini ishlatdingiz", "Вы использовали все 3 попытки")}</p>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                        {t(
+                          "The lesson stays open — re-read it any time. You can carry on with the rest of the module, and the final exam covers this material again.",
+                          "Dars ochiq qoladi — istalgan vaqtda qayta o'qing. Modulning qolganini davom ettiraversangiz bo'ladi, yakuniy imtihon bu mavzuni yana qamrab oladi.",
+                          "Урок остаётся открытым — перечитайте в любое время. Можно продолжать модуль, а итоговый экзамен снова охватит этот материал.",
+                        )}
+                      </p>
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        {next && (
+                          <Link href={`/learn/${next.id}`}>
+                            <button className="cyber-button h-9 px-4 text-xs">
+                              {t("Next lesson", "Keyingi dars", "Следующий урок")} <ArrowRight className="w-3.5 h-3.5" />
+                            </button>
+                          </Link>
+                        )}
+                        {mod && (
+                          <Link href={`/modules/${mod.id}`}>
+                            <button className="cyber-button-outline h-9 px-4 text-xs">
+                              {t("Back to module", "Modulga qaytish", "К модулю")}
+                            </button>
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="glass-card flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-primary/25">

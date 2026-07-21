@@ -52,7 +52,7 @@ export function Navbar() {
             </div>
             <div className="flex items-center font-display text-2xl font-black tracking-tighter">
               <span className="gradient-text">cd</span>
-              <span className="text-foreground/20 ml-1">CTF</span>
+              <span className="text-foreground/60 ml-1">CTF</span>
             </div>
           </Link>
 

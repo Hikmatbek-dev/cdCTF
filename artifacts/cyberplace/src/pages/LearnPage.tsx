@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { BookOpen, CheckCircle2, Lock, ChevronRight, Shield } from "lucide-react";
+import { BookOpen, CheckCircle2, Lock, ChevronRight, Shield, Search, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
 import { normalizeLearnCategories, normalizeLessons } from "@/lib/api-shapes";
@@ -9,6 +9,7 @@ import { useListLearnCategories, getListLearnCategoriesQueryKey, useListLessons,
 export default function LearnPage() {
   const { t } = useLang();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   const { data: categories, isLoading: catsLoading } = useListLearnCategories({
     query: { queryKey: getListLearnCategoriesQueryKey() },
@@ -19,7 +20,16 @@ export default function LearnPage() {
     { query: { queryKey: getListLessonsQueryKey({ category: selectedCategory ?? undefined }) } }
   );
   const categoryList = normalizeLearnCategories(categories);
-  const lessonList = normalizeLessons(lessons);
+  const allLessons = normalizeLessons(lessons);
+
+  // Client-side title search. With 60+ lessons in the library, scanning the
+  // whole list to find one topic was the slowest thing on this page.
+  const q = query.trim().toLowerCase();
+  const lessonList = q
+    ? allLessons.filter(l =>
+        [l.title, l.titleUz, l.titleRu, l.categoryName]
+          .some(s => (s ?? "").toLowerCase().includes(q)))
+    : allLessons;
 
   return (
     <div className="min-h-screen bg-background text-foreground pt-28 pb-24 relative">
@@ -84,13 +94,49 @@ export default function LearnPage() {
 
           {/* Lesson list */}
           <div className="flex-1">
+            <div className="relative mb-4">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <input
+                type="search"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder={t("Search lessons…", "Darslarni qidirish…", "Поиск уроков…")}
+                aria-label={t("Search lessons", "Darslarni qidirish", "Поиск уроков")}
+                className="terminal-input w-full pl-10 pr-10 h-11"
+                data-testid="input-lesson-search"
+              />
+              {query && (
+                <button
+                  onClick={() => setQuery("")}
+                  aria-label={t("Clear search", "Qidiruvni tozalash", "Очистить поиск")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            {q && !lessonsLoading && (
+              <p className="text-xs text-muted-foreground mb-3" aria-live="polite">
+                {t(`${lessonList.length} of ${allLessons.length} lessons`, `${allLessons.length} tadan ${lessonList.length} ta dars`, `${lessonList.length} из ${allLessons.length} уроков`)}
+              </p>
+            )}
             {lessonsLoading ? (
               <div className="grid gap-3">
                 {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
               </div>
             ) : lessonList.length === 0 ? (
-              <div className="border border-dashed border-border rounded-xl py-24 text-center">
-                <p className="text-muted-foreground">{t("No lessons here yet.", "Bu yerda hozircha darslar yo'q.", "Здесь пока нет уроков.")}</p>
+              <div className="border border-dashed border-border rounded-xl py-20 text-center px-6">
+                <Search className="w-8 h-8 text-muted-foreground/40 mx-auto mb-3" />
+                <p className="text-muted-foreground">
+                  {q
+                    ? t(`Nothing matches "${query}".`, `"${query}" bo'yicha hech narsa topilmadi.`, `Ничего не найдено по "${query}".`)
+                    : t("No lessons here yet.", "Bu yerda hozircha darslar yo'q.", "Здесь пока нет уроков.")}
+                </p>
+                {q && (
+                  <button onClick={() => setQuery("")} className="cyber-button-outline h-9 px-4 text-xs mt-4">
+                    {t("Clear search", "Qidiruvni tozalash", "Очистить поиск")}
+                  </button>
+                )}
               </div>
             ) : (
               <div className="grid gap-3">

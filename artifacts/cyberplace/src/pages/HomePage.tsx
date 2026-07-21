@@ -205,7 +205,7 @@ export default function HomePage() {
                 href="https://t.me/cdctf_uz"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0088cc] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#0077b0] text-white text-sm font-medium hover:bg-[#0088cc] transition-colors"
               >
                 <Send className="w-4 h-4" />
                 Telegram
@@ -214,16 +214,16 @@ export default function HomePage() {
             <div>
               <div className="eyebrow mb-4">{t("Learn", "O'rganish", "Обучение")}</div>
               <ul className="space-y-2.5 text-sm">
-                <li><Link href="/modules" className="text-muted-foreground hover:text-primary transition-colors">{t("Modules", "Modullar", "Модули")}</Link></li>
-                <li><Link href="/learn" className="text-muted-foreground hover:text-primary transition-colors">{t("Lessons", "Darslar", "Уроки")}</Link></li>
-                <li><Link href="/ctf" className="text-muted-foreground hover:text-primary transition-colors">{t("CTF challenges", "CTF topshiriqlar", "CTF задания")}</Link></li>
+                <li><Link href="/modules" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("Modules", "Modullar", "Модули")}</Link></li>
+                <li><Link href="/learn" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("Lessons", "Darslar", "Уроки")}</Link></li>
+                <li><Link href="/ctf" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("CTF challenges", "CTF topshiriqlar", "CTF задания")}</Link></li>
               </ul>
             </div>
             <div>
               <div className="eyebrow mb-4">{t("Compete", "Bellashuv", "Соревнование")}</div>
               <ul className="space-y-2.5 text-sm">
-                <li><Link href="/scoreboard" className="text-muted-foreground hover:text-primary transition-colors">{t("Leaderboard", "Reyting", "Рейтинг")}</Link></li>
-                <li><Link href="/competitions" className="text-muted-foreground hover:text-primary transition-colors">{t("Competitions", "Musobaqalar", "Соревнования")}</Link></li>
+                <li><Link href="/scoreboard" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("Leaderboard", "Reyting", "Рейтинг")}</Link></li>
+                <li><Link href="/competitions" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("Competitions", "Musobaqalar", "Соревнования")}</Link></li>
               </ul>
             </div>
           </div>

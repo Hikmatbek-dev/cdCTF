@@ -100,6 +100,14 @@
   --grid-line: 262 30% 12%;
   --grid-opacity: 0.035;
 
+  /* Button fill, kept separate from --primary on purpose. --primary doubles as
+     a *text* colour on the page background, so it has to stay bright in dark
+     mode; but white text sitting *on* that same bright violet only reaches
+     ~3.9:1. These stops are the darkest-but-still-on-brand violet→blue that
+     clear 4.5:1 against white (measured, not guessed). */
+  --btn-from: 262 62% 48%;
+  --btn-to: 221 83% 45%;
+
   --cyber-cyan: 262 62% 48%;
   --cyber-purple: 262 62% 48%;
   --cyber-blue: 221 83% 47%;
@@ -145,6 +153,11 @@
   --glow: 258 90% 68%;
   --grid-line: 258 60% 80%;
   --grid-opacity: 0.045;
+
+  /* See :root — the bright violet that works as text would fail as a fill
+     behind white label text, so the button gradient darkens to clear 4.5:1. */
+  --btn-from: 258 90% 63%;
+  --btn-to: 217 91% 51%;
 
   --cyber-cyan: 258 90% 68%;
   --cyber-purple: 258 90% 68%;
@@ -216,7 +229,7 @@
   .cyber-button {
     @apply inline-flex items-center justify-center gap-2 text-white px-5 py-2.5 font-semibold text-sm transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;
     border-radius: 0.8rem;
-    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    background-image: linear-gradient(135deg, hsl(var(--btn-from)), hsl(var(--btn-to)));
     box-shadow:
       0 10px 28px -8px hsl(var(--glow) / 0.65),
       inset 0 1px 0 0 hsl(0 0% 100% / 0.25);
@@ -293,6 +306,13 @@
   -webkit-mask-image: radial-gradient(120% 80% at 50% 0%, #000 40%, transparent 100%);
   mask-image: radial-gradient(120% 80% at 50% 0%, #000 40%, transparent 100%);
 }
+
+/* Open/closed affordance for a <details> summary. Swapping which icon is shown
+   rather than rotating one: Tailwind's group-open variant did not resolve here,
+   and a transform rule was being reset by the utility layer, whereas display
+   toggling has nothing to conflict with. */
+details[open] > summary .chev-closed { display: none; }
+details:not([open]) > summary .chev-open { display: none; }
 
 /* A slow, subtle float and a gentle pulse — decorative, low-cost, and easy on
    the eye. Re-enabled from the neutralised stubs, kept calm on purpose. */
