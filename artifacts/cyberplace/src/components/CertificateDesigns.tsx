@@ -19,6 +19,13 @@ export type CertData = {
   difficulty?: string;
   hours?: string;
   level?: string;
+  /* Scanned signatures. Black ink on white/transparent; they are inverted for
+     the dark ground. Omit either one and a drawn stand-in is used instead. */
+  directorSig?: string;
+  instructorSig?: string;
+  /* Diploma only — the whole-programme credential. */
+  moduleCount?: number;
+  modules?: string[];
 };
 
 /* ── A+B · The hybrid ─────────────────────────────────────────────────────

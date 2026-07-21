@@ -1,5 +1,20 @@
 import { CertificateHybrid, CertificateClassic, CertificateCredential, CertificateMinimal, type CertData } from "@/components/CertificateDesigns";
-import { CertificatePremium } from "@/components/CertificatePremium";
+import { CertificatePremium, CertificateDiploma } from "@/components/CertificatePremium";
+
+/** The diploma covers the whole programme, so it carries its own sample. */
+const DIPLOMA: CertData = {
+  fullName: "Hikmatbek Yusupov",
+  moduleTitle: "cdCTF Cybersecurity Programme",
+  score: 91,
+  serial: "CDCTF-DIP-7B4E20A9",
+  issued: "21.07.2026",
+  verifyUrl: "cyberplace.uz/diploma/7B4E20A9",
+  moduleCount: 8,
+  modules: [
+    "Linux", "Networking", "Web Security", "Cryptography",
+    "Recon", "Exploitation", "Forensics & IR", "CTF Methodology",
+  ],
+};
 
 /**
  * A side-by-side of the three certificate treatments, so the look can be picked
@@ -21,9 +36,16 @@ const SAMPLE: CertData = {
 
 const VARIANTS = [
   {
+    key: "★★",
+    name: "Dastur diplomi — yakuniy, eng yuqori maqom",
+    note: "Butun dastur uchun. Oltin yetakchi, binafsha yordamchi. Dafna gulchambari, sakkiz modulning sharaf ro'yxati va dastur o'rtachasi — bularni faqat diplom ko'tara oladi.",
+    Comp: CertificateDiploma,
+    data: DIPLOMA,
+  },
+  {
     key: "★",
-    name: "Premium security print",
-    note: "Guilloche naqsh, hex to'r, mikromatn, UV chiziqlar, oltin folga effekti, kiber emblema, ikkita imzo va muhr, yutuq statistikasi, markazga yorug'lik.",
+    name: "Modul sertifikati — premium security print",
+    note: "Bitta modul uchun. Guilloche naqsh, hex to'r, mikromatn, UV chiziqlar, oltin folga, kiber emblema, ikkita imzo va muhr, yutuq statistikasi.",
     Comp: CertificatePremium,
   },
   {
@@ -64,7 +86,7 @@ export default function CertificatePreviewPage() {
         </p>
 
         <div className="space-y-16">
-          {VARIANTS.map(({ key, name, note, Comp }) => (
+          {VARIANTS.map(({ key, name, note, Comp, data }) => (
             <section key={key} data-testid={`cert-variant-${key}`}>
               <div className="flex items-baseline gap-3 mb-1">
                 <span className="text-2xl font-bold gradient-text">{key}</span>
@@ -77,7 +99,7 @@ export default function CertificatePreviewPage() {
                   itself never scrolls sideways. */}
               <div className="overflow-x-auto -mx-6 px-6 pb-2">
                 <div className="min-w-[680px]">
-                  <Comp d={SAMPLE} />
+                  <Comp d={data ?? SAMPLE} />
                 </div>
               </div>
             </section>
