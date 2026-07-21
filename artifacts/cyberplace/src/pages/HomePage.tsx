@@ -1,10 +1,24 @@
 import { Link } from "wouter";
 import { Trophy, Send, GraduationCap, Award, Terminal, Languages, ArrowRight, ChevronRight } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
+import { HeroTerminal } from "@/components/HeroTerminal";
+import { MODULE_ART } from "@/components/ModuleArt";
 import { useGetScoreboard, useListModules, getListModulesQueryKey } from "@workspace/api-client-react";
 import { normalizeArray } from "@/lib/api-shapes";
 
 type ScoreEntry = { userId: number; nickname: string; points: number };
+
+/** The eight modules, in path order — titles kept short for the preview grid. */
+const CURRICULUM = [
+  { slug: "linux-command-line", en: "Linux", uz: "Linux", ru: "Linux" },
+  { slug: "networking-for-security", en: "Networking", uz: "Tarmoqlar", ru: "Сети" },
+  { slug: "web-application-security", en: "Web Security", uz: "Veb xavfsizlik", ru: "Веб-безопасность" },
+  { slug: "cryptography-for-security", en: "Cryptography", uz: "Kriptografiya", ru: "Криптография" },
+  { slug: "reconnaissance-and-scanning", en: "Recon", uz: "Razvedka", ru: "Разведка" },
+  { slug: "exploitation-and-privilege-escalation", en: "Exploitation", uz: "Ekspluatatsiya", ru: "Эксплуатация" },
+  { slug: "forensics-and-incident-response", en: "Forensics & IR", uz: "Forenzika", ru: "Форензика" },
+  { slug: "ctf-methodology", en: "CTF Methodology", uz: "CTF metodikasi", ru: "Методология CTF" },
+] as const;
 
 export default function HomePage() {
   const { t } = useLang();
@@ -65,46 +79,54 @@ export default function HomePage() {
       <div className="fixed inset-0 mono-grid pointer-events-none" />
 
       <div className="relative max-w-6xl mx-auto px-6">
-        {/* Hero */}
-        <section className="pt-32 sm:pt-40 pb-20 text-center">
-          <div className="eyebrow justify-center flex mb-6">
-            {t("cdCTF · Cybersecurity Academy", "cdCTF · Kiberxavfsizlik akademiyasi", "cdCTF · Академия кибербезопасности")}
+        {/* Hero — copy on the left, a live terminal on the right. */}
+        <section className="pt-28 sm:pt-36 pb-20 grid lg:grid-cols-[1fr_1.05fr] gap-14 lg:gap-12 items-center">
+          <div className="text-center lg:text-left">
+            <div className="eyebrow mb-6 mx-auto lg:mx-0">
+              {t("cdCTF · Cybersecurity Academy", "cdCTF · Kiberxavfsizlik akademiyasi", "cdCTF · Академия кибербезопасности")}
+            </div>
+            <h1 className="text-[2.75rem] sm:text-6xl lg:text-[4.25rem] font-bold tracking-tight leading-[1.04] mb-6">
+              {t("Learn to hack.", "Hacking'ni o'rganing.", "Учитесь взламывать.")}<br />
+              <span className="gradient-text">{t("Learn to defend.", "Himoyani o'rganing.", "Учитесь защищать.")}</span>
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0 mb-9 leading-relaxed">
+              {t(
+                "A hands-on, six-month cybersecurity program in Uzbek, Russian and English — with real terminal commands, CTF practice, and a certificate at the end.",
+                "Amaliy, 6 oylik kiberxavfsizlik dasturi — o'zbek, rus va ingliz tilida, real terminal buyruqlar, CTF mashqlar va oxirida sertifikat bilan.",
+                "Практическая шестимесячная программа по кибербезопасности на узбекском, русском и английском — с реальными командами, CTF и сертификатом.",
+              )}
+            </p>
+            <div className="flex flex-col sm:flex-row items-center lg:justify-start justify-center gap-3">
+              <Link href="/modules" className="w-full sm:w-auto">
+                <button className="cyber-button h-12 px-8 w-full sm:w-auto" data-testid="button-hero-start">
+                  <GraduationCap className="w-4 h-4" />
+                  {t("Start learning", "O'rganishni boshlash", "Начать обучение")}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </Link>
+              <Link href="/ctf" className="w-full sm:w-auto">
+                <button className="cyber-button-outline h-12 px-8 w-full sm:w-auto" data-testid="button-hero-ctf">
+                  {t("Try the CTF challenges", "CTF topshiriqlarni sinash", "Попробовать CTF")}
+                </button>
+              </Link>
+            </div>
           </div>
-          <h1 className="text-5xl sm:text-7xl font-bold tracking-tight leading-[1.05] mb-6">
-            {t("Learn to hack.", "Hacking'ni o'rganing.", "Учитесь взламывать.")}<br />
-            <span className="gradient-text">{t("Learn to defend.", "Himoyani o'rganing.", "Учитесь защищать.")}</span>
-          </h1>
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            {t(
-              "A hands-on, six-month cybersecurity program in Uzbek, Russian and English — with real terminal commands, CTF practice, and a certificate at the end.",
-              "Amaliy, 6 oylik kiberxavfsizlik dasturi — o'zbek, rus va ingliz tilida, real terminal buyruqlar, CTF mashqlar va oxirida sertifikat bilan.",
-              "Практическая шестимесячная программа по кибербезопасности на узбекском, русском и английском — с реальными командами, CTF и сертификатом.",
-            )}
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/modules">
-              <button className="cyber-button h-12 px-8" data-testid="button-hero-start">
-                <GraduationCap className="w-4 h-4" />
-                {t("Start learning", "O'rganishni boshlash", "Начать обучение")}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </Link>
-            <Link href="/ctf">
-              <button className="cyber-button-outline h-12 px-8" data-testid="button-hero-ctf">
-                {t("Try the CTF challenges", "CTF topshiriqlarni sinash", "Попробовать CTF")}
-              </button>
-            </Link>
+
+          <div className="lg:pl-4">
+            <HeroTerminal />
           </div>
         </section>
 
-        {/* Stats */}
-        <section className="grid grid-cols-2 sm:grid-cols-4 gap-4 pb-24">
-          {stats.map((s, i) => (
-            <div key={i} className="glass-card text-center py-6">
-              <div className="text-3xl font-bold text-primary tabular-nums">{s.value}</div>
-              <div className="text-sm text-muted-foreground mt-1">{s.label}</div>
-            </div>
-          ))}
+        {/* Stats — one band rather than four detached boxes. */}
+        <section className="pb-24">
+          <div className="glass-card !p-0 grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-border overflow-hidden">
+            {stats.map((s, i) => (
+              <div key={i} className="text-center py-7 px-4">
+                <div className="text-3xl sm:text-4xl font-bold gradient-text tabular-nums">{s.value}</div>
+                <div className="text-sm text-muted-foreground mt-1.5">{s.label}</div>
+              </div>
+            ))}
+          </div>
         </section>
 
         {/* Value pillars */}
@@ -126,23 +148,47 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Path preview → modules */}
+        {/* The curriculum, shown rather than described. */}
         <section className="pb-24">
-          <Link href="/modules">
-            <div className="glass-card group flex items-center justify-between gap-4 cursor-pointer border-primary/30">
-              <div className="flex items-center gap-4 min-w-0">
-                <div className="w-11 h-11 rounded-lg bg-primary/15 border border-primary/40 text-primary flex items-center justify-center shrink-0 neon-glow">
-                  <GraduationCap className="w-5 h-5" />
-                </div>
-                <div className="min-w-0">
-                  <div className="eyebrow mb-1">{t("The curriculum", "O'quv dasturi", "Программа")}</div>
-                  <h3 className="text-base font-semibold group-hover:text-primary transition-colors">
-                    {t("Eight modules, beginner to advanced — start now", "Sakkiz modul, boshlang'ichdan ilg'orgacha — hoziroq boshlang", "Восемь модулей, от новичка до продвинутого — начните сейчас")}
-                  </h3>
-                </div>
-              </div>
-              <ArrowRight className="w-5 h-5 text-primary shrink-0 group-hover:translate-x-0.5 transition-transform" />
+          <div className="flex items-end justify-between gap-4 mb-8">
+            <div>
+              <div className="eyebrow mb-2">{t("The curriculum", "O'quv dasturi", "Программа")}</div>
+              <h2 className="text-3xl font-bold tracking-tight">
+                {t("Eight modules, in order", "Sakkiz modul, ketma-ket", "Восемь модулей, по порядку")}
+              </h2>
             </div>
+            <Link href="/modules" className="hidden sm:inline-flex items-center gap-1 min-h-[24px] py-1 text-sm font-medium text-primary hover:text-accent transition-colors shrink-0">
+              {t("See the path", "Yo'lni ko'rish", "Смотреть путь")}
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {CURRICULUM.map((c, i) => {
+              const Art = MODULE_ART[c.slug];
+              return (
+                <Link key={c.slug} href="/modules">
+                  <div className="glass-card !p-4 group cursor-pointer h-full flex flex-col items-center text-center">
+                    <div className="w-full aspect-square max-w-[104px] mb-3">
+                      <Art className="w-full h-full" />
+                    </div>
+                    <div className="text-[10px] font-mono text-muted-foreground mb-1">
+                      {String(i + 1).padStart(2, "0")}
+                    </div>
+                    <div className="text-sm font-semibold leading-snug group-hover:text-primary transition-colors">
+                      {t(c.en, c.uz, c.ru)}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+
+          <Link href="/modules" className="sm:hidden mt-4 flex justify-center">
+            <button className="cyber-button-outline h-11 px-6 w-full">
+              {t("See the path", "Yo'lni ko'rish", "Смотреть путь")}
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </Link>
         </section>
 

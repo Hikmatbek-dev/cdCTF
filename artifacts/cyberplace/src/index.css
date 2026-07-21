@@ -314,6 +314,26 @@
 details[open] > summary .chev-closed { display: none; }
 details:not([open]) > summary .chev-open { display: none; }
 
+/* Motion for the per-module SVG artwork (see components/ModuleArt.tsx). Each is
+   slow and low-amplitude on purpose: the art should feel alive on the roadmap,
+   not compete with the text next to it. */
+@keyframes cd-caret   { 0%, 45% { opacity: 1 } 55%, 100% { opacity: 0.12 } }
+@keyframes cd-flicker { 0%, 100% { opacity: 1 } 50% { opacity: 0.45 } }
+@keyframes cd-drift   { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-4px) } }
+@keyframes cd-sweep   { to { transform: rotate(360deg) } }
+@keyframes cd-wave    { 0%, 100% { transform: scaleY(1) } 50% { transform: scaleY(0.9) } }
+
+.cd-caret   { animation: cd-caret 1.15s steps(1) infinite; }
+.cd-flicker { animation: cd-flicker 2.6s ease-in-out infinite; }
+.cd-drift   { animation: cd-drift 7s ease-in-out infinite; }
+.cd-sweep   { animation: cd-sweep 6s linear infinite; }
+.cd-wave    { animation: cd-wave 3.4s ease-in-out infinite; transform-origin: 60px 38px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cd-caret, .cd-flicker, .cd-drift, .cd-sweep, .cd-wave { animation: none; }
+  .cd-packet { display: none; }
+}
+
 /* A slow, subtle float and a gentle pulse — decorative, low-cost, and easy on
    the eye. Re-enabled from the neutralised stubs, kept calm on purpose. */
 @keyframes cd-float {

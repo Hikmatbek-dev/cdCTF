@@ -1,12 +1,11 @@
 import { Link } from "wouter";
 import {
-  GraduationCap, Clock, Award, CheckCircle2, ChevronRight, BookOpen,
-  Terminal, Network, Globe, KeyRound, Radar, Crosshair, Fingerprint, Flag, Play,
-  type LucideIcon,
+  GraduationCap, Clock, Award, CheckCircle2, ChevronRight, Play,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
 import { normalizeArray } from "@/lib/api-shapes";
+import { MODULE_ART, LinuxArt } from "@/components/ModuleArt";
 import { useListModules, getListModulesQueryKey } from "@workspace/api-client-react";
 
 type ModuleSummary = {
@@ -21,18 +20,8 @@ type ModuleSummary = {
   certificateSerial?: string | null;
 };
 
-// A distinct icon per module, so the path reads as a varied journey rather than
-// a wall of identical cards.
-const MODULE_ICONS: Record<string, LucideIcon> = {
-  "linux-command-line": Terminal,
-  "networking-for-security": Network,
-  "web-application-security": Globe,
-  "cryptography-for-security": KeyRound,
-  "reconnaissance-and-scanning": Radar,
-  "exploitation-and-privilege-escalation": Crosshair,
-  "forensics-and-incident-response": Fingerprint,
-  "ctf-methodology": Flag,
-};
+// Artwork lives in components/ModuleArt.tsx — one illustration per module, so
+// the path reads as a varied journey rather than a wall of identical rows.
 
 /** Difficulty label + colour, so the three levels are visually distinct. */
 function difficultyMeta(difficulty: string, t: (en: string, uz?: string, ru?: string) => string) {
@@ -90,7 +79,7 @@ export default function ModulesPage() {
                 const percent = m.lessonCount > 0 ? Math.round((m.completedCount / m.lessonCount) * 100) : 0;
                 const done = Boolean(m.certificateSerial || m.examPassed);
                 const isCurrent = i === currentIndex;
-                const Icon = (m.slug && MODULE_ICONS[m.slug]) || BookOpen;
+                const Art = (m.slug && MODULE_ART[m.slug]) || LinuxArt;
                 const diff = difficultyMeta(m.difficulty, t);
 
                 return (
@@ -114,8 +103,8 @@ export default function ModulesPage() {
                         className={`glass-card cursor-pointer group flex items-center gap-4 !p-4 ${isCurrent ? "border-primary/50" : ""}`}
                         data-testid={`card-module-${m.id}`}
                       >
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-accent/10 border border-primary/25 flex items-center justify-center text-primary shrink-0">
-                          <Icon className="w-6 h-6" />
+                        <div className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-xl bg-gradient-to-br from-primary/[0.14] to-accent/[0.06] border border-primary/20 overflow-hidden shrink-0 group-hover:border-primary/40 transition-colors">
+                          <Art className="w-full h-full" />
                         </div>
 
                         <div className="min-w-0 flex-1">
