@@ -1,5 +1,6 @@
 import { useRoute, Link } from "wouter";
-import { Award, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+import { ModuleCertificate, CredentialFrame } from "@/components/Credentials";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
@@ -61,42 +62,27 @@ export default function CertificatePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground pt-28 pb-24">
-      <div className="max-w-2xl mx-auto px-6">
-        <article
-          className="border border-border rounded-xl bg-card p-10 sm:p-14 text-center"
-          data-testid="card-certificate"
-        >
-          <Award className="w-12 h-12 text-primary mx-auto mb-6" />
-
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-8">
-            {t("Certificate of completion", "Tugatganlik sertifikati", "Сертификат о прохождении")}
-          </p>
-
-          <p className="text-sm text-muted-foreground mb-2">
-            {t("This certifies that", "Ushbu sertifikat tasdiqlaydi:", "Настоящим удостоверяется, что")}
-          </p>
-          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-6" data-testid="text-certificate-name">
-            {cert.fullName}
-          </h1>
-
-          <p className="text-sm text-muted-foreground mb-2">
-            {t("has completed the module", "quyidagi modulni tugatdi", "прошёл(ла) модуль")}
-          </p>
-          <h2 className="text-xl font-medium mb-8" data-testid="text-certificate-module">{moduleTitle}</h2>
-
-          <div className="inline-flex items-baseline gap-2 mb-10">
-            <span className="text-4xl font-semibold tabular-nums text-primary" data-testid="text-certificate-score">
-              {cert.score}%
-            </span>
-            <span className="text-sm text-muted-foreground">{t("final score", "yakuniy ball", "итоговый балл")}</span>
-          </div>
-
-          <div className="border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
-            <span>{issued}</span>
-            <span className="font-medium text-foreground">cdCTF</span>
-            <span className="font-mono text-xs" data-testid="text-certificate-serial">{cert.serial}</span>
-          </div>
-        </article>
+      <div className="max-w-3xl mx-auto px-6">
+        <CredentialFrame>
+          <ModuleCertificate
+            d={{
+              fullName: cert.fullName,
+              subject: moduleTitle,
+              score: cert.score,
+              serial: cert.serial,
+              issued,
+              verifyUrl: `${window.location.host}/certificate/${cert.serial}`,
+            }}
+            l={{
+              title: t("Certificate", "Sertifikat", "Сертификат"),
+              certifies: t("Awarded to", "Kimga berildi", "Выдан"),
+              completed: "",
+              scoreLabel: t("Final score", "Yakuniy ball", "Итоговый балл"),
+              issued: t("Issued", "Berilgan", "Выдан"),
+              signatory: t("Hikmatbek Yusupov · Director", "Hikmatbek Yusupov · Direktor", "Хикматбек Юсупов · Директор"),
+            }}
+          />
+        </CredentialFrame>
 
         <p className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
           <ShieldCheck className="w-4 h-4 shrink-0" />

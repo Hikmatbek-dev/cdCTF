@@ -19,7 +19,6 @@ import ModulesPage from "@/pages/ModulesPage";
 import ModuleDetailPage from "@/pages/ModuleDetailPage";
 import ModuleExamPage from "@/pages/ModuleExamPage";
 import CertificatePage from "@/pages/CertificatePage";
-import CertificatePreviewPage from "@/pages/CertificatePreviewPage";
 import DiplomaPage from "@/pages/DiplomaPage";
 import DiplomaVerifyPage from "@/pages/DiplomaVerifyPage";
 import ScoreboardPage from "@/pages/ScoreboardPage";
@@ -139,10 +138,6 @@ function Router() {
           </Route>
           <Route path="/modules">
             {() => <PageTransition><ModulesPage /></PageTransition>}
-          </Route>
-          {/* Temporary: picking the certificate look. Removed once one wins. */}
-          <Route path="/certificate-preview">
-            <PageTransition><CertificatePreviewPage /></PageTransition>
           </Route>
           {/* Public: a certificate has to be checkable by whoever it is shown to. */}
           <Route path="/certificate/:serial">

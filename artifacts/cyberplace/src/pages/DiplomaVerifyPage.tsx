@@ -1,5 +1,6 @@
 import { useRoute, Link } from "wouter";
-import { GraduationCap, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+import { ProgrammeDiploma, CredentialFrame } from "@/components/Credentials";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
@@ -59,45 +60,31 @@ export default function DiplomaVerifyPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground pt-28 pb-24">
-      <div className="max-w-2xl mx-auto px-6">
-        <article
-          className="glass-card p-10 sm:p-14 text-center"
-          data-testid="card-diploma"
-        >
-          <GraduationCap className="w-14 h-14 text-primary mx-auto mb-6 neon-glow rounded-full p-2" />
-
-          <div className="eyebrow justify-center flex mb-8">
-            {t("cdCTF · Program Diploma", "cdCTF · Dastur diplomi", "cdCTF · Диплом программы")}
-          </div>
-
-          <p className="text-sm text-muted-foreground mb-2">
-            {t("This certifies that", "Ushbu diplom tasdiqlaydi:", "Настоящим удостоверяется, что")}
-          </p>
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6" data-testid="text-diploma-name">
-            {diploma.fullName}
-          </h1>
-
-          <p className="text-sm text-muted-foreground mb-8 max-w-md mx-auto">
-            {t(
-              `has completed the full cdCTF cybersecurity program — all ${diploma.moduleCount} modules.`,
-              `to'liq cdCTF kiberxavfsizlik dasturini — barcha ${diploma.moduleCount} modulni tugatdi.`,
-              `прошёл(ла) полную программу кибербезопасности cdCTF — все ${diploma.moduleCount} модулей.`,
-            )}
-          </p>
-
-          <div className="inline-flex items-baseline gap-2 mb-10">
-            <span className="text-4xl font-bold tabular-nums text-primary" data-testid="text-diploma-score">
-              {diploma.averageScore}%
-            </span>
-            <span className="text-sm text-muted-foreground">{t("average score", "o'rtacha ball", "средний балл")}</span>
-          </div>
-
-          <div className="border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
-            <span>{issued}</span>
-            <span className="font-semibold text-foreground">cdCTF</span>
-            <span className="font-mono text-xs" data-testid="text-diploma-serial">{diploma.serial}</span>
-          </div>
-        </article>
+      <div className="max-w-3xl mx-auto px-6">
+        <CredentialFrame>
+          <ProgrammeDiploma
+            d={{
+              fullName: diploma.fullName,
+              subject: t("Cybersecurity Programme", "Kiberxavfsizlik dasturi", "Программа кибербезопасности"),
+              score: diploma.averageScore,
+              serial: diploma.serial,
+              issued,
+              verifyUrl: `${window.location.host}/diploma/${diploma.serial}`,
+            }}
+            l={{
+              title: t("Diploma", "Diplom", "Диплом"),
+              certifies: t("This certifies that", "Ushbu diplom tasdiqlaydi:", "Настоящим удостоверяется, что"),
+              completed: t(
+                `has completed the full cdCTF programme — all ${diploma.moduleCount} modules`,
+                `to'liq cdCTF dasturini — barcha ${diploma.moduleCount} modulni tugatdi`,
+                `прошёл(ла) полную программу cdCTF — все ${diploma.moduleCount} модулей`,
+              ),
+              scoreLabel: t("Programme average", "Dastur o'rtachasi", "Средний балл"),
+              issued: t("Issued", "Berilgan", "Выдан"),
+              signatory: t("Hikmatbek Yusupov · Director", "Hikmatbek Yusupov · Direktor", "Хикматбек Юсупов · Директор"),
+            }}
+          />
+        </CredentialFrame>
 
         <p className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
           <ShieldCheck className="w-4 h-4 shrink-0" />
