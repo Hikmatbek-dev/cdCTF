@@ -294,6 +294,68 @@
   }
 }
 
+/* ── Section rhythm ──────────────────────────────────────────────────────────
+   A landing page that is one uniform shade top to bottom reads as an endless
+   strip, however good the individual sections are. TryHackMe and HackTheBox
+   both break it by alternating a bright band between dark ones.
+
+   `.section-alt` inverts the palette *relative to the current theme*: on the
+   dark site it becomes a near-white band, and on the light site it becomes a
+   dark one. Because it redefines the same variables every utility already
+   reads, everything inside — cards, borders, muted text, buttons — adapts on
+   its own, with no per-element overrides.
+
+   --primary/--accent shift too: the bright violet that carries dark mode is
+   too light to sit on white, so the band uses the darker pair that clears
+   WCAG AA there (the same values :root uses). */
+.section-alt {
+  --background: 264 44% 6%;
+  --foreground: 255 30% 96%;
+  --border: 260 26% 22%;
+  --card: 264 40% 10%;
+  --card-foreground: 255 30% 96%;
+  --card-border: 260 30% 26%;
+  --muted: 262 28% 15%;
+  --muted-foreground: 256 20% 72%;
+  --primary: 258 90% 68%;
+  --accent: 217 91% 62%;
+  --btn-from: 258 90% 63%;
+  --btn-to: 217 91% 51%;
+  --glow: 258 90% 68%;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.dark .section-alt {
+  --background: 264 30% 98%;
+  --foreground: 262 30% 12%;
+  --border: 264 20% 90%;
+  --card: 0 0% 100%;
+  --card-foreground: 262 30% 12%;
+  --card-border: 264 20% 90%;
+  --muted: 264 24% 95%;
+  --muted-foreground: 258 12% 42%;
+  --primary: 262 62% 48%;
+  --accent: 221 83% 47%;
+  --btn-from: 262 62% 48%;
+  --btn-to: 221 83% 45%;
+  --glow: 262 62% 48%;
+}
+
+/* Inside a bright band the frosted-glass treatment reads as muddy grey, so
+   cards there become clean opaque surfaces with a soft neutral shadow. */
+.dark .section-alt .glass-card {
+  background-image: none;
+  background-color: hsl(var(--card));
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: 0 1px 2px hsl(262 30% 12% / 0.06), 0 8px 24px -12px hsl(262 30% 12% / 0.18);
+}
+.dark .section-alt .glass-card:hover {
+  border-color: hsl(var(--primary) / 0.45);
+  box-shadow: 0 2px 4px hsl(262 30% 12% / 0.07), 0 16px 36px -14px hsl(262 30% 12% / 0.26);
+}
+
 /* The signature grid texture, back but restrained: faint teal-tinted lines,
    fixed so it does not repaint on scroll. Opacity is theme-tuned so it whispers
    on dark and barely shows on light. Apply with the .mono-grid class on a
