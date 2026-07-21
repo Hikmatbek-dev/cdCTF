@@ -43,9 +43,13 @@ export default function HomePage() {
     { label: t("Advanced", "Yuqori", "Продвинутый"), cls: "text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/30" },
   ];
 
+  // The three step images sit on a bright, near-white studio background, which
+  // is why this band is one of the two inverted sections — they would look cut
+  // out and wrong floating on the dark canvas.
   const steps = [
     {
       icon: BookOpen,
+      img: "/images/step-read.webp",
       title: t("Read the lesson", "Darsni o'qing", "Прочитайте урок"),
       desc: t(
         "Every lesson explains one idea properly — no filler, and every command comes with the output it really prints.",
@@ -55,6 +59,7 @@ export default function HomePage() {
     },
     {
       icon: Terminal,
+      img: "/images/step-run.webp",
       title: t("Run it yourself", "O'zingiz bajaring", "Выполните сами"),
       desc: t(
         "Copy the command into your own terminal and watch it work. You learn the tool, not a screenshot of it.",
@@ -64,6 +69,7 @@ export default function HomePage() {
     },
     {
       icon: Flag,
+      img: "/images/step-flag.webp",
       title: t("Capture the flag", "Flagni qo'lga kiriting", "Захватите флаг"),
       desc: t(
         "Pass the lesson test, earn points, then prove the whole module in a final exam and take the certificate.",
@@ -199,17 +205,31 @@ export default function HomePage() {
 
           <div className="grid md:grid-cols-3 gap-4 mb-24">
             {steps.map((s, i) => (
-              <div key={i} className="glass-card relative">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/15 to-accent/10 border border-primary/25 flex items-center justify-center text-primary shrink-0">
-                    <s.icon className="w-5 h-5" />
+              <div key={i} className="glass-card !p-0 overflow-hidden flex flex-col">
+                {/* width/height are set so the row never reflows while the
+                    image loads; the first card is eager because it is close
+                    to the fold on a phone. */}
+                <img
+                  src={s.img}
+                  alt=""
+                  width={900}
+                  height={491}
+                  loading={i === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                  className="w-full aspect-[900/491] object-cover border-b border-border"
+                />
+                <div className="p-6 flex flex-col flex-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/15 to-accent/10 border border-primary/25 flex items-center justify-center text-primary shrink-0">
+                      <s.icon className="w-4.5 h-4.5" />
+                    </div>
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
                   </div>
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
+                  <h3 className="text-lg font-semibold mb-2">{s.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
                 </div>
-                <h3 className="text-lg font-semibold mb-2">{s.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
               </div>
             ))}
           </div>
