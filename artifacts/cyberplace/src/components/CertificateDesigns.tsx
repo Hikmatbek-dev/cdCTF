@@ -14,6 +14,11 @@ export type CertData = {
   serial: string;
   issued: string;
   verifyUrl: string;
+  /* Achievement strip — only the premium treatment uses these. */
+  rank?: string;
+  difficulty?: string;
+  hours?: string;
+  level?: string;
 };
 
 /* ── A+B · The hybrid ─────────────────────────────────────────────────────

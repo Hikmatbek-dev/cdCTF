@@ -1,4 +1,5 @@
 import { CertificateHybrid, CertificateClassic, CertificateCredential, CertificateMinimal, type CertData } from "@/components/CertificateDesigns";
+import { CertificatePremium } from "@/components/CertificatePremium";
 
 /**
  * A side-by-side of the three certificate treatments, so the look can be picked
@@ -12,9 +13,19 @@ const SAMPLE: CertData = {
   serial: "CDCTF-2F9A41C7",
   issued: "21.07.2026",
   verifyUrl: "cyberplace.uz/certificate/2F9A41C7",
+  rank: "#12",
+  difficulty: "Beginner",
+  hours: "40h",
+  level: "01 / 08",
 };
 
 const VARIANTS = [
+  {
+    key: "★",
+    name: "Premium security print",
+    note: "Guilloche naqsh, hex to'r, mikromatn, UV chiziqlar, oltin folga effekti, kiber emblema, ikkita imzo va muhr, yutuq statistikasi, markazga yorug'lik.",
+    Comp: CertificatePremium,
+  },
   {
     key: "A+B",
     name: "Klassik diplom × zamonaviy credential",
@@ -60,7 +71,15 @@ export default function CertificatePreviewPage() {
                 <h2 className="text-xl font-semibold">{name}</h2>
               </div>
               <p className="text-sm text-muted-foreground mb-5 max-w-2xl">{note}</p>
-              <Comp d={SAMPLE} />
+              {/* A certificate is a fixed-proportion document: squeezed into a
+                  phone its fine print falls to ~3px. So it keeps a readable
+                  minimum width and scrolls inside its own box — the page
+                  itself never scrolls sideways. */}
+              <div className="overflow-x-auto -mx-6 px-6 pb-2">
+                <div className="min-w-[680px]">
+                  <Comp d={SAMPLE} />
+                </div>
+              </div>
             </section>
           ))}
         </div>
