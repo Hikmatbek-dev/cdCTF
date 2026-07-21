@@ -1,5 +1,6 @@
 import { CertificateHybrid, CertificateClassic, CertificateCredential, CertificateMinimal, type CertData } from "@/components/CertificateDesigns";
 import { CertificatePremium, CertificateDiploma } from "@/components/CertificatePremium";
+import { CertificateCleanModule, CertificateCleanDiploma } from "@/components/CertificateClean";
 
 /** The diploma covers the whole programme, so it carries its own sample. */
 const DIPLOMA: CertData = {
@@ -35,6 +36,19 @@ const SAMPLE: CertData = {
 };
 
 const VARIANTS = [
+  {
+    key: "M2",
+    name: "Diplom — minimal",
+    note: "Bezaksiz. Faqat ism, dastur, o'rtacha ball, imzo, sana va tekshirish. Oltin akssent, bitta nozik chiziq, ko'p bo'sh joy.",
+    Comp: CertificateCleanDiploma,
+    data: DIPLOMA,
+  },
+  {
+    key: "M1",
+    name: "Modul sertifikati — minimal",
+    note: "Xuddi shu mantiq, binafsha akssent bilan. Sahifadagi yagona katta narsa — ism.",
+    Comp: CertificateCleanModule,
+  },
   {
     key: "★★",
     name: "Dastur diplomi — yakuniy, eng yuqori maqom",
