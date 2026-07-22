@@ -55,10 +55,18 @@ export type CredentialLabels = {
 /** Keeps a document readable on small screens without the page scrolling. */
 export function CredentialFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto -mx-6 px-6 pb-2">
-      <div className="min-w-[680px]">{children}</div>
+    <div className="credential-print-wrap overflow-x-auto -mx-6 px-6 pb-2">
+      <div className="credential-print min-w-[680px]">{children}</div>
     </div>
   );
+}
+
+/**
+ * Hands the sheet to the browser's print dialog, where "Save as PDF" produces
+ * a vector A4 landscape file. See the @media print rules in index.css.
+ */
+export function printCredential() {
+  window.print();
 }
 
 /**

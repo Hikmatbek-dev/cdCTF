@@ -86,8 +86,11 @@ export default function ProfilePage() {
   const completedLessons = normalizeArray<any>(profile.completedLessons, ["completedLessons", "data", "items"]);
   const competitionHistory = normalizeArray<any>(profile.competitionHistory, ["competitionHistory", "competitions", "data", "items"]);
 
+  // No `overflow-hidden` on the root: it clipped the fixed backdrop below, and
+  // on a page whose content can exceed the viewport it is a way to lose content
+  // rather than a way to tidy it.
   return (
-    <div className="min-h-screen bg-background text-foreground pt-32 pb-24 relative overflow-hidden">
+    <div className="min-h-screen bg-background text-foreground pt-32 pb-24 relative">
       {/* Background Grid */}
       <div className="fixed inset-0 mono-grid pointer-events-none" />
 

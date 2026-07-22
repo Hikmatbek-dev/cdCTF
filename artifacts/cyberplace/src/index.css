@@ -356,6 +356,48 @@
   box-shadow: 0 2px 4px hsl(262 30% 12% / 0.07), 0 16px 36px -14px hsl(262 30% 12% / 0.26);
 }
 
+/* ── Printing a credential ───────────────────────────────────────────────────
+   "Download PDF" prints through the browser rather than rasterising the sheet
+   with html2canvas. The sheets are SVG, CSS gradients and container queries;
+   a canvas snapshot flattens all three and loses the crispness that matters
+   most on a document someone will print. Printing keeps it vector.
+
+   Everything else on the page is hidden with `visibility` rather than
+   `display` so the credential keeps the layout box its container queries size
+   against — switching to display:none would collapse it and rescale the type. */
+@media print {
+  @page { size: A4 landscape; margin: 0; }
+
+  html, body { background: #fff !important; }
+
+  body * { visibility: hidden !important; }
+  .credential-print, .credential-print * { visibility: visible !important; }
+
+  /* The scroller must not clip or offset the sheet on paper. */
+  .credential-print-wrap {
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .credential-print {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Without this the dark ground and the gradients drop out and the sheet
+     prints as near-white paper with invisible text. */
+  .credential-print, .credential-print * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
 /* The signature grid texture, back but restrained: faint teal-tinted lines,
    fixed so it does not repaint on scroll. Opacity is theme-tuned so it whispers
    on dark and barely shows on light. Apply with the .mono-grid class on a

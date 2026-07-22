@@ -32,6 +32,11 @@ export default function LessonTestPage() {
   const [loading, setLoading] = useState(true);
   const [fullscreenActive, setFullscreenActive] = useState(Boolean(document.fullscreenElement));
   const [fullscreenStarted, setFullscreenStarted] = useState(false);
+  /** False once we learn this browser has no Fullscreen API — then the test
+      runs without it rather than locking the reader out. */
+  const [fullscreenSupported, setFullscreenSupported] = useState(true);
+  /** The API exists but the request was refused; recoverable, so we say how. */
+  const [fullscreenRefused, setFullscreenRefused] = useState(false);
 
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTest = useStartLessonTest();
@@ -68,7 +73,10 @@ export default function LessonTestPage() {
     const handleFullscreenChange = () => {
       const isFullscreen = Boolean(document.fullscreenElement);
       setFullscreenActive(isFullscreen);
-      if (!isFullscreen && fullscreenStarted && sessionId && !result) {
+      // Only police an exit where fullscreen was genuinely entered. Without the
+      // support guard a browser that never had the API could still be reported
+      // as having "escaped" and get the lesson blocked.
+      if (fullscreenSupported && !isFullscreen && fullscreenStarted && sessionId && !result) {
         handleEscape();
       }
     };
@@ -79,10 +87,17 @@ export default function LessonTestPage() {
       if (document.fullscreenElement) void document.exitFullscreen?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, result, fullscreenStarted]);
+  }, [sessionId, result, fullscreenStarted, fullscreenSupported]);
 
   const enterFullscreen = () => {
+    // A browser with no Fullscreen API at all — iOS Safari, and most in-app
+    // browsers. Blocking here made the test impossible to take rather than
+    // harder to cheat at, and the button appeared to do nothing: it set
+    // `started` while `active` stayed false, so the gate below never opened.
+    // Proctoring that excludes whole platforms is worse than proctoring that
+    // degrades, so the test runs without it and says so.
     if (!document.documentElement.requestFullscreen) {
+      setFullscreenSupported(false);
       setFullscreenStarted(true);
       return;
     }
@@ -90,12 +105,13 @@ export default function LessonTestPage() {
       .then(() => {
         setFullscreenStarted(true);
         setFullscreenActive(true);
+        setFullscreenRefused(false);
       })
       .catch(() => {
-        toast({
-          title: t("Fullscreen is required", "To'liq ekran kerak", "Требуется полноэкранный режим"),
-          variant: "destructive",
-        });
+        // The API exists but the request was refused — a denied permission, or
+        // no user gesture. Unlike the case above this is fixable by the reader,
+        // so keep the gate closed and tell them precisely what to do.
+        setFullscreenRefused(true);
       });
   };
 
@@ -257,17 +273,36 @@ export default function LessonTestPage() {
   const answered = Object.keys(answers).length;
   const progress = questionList.length > 0 ? (answered / questionList.length) * 100 : 0;
 
-  if (!fullscreenStarted || !fullscreenActive) {
+  // The gate only applies where fullscreen is actually available. Where it is
+  // not, `fullscreenActive` can never become true and this screen would be a
+  // dead end.
+  if (!fullscreenStarted || (fullscreenSupported && !fullscreenActive)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="text-center max-w-sm">
-          <AlertTriangle className="w-12 h-12 text-primary mx-auto mb-4" />
-          <h2 className="text-xl font-bold mb-2">{t("Fullscreen required", "To'liq ekran kerak", "Нужен полноэкранный режим")}</h2>
-          <p className="text-sm text-muted-foreground mb-6">
-            {t("Start the test in fullscreen mode.", "Testni to'liq ekran rejimida boshlang.", "Начните тест в полноэкранном режиме.")}
+        <div className="glass-card text-center max-w-sm w-full">
+          <AlertTriangle className={`w-12 h-12 mx-auto mb-4 ${fullscreenRefused ? "text-destructive" : "text-primary"}`} />
+          <h2 className="text-xl font-bold mb-2">
+            {fullscreenRefused
+              ? t("Fullscreen was blocked", "To'liq ekran bloklandi", "Полноэкранный режим заблокирован")
+              : t("Fullscreen required", "To'liq ekran kerak", "Нужен полноэкранный режим")}
+          </h2>
+          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+            {fullscreenRefused
+              ? t(
+                  "Your browser refused the request. Allow fullscreen for this site in the address-bar permissions, then try again.",
+                  "Brauzeringiz so'rovni rad etdi. Manzil qatoridagi ruxsatlardan bu saytga to'liq ekranga ruxsat bering va qayta urining.",
+                  "Браузер отклонил запрос. Разрешите полноэкранный режим для сайта в настройках адресной строки и попробуйте снова.",
+                )
+              : t(
+                  "The test runs in fullscreen so the questions stay on screen. Leaving it during the test is recorded.",
+                  "Test to'liq ekranda o'tadi, shunda savollar ekrandan chiqmaydi. Test davomida undan chiqish qayd etiladi.",
+                  "Тест проходит в полноэкранном режиме. Выход из него во время теста фиксируется.",
+                )}
           </p>
-          <Button onClick={enterFullscreen}>
-            {t("Start Fullscreen Test", "To'liq ekran testini boshlash", "Начать тест")}
+          <Button onClick={enterFullscreen} className="w-full">
+            {fullscreenRefused
+              ? t("Try again", "Qayta urinish", "Попробовать снова")
+              : t("Start the test", "Testni boshlash", "Начать тест")}
           </Button>
         </div>
       </div>
