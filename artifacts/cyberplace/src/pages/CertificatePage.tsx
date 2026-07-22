@@ -80,7 +80,12 @@ export default function CertificatePage() {
               completed: "",
               scoreLabel: t("Final score", "Yakuniy ball", "Итоговый балл"),
               issued: t("Issued", "Berilgan", "Выдан"),
-              signatory: t("Hikmatbek Yusupov · Director", "Hikmatbek Yusupov · Direktor", "Хикматбек Юсупов · Директор"),
+              signatoryName: t(
+                "Hikmatbek Xudoyberganov Jur'at o'g'li",
+                "Hikmatbek Xudoyberganov Jur'at o'g'li",
+                "Хикматбек Худойберганов Журъат угли",
+              ),
+              signatoryRole: t("Founder & Director", "Asoschi va direktor", "Основатель и директор"),
             }}
           />
         </CredentialFrame>

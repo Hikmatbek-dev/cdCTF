@@ -42,7 +42,10 @@ export type CredentialLabels = {
   completed: string;  // "has completed the module" / "…the full programme — all 8 modules"
   scoreLabel: string; // "Final score" / "Programme average"
   issued: string;     // "Issued"
-  signatory: string;  // "Hikmatbek Yusupov · Director"
+  /* Kept as two fields rather than one line: a full Uzbek name with a
+     patronymic does not fit beside a role without being truncated. */
+  signatoryName: string;
+  signatoryRole: string;
 };
 
 /** Keeps a document readable on small screens without the page scrolling. */
@@ -121,8 +124,11 @@ export function ModuleCertificate({ d, l }: { d: CredentialData; l: CredentialLa
         <div className="w-full flex items-end justify-between gap-[4%] pt-[2.4%] border-t border-white/15">
           <div className="min-w-0">
             <SignatureMark src={d.signature} />
-            <div className="font-mono text-[0.95cqw] tracking-[0.2em] uppercase opacity-62 mt-[4%] truncate">
-              {l.signatory}
+            <div className="font-mono text-[0.95cqw] tracking-[0.16em] uppercase opacity-80 mt-[4%]">
+              {l.signatoryName}
+            </div>
+            <div className="font-mono text-[0.9cqw] tracking-[0.2em] uppercase opacity-62 mt-[2%]">
+              {l.signatoryRole}
             </div>
           </div>
 
@@ -221,7 +227,8 @@ export function ProgrammeDiploma({ d, l }: { d: CredentialData; l: CredentialLab
               <div className="text-right min-w-0">
                 <div className="flex justify-end"><SignatureMark src={d.signature} /></div>
                 <div className="w-[13cqw] border-t border-white/35 ml-auto mt-[1%]" />
-                <div className="text-[1cqw] uppercase tracking-[0.22em] text-white/60 mt-[4%] truncate">{l.signatory}</div>
+                <div className="text-[1cqw] uppercase tracking-[0.16em] text-white/80 mt-[4%]">{l.signatoryName}</div>
+                <div className="text-[1cqw] uppercase tracking-[0.22em] text-white/60 mt-[2%]">{l.signatoryRole}</div>
                 <div className="text-[1cqw] uppercase tracking-[0.22em] text-white/60 mt-[2%]">{l.issued} {d.issued}</div>
               </div>
             </div>

@@ -82,7 +82,12 @@ export default function DiplomaVerifyPage() {
               ),
               scoreLabel: t("Programme average", "Dastur o'rtachasi", "Средний балл"),
               issued: t("Issued", "Berilgan", "Выдан"),
-              signatory: t("Hikmatbek Yusupov · Director", "Hikmatbek Yusupov · Direktor", "Хикматбек Юсупов · Директор"),
+              signatoryName: t(
+                "Hikmatbek Xudoyberganov Jur'at o'g'li",
+                "Hikmatbek Xudoyberganov Jur'at o'g'li",
+                "Хикматбек Худойберганов Журъат угли",
+              ),
+              signatoryRole: t("Founder & Director", "Asoschi va direktor", "Основатель и директор"),
             }}
           />
         </CredentialFrame>
