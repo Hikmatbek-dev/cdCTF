@@ -23,7 +23,25 @@ router.get("/", optionalAuth, requireScope("ctf:read"), async (req, res) => {
   const userId = req.user?.userId;
 
   // Drafts are visible only through the admin routes.
-  let challenges = await db.select().from(ctfTasksTable).where(eq(ctfTasksTable.isPublished, true));
+  const published = await db.select().from(ctfTasksTable).where(eq(ctfTasksTable.isPublished, true));
+  let challenges = published;
+
+  // Which categories and difficulties actually have something in them. The
+  // filter used a hardcoded list of sixteen categories while only nine were
+  // populated, so picking Pwn or OSINT returned an empty page with no
+  // explanation. Counted before the filters are applied, so choosing one
+  // option does not make the others disappear.
+  const countBy = (key: "category" | "difficulty") => {
+    const counts = new Map<string, number>();
+    for (const c of published) {
+      const v = c[key];
+      if (v) counts.set(v, (counts.get(v) ?? 0) + 1);
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([value, count]) => ({ value, count }));
+  };
+  const facets = { categories: countBy("category"), difficulties: countBy("difficulty") };
 
   if (category && category !== "All") challenges = challenges.filter(c => c.category === category);
   if (difficulty && difficulty !== "All") challenges = challenges.filter(c => c.difficulty === difficulty);
@@ -69,12 +87,16 @@ router.get("/", optionalAuth, requireScope("ctf:read"), async (req, res) => {
   const total = result.length;
   const paginatedResult = result.slice((page - 1) * limit, page * limit);
 
-  res.json({ 
-    challenges: paginatedResult, 
+  res.json({
+    challenges: paginatedResult,
     total,
     page,
     limit,
-    totalPages: Math.ceil(total / limit)
+    totalPages: Math.ceil(total / limit),
+    // Every published challenge, not just this page — the filter needs the
+    // whole picture, and the landing quotes the real count instead of "40+".
+    publishedTotal: published.length,
+    facets,
   });
 });
 

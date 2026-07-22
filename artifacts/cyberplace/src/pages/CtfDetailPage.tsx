@@ -1,14 +1,38 @@
 import { useState } from "react";
-import { useRoute } from "wouter";
-import { Download, Flag, AlertTriangle, CheckCircle2, Lock, ExternalLink, Zap, Cpu } from "lucide-react";
+import { useRoute, Link } from "wouter";
+import { Download, Flag, AlertTriangle, CheckCircle2, Lock, ExternalLink, Zap, Cpu, GraduationCap, ChevronRight } from "lucide-react";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/LanguageContext";
-import { useGetCtfChallenge, getGetCtfChallengeQueryKey, useSubmitCtfFlag, useGetScoreboard } from "@workspace/api-client-react";
+import { useGetCtfChallenge, getGetCtfChallengeQueryKey, useSubmitCtfFlag, useGetScoreboard, useListModules, getListModulesQueryKey } from "@workspace/api-client-react";
+import { normalizeArray } from "@/lib/api-shapes";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { FadeIn, ScaleIn } from "@/components/PageTransition";
+
+/**
+ * Which module teaches the skill a challenge category needs.
+ *
+ * This is the bridge the site was missing. Every user on the leaderboard has
+ * solved challenges and not one has finished a lesson, because nothing ever
+ * connected the two. The moment someone is stuck on a crypto challenge is the
+ * moment the cryptography module is worth showing them.
+ */
+const CATEGORY_TO_MODULE: Record<string, string> = {
+  Web: "web-application-security",
+  Crypto: "cryptography-for-security",
+  Forensics: "forensics-and-incident-response",
+  Steganography: "forensics-and-incident-response",
+  Networking: "networking-for-security",
+  Scripting: "linux-command-line",
+  OSINT: "reconnaissance-and-scanning",
+  Recon: "reconnaissance-and-scanning",
+  Pwn: "exploitation-and-privilege-escalation",
+  Reverse: "ctf-methodology",
+  Miscellaneous: "ctf-methodology",
+  Others: "ctf-methodology",
+};
 
 export default function CtfDetailPage() {
   const [, params] = useRoute("/ctf/:id");
@@ -23,6 +47,15 @@ export default function CtfDetailPage() {
   });
 
   const { data: scoreboard } = useGetScoreboard({ limit: 1 });
+
+  // Resolve the category to a real module so the link is a deep one. Modules
+  // are keyed by slug in the map but routed by id, so this needs the list.
+  type ModuleRow = { id: number; slug?: string; title: string; titleUz?: string | null; titleRu?: string | null; lessonCount: number };
+  const { data: modulesData } = useListModules({ query: { queryKey: getListModulesQueryKey() } });
+  const teachingSlug = challenge?.category ? CATEGORY_TO_MODULE[challenge.category] : undefined;
+  const teachingModule = teachingSlug
+    ? normalizeArray<ModuleRow>(modulesData, ["id", "title"]).find(m => m.slug === teachingSlug)
+    : undefined;
   const total = scoreboard?.total ?? 1;
 
   const submitFlag = useSubmitCtfFlag();
@@ -95,7 +128,7 @@ export default function CtfDetailPage() {
           <FadeIn>
             <div className="flex flex-wrap items-center gap-4 mb-10">
               <DifficultyBadge difficulty={challenge.difficulty} className="rounded-xl px-5 py-2 text-[10px] font-black uppercase tracking-[0.2em] shadow-lg border-foreground/5" />
-              <div className="px-5 py-2 bg-foreground/5 border border-foreground/5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 backdrop-blur-md">{challenge.category}</div>
+              <div className="px-4 py-1.5 bg-foreground/5 border border-foreground/5 rounded-lg text-xs font-medium text-muted-foreground backdrop-blur-md">{challenge.category}</div>
               
               {challenge.isSolved && (
                 <div className="flex items-center gap-3 px-5 py-2 bg-primary/10 border border-primary/20 text-[10px] font-black uppercase tracking-[0.2em] text-primary shadow-xl shadow-primary/10 animate-pulse-glow rounded-xl">
@@ -109,7 +142,7 @@ export default function CtfDetailPage() {
               )}
             </div>
             
-            <h1 className="text-5xl md:text-8xl font-black tracking-tighter uppercase leading-none mb-12" data-testid="text-challenge-name">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight mb-8" data-testid="text-challenge-name">
               <span className="text-foreground/20 mr-4">MISSION:</span>
               <span className="gradient-text">{t(challenge.name, challenge.nameUz ?? undefined, challenge.nameRu ?? undefined)}</span>
             </h1>
@@ -278,14 +311,45 @@ export default function CtfDetailPage() {
               </div>
             </FadeIn>
             
-            <FadeIn delay={0.6}>
-              <div className="glass-card p-10 rounded-[3rem] bg-accent/[0.02] border-accent/20">
-                <div className="flex items-center gap-4 mb-6">
-                  <AlertTriangle className="w-5 h-5 text-accent" />
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-accent">SECURITY_PROTOCOL</h3>
+            {teachingModule && (
+              <FadeIn delay={0.6}>
+                <Link href={`/modules/${teachingModule.id}`}>
+                  <div className="glass-card p-8 rounded-[3rem] border-primary/25 cursor-pointer group hover:border-primary/50 transition-colors">
+                    <div className="eyebrow mb-3">
+                      <GraduationCap className="w-3.5 h-3.5" />
+                      {t("Stuck?", "Qiynalyapsizmi?", "Застряли?")}
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
+                      {t(teachingModule.title, teachingModule.titleUz ?? undefined, teachingModule.titleRu ?? undefined)}
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                      {t(
+                        `This module teaches ${challenge.category}. ${teachingModule.lessonCount} lessons, with the commands you need.`,
+                        `Bu modul ${challenge.category} yo'nalishini o'rgatadi. ${teachingModule.lessonCount} dars, kerakli buyruqlar bilan.`,
+                        `Этот модуль обучает направлению ${challenge.category}. ${teachingModule.lessonCount} уроков с нужными командами.`,
+                      )}
+                    </p>
+                    <span className="inline-flex items-center gap-1 text-sm font-medium text-primary">
+                      {t("Open the module", "Modulni ochish", "Открыть модуль")}
+                      <ChevronRight className="w-4 h-4" />
+                    </span>
+                  </div>
+                </Link>
+              </FadeIn>
+            )}
+
+            <FadeIn delay={0.7}>
+              <div className="glass-card p-8 rounded-[3rem] bg-accent/[0.02] border-accent/20">
+                <div className="flex items-center gap-3 mb-3">
+                  <AlertTriangle className="w-4 h-4 text-accent shrink-0" />
+                  <h3 className="text-sm font-semibold">{t("One rule", "Bitta qoida", "Одно правило")}</h3>
                 </div>
-                <p className="text-[11px] leading-relaxed text-muted-foreground/60 font-bold italic tracking-wide">
-                  "Exposing mission assets or capture tokens outside the cdCTF environment is strictly prohibited. Terminal access will be permanently revoked for violators."
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {t(
+                    "Do not share flags or challenge files outside cdCTF. Solving it yourself is the whole point — and sharing it takes that away from someone else.",
+                    "Flag va topshiriq fayllarini cdCTF tashqarisida ulashmang. Butun gap o'zingiz yechishingizda — ulashsangiz, buni boshqadan tortib olgan bo'lasiz.",
+                    "Не делитесь флагами и файлами заданий вне cdCTF. Весь смысл в том, чтобы решить самому — а поделившись, вы лишаете этого другого.",
+                  )}
                 </p>
               </div>
             </FadeIn>

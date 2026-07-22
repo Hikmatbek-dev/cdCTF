@@ -4,7 +4,7 @@ import {
   ChevronRight, ChevronDown, BookOpen, Flag, ShieldCheck, Users, Check,
 } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
-import { useGetScoreboard, useListModules, getListModulesQueryKey } from "@workspace/api-client-react";
+import { useGetScoreboard, useListModules, getListModulesQueryKey, useListCtfChallenges, getListCtfChallengesQueryKey } from "@workspace/api-client-react";
 import { normalizeArray } from "@/lib/api-shapes";
 import { HeroTerminal } from "@/components/HeroTerminal";
 import { MODULE_ART } from "@/components/ModuleArt";
@@ -29,12 +29,21 @@ export default function HomePage() {
   const { data: scoreboard } = useGetScoreboard({ limit: 5 });
   const scoreboardEntries = normalizeArray<ScoreEntry>(scoreboard?.entries, ["entries", "data", "items"]);
   const { data: modulesData } = useListModules({ query: { queryKey: getListModulesQueryKey() } });
-  const moduleCount = normalizeArray<{ id: number }>(modulesData, ["id"]).length;
+  const modules = normalizeArray<{ id: number; lessonCount?: number }>(modulesData, ["id"]);
+  const moduleCount = modules.length;
+  const lessonCount = modules.reduce((n, m) => n + (m.lessonCount ?? 0), 0);
+
+  // The real published count rather than a hardcoded "40+". It was 79, so the
+  // page was underselling the thing by half.
+  const { data: ctfData } = useListCtfChallenges({}, {
+    query: { queryKey: getListCtfChallengesQueryKey({}) },
+  }) as { data?: { publishedTotal?: number; total?: number } };
+  const ctfCount = ctfData?.publishedTotal ?? ctfData?.total ?? 0;
 
   const stats = [
     { value: moduleCount > 0 ? `${moduleCount}` : "8", label: t("modules", "modul", "модулей") },
-    { value: "64+", label: t("lessons", "dars", "уроков") },
-    { value: "40+", label: t("CTF challenges", "CTF topshiriq", "CTF заданий") },
+    { value: lessonCount > 0 ? `${lessonCount}` : "64", label: t("lessons", "dars", "уроков") },
+    { value: ctfCount > 0 ? `${ctfCount}` : "40+", label: t("CTF challenges", "CTF topshiriq", "CTF заданий") },
     { value: "3", label: t("languages", "til", "языка") },
   ];
 
@@ -377,9 +386,9 @@ export default function HomePage() {
               </h2>
               <p className="text-muted-foreground mb-7 leading-relaxed">
                 {t(
-                  "Forty-plus CTF challenges across web, crypto, forensics and pwn — the same categories the lessons teach. Submit a flag, take the points, climb the board.",
-                  "Veb, kripto, forenzika va pwn bo'yicha 40 dan ortiq CTF topshiriq — darslar o'rgatgan o'sha kategoriyalar. Flagni topshiring, ballni oling, reytingda ko'tariling.",
-                  "Более сорока CTF-заданий по вебу, крипте, форензике и pwn — те же категории, что и в уроках. Сдайте флаг, получите очки, поднимитесь в таблице.",
+                  "Dozens of CTF challenges across web, crypto, forensics and more — the same categories the lessons teach. Submit a flag, take the points, climb the board.",
+                  "Veb, kripto, forenzika va boshqa yo'nalishlarda o'nlab CTF topshiriq — darslar o'rgatgan o'sha kategoriyalar. Flagni topshiring, ballni oling, reytingda ko'tariling.",
+                  "Десятки CTF-заданий по вебу, крипте, форензике и другим — те же категории, что и в уроках. Сдайте флаг, получите очки, поднимитесь в таблице.",
                 )}
               </p>
               <Link href="/ctf" className="inline-block">

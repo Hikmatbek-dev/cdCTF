@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import { Search, CheckCircle2, Shield, Zap, Target, ChevronRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,12 +11,8 @@ import { normalizeCtfChallenges } from "@/lib/api-shapes";
 import { motion, AnimatePresence } from "framer-motion";
 import { FadeIn } from "@/components/PageTransition";
 
-const CATEGORIES = [
-  "All", "Web", "Crypto", "Reverse", "Forensics", "Pwn", "OSINT", 
-  "Steganography", "Miscellaneous", "Mobile", "Hardware", 
-  "Networking", "Cloud", "AI", "Scripting", "Others"
-];
-const DIFFICULTIES = ["All", "easy", "medium", "hard", "insane"];
+/** Order difficulties by how hard they are, not by how many exist. */
+const DIFFICULTY_ORDER = ["easy", "medium", "hard", "insane"];
 
 export default function CtfListPage() {
   const { t } = useLang();
@@ -26,14 +22,17 @@ export default function CtfListPage() {
   const [solved, setSolved] = useState<"all" | "solved" | "unsolved">("all");
   const [page, setPage] = useState(1);
   
-  const queryParams = {
+  // Memoised so the query key keeps its identity between renders. Rebuilt
+  // inline it was a fresh object every render, which kept React Query
+  // restarting the request instead of settling on a result.
+  const queryParams = useMemo(() => ({
     page,
     limit: 24,
     ...(category !== "All" ? { category } : {}),
     ...(difficulty !== "All" ? { difficulty: difficulty as "easy" | "medium" | "hard" | "insane" } : {}),
     ...(solved === "solved" ? { solved: true } : solved === "unsolved" ? { solved: false } : {}),
     ...(search ? { search } : {}),
-  };
+  }), [page, category, difficulty, solved, search]);
 
   const { data, isLoading } = useListCtfChallenges(
     queryParams,
@@ -42,6 +41,14 @@ export default function CtfListPage() {
 
   const challenges = normalizeCtfChallenges(data?.challenges || []);
   const totalPages = data?.totalPages || 1;
+
+  // Only offer filters that lead somewhere. The server counts these across
+  // every published challenge, so the options do not shift as you filter.
+  type Facet = { value: string; count: number };
+  const categoryFacets: Facet[] = data?.facets?.categories ?? [];
+  const difficultyFacets: Facet[] = (data?.facets?.difficulties ?? [])
+    .slice()
+    .sort((a: Facet, b: Facet) => DIFFICULTY_ORDER.indexOf(a.value) - DIFFICULTY_ORDER.indexOf(b.value));
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
@@ -137,7 +144,14 @@ export default function CtfListPage() {
                   <SelectValue placeholder={t("Category", "Kategoriya", "Категория")} />
                 </SelectTrigger>
                 <SelectContent className="bg-card/95 backdrop-blur-xl border border-foreground/10 rounded-2xl shadow-2xl p-2">
-                  {CATEGORIES.map(c => <SelectItem key={c} value={c} className="rounded-xl px-4 py-2.5 text-sm cursor-pointer">{c}</SelectItem>)}
+                  <SelectItem value="All" className="rounded-xl px-4 py-2.5 text-sm cursor-pointer">
+                    {t("All categories", "Barcha kategoriyalar", "Все категории")}
+                  </SelectItem>
+                  {categoryFacets.map(f => (
+                    <SelectItem key={f.value} value={f.value} className="rounded-xl px-4 py-2.5 text-sm cursor-pointer">
+                      {f.value} <span className="text-muted-foreground">({f.count})</span>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 
@@ -146,7 +160,14 @@ export default function CtfListPage() {
                   <SelectValue placeholder={t("Difficulty", "Qiyinlik", "Сложность")} />
                 </SelectTrigger>
                 <SelectContent className="bg-card/95 backdrop-blur-xl border border-foreground/10 rounded-2xl shadow-2xl p-2">
-                  {DIFFICULTIES.map(d => <SelectItem key={d} value={d} className="rounded-xl px-4 py-2.5 text-sm cursor-pointer">{d}</SelectItem>)}
+                  <SelectItem value="All" className="rounded-xl px-4 py-2.5 text-sm cursor-pointer">
+                    {t("Any difficulty", "Har qanday", "Любая")}
+                  </SelectItem>
+                  {difficultyFacets.map(f => (
+                    <SelectItem key={f.value} value={f.value} className="rounded-xl px-4 py-2.5 text-sm cursor-pointer capitalize">
+                      {f.value} <span className="text-muted-foreground">({f.count})</span>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

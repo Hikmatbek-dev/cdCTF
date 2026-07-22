@@ -203,12 +203,27 @@ export default function LessonTestPage() {
   if (blocked) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="text-center max-w-sm">
+        {/* "Contact admin" with no way to contact one is a dead end. Say what is
+            still open — the lesson, the rest of the module, the exam — and give
+            a route that actually reaches somebody. */}
+        <div className="glass-card text-center max-w-md w-full">
           <AlertTriangle className="w-12 h-12 text-destructive mx-auto mb-4" />
-          <h2 className="text-xl font-bold mb-2">{t("Lesson Blocked", "Dars Bloklangan", "Урок заблокирован")}</h2>
-          <p className="text-sm text-muted-foreground mb-6">{t("You exited fullscreen 3 times. Contact admin to unblock.", "3 marta to'liq ekrandan chiqdingiz. Blokni ochish uchun adminga murojaat qiling.", "Вы вышли из полноэкранного режима 3 раза.")}</p>
+          <h2 className="text-xl font-bold mb-2">{t("This test is locked", "Bu test qulflandi", "Тест заблокирован")}</h2>
+          <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+            {t(
+              "You left fullscreen three times, so the test closed. The lesson itself stays open, the rest of the module is unaffected, and the final exam still counts this material.",
+              "To'liq ekrandan uch marta chiqdingiz, shuning uchun test yopildi. Darsning o'zi ochiq qoladi, modulning qolgani ta'sirlanmaydi, va yakuniy imtihon bu mavzuni baribir hisobga oladi.",
+              "Вы трижды вышли из полноэкранного режима, и тест закрылся. Сам урок остаётся открытым, остальная часть модуля не затронута, а итоговый экзамен всё равно охватывает этот материал.",
+            )}
+          </p>
+          <p className="text-sm text-muted-foreground mb-6">
+            {t("Think it was a mistake?", "Xato bo'ldi deb o'ylaysizmi?", "Считаете это ошибкой?")}{" "}
+            <a href="https://t.me/cdctf_uz" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-accent transition-colors">
+              {t("Ask on Telegram", "Telegramda so'rang", "Спросите в Telegram")}
+            </a>
+          </p>
           <Button onClick={() => setLocation(`/learn/${id}`)}>
-            {t("Back to Lesson", "Darsga Qaytish", "Вернуться к уроку")}
+            {t("Back to the lesson", "Darsga qaytish", "Вернуться к уроку")}
           </Button>
         </div>
       </div>
