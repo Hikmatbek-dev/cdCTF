@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import {
-  Trophy, Send, GraduationCap, Award, Terminal, Languages, ArrowRight,
+  Trophy, Send, GraduationCap, Terminal, Languages, ArrowRight,
   ChevronRight, ChevronDown, BookOpen, Flag, ShieldCheck, Users, Check,
 } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
@@ -8,6 +8,7 @@ import { useGetScoreboard, useListModules, getListModulesQueryKey } from "@works
 import { normalizeArray } from "@/lib/api-shapes";
 import { HeroTerminal } from "@/components/HeroTerminal";
 import { MODULE_ART } from "@/components/ModuleArt";
+import { ModuleCertificate, CredentialFrame } from "@/components/Credentials";
 
 type ScoreEntry = { userId: number; nickname: string; points: number };
 
@@ -394,8 +395,8 @@ export default function HomePage() {
 
       {/* ── Bright band: the certificate ────────────────────────────── */}
       <div className="section-alt relative z-10">
-        <div className="max-w-6xl mx-auto px-6 py-24 grid lg:grid-cols-2 gap-12 items-center">
-          <div>
+        <div className="max-w-6xl mx-auto px-6 py-24">
+          <div className="max-w-2xl mb-12">
             <div className="eyebrow mb-3">{t("Proof of work", "Ish isboti", "Доказательство работы")}</div>
             <h2 className="text-3xl sm:text-[2.5rem] font-bold tracking-tight mb-4 leading-tight">
               {t("A certificate per module — and a diploma at the end", "Har modulga sertifikat — oxirida esa diplom", "Сертификат за модуль — и диплом в конце")}
@@ -415,35 +416,40 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* Certificate mock */}
-          <div className="relative">
-            <div className="glass-card !p-8 relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent" />
-              <div className="flex items-start justify-between mb-6">
-                <div>
-                  <div className="eyebrow mb-1">{t("Certificate", "Sertifikat", "Сертификат")}</div>
-                  <div className="font-mono text-[10px] text-muted-foreground">CDCTF-2F9A41C7</div>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
-                  <Award className="w-6 h-6 text-white" />
-                </div>
-              </div>
-              <div className="text-xs text-muted-foreground mb-1">{t("Awarded to", "Kimga berildi", "Выдан")}</div>
-              <div className="text-2xl font-bold mb-5">Hikmatbek</div>
-              <div className="text-sm font-medium mb-6">
-                {t("Linux Command Line for Security", "Xavfsizlik uchun Linux buyruqlar qatori", "Linux для безопасности")}
-              </div>
-              <div className="flex items-end justify-between pt-5 border-t border-border">
-                <div>
-                  <div className="text-xs text-muted-foreground">{t("Score", "Ball", "Балл")}</div>
-                  <div className="text-xl font-bold gradient-text tabular-nums">93%</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs text-muted-foreground">{t("Issued", "Berilgan", "Выдан")}</div>
-                  <div className="text-sm font-medium tabular-nums">2026-07-21</div>
-                </div>
-              </div>
-            </div>
+          {/* The real sheet, not a mock — the landing should show exactly what
+              is issued. The recipient reads "Your name" rather than a person's,
+              so it is plainly a specimen and invents nobody. */}
+          <div className="max-w-3xl mx-auto">
+            <CredentialFrame>
+              <ModuleCertificate
+                d={{
+                  fullName: t("Your name", "Sizning ismingiz", "Ваше имя"),
+                  subject: t("Linux Command Line for Security", "Xavfsizlik uchun Linux buyruqlar qatori", "Linux для безопасности"),
+                  score: 93,
+                  serial: "CDCTF-2F9A41C7B0",
+                  issued: "21.07.2026",
+                  verifyUrl: "cyberplace.uz/certificate/…",
+                  verifyHref: "https://cyberplace.uz/modules",
+                  fingerprint: "8deca45f81e1de5d78aa6c1ca47aba2c",
+                }}
+                l={{
+                  title: t("Certificate", "Sertifikat", "Сертификат"),
+                  certifies: t("Awarded to", "Kimga berildi", "Выдан"),
+                  completed: "",
+                  scoreLabel: t("Final score", "Yakuniy ball", "Итоговый балл"),
+                  issued: t("Issued", "Berilgan", "Выдан"),
+                  signatoryName: "Hikmatbek Xudoyberganov Jur'at o'g'li",
+                  signatoryRole: t("Founder & Director", "Asoschi va direktor", "Основатель и директор"),
+                }}
+              />
+            </CredentialFrame>
+            <p className="text-xs text-muted-foreground text-center mt-4">
+              {t(
+                "Specimen. Every issued certificate carries a serial and fingerprint anyone can check.",
+                "Namuna. Beriladigan har bir sertifikatda har kim tekshira oladigan seriya va barmoq izi bo'ladi.",
+                "Образец. На каждом выданном сертификате — серийный номер и отпечаток, которые может проверить любой.",
+              )}
+            </p>
           </div>
         </div>
       </div>
