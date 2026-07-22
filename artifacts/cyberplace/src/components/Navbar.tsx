@@ -93,13 +93,13 @@ export function Navbar() {
             <div className="hidden sm:flex items-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-10 px-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground rounded-xl hover:bg-foreground/5 border border-transparent hover:border-foreground/5 transition-all">
+                  <Button variant="ghost" size="sm" className="h-10 px-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground rounded-xl hover:bg-foreground/5 border border-transparent hover:border-foreground/5 transition-all">
                     {lang} <ChevronDown className="w-3 h-3 ml-2 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-xl border border-foreground/10 rounded-2xl min-w-[140px] p-2 mt-2 shadow-2xl">
                   {(["en", "uz", "ru"] as Language[]).map(l => (
-                    <DropdownMenuItem key={l} onClick={() => setLang(l)} className={`rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-foreground/5 transition-colors ${lang === l ? "text-primary bg-primary/5" : "text-muted-foreground"}`}>
+                    <DropdownMenuItem key={l} onClick={() => setLang(l)} className={`rounded-xl px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-foreground/5 transition-colors ${lang === l ? "text-primary bg-primary/5" : "text-muted-foreground"}`}>
                       {l === "en" ? "English" : l === "uz" ? "O'zbek" : "Русский"}
                     </DropdownMenuItem>
                   ))}
@@ -133,8 +133,8 @@ export function Navbar() {
                       {user.nickname[0].toUpperCase()}
                     </div>
                     <div className="text-left hidden lg:block">
-                      <div className="text-[10px] font-black uppercase tracking-widest leading-none text-foreground">{user.nickname}</div>
-                      <div className="text-[9px] font-black text-primary mt-1 tabular-nums">{user.points.toLocaleString()} XP</div>
+                      <div className="text-sm font-medium leading-none text-foreground">{user.nickname}</div>
+                      <div className="text-xs text-primary mt-1 tabular-nums">{user.points.toLocaleString()} XP</div>
                     </div>
                   </button>
                 </DropdownMenuTrigger>
@@ -233,7 +233,7 @@ export function Navbar() {
             <div className="mt-6 pt-6 border-t border-foreground/5 flex items-center justify-between">
               <div className="flex gap-4">
                 {(["en", "uz", "ru"] as Language[]).map(l => (
-                  <button key={l} onClick={() => setLang(l)} className={`text-[10px] font-black uppercase tracking-widest ${lang === l ? "text-primary" : "text-muted-foreground"}`}>
+                  <button key={l} onClick={() => setLang(l)} className={`min-h-[24px] px-2 py-1 text-sm font-medium uppercase ${lang === l ? "text-primary" : "text-muted-foreground"}`}>
                     {l}
                   </button>
                 ))}
