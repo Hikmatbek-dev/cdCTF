@@ -7,7 +7,7 @@ import {
   programDiplomasTable,
 } from "@workspace/db/schema";
 import { eq, and, inArray, asc } from "drizzle-orm";
-import { randomBytes } from "node:crypto";
+import { randomBytes, createHash } from "node:crypto";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import { SubmitLessonTestBody } from "@workspace/api-zod";
@@ -545,6 +545,31 @@ router.post("/modules/:id/certificate", authenticateToken, async (req, res) => {
   res.status(201).json({ serial: created.serial, fullName: created.fullName, score: created.score, issuedAt: created.issuedAt });
 });
 
+/**
+ * Integrity fingerprint over the fields a credential attests to.
+ *
+ * What it proves, precisely: that the name, subject, score and date printed on
+ * a sheet are the ones this server holds. Someone who edits a screenshot or a
+ * printout to raise their score cannot produce a matching fingerprint, because
+ * the verifier recomputes it from the record behind the serial.
+ *
+ * What it does not prove: that we issued it. A hash over public fields is
+ * reproducible by anyone, so it is an integrity check and not a signature —
+ * the serial lookup is what establishes the credential exists at all. The two
+ * together are what make a forgery fail.
+ *
+ * Fields are joined with a unit separator so a value containing the delimiter
+ * cannot be rearranged into a different-but-equal canonical string, and the
+ * subject is the module *slug* rather than its title: titles are re-written
+ * when curriculum is re-imported, and a fingerprint that drifts is worthless.
+ */
+function credentialFingerprint(kind: string, parts: (string | number)[]) {
+  // A unit separator, written as an escape: a literal control byte in
+  // source is invisible and easily mangled by an editor or a copy-paste.
+  const canonical = ["cdctf.v1", kind, ...parts.map(String)].join("\u001f");
+  return createHash("sha256").update(canonical, "utf8").digest("hex");
+}
+
 // GET /api/learn/certificates/:serial — public, so a certificate can be checked
 // by anyone the holder shows it to.
 router.get("/certificates/:serial", async (req, res) => {
@@ -564,6 +589,10 @@ router.get("/certificates/:serial", async (req, res) => {
     moduleTitle: mod?.title ?? "",
     moduleTitleUz: mod?.titleUz ?? null,
     moduleTitleRu: mod?.titleRu ?? null,
+    fingerprint: credentialFingerprint("certificate", [
+      cert.serial, cert.fullName, mod?.slug ?? "", cert.score,
+      new Date(cert.issuedAt).toISOString(),
+    ]),
   });
 });
 
@@ -681,6 +710,10 @@ router.get("/diploma/:serial", async (req, res) => {
     averageScore: diploma.averageScore,
     moduleCount: diploma.moduleCount,
     issuedAt: diploma.issuedAt,
+    fingerprint: credentialFingerprint("diploma", [
+      diploma.serial, diploma.fullName, diploma.moduleCount, diploma.averageScore,
+      new Date(diploma.issuedAt).toISOString(),
+    ]),
   });
 });
 

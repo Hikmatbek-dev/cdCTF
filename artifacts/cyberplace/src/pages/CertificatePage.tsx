@@ -73,6 +73,7 @@ export default function CertificatePage() {
               issued,
               verifyUrl: `${window.location.host}/certificate/${cert.serial}`,
               verifyHref: `${window.location.origin}/certificate/${cert.serial}`,
+              fingerprint: (cert as { fingerprint?: string }).fingerprint,
             }}
             l={{
               title: t("Certificate", "Sertifikat", "Сертификат"),

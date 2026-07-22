@@ -65,12 +65,13 @@ export default function DiplomaVerifyPage() {
           <ProgrammeDiploma
             d={{
               fullName: diploma.fullName,
-              subject: t("Cybersecurity Programme", "Kiberxavfsizlik dasturi", "Программа кибербезопасности"),
+              subject: "cdCTF Cybersecurity Programme",
               score: diploma.averageScore,
               serial: diploma.serial,
               issued,
               verifyUrl: `${window.location.host}/diploma/${diploma.serial}`,
               verifyHref: `${window.location.origin}/diploma/${diploma.serial}`,
+              fingerprint: (diploma as { fingerprint?: string }).fingerprint,
             }}
             l={{
               title: t("Diploma", "Diplom", "Диплом"),

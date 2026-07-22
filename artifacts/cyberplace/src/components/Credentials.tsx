@@ -8,8 +8,12 @@ import { QRCodeSVG } from "qrcode.react";
  * A module certificate is restrained — the name is the only large thing on the
  * sheet, and everything else is the minimum a credential must carry. The
  * programme diploma is the ceremonial one: a ruled frame, corner flourishes,
- * serif display type, an engraved seal and a signature, in the dark brand and
- * carrying the verification furniture a modern credential needs.
+ * serif display type and an engraved seal, in the dark brand and carrying the
+ * verification furniture a modern credential needs.
+ *
+ * Neither carries a handwritten signature. A scanned one on a digital document
+ * is decoration — anyone who can see it can copy it. The issuer is stated in
+ * type instead, beside a server-computed fingerprint that a forgery fails.
  *
  * The hierarchy is deliberate. Eight certificates lead to one diploma, so the
  * diploma is the only one dressed for the occasion.
@@ -32,8 +36,8 @@ export type CredentialData = {
   verifyUrl: string;
   /** Absolute URL the QR encodes. A scanner needs the scheme to open it. */
   verifyHref: string;
-  /** Scanned signature, black ink; inverted for the dark sheet. */
-  signature?: string;
+  /** Server-computed integrity hash over the attested fields. */
+  fingerprint?: string;
 };
 
 export type CredentialLabels = {
@@ -78,15 +82,36 @@ function QrBlock({ href, dark }: { href: string; dark: string }) {
   );
 }
 
-function SignatureMark({ src }: { src?: string }) {
-  return src
-    ? <img src={src} alt="" className="w-[13cqw] h-[3cqw] object-contain object-left invert brightness-125 opacity-90" />
-    : (
-      <svg viewBox="0 0 200 46" className="w-[13cqw] h-[3cqw]" fill="none" aria-hidden="true">
-        <path d="M8 34c14-22 22 6 30-6s10 12 20 2 14-16 22-6 8 14 18 8 16-18 26-10 12 12 22 6"
-          stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.8" />
-      </svg>
-    );
+/**
+ * The issuing block, in place of a handwritten signature.
+ *
+ * A scanned signature on a digital document is decoration: anyone who can see
+ * it can copy it. What actually resists forgery is the fingerprint — a hash the
+ * server computes over the fields this sheet attests to. Alter a screenshot to
+ * raise the score and it stops matching what the verifier recomputes.
+ *
+ * So the sheet states who issued it in type, and prints the fingerprint beside
+ * it, rather than drawing a squiggle that proves nothing.
+ */
+function IssuerBlock({ name, role, fingerprint, accent }: {
+  name: string; role: string; fingerprint?: string; accent: string;
+}) {
+  // Grouped in fours: long hex is unreadable and uncheckable in one run.
+  const shown = (fingerprint ?? "").slice(0, 24).replace(/(.{4})/g, "$1 ").trim();
+  return (
+    <div className="min-w-0">
+      <div className="font-mono text-[0.95cqw] tracking-[0.16em] uppercase opacity-85">{name}</div>
+      <div className="font-mono text-[0.9cqw] tracking-[0.2em] uppercase opacity-62 mt-[2%]">{role}</div>
+      {shown && (
+        <div className="mt-[6%]">
+          <div className="font-mono text-[0.82cqw] tracking-[0.24em] uppercase opacity-55">Fingerprint</div>
+          <div className="font-mono text-[0.92cqw] tracking-[0.06em] mt-[2%]" style={{ color: accent }}>
+            {shown}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 /* ── Module certificate — restrained ─────────────────────────────────────── */
@@ -122,15 +147,12 @@ export function ModuleCertificate({ d, l }: { d: CredentialData; l: CredentialLa
         </div>
 
         <div className="w-full flex items-end justify-between gap-[4%] pt-[2.4%] border-t border-white/15">
-          <div className="min-w-0">
-            <SignatureMark src={d.signature} />
-            <div className="font-mono text-[0.95cqw] tracking-[0.16em] uppercase opacity-80 mt-[4%]">
-              {l.signatoryName}
-            </div>
-            <div className="font-mono text-[0.9cqw] tracking-[0.2em] uppercase opacity-62 mt-[2%]">
-              {l.signatoryRole}
-            </div>
-          </div>
+          <IssuerBlock
+            name={l.signatoryName}
+            role={l.signatoryRole}
+            fingerprint={d.fingerprint}
+            accent="#A78BFA"
+          />
 
           <div className="text-center shrink-0">
             <div className="font-mono text-[0.95cqw] tracking-[0.2em] uppercase opacity-62">{l.issued}</div>
@@ -225,11 +247,14 @@ export function ProgrammeDiploma({ d, l }: { d: CredentialData; l: CredentialLab
               </svg>
 
               <div className="text-right min-w-0">
-                <div className="flex justify-end"><SignatureMark src={d.signature} /></div>
-                <div className="w-[13cqw] border-t border-white/35 ml-auto mt-[1%]" />
-                <div className="text-[1cqw] uppercase tracking-[0.16em] text-white/80 mt-[4%]">{l.signatoryName}</div>
-                <div className="text-[1cqw] uppercase tracking-[0.22em] text-white/60 mt-[2%]">{l.signatoryRole}</div>
-                <div className="text-[1cqw] uppercase tracking-[0.22em] text-white/60 mt-[2%]">{l.issued} {d.issued}</div>
+                <div className="text-[1cqw] uppercase tracking-[0.16em] text-white/85">{l.signatoryName}</div>
+                <div className="text-[1cqw] uppercase tracking-[0.22em] text-white/62 mt-[2%]">{l.signatoryRole}</div>
+                <div className="text-[1cqw] uppercase tracking-[0.22em] text-white/62 mt-[6%]">{l.issued} {d.issued}</div>
+                {d.fingerprint && (
+                  <div className="font-mono text-[0.92cqw] tracking-[0.06em] text-[#A78BFA] mt-[4%]">
+                    {d.fingerprint.slice(0, 24).replace(/(.{4})/g, "$1 ").trim()}
+                  </div>
+                )}
               </div>
             </div>
 
