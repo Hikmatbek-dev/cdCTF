@@ -38,8 +38,8 @@ export default function CompetitionsPage() {
             <Trophy className="w-7 h-7 text-primary animate-glow" />
           </div>
           <div>
-            <h1 className="text-4xl font-display font-black tracking-tighter uppercase">{t("Global Tournaments", "Musobaqalar", "Соревнования")}</h1>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">{t("BATTLE FOR SUPREMACY AND EXCLUSIVE REWARDS", "OYLIK MUSOBAQALARDA QATNASHING", "СОРЕВНУЙТЕСЬ ЗА ПРЕВОСХОДСТВО")}</p>
+            <h1 className="text-4xl font-display font-bold tracking-tight">{t("Global Tournaments", "Musobaqalar", "Соревнования")}</h1>
+            <p className="text-muted-foreground">{t("Compete in timed events and climb the board", "Vaqtli tadbirlarda bellashing va reytingda ko'tariling", "Участвуйте в событиях и поднимайтесь в рейтинге")}</p>
           </div>
         </div>
 
@@ -66,19 +66,19 @@ export default function CompetitionsPage() {
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors" />
                   
                   <div className="flex flex-wrap items-center gap-3 mb-6 relative z-10">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
+                    <span className={`inline-flex items-center px-3 py-1 rounded-lg border text-xs font-medium transition-all ${
                       comp.status === "active" ? "bg-primary/20 text-primary border-primary/30 neon-text" : "bg-foreground/5 text-muted-foreground border-foreground/10"
                     }`}>
                       {comp.status}
                     </span>
-                    <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg border text-[10px] font-black uppercase tracking-widest ${
+                    <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg border text-xs font-medium ${
                       comp.type === "private" ? "bg-orange-500/10 text-orange-500 border-orange-500/20" : "bg-foreground/5 text-muted-foreground border-foreground/10"
                     }`}>
                       {comp.type === "private" && <Lock className="w-3 h-3" />}
                       {comp.type === "public" ? t("Public Access", "Ochiq", "Публичный") : t("Classified", "Yopiq", "Приватный")}
                     </span>
                     {comp.isJoined && (
-                      <span className="text-[10px] font-black uppercase tracking-widest text-primary animate-pulse">{t("MISSION ACCEPTED", "QATNASHYAPSIZ", "ВЫ УЧАСТВУЕТЕ")}</span>
+                      <span className="text-xs font-medium text-primary">{t("Joined", "Qatnashyapsiz", "Вы участвуете")}</span>
                     )}
                   </div>
 
@@ -90,14 +90,14 @@ export default function CompetitionsPage() {
                   <div className="flex flex-wrap items-center justify-between gap-6 pt-6 border-t border-foreground/5 relative z-10">
                     <div className="flex items-center gap-8">
                       <div className="flex flex-col">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 leading-none mb-1">Timeframe</span>
+                        <span className="text-xs text-muted-foreground leading-none mb-1">{t("Timeframe", "Muddat", "Срок")}</span>
                         <div className="flex items-center gap-2 text-xs font-bold text-foreground">
                           <Clock className="w-3 h-3 text-primary" />
                           {formatDate(comp.startTime)} <span className="text-muted-foreground/40">—</span> {formatDate(comp.endTime)}
                         </div>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 leading-none mb-1">Operatives</span>
+                        <span className="text-xs text-muted-foreground leading-none mb-1">{t("Players", "Ishtirokchilar", "Игроки")}</span>
                         <div className="flex items-center gap-2 text-xs font-bold text-foreground">
                           <Users className="w-3 h-3 text-primary" />
                           {comp.participantCount} {t("ENGAGED", "QATNASHCHI", "УЧАСТНИКОВ")}
@@ -105,7 +105,7 @@ export default function CompetitionsPage() {
                       </div>
                     </div>
                     <div className="flex flex-col text-right">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 leading-none mb-1">Assets</span>
+                      <span className="text-xs text-muted-foreground leading-none mb-1">{t("Challenges", "Topshiriqlar", "Задания")}</span>
                       <div className="text-sm font-black text-primary">{comp.ctfCount} TARGETS</div>
                     </div>
                   </div>

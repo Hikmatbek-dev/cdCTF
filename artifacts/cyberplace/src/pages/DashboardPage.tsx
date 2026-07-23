@@ -66,20 +66,20 @@ export default function DashboardPage() {
             <div className="flex items-center gap-3 mb-6">
               <Shield className="w-8 h-8 text-primary" />
               <div className="h-px w-12 bg-border" />
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60">COMMAND_CENTER</span>
+              <span className="eyebrow">{t("cdCTF · Dashboard", "cdCTF · Panel", "cdCTF · Панель")}</span>
             </div>
-            <h1 className="text-5xl md:text-6xl font-black tracking-tighter uppercase mb-6 leading-none">
-              {t("OPERATIVE DASHBOARD", "DASHBOARD", "ПАНЕЛЬ УПРАВЛЕНИЯ")}
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 leading-tight">
+              {t("Dashboard", "Boshqaruv paneli", "Панель управления")}
             </h1>
-            <div className="flex flex-wrap items-center gap-8 text-[11px] font-black uppercase tracking-widest text-muted-foreground/40">
-              <span className="text-foreground">OPERATIVE: {data.user.nickname}</span>
-              <span>SYSTEM_RANK: <span className="text-primary">#{data.user.rank}</span></span>
-              <span>TOTAL_CREDITS: {data.user.points} XP</span>
+            <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
+              <span className="text-foreground font-medium">{data.user.nickname}</span>
+              <span>{t("Rank", "O'rin", "Место")} <span className="text-primary tabular-nums">#{data.user.rank}</span></span>
+              <span className="tabular-nums">{data.user.points} {t("points", "ball", "очки")}</span>
             </div>
           </div>
           <Link href={`/profile/${data.user.id}`}>
             <Button className="cyber-button h-14 px-10 rounded-2xl shadow-xl shadow-primary/20">
-              ACCESS_FULL_DOSSIER
+              {t("View profile", "Profilni ko'rish", "Смотреть профиль")}
             </Button>
           </Link>
         </div>
@@ -87,14 +87,14 @@ export default function DashboardPage() {
         {/* Tactical Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-16">
           {[
-            { icon: Flag, label: "CONFIRMED_BREACHES", value: data.progress.solvedCtfCount, color: "text-primary" },
+            { icon: Flag, label: t("Solved", "Yechilgan", "Решено"), value: data.progress.solvedCtfCount, color: "text-primary" },
             { icon: BookOpen, label: "INTEL_MODULES", value: data.progress.completedLessonCount, color: "text-foreground" },
             { icon: Star, label: "AUTH_TITLES", value: data.progress.titleCount, color: "text-foreground" }
           ].map((stat, i) => (
             <div key={i} className="glass-card bg-muted/10 p-10 rounded-[2.5rem] group hover:bg-muted/20 transition-all border-border hover:border-primary/20">
               <div className="flex items-center gap-4 mb-6">
                 <stat.icon className={`w-5 h-5 ${stat.color} group-hover:scale-110 transition-transform`} />
-                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">{stat.label}</span>
+                <span className="text-xs text-muted-foreground">{stat.label}</span>
               </div>
               <div className="text-5xl font-black tracking-tighter leading-none">{String(stat.value).padStart(2, '0')}</div>
             </div>
@@ -107,7 +107,7 @@ export default function DashboardPage() {
             <div className="glass-card bg-muted/10 p-10 rounded-[3rem] border-border h-full">
               <div className="flex items-center gap-4 mb-10">
                 <Activity className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-black uppercase tracking-tighter">MISSION_LOGS</h2>
+                <h2 className="text-lg font-semibold tracking-tight">{t("Recent activity", "So'nggi faoliyat", "Недавняя активность")}</h2>
                 <div className="flex-1 h-px bg-border" />
               </div>
               
@@ -120,8 +120,8 @@ export default function DashboardPage() {
                           <Flag className="w-5 h-5" />
                         </div>
                         <div>
-                          <div className="text-xs font-black uppercase tracking-widest group-hover:text-primary transition-colors">{t("BREACH_DETECTED", "YECHILDI", "ВЗЛОМ_ОБНАРУЖЕН")}</div>
-                          <div className="text-[10px] font-bold text-muted-foreground/40 mt-1 uppercase tracking-widest">ASSET_ID: #{item.ctfId}</div>
+                          <div className="text-sm font-medium group-hover:text-primary transition-colors">{t("Challenge solved", "Topshiriq yechildi", "Задание решено")}</div>
+                          <div className="text-xs text-muted-foreground mt-1">#{item.ctfId}</div>
                         </div>
                       </div>
                       <ChevronRight className="w-5 h-5 text-muted-foreground/20 group-hover:text-primary transition-all group-hover:translate-x-1" />
@@ -137,8 +137,8 @@ export default function DashboardPage() {
                           <BookOpen className="w-5 h-5" />
                         </div>
                         <div>
-                          <div className="text-xs font-black uppercase tracking-widest group-hover:text-primary transition-colors">{t("INTEL_LOGGED", "TUGATILDI", "КУРС_ЗАВЕРШЕН")}</div>
-                          <div className="text-[10px] font-bold text-muted-foreground/40 mt-1 uppercase tracking-widest">MODULE_ID: #{item.lessonId}</div>
+                          <div className="text-sm font-medium group-hover:text-primary transition-colors">{t("Lesson completed", "Dars tugatildi", "Урок пройден")}</div>
+                          <div className="text-xs text-muted-foreground mt-1">#{item.lessonId}</div>
                         </div>
                       </div>
                       <ChevronRight className="w-5 h-5 text-muted-foreground/20 group-hover:text-primary transition-all group-hover:translate-x-1" />
@@ -148,7 +148,7 @@ export default function DashboardPage() {
                 
                 {solvedCtf.length === 0 && completedLessons.length === 0 && (
                   <div className="py-24 text-center border-2 border-dashed border-border rounded-[2.5rem]">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 italic">
+                    <p className="text-sm text-muted-foreground">
                       {t("NO_STREAMS_DETECTED", "FAOLLIK YO'Q", "ПОТОКИ_ДАННЫХ_ОТСУТСТВУЮТ")}
                     </p>
                   </div>
@@ -162,18 +162,18 @@ export default function DashboardPage() {
             <div className="glass-card bg-primary/5 p-10 rounded-[3rem] border-primary/20 h-full">
               <div className="flex items-center gap-4 mb-10">
                 <Trophy className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-black uppercase tracking-tighter">AUTH_TITLES</h2>
+                <h2 className="text-lg font-semibold tracking-tight">{t("Titles", "Unvonlar", "Титулы")}</h2>
                 <div className="flex-1 h-px bg-primary/20" />
               </div>
               
               <div className="flex flex-wrap gap-3">
                 {titles.length > 0 ? titles.map((title, index) => (
-                  <div key={`${title.id ?? "title"}-${index}`} className="px-5 py-3 bg-primary/10 border border-primary/30 text-[10px] font-black uppercase tracking-widest text-primary rounded-xl hover:bg-primary/20 transition-all cursor-default shadow-sm">
-                    {title.name ?? "CLASSIFIED"}
+                  <div key={`${title.id ?? "title"}-${index}`} className="px-4 py-2.5 bg-primary/10 border border-primary/30 text-sm font-medium text-primary rounded-xl hover:bg-primary/20 transition-all cursor-default shadow-sm">
+                    {title.name ?? t("Untitled", "Nomsiz", "Без названия")}
                   </div>
                 )) : (
                   <div className="text-center py-20 w-full border border-dashed border-primary/20 rounded-[2.5rem]">
-                    <p className="text-[10px] leading-relaxed text-muted-foreground/60 font-black uppercase tracking-[0.2em] px-8 italic">
+                    <p className="text-sm leading-relaxed text-muted-foreground px-8">
                       {t("INSUFFICIENT_DATA_FOR_TITLES", "UNVONLAR YO'Q", "НЕДОСТАТОЧНО_ДАННЫХ")}
                     </p>
                   </div>

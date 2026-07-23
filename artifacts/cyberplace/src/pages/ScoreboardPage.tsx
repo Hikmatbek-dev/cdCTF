@@ -62,11 +62,11 @@ export default function ScoreboardPage() {
                 <Trophy className="w-10 h-10 text-primary" />
               </div>
               <div>
-                <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-none mb-4">{t("LEADERBOARD", "REYTING", "РЕЙТИНГ")}</h1>
+                <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-none mb-4">{t("Leaderboard", "Reyting", "Рейтинг")}</h1>
                 <div className="flex items-center gap-4">
                   <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
-                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60">
-                    {isLoading ? "SYNCHRONIZING_GLOBAL_STREAMS..." : `${total} ACTIVE_OPERATIVES_DETECTED`}
+                  <p className="text-sm text-muted-foreground">
+                    {isLoading ? t("Loading…", "Yuklanmoqda…", "Загрузка…") : t(`${total} players`, `${total} foydalanuvchi`, `${total} игроков`)}
                   </p>
                 </div>
               </div>
@@ -79,7 +79,7 @@ export default function ScoreboardPage() {
               <input
                 type="search"
                 aria-label={t("Search users", "Foydalanuvchilarni qidirish", "Поиск пользователей")}
-                placeholder={t("QUERY_OPERATIVE_ID...", "FOYDALANUVCHILARNI QIDIRING...", "ПОИСК_ОПЕРАТИВНИКОВ...")}
+                placeholder={t("Search players…", "Foydalanuvchilarni qidirish…", "Поиск игроков…")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full h-20 pl-16 pr-8 bg-foreground/5 border border-foreground/5 rounded-[2rem] font-bold uppercase tracking-[0.2em] focus:border-primary focus:ring-8 focus:ring-primary/5 transition-all text-sm placeholder:text-muted-foreground/20"
@@ -96,11 +96,11 @@ export default function ScoreboardPage() {
                 <Shield className="w-80 h-80 text-primary" />
               </div>
               <div className="relative z-10 text-center md:text-left mb-8 md:mb-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-4">{t("YOUR_OPERATIVE_STATUS", "SIZNING JOYINGIZ", "ВАША_ПОЗИЦИЯ")}</p>
+                <p className="text-xs font-medium uppercase tracking-wider text-primary mb-3">{t("Your position", "Sizning joyingiz", "Ваша позиция")}</p>
                 <h2 className="text-6xl md:text-8xl font-black tracking-tighter gradient-text">#{data.currentUserRank}</h2>
               </div>
               <div className="text-center md:text-right relative z-10">
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-4">{t("TOTAL_XP_ACCUMULATED", "UMUMIY XP", "ОБЩИЙ_XP")}</p>
+                <p className="text-xs font-medium uppercase tracking-wider text-primary mb-3">{t("Your points", "Sizning ballaringiz", "Ваши очки")}</p>
                 <div className="text-5xl md:text-7xl font-black tracking-tighter tabular-nums">{user?.points ?? 0}</div>
               </div>
             </div>
@@ -129,7 +129,7 @@ export default function ScoreboardPage() {
                <div className="w-20 h-20 bg-foreground/5 border border-foreground/5 rounded-3xl flex items-center justify-center mx-auto mb-8">
                 <Target className="w-10 h-10 text-muted-foreground/20" />
                </div>
-               <p className="text-xs font-black uppercase tracking-[0.4em] text-muted-foreground/30">{t("ZERO_RECORDS_MATCH_QUERY", "NATIJALAR TOPILMADI", "РЕЗУЛЬТАТЫ_НЕ_НАЙДЕНЫ")}</p>
+               <p className="text-muted-foreground">{t("No players match your search", "Qidiruvingizga mos foydalanuvchi yo'q", "Игроки не найдены")}</p>
             </motion.div>
           ) : (
             <motion.div 
@@ -175,7 +175,7 @@ export default function ScoreboardPage() {
                                 {entry.nickname}
                               </span>
                               {isMe && (
-                                <div className="px-3 py-1 bg-primary text-primary-foreground text-[8px] font-black uppercase tracking-[0.2em] rounded-lg shadow-lg shadow-primary/20">
+                                <div className="px-3 py-1 bg-primary text-primary-foreground text-[11px] font-semibold rounded-lg shadow-lg shadow-primary/20">
                                   YOU
                                 </div>
                               )}
@@ -183,7 +183,7 @@ export default function ScoreboardPage() {
                             </div>
                             <div className="flex flex-wrap gap-2">
                               {titles.slice(0, 2).map(title => (
-                                <span key={title} className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 bg-foreground/5 border border-foreground/5 px-3 py-1 rounded-xl group-hover:border-primary/30 transition-all">
+                                <span key={title} className="text-xs font-medium text-muted-foreground bg-foreground/5 border border-foreground/5 px-3 py-1 rounded-xl group-hover:border-primary/30 transition-all">
                                   {title}
                                 </span>
                               ))}
@@ -196,7 +196,7 @@ export default function ScoreboardPage() {
                               <Zap className="w-4 h-4 fill-current" />
                               <div className="text-3xl md:text-5xl font-black tabular-nums leading-none tracking-tighter text-foreground">{entry.points}</div>
                             </div>
-                            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/20">
+                            <div className="text-xs text-muted-foreground/50">
                               {entry.solvedCtfCount} SOLVES_LOGGED
                             </div>
                           </div>

@@ -170,7 +170,7 @@ export default function LoginPage() {
                 <div>
                   <label
                     htmlFor="mfa-code"
-                    className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1 mb-2"
+                    className="block text-sm font-medium text-muted-foreground ml-1 mb-2"
                   >
                     {t("VERIFICATION_CODE", "TASDIQLASH KODI", "КОД ПОДТВЕРЖДЕНИЯ")}
                   </label>
@@ -212,7 +212,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => { setMfaToken(null); setCode(""); }}
-                  className="w-full text-[9px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
+                  className="w-full text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   {t("BACK", "ORQAGA", "НАЗАД")}
                 </button>
@@ -308,7 +308,7 @@ export default function LoginPage() {
                       type="button"
                       onClick={() => api.startOAuth(provider)}
                       data-testid={`button-oauth-${provider}`}
-                      className="h-12 rounded-2xl bg-foreground/5 border border-foreground/5 hover:border-primary/40 hover:bg-foreground/10 transition-all text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground"
+                      className="h-12 rounded-2xl bg-foreground/5 border border-foreground/5 hover:border-primary/40 hover:bg-foreground/10 transition-all text-sm font-medium text-muted-foreground hover:text-foreground"
                     >
                       {PROVIDER_LABELS[provider] ?? provider}
                     </button>
