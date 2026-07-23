@@ -169,6 +169,15 @@ router.post("/:id/ctf/:ctfId/submit", authenticateToken, flagRateLimit, validate
       return { status: 200, data: { correct: false, blocked, wrongAttempts: newWrongAttempts } };
     }
 
+    // Whether this challenge already counted toward the global score — either
+    // through the main CTF list or an earlier competition that shares it. A
+    // challenge's points must land in users.points once; without this guard,
+    // solving it in the main pool and then again inside a competition paid
+    // twice, because the main-pool submit blocks a re-award but this one did
+    // not. The competition solve is still recorded either way, so the
+    // competition's own leaderboard is unaffected.
+    const alreadyCountedGlobally = attempt?.solved === true;
+
     await tx.insert(competitionSolvesTable).values({ competitionId: compId, ctfId, userId, pointsEarned: challenge.points });
     if (!attempt) {
       await tx.insert(ctfAttemptsTable).values({ userId, ctfId, solved: true, solvedAt: new Date(), updatedAt: new Date() });
@@ -176,7 +185,7 @@ router.post("/:id/ctf/:ctfId/submit", authenticateToken, flagRateLimit, validate
       await tx.update(ctfAttemptsTable).set({ solved: true, solvedAt: new Date(), updatedAt: new Date() }).where(eq(ctfAttemptsTable.id, attempt.id));
     }
 
-    const pointsEarned = await awardPoints(tx, userId, challenge.points);
+    const pointsEarned = alreadyCountedGlobally ? 0 : await awardPoints(tx, userId, challenge.points);
 
     return { status: 200, data: { correct: true, alreadySolved: false, pointsEarned } };
   });

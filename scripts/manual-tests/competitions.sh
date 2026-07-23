@@ -113,6 +113,33 @@ check "$(q "SELECT coalesce(sum(points_earned),0) FROM competition_solves WHERE 
 
 echo
 resetlimit
+echo "=== ⭐ ASOSIY CTF + MUSOBAQA — bir vazifa ikki marta TO'LAMAYDI ==="
+# A challenge solved in the main pool must not pay again inside a competition
+# that shares it. The competition solve is still recorded (its own leaderboard),
+# but the global users.points moves once. Before the fix this paid twice.
+#
+# A fresh user with one solve — so the category-title bonus (3 solves) never
+# fires and U1's running total below is left untouched.
+read -r TOK3 U3_ID <<< "$(mkuser u3)"
+curl -s -o /dev/null -X POST $API/competitions/$COMP/join -H "Authorization: Bearer $TOK3"
+SHARED=$(mkctf shared 'Flag{shared}' 400)
+q "INSERT INTO competition_tasks (competition_id, ctf_id) VALUES ($COMP,$SHARED)" > /dev/null
+resetlimit
+# solve it in the MAIN pool first — awards global points once
+curl -s -X POST $API/ctf/$SHARED/submit -H "Authorization: Bearer $TOK3" \
+  -H 'Content-Type: application/json' -d '{"flag":"Flag{shared}"}' > /dev/null
+AFTER_MAIN=$(q "SELECT points FROM users WHERE id=$U3_ID")
+check "$AFTER_MAIN" "400" "asosiy CTF 400 ball berdi"
+# now the same challenge inside the competition — must not pay again
+resetlimit
+COMP_PTS=$(sub $TOK3 $COMP $SHARED 'Flag{shared}' | python3 -c 'import sys,json; print(json.load(sys.stdin).get("pointsEarned"))')
+AFTER_COMP=$(q "SELECT points FROM users WHERE id=$U3_ID")
+check "$COMP_PTS" "0" "musobaqa global ball bermadi (allaqachon sanalgan)"
+check "$AFTER_COMP" "400" "global users.points 400da qoldi (ikki marta emas)"
+check "$(q "SELECT count(*) FROM competition_solves WHERE competition_id=$COMP AND ctf_id=$SHARED AND user_id=$U3_ID")" "1" "musobaqa yechimi baribir qayd etildi"
+
+echo
+resetlimit
 echo "=== Musobaqada yo'q vazifa ==="
 OTHER=$(mkctf outside 'Flag{out}' 100)
 check "$(subcode $TOK $COMP $OTHER 'Flag{out}')" "404" "begona vazifa rad etildi"
