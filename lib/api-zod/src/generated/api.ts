@@ -1205,6 +1205,12 @@ export const AdminCreateLessonBody = zod.object({
   contentUz: zod.string().nullish(),
   contentRu: zod.string().nullish(),
   categoryId: zod.number(),
+  moduleId: zod
+    .number()
+    .nullish()
+    .describe(
+      "Attach the lesson to a module, or null for a standalone lesson.",
+    ),
   points: zod.number().optional(),
   questions: zod
     .array(
@@ -1272,6 +1278,12 @@ export const AdminUpdateLessonBody = zod.object({
   contentUz: zod.string().nullish(),
   contentRu: zod.string().nullish(),
   categoryId: zod.number(),
+  moduleId: zod
+    .number()
+    .nullish()
+    .describe(
+      "Attach the lesson to a module, or null for a standalone lesson.",
+    ),
   points: zod.number().optional(),
   questions: zod
     .array(

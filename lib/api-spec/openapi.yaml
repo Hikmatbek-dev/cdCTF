@@ -3401,6 +3401,10 @@ components:
           nullable: true
         categoryId:
           type: integer
+        moduleId:
+          type: integer
+          nullable: true
+          description: Attach the lesson to a module, or null for a standalone lesson.
         points:
           type: integer
         questions:

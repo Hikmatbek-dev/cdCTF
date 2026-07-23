@@ -123,6 +123,10 @@ export default function AdminCtfPage() {
     }
   };
 
+  // Show the server's real reason for a failure, not a blank "Xato".
+  const errText = (e: unknown) =>
+    (e as { message?: string })?.message || t("Error", "Xato", "Ошибка");
+
   const onSubmit = (data: FormData) => {
     if (!editingId && (!data.flag || !data.flag.trim())) {
       form.setError("flag", { message: t("Flag is required for new challenges", "Yangi topshiriq uchun flag majburiy", "Флаг обязателен для новых заданий") });
@@ -138,12 +142,12 @@ export default function AdminCtfPage() {
     if (editingId) {
       updateCtf.mutate({ id: editingId, data: payload }, {
         onSuccess: () => { toast({ title: t("CTF updated!", "CTF yangilandi!", "CTF обновлён!") }); invalidate(); },
-        onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
+        onError: (e) => toast({ title: errText(e), variant: "destructive" }),
       });
     } else {
       createCtf.mutate({ data: payload }, {
         onSuccess: () => { toast({ title: t("CTF created!", "CTF yaratildi!", "CTF создан!") }); invalidate(); },
-        onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
+        onError: (e) => toast({ title: errText(e), variant: "destructive" }),
       });
     }
   };
@@ -152,7 +156,7 @@ export default function AdminCtfPage() {
     if (!confirm(t("Delete this challenge?", "O'chirish?", "Удалить?"))) return;
     deleteCtf.mutate({ id }, {
       onSuccess: () => { toast({ title: t("Deleted", "O'chirildi", "Удалено") }); void qc.invalidateQueries({ queryKey: ["admin-ctfs"] }); },
-      onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
+      onError: (e) => toast({ title: errText(e), variant: "destructive" }),
     });
   };
 

@@ -11,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { useLang } from "@/lib/LanguageContext";
-import { normalizeLearnCategories, normalizeLessons } from "@/lib/api-shapes";
-import { useListLearnCategories, getListLearnCategoriesQueryKey, useAdminCreateLesson, useAdminUpdateLesson, useAdminDeleteLesson } from "@workspace/api-client-react";
+import { normalizeLearnCategories, normalizeLessons, normalizeArray } from "@/lib/api-shapes";
+import { useListLearnCategories, getListLearnCategoriesQueryKey, useListModules, getListModulesQueryKey, useAdminCreateLesson, useAdminUpdateLesson, useAdminDeleteLesson } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 
@@ -30,6 +30,9 @@ const schema = z.object({
   contentUz: z.string().optional(),
   contentRu: z.string().optional(),
   categoryId: z.coerce.number().min(1),
+  // 0 means "standalone" in the dropdown; converted to null before submit so a
+  // lesson can be attached to a module or left on its own.
+  moduleId: z.coerce.number().optional(),
   points: z.coerce.number().min(1),
   questions: z.array(questionSchema).min(1),
 });
@@ -52,6 +55,8 @@ export default function AdminLessonsPage() {
     }
   });
   const { data: categories } = useListLearnCategories({ query: { queryKey: getListLearnCategoriesQueryKey() } });
+  const { data: modulesData } = useListModules({ query: { queryKey: getListModulesQueryKey() } });
+  const moduleList = normalizeArray<{ id: number; title: string; titleUz?: string | null; titleRu?: string | null }>(modulesData, ["id", "title"]);
   const lessonList = normalizeLessons(lessonsData);
   const categoryList = normalizeLearnCategories(categories);
 
@@ -62,26 +67,36 @@ export default function AdminLessonsPage() {
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      title: "", content: "", categoryId: 1, points: 50,
+      title: "", content: "", categoryId: 1, moduleId: 0, points: 50,
       questions: [{ question: "", options: ["", "", "", ""], correctOption: 0 }],
     },
   });
 
   const { fields, append, remove } = useFieldArray({ control: form.control, name: "questions" });
 
-  const openCreate = () => { setEditingId(null); form.reset({ title: "", content: "", categoryId: categoryList[0]?.id ?? 1, points: 50, questions: [{ question: "", options: ["", "", "", ""], correctOption: 0 }] }); setShowForm(true); };
+  const openCreate = () => { setEditingId(null); form.reset({ title: "", content: "", categoryId: categoryList[0]?.id ?? 1, moduleId: 0, points: 50, questions: [{ question: "", options: ["", "", "", ""], correctOption: 0 }] }); setShowForm(true); };
 
-  const onSubmit = (data: FormData) => {
+  // Surface the server's actual message instead of a blank "Xato". The client
+  // throws an ApiError carrying the reason the request failed (a missing field,
+  // a permission, a bad category) — swallowing it left an admin with no idea
+  // what to fix.
+  const errText = (e: unknown) =>
+    (e as { message?: string })?.message || t("Error", "Xato", "Ошибка");
+
+  const onSubmit = (raw: FormData) => {
+    // 0 in the dropdown means "no module" — send it as null so the lesson is
+    // standalone rather than attached to module id 0.
+    const data = { ...raw, moduleId: raw.moduleId ? raw.moduleId : null };
     const invalidate = () => { void qc.invalidateQueries({ queryKey: ["admin-lessons"] }); setShowForm(false); };
     if (editingId) {
       updateLesson.mutate({ id: editingId, data }, {
         onSuccess: () => { toast({ title: t("Lesson updated!", "Dars yangilandi!", "Урок обновлён!") }); invalidate(); },
-        onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
+        onError: (e) => toast({ title: errText(e), variant: "destructive" }),
       });
     } else {
       createLesson.mutate({ data }, {
         onSuccess: () => { toast({ title: t("Lesson created!", "Dars yaratildi!", "Урок создан!") }); invalidate(); },
-        onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
+        onError: (e) => toast({ title: errText(e), variant: "destructive" }),
       });
     }
   };
@@ -90,7 +105,7 @@ export default function AdminLessonsPage() {
     if (!confirm(t("Delete this lesson?", "O'chirish?", "Удалить?"))) return;
     deleteLesson.mutate({ id }, {
       onSuccess: () => { toast({ title: t("Deleted", "O'chirildi", "Удалено") }); void qc.invalidateQueries({ queryKey: ["admin-lessons"] }); },
-      onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
+      onError: (e) => toast({ title: errText(e), variant: "destructive" }),
     });
   };
 
@@ -124,12 +139,30 @@ export default function AdminLessonsPage() {
                     <FormItem><FormLabel>{t("Title (RU)", "Sarlavha (RU)", "Заголовок (RU)")}</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                   )} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <FormField control={form.control} name="categoryId" render={({ field }) => (
                     <FormItem><FormLabel>{t("Category", "Kategoriya", "Категория")}</FormLabel>
                       <Select onValueChange={v => field.onChange(Number(v))} value={String(field.value)}>
                         <FormControl><SelectTrigger data-testid="select-lesson-category"><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>{categoryList.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </FormItem>
+                  )} />
+                  {/* Attach the lesson to a module so it appears in that module's
+                      list and roadmap. Without this an admin-created lesson had
+                      no module and showed up nowhere in the curriculum. */}
+                  <FormField control={form.control} name="moduleId" render={({ field }) => (
+                    <FormItem><FormLabel>{t("Module", "Modul", "Модуль")}</FormLabel>
+                      <Select onValueChange={v => field.onChange(Number(v))} value={String(field.value ?? 0)}>
+                        <FormControl><SelectTrigger data-testid="select-lesson-module"><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="0">{t("Standalone (no module)", "Mustaqil (modulsiz)", "Отдельный (без модуля)")}</SelectItem>
+                          {moduleList.map(m => (
+                            <SelectItem key={m.id} value={String(m.id)}>
+                              {t(m.title, m.titleUz ?? undefined, m.titleRu ?? undefined)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
                       </Select>
                     </FormItem>
                   )} />
@@ -226,6 +259,7 @@ export default function AdminLessonsPage() {
                               contentUz: data.contentUz || data.content_uz || "",
                               contentRu: data.contentRu || data.content_ru || "",
                               categoryId: data.categoryId,
+                              moduleId: data.moduleId ?? data.module_id ?? 0,
                               points: data.points,
                               questions: data.questions?.map((q: any) => ({
                                 question: q.question,

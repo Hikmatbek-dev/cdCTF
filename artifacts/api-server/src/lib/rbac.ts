@@ -36,12 +36,12 @@ export const columnPermissions: ColumnPermissions = {
   lessons: {
     user: [],
     author: [
-      "title", "titleUz", "titleRu", "content", "contentUz", "contentRu", "categoryId",
+      "title", "titleUz", "titleRu", "content", "contentUz", "contentRu", "categoryId", "moduleId",
     ],
     moderator: [],
     admin: [
       "title", "titleUz", "titleRu", "content", "contentUz", "contentRu",
-      "categoryId", "points", "isPublished",
+      "categoryId", "moduleId", "points", "isPublished",
     ],
   },
   competitions: {

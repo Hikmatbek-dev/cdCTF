@@ -82,12 +82,20 @@ export default function LessonTestPage() {
     };
 
     document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-      if (document.fullscreenElement) void document.exitFullscreen?.();
-    };
+    // Cleanup here removes ONLY the listener. It must not exit fullscreen: this
+    // effect re-runs whenever fullscreenStarted flips, and entering fullscreen
+    // is exactly what flips it — so exiting in the cleanup turned right around
+    // and left the fullscreen the reader had just entered, firing a false
+    // "you exited". Leaving fullscreen on unmount is a separate effect below.
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, result, fullscreenStarted, fullscreenSupported]);
+
+  // Leave fullscreen when the test page itself unmounts — once, on a real
+  // unmount, so it never fights the fullscreen the reader just entered.
+  useEffect(() => {
+    return () => { if (document.fullscreenElement) void document.exitFullscreen?.(); };
+  }, []);
 
   const enterFullscreen = () => {
     // A browser with no Fullscreen API at all — iOS Safari, and most in-app

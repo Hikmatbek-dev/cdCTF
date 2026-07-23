@@ -660,6 +660,8 @@ export interface CreateLessonBody {
   contentUz?: string | null;
   contentRu?: string | null;
   categoryId: number;
+  /** Attach the lesson to a module, or null for a standalone lesson. */
+  moduleId?: number | null;
   points?: number;
   questions?: CreateLessonBodyQuestionsItem[];
 }

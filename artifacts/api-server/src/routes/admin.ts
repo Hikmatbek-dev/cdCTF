@@ -569,21 +569,44 @@ router.get("/lessons/:id", requirePermission("lessons.read.all"), async (req, re
 
 // POST /api/admin/lessons
 router.post("/lessons", requirePermission("lessons.create"), validateBody(AdminCreateLessonBody), async (req, res) => {
-  const { title, titleUz, titleRu, content, contentUz, contentRu, categoryId, points, questions } = req.body;
+  const { title, titleUz, titleRu, content, contentUz, contentRu, categoryId, moduleId, points, questions } = req.body;
   if (!title || !content || !categoryId) return res.status(400).json({ error: "Missing fields" });
 
-  // Ensure category exists
-  let [category] = await db.select().from(learnCategoriesTable).where(eq(learnCategoriesTable.id, Number(categoryId))).limit(1);
-  if (!category) {
-    // Create a default category if none exist
-    const [created] = await db.insert(learnCategoriesTable).values({ name: "General" }).returning();
-    category = created;
+  // A lesson may be attached to a module (so it shows in that module's list and
+  // roadmap) or left standalone. If a module is named, it must be a real one —
+  // a dangling moduleId would file the lesson under a module that does not
+  // exist, and it would appear nowhere.
+  let lessonModuleId: number | null = null;
+  if (moduleId != null) {
+    const [mod] = await db.select({ id: modulesTable.id }).from(modulesTable)
+      .where(eq(modulesTable.id, Number(moduleId))).limit(1);
+    if (!mod) return res.status(400).json({ error: "Unknown module" });
+    lessonModuleId = mod.id;
+  }
+
+  // The categoryId must name a real category. This used to silently create a
+  // fresh "General" category for any id it did not recognise, so a typo or a
+  // stale id littered the table with junk categories and quietly filed the
+  // lesson under the wrong one. Reject it instead — the admin picks from a
+  // dropdown of existing categories, so an unknown id is a bug, not a default.
+  const [category] = await db.select().from(learnCategoriesTable)
+    .where(eq(learnCategoriesTable.id, Number(categoryId))).limit(1);
+  if (!category) return res.status(400).json({ error: "Unknown category" });
+
+  // A lesson attached to a module goes to the end of that module's list, so a
+  // newly added lesson does not collide with an existing orderIndex.
+  let orderIndex = 0;
+  if (lessonModuleId != null) {
+    const siblings = await db.select({ orderIndex: lessonsTable.orderIndex })
+      .from(lessonsTable).where(eq(lessonsTable.moduleId, lessonModuleId));
+    orderIndex = siblings.reduce((max, s) => Math.max(max, (s.orderIndex ?? 0) + 1), 0);
   }
 
   const [lesson] = await db.insert(lessonsTable).values({
     title, titleUz: titleUz || null, titleRu: titleRu || null,
     content, contentUz: contentUz || null, contentRu: contentRu || null,
-    categoryId: category.id, points: Number(points) || 50,
+    categoryId: category.id, moduleId: lessonModuleId, orderIndex,
+    points: Number(points) || 50,
     authorId: req.user!.userId,
     // Authors submit drafts; only someone with `lessons.publish` makes them live.
     isPublished: hasPermission(req.user!.role, "lessons.publish"),
@@ -623,6 +646,18 @@ async function updateLessonHandler(req: Request, res: Response) {
 
   if (updates.categoryId) updates.categoryId = Number(updates.categoryId);
   if (updates.points) updates.points = Number(updates.points);
+  // moduleId may be set (attach), changed, or cleared (detach → standalone).
+  // A non-null value must name a real module.
+  if ("moduleId" in updates) {
+    if (updates.moduleId == null) {
+      updates.moduleId = null;
+    } else {
+      const [mod] = await db.select({ id: modulesTable.id }).from(modulesTable)
+        .where(eq(modulesTable.id, Number(updates.moduleId))).limit(1);
+      if (!mod) return res.status(400).json({ error: "Unknown module" });
+      updates.moduleId = mod.id;
+    }
+  }
 
   if (Object.keys(updates).length === 0 && !questions) return res.status(400).json({ error: "Nothing to update or no permission" });
 
