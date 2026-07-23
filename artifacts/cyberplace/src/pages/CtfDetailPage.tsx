@@ -28,6 +28,7 @@ const CATEGORY_TO_MODULE: Record<string, string> = {
   Scripting: "linux-command-line",
   OSINT: "reconnaissance-and-scanning",
   Recon: "reconnaissance-and-scanning",
+  Exploitation: "exploitation-and-privilege-escalation",
   Pwn: "exploitation-and-privilege-escalation",
   Reverse: "ctf-methodology",
   Miscellaneous: "ctf-methodology",
