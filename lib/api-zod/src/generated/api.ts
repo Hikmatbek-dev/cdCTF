@@ -545,6 +545,22 @@ export const GetScoreboardResponse = zod.object({
 });
 
 /**
+ * @summary Public platform statistics
+ */
+export const GetPlatformStatsResponse = zod.object({
+  learners: zod.number(),
+  modules: zod.number(),
+  lessons: zod.number(),
+  challenges: zod.number(),
+  challengesSolved: zod.number(),
+  lessonsCompleted: zod.number(),
+  certificatesIssued: zod.number(),
+  competitions: zod.number(),
+  openToWork: zod.number(),
+  languages: zod.number(),
+});
+
+/**
  * @summary List active job postings
  */
 export const ListJobsResponseItem = zod.object({

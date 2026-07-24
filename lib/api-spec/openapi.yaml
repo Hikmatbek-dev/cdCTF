@@ -623,6 +623,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/ScoreboardResponse"
 
+  /stats:
+    get:
+      operationId: getPlatformStats
+      tags: [stats]
+      summary: Public platform statistics
+      responses:
+        "200":
+          description: Live community numbers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformStats"
+
   /jobs:
     get:
       operationId: listJobs
@@ -3048,6 +3061,31 @@ components:
           items:
             type: string
       required: [rank, userId, nickname, points, solvedCtfCount, completedLessonsCount, titles]
+
+    PlatformStats:
+      type: object
+      properties:
+        learners:
+          type: integer
+        modules:
+          type: integer
+        lessons:
+          type: integer
+        challenges:
+          type: integer
+        challengesSolved:
+          type: integer
+        lessonsCompleted:
+          type: integer
+        certificatesIssued:
+          type: integer
+        competitions:
+          type: integer
+        openToWork:
+          type: integer
+        languages:
+          type: integer
+      required: [learners, modules, lessons, challenges, challengesSolved, lessonsCompleted, certificatesIssued, competitions, openToWork, languages]
 
     Job:
       type: object

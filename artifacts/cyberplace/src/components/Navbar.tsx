@@ -25,6 +25,7 @@ const NAV_LINKS = [
   { href: "/competitions", label: { en: "Events", uz: "Tadbirlar", ru: "События" } },
   { href: "/talent", label: { en: "Hire", uz: "Yollash", ru: "Наём" } },
   { href: "/jobs", label: { en: "Jobs", uz: "Ishlar", ru: "Вакансии" } },
+  { href: "/impact", label: { en: "Impact", uz: "Ta'sir", ru: "Влияние" } },
 ];
 
 export function Navbar() {

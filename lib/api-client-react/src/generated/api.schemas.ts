@@ -379,6 +379,19 @@ export interface ScoreboardEntry {
   titles: string[];
 }
 
+export interface PlatformStats {
+  learners: number;
+  modules: number;
+  lessons: number;
+  challenges: number;
+  challengesSolved: number;
+  lessonsCompleted: number;
+  certificatesIssued: number;
+  competitions: number;
+  openToWork: number;
+  languages: number;
+}
+
 export type JobEmploymentType =
   (typeof JobEmploymentType)[keyof typeof JobEmploymentType];
 
