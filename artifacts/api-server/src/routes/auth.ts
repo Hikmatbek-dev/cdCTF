@@ -157,7 +157,8 @@ function isStrongPassword(password: string) {
 
 type PublicUser = {
   id: number; nickname: string; email: string; avatarUrl: string | null;
-  points: number; role: string; emailVerified: boolean; isBlocked: boolean; createdAt: Date;
+  points: number; role: string; emailVerified: boolean; isBlocked: boolean;
+  openToWork: boolean; createdAt: Date;
 };
 
 /** The only shape of a user that may leave the server. */
@@ -165,7 +166,7 @@ function publicUser(user: typeof usersTable.$inferSelect): PublicUser {
   return {
     id: user.id, nickname: user.nickname, email: user.email, avatarUrl: user.avatarUrl,
     points: user.points, role: user.role, emailVerified: user.emailVerified,
-    isBlocked: user.isBlocked, createdAt: user.createdAt,
+    isBlocked: user.isBlocked, openToWork: user.openToWork, createdAt: user.createdAt,
   };
 }
 
@@ -251,7 +252,7 @@ router.post("/register", authRateLimit, validateBody(RegisterBody), async (req, 
     user: {
       id: user.id, nickname: user.nickname, email: user.email, avatarUrl: user.avatarUrl,
       points: user.points, role: user.role, emailVerified: emailResult.ok ? user.emailVerified : true,
-      isBlocked: user.isBlocked, createdAt: user.createdAt,
+      isBlocked: user.isBlocked, openToWork: user.openToWork, createdAt: user.createdAt,
     },
     requiresEmailVerification: emailResult.ok,
   });

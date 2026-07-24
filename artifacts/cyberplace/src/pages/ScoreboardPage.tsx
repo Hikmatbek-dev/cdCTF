@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { Trophy, Shield, Search, Zap, Star, Target } from "lucide-react";
+import { Trophy, Shield, Search, Zap, Star, Target, Briefcase } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Pagination } from "@/components/Pagination";
 import { useLang } from "@/lib/LanguageContext";
@@ -176,12 +176,17 @@ export default function ScoreboardPage() {
                               </span>
                               {isMe && (
                                 <div className="px-3 py-1 bg-primary text-primary-foreground text-[11px] font-semibold rounded-lg shadow-lg shadow-primary/20">
-                                  YOU
+                                  {t("You", "Siz", "Вы")}
                                 </div>
                               )}
                               {isTop3 && <Star className={`w-5 h-5 fill-current ${rankColor}`} />}
                             </div>
                             <div className="flex flex-wrap gap-2">
+                              {entry.openToWork && (
+                                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-xl" data-testid={`badge-open-to-work-${entry.userId}`}>
+                                  <Briefcase className="w-3 h-3" /> {t("Open to work", "Ishga tayyor", "Открыт для работы")}
+                                </span>
+                              )}
                               {titles.slice(0, 2).map(title => (
                                 <span key={title} className="text-xs font-medium text-muted-foreground bg-foreground/5 border border-foreground/5 px-3 py-1 rounded-xl group-hover:border-primary/30 transition-all">
                                   {title}
@@ -197,7 +202,7 @@ export default function ScoreboardPage() {
                               <div className="text-3xl md:text-5xl font-black tabular-nums leading-none tracking-tighter text-foreground">{entry.points}</div>
                             </div>
                             <div className="text-xs text-muted-foreground/50">
-                              {entry.solvedCtfCount} SOLVES_LOGGED
+                              {entry.solvedCtfCount} {t("solved", "yechildi", "решено")}
                             </div>
                           </div>
                         </div>

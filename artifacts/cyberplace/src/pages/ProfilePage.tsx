@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useRoute, Link, useLocation } from "wouter";
-import { Trophy, BookOpen, Target, Calendar, Share2, Shield } from "lucide-react";
+import { Trophy, BookOpen, Target, Calendar, Share2, Shield, Briefcase } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
 import { useGetUserProfile, getGetUserProfileQueryKey } from "@workspace/api-client-react";
@@ -124,6 +124,11 @@ export default function ProfilePage() {
                     {t("Profile", "Profil", "Профиль")}
                   </div>
                   <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2 leading-none">{profile.nickname}</h1>
+                  {profile.openToWork && (
+                    <span className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-xs font-medium text-emerald-600 dark:text-emerald-400" data-testid="badge-open-to-work">
+                      <Briefcase className="w-3.5 h-3.5" /> {t("Open to work", "Ishga tayyor", "Открыт для работы")}
+                    </span>
+                  )}
                   <p className="text-sm text-muted-foreground mt-2">
                     {profile.email}
                   </p>

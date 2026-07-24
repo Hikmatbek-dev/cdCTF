@@ -28,6 +28,13 @@ export const usersTable = pgTable("users", {
    * six files — a rename would have silently started paying that account.
    */
   excludedFromScoring: boolean("excluded_from_scoring").notNull().default(false),
+  /**
+   * The seed of the talent pipeline: a learner who flips this on is telling
+   * recruiters they are available. It surfaces as a badge on their profile and
+   * scoreboard row, turning the leaderboard into a hiring signal — the thing an
+   * employer sponsor actually pays to reach.
+   */
+  openToWork: boolean("open_to_work").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, table => [
   // The scoreboard's exact filter and sort: non-blocked users, role 'user',

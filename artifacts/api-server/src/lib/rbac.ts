@@ -15,10 +15,10 @@ export type ColumnPermissions = {
  */
 export const columnPermissions: ColumnPermissions = {
   users: {
-    user: ["nickname", "avatarUrl"],
-    author: ["nickname", "avatarUrl"],
-    moderator: ["nickname", "avatarUrl"],
-    admin: ["nickname", "avatarUrl", "points", "role", "isBlocked", "email", "emailVerified"],
+    user: ["nickname", "avatarUrl", "openToWork"],
+    author: ["nickname", "avatarUrl", "openToWork"],
+    moderator: ["nickname", "avatarUrl", "openToWork"],
+    admin: ["nickname", "avatarUrl", "openToWork", "points", "role", "isBlocked", "email", "emailVerified"],
   },
   ctf_tasks: {
     user: [],

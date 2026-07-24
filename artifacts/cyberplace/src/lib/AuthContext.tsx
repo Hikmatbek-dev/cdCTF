@@ -11,6 +11,7 @@ export interface User {
   role: string;
   emailVerified: boolean;
   isBlocked: boolean;
+  openToWork?: boolean;
   createdAt: string;
 }
 

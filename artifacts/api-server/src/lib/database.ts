@@ -224,6 +224,7 @@ export async function ensureDatabaseShape() {
     );
     logger.info({ rowCount }, "Backfilled excluded_from_scoring from the previous hardcoded nickname");
   }
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS open_to_work boolean NOT NULL DEFAULT false");
 
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret text");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled boolean NOT NULL DEFAULT false");

@@ -2962,6 +2962,8 @@ components:
           nullable: true
         points:
           type: integer
+        openToWork:
+          type: boolean
         solvedCtfCount:
           type: integer
         completedLessonsCount:
@@ -3089,6 +3091,9 @@ components:
           type: integer
         isBlocked:
           type: boolean
+        openToWork:
+          type: boolean
+          description: The learner has flagged themselves as available to recruiters.
         solvedCtf:
           type: array
           items:
@@ -3155,6 +3160,9 @@ components:
         avatarUrl:
           type: string
           nullable: true
+        openToWork:
+          type: boolean
+          description: The user may flag themselves as open to recruiters.
         points:
           type: integer
           description: Admin only.

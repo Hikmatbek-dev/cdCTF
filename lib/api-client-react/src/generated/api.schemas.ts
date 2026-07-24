@@ -373,6 +373,7 @@ export interface ScoreboardEntry {
   nickname: string;
   avatarUrl?: string | null;
   points: number;
+  openToWork?: boolean;
   solvedCtfCount: number;
   completedLessonsCount: number;
   titles: string[];
@@ -490,6 +491,8 @@ export interface UserProfile {
   points: number;
   rank: number;
   isBlocked: boolean;
+  /** The learner has flagged themselves as available to recruiters. */
+  openToWork?: boolean;
   solvedCtf: UserProfileSolvedCtfItem[];
   completedLessons: UserProfileCompletedLessonsItem[];
   competitionHistory: UserProfileCompetitionHistoryItem[];
@@ -520,6 +523,8 @@ export interface UpdateProfileBody {
    */
   nickname?: string;
   avatarUrl?: string | null;
+  /** The user may flag themselves as open to recruiters. */
+  openToWork?: boolean;
   /** Admin only. */
   points?: number;
   /** Admin only. */

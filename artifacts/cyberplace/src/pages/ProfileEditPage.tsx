@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Camera, Lock, Trash2, User, Mail, AlertTriangle } from "lucide-react";
+import { Camera, Lock, Trash2, User, Mail, AlertTriangle, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -45,6 +45,8 @@ export default function ProfileEditPage() {
   const [changingPassword, setChangingPassword] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const updateProfile = useUpdateUserProfile();
+  const [openToWork, setOpenToWork] = useState<boolean>(user?.openToWork ?? false);
+  const [savingOpenToWork, setSavingOpenToWork] = useState(false);
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -74,6 +76,31 @@ export default function ProfileEditPage() {
           const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Error";
           toast({ title: msg, variant: "destructive" });
         },
+      }
+    );
+  };
+
+  const toggleOpenToWork = (next: boolean) => {
+    if (!user || savingOpenToWork) return;
+    const previous = openToWork;
+    setOpenToWork(next); // optimistic
+    setSavingOpenToWork(true);
+    updateProfile.mutate(
+      { id: user.id, data: { openToWork: next } },
+      {
+        onSuccess: (res) => {
+          updateUser({ ...user, ...res });
+          void qc.invalidateQueries({ queryKey: getGetUserProfileQueryKey(user.id) });
+          toast({ title: next
+            ? t("You are now visible to recruiters", "Endi ish beruvchilarga ko'rinasiz", "Теперь вы видны рекрутерам")
+            : t("Hidden from recruiters", "Ish beruvchilardan yashirildingiz", "Скрыто от рекрутеров") });
+        },
+        onError: (err: unknown) => {
+          setOpenToWork(previous); // roll back
+          const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Error";
+          toast({ title: msg, variant: "destructive" });
+        },
+        onSettled: () => setSavingOpenToWork(false),
       }
     );
   };
@@ -213,6 +240,39 @@ export default function ProfileEditPage() {
                 </Button>
               </form>
             </Form>
+          </section>
+
+          {/* Career — the talent-pipeline switch. On means this account shows an
+              "Open to work" badge on its profile and scoreboard row, so a
+              recruiter browsing the leaderboard can spot available people. */}
+          <section className="p-6 rounded-2xl border border-border bg-card shadow-sm">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">{t("Career", "Karyera", "Карьера")}</h2>
+            <label className="flex items-start gap-4 cursor-pointer">
+              <div className="w-10 h-10 shrink-0 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                <Briefcase className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="font-medium">{t("Open to work", "Ishga tayyorman", "Открыт для работы")}</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={openToWork}
+                    onClick={() => toggleOpenToWork(!openToWork)}
+                    disabled={savingOpenToWork}
+                    data-testid="toggle-open-to-work"
+                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${openToWork ? "bg-emerald-500" : "bg-muted-foreground/30"}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${openToWork ? "translate-x-6" : "translate-x-1"}`} />
+                  </button>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {t("Show recruiters you're available. A badge appears on your profile and the leaderboard.",
+                     "Ish beruvchilarga ochiq ekaningizni bildiring. Profil va reytingda belgi paydo bo'ladi.",
+                     "Покажите рекрутерам, что вы доступны. Значок появится в профиле и рейтинге.")}
+                </p>
+              </div>
+            </label>
           </section>
 
           {/* Password Section */}

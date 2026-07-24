@@ -175,6 +175,7 @@ async function getProfileData(id: number, requestingUserId?: number, requestingU
     id: user.id, nickname: user.nickname, email: canViewPrivate ? user.email : "", avatarUrl: user.avatarUrl,
     points: earnsPoints(user) ? user.points : 0,
     role: user.role, emailVerified: user.emailVerified, isBlocked: user.isBlocked,
+    openToWork: user.openToWork,
     createdAt: user.createdAt, rank,
     titles: userTitles.map(t => ({ id: t.id, name: t.name, category: t.category, points: t.points, earnedAt: t.earnedAt })),
     solvedCtf, completedLessons, competitionHistory,
@@ -257,9 +258,10 @@ router.patch("/:id", authenticateToken, validateBody(UpdateUserProfileBody), asy
       avatarUrl: updated.avatarUrl, 
       points: updated.points, 
       role: updated.role, 
-      emailVerified: updated.emailVerified, 
-      isBlocked: updated.isBlocked, 
-      createdAt: updated.createdAt 
+      emailVerified: updated.emailVerified,
+      isBlocked: updated.isBlocked,
+      openToWork: updated.openToWork,
+      createdAt: updated.createdAt
     });
   } catch (err) {
     logger.error({ err }, "Error updating user");

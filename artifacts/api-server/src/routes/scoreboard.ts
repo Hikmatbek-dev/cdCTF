@@ -43,6 +43,7 @@ router.get("/", optionalAuth, requireScope("scoreboard:read"), async (req, res) 
       nickname: usersTable.nickname,
       avatarUrl: usersTable.avatarUrl,
       points: usersTable.points,
+      openToWork: usersTable.openToWork,
       rank: sql<number>`row_number() over (order by ${usersTable.points} desc, ${usersTable.id} asc)::int`.as("rank"),
     })
       .from(usersTable)
@@ -101,6 +102,7 @@ router.get("/", optionalAuth, requireScope("scoreboard:read"), async (req, res) 
     nickname: row.nickname,
     avatarUrl: row.avatarUrl,
     points: row.points,
+    openToWork: row.openToWork,
     solvedCtfCount: solvesByUser.get(row.id) ?? 0,
     completedLessonsCount: lessonsByUser.get(row.id) ?? 0,
     titles: titlesByUser.get(row.id) ?? [],

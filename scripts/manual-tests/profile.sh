@@ -99,6 +99,23 @@ check "$(echo "$OTHER" | json email)" "" "begona email bo'sh"
 check "$(curl -s $API/users/me/profile -H "Authorization: Bearer $T" | json email)" "${U}@e.com" "o'z emailim ko'rinadi"
 
 echo
+echo "=== ⭐ ISHGA TAYYORMAN — talent pipeline belgisi ==="
+# Default off. The column exists because ensureDatabaseShape added it; a missing
+# column would make this read null, not false.
+check "$(echo "$P" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("openToWork"))')" "False" "boshida o'chiq"
+# The user flips it on via the normal profile PATCH (self only).
+curl -s -o /dev/null -X PATCH $API/users/$UID_ -H "Authorization: Bearer $T" \
+  -H 'Content-Type: application/json' -d '{"openToWork":true}'
+check "$(curl -s $API/users/me/profile -H "Authorization: Bearer $T" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("openToWork"))')" "True" "profilda yoqildi"
+check "$(psql "$DATABASE_URL" -tAqc "SELECT open_to_work FROM users WHERE nickname='$U';")" "t" "bazada saqlandi"
+# And it surfaces on the scoreboard row so a recruiter can spot it.
+check "$(curl -s "$API/scoreboard?search=$U" | python3 -c 'import sys,json; d=json.load(sys.stdin); e=[r for r in d["entries"] if r["userId"]=='"$UID_"']; print(e[0]["openToWork"] if e else "topilmadi")')" "True" "scoreboardda ko'rinadi"
+# A user cannot flip it on someone else's account.
+curl -s -o /dev/null -X PATCH $API/users/$RID -H "Authorization: Bearer $T" \
+  -H 'Content-Type: application/json' -d '{"openToWork":true}'
+check "$(psql "$DATABASE_URL" -tAqc "SELECT open_to_work FROM users WHERE id=$RID;")" "f" "begona hisobga tegib bo'lmaydi"
+
+echo
 echo "=== ⭐ GET profil bazani O'ZGARTIRMAYDI (idempotent) ==="
 psql "$DATABASE_URL" -q -c "UPDATE users SET points = 350 WHERE nickname='$U';"
 curl -s -o /dev/null $API/users/me/dashboard -H "Authorization: Bearer $T"

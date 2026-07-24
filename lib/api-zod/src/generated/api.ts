@@ -534,6 +534,7 @@ export const GetScoreboardResponse = zod.object({
       nickname: zod.string(),
       avatarUrl: zod.string().nullish(),
       points: zod.number(),
+      openToWork: zod.boolean().optional(),
       solvedCtfCount: zod.number(),
       completedLessonsCount: zod.number(),
       titles: zod.array(zod.string()),
@@ -624,6 +625,7 @@ export const GetCompetitionScoreboardResponseItem = zod.object({
   nickname: zod.string(),
   avatarUrl: zod.string().nullish(),
   points: zod.number(),
+  openToWork: zod.boolean().optional(),
   solvedCtfCount: zod.number(),
   completedLessonsCount: zod.number(),
   titles: zod.array(zod.string()),
@@ -647,6 +649,10 @@ export const GetUserProfileResponse = zod.object({
   points: zod.number(),
   rank: zod.number(),
   isBlocked: zod.boolean(),
+  openToWork: zod
+    .boolean()
+    .optional()
+    .describe("The learner has flagged themselves as available to recruiters."),
   solvedCtf: zod.array(
     zod.object({
       id: zod.number(),
@@ -702,6 +708,10 @@ export const UpdateUserProfileBody = zod
       .max(updateUserProfileBodyNicknameMax)
       .optional(),
     avatarUrl: zod.string().nullish(),
+    openToWork: zod
+      .boolean()
+      .optional()
+      .describe("The user may flag themselves as open to recruiters."),
     points: zod.number().optional().describe("Admin only."),
     role: zod
       .enum(["user", "author", "moderator", "admin"])
@@ -723,6 +733,10 @@ export const UpdateUserProfileResponse = zod.object({
   points: zod.number(),
   rank: zod.number(),
   isBlocked: zod.boolean(),
+  openToWork: zod
+    .boolean()
+    .optional()
+    .describe("The learner has flagged themselves as available to recruiters."),
   solvedCtf: zod.array(
     zod.object({
       id: zod.number(),
@@ -2034,6 +2048,10 @@ export const GetMyProfileResponse = zod.object({
   points: zod.number(),
   rank: zod.number(),
   isBlocked: zod.boolean(),
+  openToWork: zod
+    .boolean()
+    .optional()
+    .describe("The learner has flagged themselves as available to recruiters."),
   solvedCtf: zod.array(
     zod.object({
       id: zod.number(),
