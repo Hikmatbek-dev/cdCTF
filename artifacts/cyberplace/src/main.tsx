@@ -2,9 +2,11 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import { setupFrontendMonitoring } from "./lib/monitoring";
+import { setupAnalytics } from "./lib/analytics";
 import "./index.css";
 
 setupFrontendMonitoring();
+setupAnalytics();
 
 const queryClient = new QueryClient({
   defaultOptions: {

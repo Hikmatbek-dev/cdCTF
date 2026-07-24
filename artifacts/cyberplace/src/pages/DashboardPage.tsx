@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Activity, BookOpen, ChevronRight, Flag, Star, Trophy, Shield } from "lucide-react";
+import { Activity, BookOpen, ChevronRight, Flag, Star, Trophy, Shield, GraduationCap, ArrowRight } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -84,19 +84,47 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {/* Tactical Metrics */}
+        {/* Onboarding nudge. Almost every account solves challenges and never
+            starts a lesson; a returning learner who has completed none gets a
+            clear first step toward the curriculum rather than a wall of stats. */}
+        {data.progress.completedLessonCount === 0 && (
+          <Link href="/modules" className="block mb-10">
+            <div className="glass-card !p-8 border-primary/30 flex flex-col sm:flex-row sm:items-center justify-between gap-6 group cursor-pointer">
+              <div className="flex items-center gap-5">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0 neon-glow">
+                  <GraduationCap className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <div className="eyebrow mb-1">{t("Get started", "Boshlang", "Начните")}</div>
+                  <h2 className="text-xl font-semibold group-hover:text-primary transition-colors">
+                    {t("Start your first lesson", "Birinchi darsingizni boshlang", "Начните первый урок")}
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {t("Eight modules, from your first command to full attack chains.", "Sakkiz modul — birinchi buyruqdan to'liq hujum zanjirigacha.", "Восемь модулей — от первой команды до полных цепочек атаки.")}
+                  </p>
+                </div>
+              </div>
+              <button className="cyber-button h-11 px-6 shrink-0">
+                {t("Start module 01", "01-moduldan boshlash", "Начать с модуля 01")}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </Link>
+        )}
+
+        {/* Progress metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-16">
           {[
             { icon: Flag, label: t("Solved", "Yechilgan", "Решено"), value: data.progress.solvedCtfCount, color: "text-primary" },
-            { icon: BookOpen, label: "INTEL_MODULES", value: data.progress.completedLessonCount, color: "text-foreground" },
-            { icon: Star, label: "AUTH_TITLES", value: data.progress.titleCount, color: "text-foreground" }
+            { icon: BookOpen, label: t("Lessons done", "Tugatilgan dars", "Уроков пройдено"), value: data.progress.completedLessonCount, color: "text-foreground" },
+            { icon: Star, label: t("Titles", "Unvonlar", "Титулы"), value: data.progress.titleCount, color: "text-foreground" }
           ].map((stat, i) => (
             <div key={i} className="glass-card bg-muted/10 p-10 rounded-[2.5rem] group hover:bg-muted/20 transition-all border-border hover:border-primary/20">
               <div className="flex items-center gap-4 mb-6">
                 <stat.icon className={`w-5 h-5 ${stat.color} group-hover:scale-110 transition-transform`} />
                 <span className="text-xs text-muted-foreground">{stat.label}</span>
               </div>
-              <div className="text-5xl font-black tracking-tighter leading-none">{String(stat.value).padStart(2, '0')}</div>
+              <div className="text-5xl font-bold tracking-tight leading-none tabular-nums">{String(stat.value).padStart(2, '0')}</div>
             </div>
           ))}
         </div>
