@@ -182,6 +182,21 @@ check "$(echo "$SPBODY" | python3 -c 'import sys,json;print(json.load(sys.stdin)
 check "$(curl -s $API/competitions | python3 -c 'import sys,json;print([c["sponsorName"] for c in json.load(sys.stdin) if c["id"]=='"$SPCOMP"'][0])')" "IT Park Uzbekistan" "ro'yxatda ham homiy nomi bor"
 
 echo
+echo "=== ⭐ OG PREVIEW — Telegram uchun meta teglar ==="
+# Crawlers get server-rendered OG tags (humans get the SPA). The route is
+# reachable directly; Vercel only maps crawler user-agents onto it.
+OG=$(curl -s $API/og/competition/$SPCOMP)
+check "$(echo "$OG" | grep -c 'property="og:title" content="'"${TAG}"'_sponsored')" "1" "og:title musobaqa nomi bilan"
+check "$(echo "$OG" | grep 'property="og:description"' | grep -c 'IT Park Uzbekistan')" "1" "og:description homiyni o'z ichiga oladi"
+check "$(echo "$OG" | grep -c 'property="og:image" content="https://itpark.uz/logo.png"')" "1" "og:image homiy logosi"
+check "$(echo "$OG" | grep -c 'name="twitter:card" content="summary_large_image"')" "1" "twitter:card katta rasm"
+# A missing competition must not 500 — it degrades to a generic preview.
+check "$(curl -s -o /dev/null -w '%{http_code}' $API/og/competition/999999)" "200" "yo'q musobaqa 200 (umumiy preview)"
+# HTML escaping: an XSS-y competition name must be escaped in the tag.
+XSSID=$(q "INSERT INTO competitions (name, type, start_time, end_time) VALUES ('<script>x</script>','public', now(), now() + interval '1 hour') RETURNING id")
+check "$(curl -s $API/og/competition/$XSSID | grep -c '<script>x</script>')" "0" "nomdagi HTML qochiriladi (XSS yo'q)"
+
+echo
 echo "=== Scoreboard yechimlarni aks ettiradi ==="
 SB=$(curl -s $API/competitions/$COMP/scoreboard | python3 -c '
 import sys, json

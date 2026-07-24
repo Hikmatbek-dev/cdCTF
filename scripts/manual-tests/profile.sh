@@ -126,6 +126,14 @@ check "$(echo "$TAL" | python3 -c 'import sys,json; d=json.load(sys.stdin); prin
 check "$(echo "$TAL" | python3 -c 'import sys,json; d=json.load(sys.stdin); e=[x for x in d["entries"] if x["userId"]=='"$UID_"'][0]; print(e["solvedCtfCount"])')" "2" "yechilgan CTF soni to'g'ri"
 
 echo
+echo "=== ⭐ OG PREVIEW — profil va talent uchun meta teglar ==="
+OGP=$(curl -s $API/og/profile/$UID_)
+check "$(echo "$OGP" | grep -c 'property="og:title" content="'"$U"' ')" "1" "profil og:title taxallus bilan"
+check "$(echo "$OGP" | grep -c 'canonical" href="https://cyberplace.uz/profile/'"$UID_"'"')" "1" "canonical to'g'ri URL"
+check "$(curl -s -o /dev/null -w '%{http_code}' $API/og/profile/999999)" "200" "yo'q profil 200 (umumiy preview)"
+check "$(curl -s $API/og/talent | grep -c 'property="og:title"')" "1" "talent og:title bor"
+
+echo
 echo "=== ⭐ GET profil bazani O'ZGARTIRMAYDI (idempotent) ==="
 psql "$DATABASE_URL" -q -c "UPDATE users SET points = 350 WHERE nickname='$U';"
 curl -s -o /dev/null $API/users/me/dashboard -H "Authorization: Bearer $T"

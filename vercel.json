@@ -49,6 +49,39 @@
       "destination": "/api/[...path]"
     },
     {
+      "source": "/competitions/:id(\\d+)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(TelegramBot|facebookexternalhit|Twitterbot|WhatsApp|Slackbot|Discordbot|LinkedInBot|vkShare|Pinterest|redditbot|Applebot|SkypeUriPreview|Googlebot|bingbot).*"
+        }
+      ],
+      "destination": "/api/og/competition/:id"
+    },
+    {
+      "source": "/profile/:id(\\d+)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(TelegramBot|facebookexternalhit|Twitterbot|WhatsApp|Slackbot|Discordbot|LinkedInBot|vkShare|Pinterest|redditbot|Applebot|SkypeUriPreview|Googlebot|bingbot).*"
+        }
+      ],
+      "destination": "/api/og/profile/:id"
+    },
+    {
+      "source": "/talent",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(TelegramBot|facebookexternalhit|Twitterbot|WhatsApp|Slackbot|Discordbot|LinkedInBot|vkShare|Pinterest|redditbot|Applebot|SkypeUriPreview|Googlebot|bingbot).*"
+        }
+      ],
+      "destination": "/api/og/talent"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
