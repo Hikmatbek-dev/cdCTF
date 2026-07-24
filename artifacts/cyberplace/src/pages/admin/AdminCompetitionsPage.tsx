@@ -23,6 +23,10 @@ const schema = z.object({
   startTime: z.string().min(1),
   endTime: z.string().min(1),
   ctfIds: z.array(z.number()).min(1, "Select at least one CTF"),
+  sponsorName: z.string().optional(),
+  sponsorLogoUrl: z.string().url().optional().or(z.literal("")),
+  sponsorUrl: z.string().url().optional().or(z.literal("")),
+  prize: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -42,7 +46,7 @@ export default function AdminCompetitionsPage() {
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", type: "public", startTime: "", endTime: "", ctfIds: [] },
+    defaultValues: { name: "", type: "public", startTime: "", endTime: "", ctfIds: [], sponsorName: "", sponsorLogoUrl: "", sponsorUrl: "", prize: "" },
   });
 
   const toggleCtf = (id: number) => {
@@ -52,7 +56,12 @@ export default function AdminCompetitionsPage() {
   };
 
   const onSubmit = (data: FormData) => {
-    createComp.mutate({ data: { ...data, ctfIds: selectedCtfs, description: data.description || null, startTime: new Date(data.startTime).toISOString(), endTime: new Date(data.endTime).toISOString() } }, {
+    createComp.mutate({ data: {
+      ...data, ctfIds: selectedCtfs, description: data.description || null,
+      startTime: new Date(data.startTime).toISOString(), endTime: new Date(data.endTime).toISOString(),
+      sponsorName: data.sponsorName || null, sponsorLogoUrl: data.sponsorLogoUrl || null,
+      sponsorUrl: data.sponsorUrl || null, prize: data.prize || null,
+    } }, {
       onSuccess: () => { toast({ title: t("Competition created!", "Musobaqa yaratildi!", "Соревнование создано!") }); void qc.invalidateQueries({ queryKey: getListCompetitionsQueryKey() }); setShowForm(false); setSelectedCtfs([]); },
       onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
     });
@@ -102,6 +111,27 @@ export default function AdminCompetitionsPage() {
                 <FormField control={form.control} name="endTime" render={({ field }) => (
                   <FormItem><FormLabel>{t("End Time", "Tugash vaqti", "Время окончания")}</FormLabel><FormControl><Input {...field} type="datetime-local" data-testid="input-comp-end" /></FormControl><FormMessage /></FormItem>
                 )} />
+                {/* Sponsorship — optional. Filled in when a competition is sold
+                    to a sponsor; leaving them blank keeps the event unbranded. */}
+                <div className="col-span-2 rounded-lg border border-dashed border-border p-4">
+                  <p className="text-sm font-medium mb-1">{t("Sponsorship (optional)", "Homiylik (ixtiyoriy)", "Спонсорство (необязательно)")}</p>
+                  <p className="text-xs text-muted-foreground mb-3">{t("Credit a sponsor and show the prize on the event page.", "Homiyni ko'rsating va sovrinni tadbir sahifasida chiqaring.", "Укажите спонсора и приз на странице события.")}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField control={form.control} name="sponsorName" render={({ field }) => (
+                      <FormItem><FormLabel>{t("Sponsor name", "Homiy nomi", "Название спонсора")}</FormLabel><FormControl><Input {...field} placeholder="IT Park Uzbekistan" data-testid="input-comp-sponsor-name" /></FormControl></FormItem>
+                    )} />
+                    <FormField control={form.control} name="prize" render={({ field }) => (
+                      <FormItem><FormLabel>{t("Prize", "Sovrin", "Приз")}</FormLabel><FormControl><Input {...field} placeholder={t("e.g. 5,000,000 UZS + internship", "mas. 5 000 000 so'm + amaliyot", "напр. 5 000 000 сум + стажировка")} data-testid="input-comp-prize" /></FormControl></FormItem>
+                    )} />
+                    <FormField control={form.control} name="sponsorLogoUrl" render={({ field }) => (
+                      <FormItem><FormLabel>{t("Logo URL", "Logo havolasi", "URL логотипа")}</FormLabel><FormControl><Input {...field} placeholder="https://…/logo.png" data-testid="input-comp-sponsor-logo" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="sponsorUrl" render={({ field }) => (
+                      <FormItem><FormLabel>{t("Sponsor link", "Homiy havolasi", "Ссылка спонсора")}</FormLabel><FormControl><Input {...field} placeholder="https://itpark.uz" data-testid="input-comp-sponsor-url" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                  </div>
+                </div>
+
                 <div className="col-span-2">
                   <label className="text-sm font-medium mb-2 block">
                     {t("CTF Challenges", "CTF topshiriqlari", "CTF задания")} ({selectedCtfs.length} {t("selected", "tanlandi", "выбрано")})

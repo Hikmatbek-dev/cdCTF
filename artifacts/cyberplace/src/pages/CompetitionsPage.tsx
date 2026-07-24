@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Trophy, Clock, Users, Lock } from "lucide-react";
+import { Trophy, Clock, Users, Lock, Gift } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
 import { normalizeCompetitions } from "@/lib/api-shapes";
@@ -52,7 +52,7 @@ export default function CompetitionsPage() {
             <div className="w-20 h-20 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-6">
               <Trophy className="w-8 h-8 text-primary/40" />
             </div>
-            <h3 className="text-xl font-display font-bold mb-2 uppercase tracking-widest">{t("NO TOURNAMENTS SCHEDULED", "MUSOBAQALAR YO'Q", "НЕТ ТУРНИРОВ")}</h3>
+            <h3 className="text-xl font-display font-bold mb-2">{t("No competitions scheduled", "Hozircha musobaqalar yo'q", "Пока нет соревнований")}</h3>
             <p className="text-sm text-muted-foreground">{t("Check back later for upcoming elite events.", "Yangi musobaqalarni kuting.", "Следите за новыми событиями.")}</p>
           </div>
         ) : (
@@ -75,10 +75,20 @@ export default function CompetitionsPage() {
                       comp.type === "private" ? "bg-orange-500/10 text-orange-500 border-orange-500/20" : "bg-foreground/5 text-muted-foreground border-foreground/10"
                     }`}>
                       {comp.type === "private" && <Lock className="w-3 h-3" />}
-                      {comp.type === "public" ? t("Public Access", "Ochiq", "Публичный") : t("Classified", "Yopiq", "Приватный")}
+                      {comp.type === "public" ? t("Public", "Ochiq", "Публичный") : t("Private", "Yopiq", "Приватный")}
                     </span>
                     {comp.isJoined && (
                       <span className="text-xs font-medium text-primary">{t("Joined", "Qatnashyapsiz", "Вы участвуете")}</span>
+                    )}
+                    {comp.sponsorName && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border border-border bg-foreground/5 text-xs font-medium text-muted-foreground">
+                        {t("Powered by", "Homiy", "Спонсор")} <span className="text-foreground font-semibold">{comp.sponsorName}</span>
+                      </span>
+                    )}
+                    {comp.prize && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 text-xs font-medium text-amber-600 dark:text-amber-400">
+                        <Gift className="w-3 h-3" /> {comp.prize}
+                      </span>
                     )}
                   </div>
 
@@ -100,13 +110,13 @@ export default function CompetitionsPage() {
                         <span className="text-xs text-muted-foreground leading-none mb-1">{t("Players", "Ishtirokchilar", "Игроки")}</span>
                         <div className="flex items-center gap-2 text-xs font-bold text-foreground">
                           <Users className="w-3 h-3 text-primary" />
-                          {comp.participantCount} {t("ENGAGED", "QATNASHCHI", "УЧАСТНИКОВ")}
+                          {comp.participantCount} {t("participants", "qatnashchi", "участников")}
                         </div>
                       </div>
                     </div>
                     <div className="flex flex-col text-right">
                       <span className="text-xs text-muted-foreground leading-none mb-1">{t("Challenges", "Topshiriqlar", "Задания")}</span>
-                      <div className="text-sm font-black text-primary">{comp.ctfCount} TARGETS</div>
+                      <div className="text-sm font-black text-primary">{comp.ctfCount} {t("challenges", "topshiriq", "заданий")}</div>
                     </div>
                   </div>
                 </div>

@@ -412,6 +412,8 @@ export interface Competition {
   participantCount: number;
   ctfCount: number;
   isJoined: boolean;
+  sponsorName?: string | null;
+  prize?: string | null;
 }
 
 export type CompetitionDetailType =
@@ -443,6 +445,10 @@ export interface CompetitionDetail {
   isJoined: boolean;
   challenges: CtfChallenge[];
   certificateUrl?: string | null;
+  sponsorName?: string | null;
+  sponsorLogoUrl?: string | null;
+  sponsorUrl?: string | null;
+  prize?: string | null;
 }
 
 export type UserProfileSolvedCtfItem = {
@@ -640,6 +646,14 @@ export interface CreateCompetitionBody {
   ctfIds?: number[];
   /** Join code for a private competition. Ignored when type is public, and generated if a private competition is created without one. */
   inviteCode?: string | null;
+  /** The sponsor to credit on the event page, e.g. "IT Park Uzbekistan". */
+  sponsorName?: string | null;
+  /** Absolute URL of the sponsor logo shown on the event page. */
+  sponsorLogoUrl?: string | null;
+  /** Link the sponsor's name and logo point to. */
+  sponsorUrl?: string | null;
+  /** The prize on offer, shown to participants (free text). */
+  prize?: string | null;
 }
 
 export type CreateLessonBodyQuestionsItem = {
@@ -1095,6 +1109,10 @@ export interface UpdateCompetitionBody {
   startTime?: string;
   endTime?: string;
   inviteCode?: string | null;
+  sponsorName?: string | null;
+  sponsorLogoUrl?: string | null;
+  sponsorUrl?: string | null;
+  prize?: string | null;
 }
 
 export type SetRoleBodyRole =

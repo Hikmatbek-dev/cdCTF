@@ -13,6 +13,12 @@ export const competitionsTable = pgTable("competitions", {
   inviteCode: text("invite_code"),
   startTime: timestamp("start_time", { withTimezone: true }).notNull(),
   endTime: timestamp("end_time", { withTimezone: true }).notNull(),
+  // Sponsorship: the fields that turn a competition into a paid, branded event —
+  // a logo and name to credit the sponsor, a link, and the prize on offer.
+  sponsorName: text("sponsor_name"),
+  sponsorLogoUrl: text("sponsor_logo_url"),
+  sponsorUrl: text("sponsor_url"),
+  prize: text("prize"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, table => [
   // Declared here at last. ensureDatabaseShape() created this index while the

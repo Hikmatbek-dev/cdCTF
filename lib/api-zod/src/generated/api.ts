@@ -557,6 +557,8 @@ export const ListCompetitionsResponseItem = zod.object({
   participantCount: zod.number(),
   ctfCount: zod.number(),
   isJoined: zod.boolean(),
+  sponsorName: zod.string().nullish(),
+  prize: zod.string().nullish(),
 });
 export const ListCompetitionsResponse = zod.array(ListCompetitionsResponseItem);
 
@@ -592,6 +594,10 @@ export const GetCompetitionResponse = zod.object({
     }),
   ),
   certificateUrl: zod.string().nullish(),
+  sponsorName: zod.string().nullish(),
+  sponsorLogoUrl: zod.string().nullish(),
+  sponsorUrl: zod.string().nullish(),
+  prize: zod.string().nullish(),
 });
 
 /**
@@ -1116,6 +1122,24 @@ export const AdminCreateCompetitionBody = zod.object({
     .describe(
       "Join code for a private competition. Ignored when type is public, and generated if a private competition is created without one.",
     ),
+  sponsorName: zod
+    .string()
+    .nullish()
+    .describe(
+      'The sponsor to credit on the event page, e.g. \"IT Park Uzbekistan\".',
+    ),
+  sponsorLogoUrl: zod
+    .string()
+    .nullish()
+    .describe("Absolute URL of the sponsor logo shown on the event page."),
+  sponsorUrl: zod
+    .string()
+    .nullish()
+    .describe("Link the sponsor's name and logo point to."),
+  prize: zod
+    .string()
+    .nullish()
+    .describe("The prize on offer, shown to participants (free text)."),
 });
 
 /**
@@ -1138,6 +1162,24 @@ export const AdminUpdateCompetitionBody = zod.object({
     .describe(
       "Join code for a private competition. Ignored when type is public, and generated if a private competition is created without one.",
     ),
+  sponsorName: zod
+    .string()
+    .nullish()
+    .describe(
+      'The sponsor to credit on the event page, e.g. \"IT Park Uzbekistan\".',
+    ),
+  sponsorLogoUrl: zod
+    .string()
+    .nullish()
+    .describe("Absolute URL of the sponsor logo shown on the event page."),
+  sponsorUrl: zod
+    .string()
+    .nullish()
+    .describe("Link the sponsor's name and logo point to."),
+  prize: zod
+    .string()
+    .nullish()
+    .describe("The prize on offer, shown to participants (free text)."),
 });
 
 export const AdminUpdateCompetitionResponse = zod.object({
@@ -1151,6 +1193,8 @@ export const AdminUpdateCompetitionResponse = zod.object({
   participantCount: zod.number(),
   ctfCount: zod.number(),
   isJoined: zod.boolean(),
+  sponsorName: zod.string().nullish(),
+  prize: zod.string().nullish(),
 });
 
 /**
@@ -1167,6 +1211,10 @@ export const UpdateCompetitionBody = zod.object({
   startTime: zod.coerce.date().optional(),
   endTime: zod.coerce.date().optional(),
   inviteCode: zod.string().nullish(),
+  sponsorName: zod.string().nullish(),
+  sponsorLogoUrl: zod.string().nullish(),
+  sponsorUrl: zod.string().nullish(),
+  prize: zod.string().nullish(),
 });
 
 export const UpdateCompetitionResponse = zod.object({
@@ -1180,6 +1228,8 @@ export const UpdateCompetitionResponse = zod.object({
   participantCount: zod.number(),
   ctfCount: zod.number(),
   isJoined: zod.boolean(),
+  sponsorName: zod.string().nullish(),
+  prize: zod.string().nullish(),
 });
 
 /**

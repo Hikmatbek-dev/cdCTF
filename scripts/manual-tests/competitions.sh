@@ -167,6 +167,21 @@ check "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/competitions/$PRIV/
   -H 'Content-Type: application/json' -d '{"inviteCode":"secret123"}')" "201" "to'g'ri kod bilan qo'shildi"
 
 echo
+echo "=== ⭐ HOMIY BRENDI — musobaqa sahifasida ko'rinadi ==="
+# A sponsored competition is the fastest revenue path; the event page must
+# surface the sponsor and prize the API stores. The INSERT below also proves
+# ensureDatabaseShape() created the sponsor columns — it would error otherwise.
+SPCOMP=$(q "INSERT INTO competitions (name, type, start_time, end_time, sponsor_name, sponsor_logo_url, sponsor_url, prize)
+  VALUES ('${TAG}_sponsored','public', now() - interval '1 hour', now() + interval '1 hour',
+          'IT Park Uzbekistan','https://itpark.uz/logo.png','https://itpark.uz','5,000,000 UZS') RETURNING id")
+SPBODY=$(curl -s $API/competitions/$SPCOMP)
+check "$(echo "$SPBODY" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("sponsorName"))')" "IT Park Uzbekistan" "homiy nomi qaytdi"
+check "$(echo "$SPBODY" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("prize"))')" "5,000,000 UZS" "sovrin qaytdi"
+check "$(echo "$SPBODY" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("sponsorUrl"))')" "https://itpark.uz" "homiy havolasi qaytdi"
+# And on the list endpoint, so a card can show the "Homiy" badge.
+check "$(curl -s $API/competitions | python3 -c 'import sys,json;print([c["sponsorName"] for c in json.load(sys.stdin) if c["id"]=='"$SPCOMP"'][0])')" "IT Park Uzbekistan" "ro'yxatda ham homiy nomi bor"
+
+echo
 echo "=== Scoreboard yechimlarni aks ettiradi ==="
 SB=$(curl -s $API/competitions/$COMP/scoreboard | python3 -c '
 import sys, json

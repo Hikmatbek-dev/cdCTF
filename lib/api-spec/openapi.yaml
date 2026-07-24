@@ -3015,6 +3015,12 @@ components:
           type: integer
         isJoined:
           type: boolean
+        sponsorName:
+          type: string
+          nullable: true
+        prize:
+          type: string
+          nullable: true
       required: [id, name, type, startTime, endTime, status, participantCount, ctfCount, isJoined]
 
     CompetitionDetail:
@@ -3048,6 +3054,18 @@ components:
           items:
             $ref: "#/components/schemas/CtfChallenge"
         certificateUrl:
+          type: string
+          nullable: true
+        sponsorName:
+          type: string
+          nullable: true
+        sponsorLogoUrl:
+          type: string
+          nullable: true
+        sponsorUrl:
+          type: string
+          nullable: true
+        prize:
           type: string
           nullable: true
       required: [id, name, type, startTime, endTime, status, participantCount, isJoined, challenges]
@@ -3375,6 +3393,22 @@ components:
           type: string
           nullable: true
           description: Join code for a private competition. Ignored when type is public, and generated if a private competition is created without one.
+        sponsorName:
+          type: string
+          nullable: true
+          description: The sponsor to credit on the event page, e.g. "IT Park Uzbekistan".
+        sponsorLogoUrl:
+          type: string
+          nullable: true
+          description: Absolute URL of the sponsor logo shown on the event page.
+        sponsorUrl:
+          type: string
+          nullable: true
+          description: Link the sponsor's name and logo point to.
+        prize:
+          type: string
+          nullable: true
+          description: The prize on offer, shown to participants (free text).
       required:
       - name
       - startTime
@@ -4138,6 +4172,18 @@ components:
           type: string
           format: date-time
         inviteCode:
+          type: string
+          nullable: true
+        sponsorName:
+          type: string
+          nullable: true
+        sponsorLogoUrl:
+          type: string
+          nullable: true
+        sponsorUrl:
+          type: string
+          nullable: true
+        prize:
           type: string
           nullable: true
 

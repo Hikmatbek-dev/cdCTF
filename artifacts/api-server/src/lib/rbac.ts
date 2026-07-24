@@ -48,7 +48,7 @@ export const columnPermissions: ColumnPermissions = {
     user: [],
     author: [],
     moderator: [],
-    admin: ["name", "description", "type", "startTime", "endTime", "inviteCode"],
+    admin: ["name", "description", "type", "startTime", "endTime", "inviteCode", "sponsorName", "sponsorLogoUrl", "sponsorUrl", "prize"],
   },
 };
 

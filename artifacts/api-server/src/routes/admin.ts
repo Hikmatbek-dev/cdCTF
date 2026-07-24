@@ -460,7 +460,7 @@ router.post("/blocked-tasks/:type/:taskId/unblock/:userId", requirePermission("b
 
 // POST /api/admin/competitions
 router.post("/competitions", requirePermission("competitions.manage"), validateBody(AdminCreateCompetitionBody), async (req, res) => {
-  const { name, description, type, startTime, endTime, ctfIds, inviteCode } = req.body;
+  const { name, description, type, startTime, endTime, ctfIds, inviteCode, sponsorName, sponsorLogoUrl, sponsorUrl, prize } = req.body;
   if (!name || !startTime || !endTime) return res.status(400).json({ error: "Missing fields" });
   const start = new Date(startTime);
   const end = new Date(endTime);
@@ -475,6 +475,8 @@ router.post("/competitions", requirePermission("competitions.manage"), validateB
   const [comp] = await db.insert(competitionsTable).values({
     name, description: description || null, type: normalizedType, inviteCode: normalizedInviteCode,
     startTime: start, endTime: end,
+    sponsorName: cleanText(sponsorName), sponsorLogoUrl: cleanText(sponsorLogoUrl),
+    sponsorUrl: cleanText(sponsorUrl), prize: cleanText(prize),
   }).returning();
 
   if (ctfIds && Array.isArray(ctfIds)) {
@@ -486,6 +488,15 @@ router.post("/competitions", requirePermission("competitions.manage"), validateB
   await writeAuditLog(req, "competition.create", "competition", comp.id, { type: comp.type, ctfCount: Array.isArray(ctfIds) ? ctfIds.length : 0 });
   res.status(201).json(comp);
 });
+
+/** Trims an optional text field to a stored value: a real string, or null for
+ * anything empty/absent. Keeps blank sponsor fields out of the column so the
+ * event page can test them with a simple truthiness check. */
+function cleanText(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
 
 // PATCH /api/admin/competitions/:id
 /** Parses a client-supplied timestamp, rejecting anything that is not a real date. */
@@ -520,6 +531,10 @@ async function updateCompetitionHandler(req: Request, res: Response) {
       return res.status(400).json({ error: "inviteCode must be a string" });
     }
     updates.inviteCode = updates.inviteCode.trim() || null;
+  }
+  // Sponsor fields: a blank string clears the field rather than storing "".
+  for (const field of ["sponsorName", "sponsorLogoUrl", "sponsorUrl", "prize"] as const) {
+    if (updates[field] !== undefined) updates[field] = cleanText(updates[field]);
   }
 
   if (Object.keys(updates).length === 0) return res.status(400).json({ error: "Nothing to update or no permission" });

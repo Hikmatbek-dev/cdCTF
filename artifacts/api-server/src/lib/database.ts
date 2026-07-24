@@ -159,6 +159,10 @@ export async function ensureDatabaseShape() {
   await pool.query("ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS file_id integer REFERENCES ctf_files(id)");
   await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS invite_code text");
   await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS competitions_invite_code_idx ON competitions(invite_code) WHERE invite_code IS NOT NULL");
+  await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS sponsor_name text");
+  await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS sponsor_logo_url text");
+  await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS sponsor_url text");
+  await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS prize text");
   
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token text");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires timestamptz");

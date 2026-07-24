@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRoute } from "wouter";
-import { Trophy, Clock, Users, Flag, Lock } from "lucide-react";
+import { Trophy, Clock, Users, Flag, Lock, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
@@ -89,6 +89,44 @@ export default function CompetitionDetailPage() {
           </div>
           <h1 className="text-2xl font-bold mb-2" data-testid="text-competition-name">{comp.name}</h1>
           {comp.description && <p className="text-muted-foreground text-sm mb-4">{comp.description}</p>}
+
+          {/* Prize on offer — the reason a sponsored event pulls a crowd. Shown
+              prominently so participants see what they are competing for. */}
+          {comp.prize && (
+            <div className="mb-4 inline-flex items-center gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5" data-testid="competition-prize">
+              <Gift className="w-4 h-4 text-amber-500 shrink-0" />
+              <span className="text-sm">
+                <span className="text-muted-foreground">{t("Prize", "Sovrin", "Приз")}: </span>
+                <span className="font-semibold text-amber-600 dark:text-amber-400">{comp.prize}</span>
+              </span>
+            </div>
+          )}
+
+          {/* Sponsor credit. A named sponsor with a logo is what a company pays
+              for; it renders as a tasteful "Powered by" strip, linked if a URL
+              was set. */}
+          {comp.sponsorName && (
+            <div className="mb-4 flex items-center gap-3 rounded-xl border border-border bg-muted/20 px-4 py-3" data-testid="competition-sponsor">
+              {comp.sponsorLogoUrl && (
+                <img
+                  src={comp.sponsorLogoUrl}
+                  alt={comp.sponsorName}
+                  className="h-8 w-auto max-w-[140px] object-contain"
+                  loading="lazy"
+                />
+              )}
+              <div className="text-xs leading-tight">
+                <div className="text-muted-foreground">{t("Powered by", "Homiy", "Спонсор")}</div>
+                {comp.sponsorUrl ? (
+                  <a href={comp.sponsorUrl} target="_blank" rel="noopener noreferrer sponsored" className="font-semibold text-foreground hover:text-primary transition-colors">
+                    {comp.sponsorName}
+                  </a>
+                ) : (
+                  <span className="font-semibold text-foreground">{comp.sponsorName}</span>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
             <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> {formatDate(comp.startTime)}</span>

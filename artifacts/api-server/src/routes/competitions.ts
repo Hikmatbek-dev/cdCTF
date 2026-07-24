@@ -44,6 +44,8 @@ router.get("/", optionalAuth, async (req, res) => {
     ctfCount: allTasks.filter(t => t.competitionId === comp.id).length,
     participantCount: allUsers.filter(u => u.competitionId === comp.id).length,
     isJoined: userId ? allUsers.some(u => u.competitionId === comp.id && u.userId === userId) : false,
+    sponsorName: comp.sponsorName,
+    prize: comp.prize,
   }));
 
   res.json(result);
@@ -84,6 +86,10 @@ router.get("/:id", optionalAuth, async (req, res) => {
     isJoined: userId ? participants.some(u => u.userId === userId) : false,
     challenges: allChallenges,
     certificateUrl: null,
+    sponsorName: comp.sponsorName,
+    sponsorLogoUrl: comp.sponsorLogoUrl,
+    sponsorUrl: comp.sponsorUrl,
+    prize: comp.prize,
   });
 });
 
