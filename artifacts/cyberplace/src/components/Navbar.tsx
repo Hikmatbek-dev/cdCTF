@@ -23,6 +23,7 @@ const NAV_LINKS = [
   { href: "/ctf", label: { en: "CTF", uz: "CTF", ru: "CTF" } },
   { href: "/scoreboard", label: { en: "Ranking", uz: "Reyting", ru: "Рейтинг" } },
   { href: "/competitions", label: { en: "Events", uz: "Tadbirlar", ru: "События" } },
+  { href: "/talent", label: { en: "Hire", uz: "Yollash", ru: "Наём" } },
 ];
 
 export function Navbar() {

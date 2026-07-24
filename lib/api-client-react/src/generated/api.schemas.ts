@@ -379,6 +379,23 @@ export interface ScoreboardEntry {
   titles: string[];
 }
 
+export interface TalentEntry {
+  userId: number;
+  nickname: string;
+  avatarUrl?: string | null;
+  points: number;
+  solvedCtfCount: number;
+  completedLessonsCount: number;
+  titles: string[];
+}
+
+export interface TalentDirectory {
+  entries: TalentEntry[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export interface ScoreboardResponse {
   entries: ScoreboardEntry[];
   total: number;
@@ -1223,6 +1240,11 @@ export type ListLessonsParams = {
 export type GetScoreboardParams = {
   limit?: number;
   offset?: number;
+};
+
+export type GetTalentDirectoryParams = {
+  page?: number;
+  limit?: number;
 };
 
 export type AdminListUsersParams = {

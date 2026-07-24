@@ -545,6 +545,34 @@ export const GetScoreboardResponse = zod.object({
 });
 
 /**
+ * @summary List learners who are open to work
+ */
+export const getTalentDirectoryQueryPageDefault = 1;
+export const getTalentDirectoryQueryLimitDefault = 24;
+
+export const GetTalentDirectoryQueryParams = zod.object({
+  page: zod.coerce.number().default(getTalentDirectoryQueryPageDefault),
+  limit: zod.coerce.number().default(getTalentDirectoryQueryLimitDefault),
+});
+
+export const GetTalentDirectoryResponse = zod.object({
+  entries: zod.array(
+    zod.object({
+      userId: zod.number(),
+      nickname: zod.string(),
+      avatarUrl: zod.string().nullish(),
+      points: zod.number(),
+      solvedCtfCount: zod.number(),
+      completedLessonsCount: zod.number(),
+      titles: zod.array(zod.string()),
+    }),
+  ),
+  total: zod.number(),
+  page: zod.number(),
+  limit: zod.number(),
+});
+
+/**
  * @summary List competitions
  */
 export const ListCompetitionsResponseItem = zod.object({

@@ -116,6 +116,16 @@ curl -s -o /dev/null -X PATCH $API/users/$RID -H "Authorization: Bearer $T" \
 check "$(psql "$DATABASE_URL" -tAqc "SELECT open_to_work FROM users WHERE id=$RID;")" "f" "begona hisobga tegib bo'lmaydi"
 
 echo
+echo "=== ⭐ TALENT DIRECTORY — faqat ishga tayyorlar ko'rinadi ==="
+# Public, no auth. The opted-in user must appear; the rival (open_to_work=false)
+# must not.
+TAL=$(curl -s "$API/talent")
+check "$(echo "$TAL" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(any(e["userId"]=='"$UID_"' for e in d["entries"]))')" "True" "ishga tayyor foydalanuvchi ro'yxatda"
+check "$(echo "$TAL" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(any(e["userId"]=='"$RID"' for e in d["entries"]))')" "False" "tayyor bo'lmagan ko'rinmaydi"
+# The entry carries the recruiter signal: solved count comes through.
+check "$(echo "$TAL" | python3 -c 'import sys,json; d=json.load(sys.stdin); e=[x for x in d["entries"] if x["userId"]=='"$UID_"'][0]; print(e["solvedCtfCount"])')" "2" "yechilgan CTF soni to'g'ri"
+
+echo
 echo "=== ⭐ GET profil bazani O'ZGARTIRMAYDI (idempotent) ==="
 psql "$DATABASE_URL" -q -c "UPDATE users SET points = 350 WHERE nickname='$U';"
 curl -s -o /dev/null $API/users/me/dashboard -H "Authorization: Bearer $T"

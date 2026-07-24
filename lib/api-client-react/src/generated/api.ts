@@ -61,6 +61,7 @@ import type {
   GetPasskeyLoginOptions200,
   GetPasskeyRegistrationOptions200,
   GetScoreboardParams,
+  GetTalentDirectoryParams,
   HealthStatus,
   IssueCertificateBody,
   LearnAnalytics,
@@ -101,6 +102,7 @@ import type {
   SubmitFlagBody,
   SubmitTestBody,
   SuccessResponse,
+  TalentDirectory,
   TestResult,
   TestStartResponse,
   TwoFactorCodeBody,
@@ -2236,6 +2238,103 @@ export function useGetScoreboard<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetScoreboardQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List learners who are open to work
+ */
+export const getGetTalentDirectoryUrl = (params?: GetTalentDirectoryParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/talent?${stringifiedParams}`
+    : `/api/talent`;
+};
+
+export const getTalentDirectory = async (
+  params?: GetTalentDirectoryParams,
+  options?: RequestInit,
+): Promise<TalentDirectory> => {
+  return customFetch<TalentDirectory>(getGetTalentDirectoryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetTalentDirectoryQueryKey = (
+  params?: GetTalentDirectoryParams,
+) => {
+  return [`/api/talent`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetTalentDirectoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getTalentDirectory>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetTalentDirectoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTalentDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetTalentDirectoryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getTalentDirectory>>
+  > = ({ signal }) => getTalentDirectory(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getTalentDirectory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetTalentDirectoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getTalentDirectory>>
+>;
+export type GetTalentDirectoryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List learners who are open to work
+ */
+
+export function useGetTalentDirectory<
+  TData = Awaited<ReturnType<typeof getTalentDirectory>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetTalentDirectoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTalentDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetTalentDirectoryQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

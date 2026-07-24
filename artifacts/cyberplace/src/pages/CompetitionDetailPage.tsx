@@ -160,6 +160,34 @@ export default function CompetitionDetailPage() {
           )}
         </div>
 
+        {/* Winners — the payoff of a sponsored event. Once it has ended, the top
+            three finishers get a podium the sponsor (and the winners) can share.
+            Only shown when there is a result to show. */}
+        {comp.status === "ended" && scoreboard.length > 0 && (
+          <div className="mb-8 rounded-2xl border border-amber-500/20 bg-gradient-to-b from-amber-500/5 to-transparent p-6" data-testid="competition-winners">
+            <h2 className="text-base font-semibold mb-5 flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-amber-500" /> {t("Winners", "G'oliblar", "Победители")}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {scoreboard.slice(0, 3).map((entry, i) => {
+                const medal = ["ring-amber-400/50 bg-amber-400/10", "ring-slate-300/40 bg-slate-300/10", "ring-orange-500/40 bg-orange-500/10"][i];
+                return (
+                  <Link href={`/profile/${entry.userId}`} key={entry.userId}>
+                    <div className={`flex items-center gap-3 rounded-xl border border-transparent ring-1 ${medal} p-4 hover:border-amber-500/30 transition-colors cursor-pointer`} data-testid={`winner-${i + 1}`}>
+                      <span className="text-2xl font-black tabular-nums w-8 text-center">{i + 1}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold truncate">{entry.nickname}</div>
+                        <div className="text-xs text-muted-foreground tabular-nums">{entry.points} {t("points", "ball", "очки")}</div>
+                      </div>
+                      {i === 0 && <Trophy className="w-5 h-5 text-amber-500 shrink-0" />}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="grid md:grid-cols-2 gap-6">
           {/* CTF List */}
           <div>
