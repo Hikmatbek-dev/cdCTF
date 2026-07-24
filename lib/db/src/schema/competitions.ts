@@ -28,6 +28,21 @@ export const competitionsTable = pgTable("competitions", {
   uniqueIndex("competitions_invite_code_idx").on(table.inviteCode).where(sql`invite_code IS NOT NULL`),
 ]);
 
+export const competitionTeamsTable = pgTable("competition_teams", {
+  id: serial("id").primaryKey(),
+  competitionId: integer("competition_id").notNull().references(() => competitionsTable.id),
+  name: text("name").notNull(),
+  // Members join with this code — the captain hands it out. Unique across all
+  // competitions so a code maps to exactly one team.
+  inviteCode: text("invite_code").notNull(),
+  captainId: integer("captain_id").notNull().references(() => usersTable.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  // One team name per competition, and a globally unique join code.
+  uniqueIndex("competition_teams_competition_name_idx").on(table.competitionId, table.name),
+  uniqueIndex("competition_teams_invite_code_idx").on(table.inviteCode),
+]);
+
 export const competitionTasksTable = pgTable("competition_tasks", {
   id: serial("id").primaryKey(),
   competitionId: integer("competition_id").notNull().references(() => competitionsTable.id),
@@ -40,6 +55,8 @@ export const competitionUsersTable = pgTable("competition_users", {
   id: serial("id").primaryKey(),
   competitionId: integer("competition_id").notNull().references(() => competitionsTable.id),
   userId: integer("user_id").notNull().references(() => usersTable.id),
+  // The team this member competes under in this competition, or null for solo.
+  teamId: integer("team_id").references(() => competitionTeamsTable.id),
   joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
 }, table => [
   // Membership is checked on every competition flag submit.
@@ -51,6 +68,10 @@ export const competitionSolvesTable = pgTable("competition_solves", {
   id: serial("id").primaryKey(),
   competitionId: integer("competition_id").notNull().references(() => competitionsTable.id),
   userId: integer("user_id").notNull().references(() => usersTable.id),
+  // Denormalised from competition_users so a single unique index can enforce
+  // "one solve per team per challenge" — the team equivalent of the per-user
+  // rule below. Null for a solo solver.
+  teamId: integer("team_id").references(() => competitionTeamsTable.id),
   ctfId: integer("ctf_id").notNull().references(() => ctfTasksTable.id),
   pointsEarned: integer("points_earned").notNull().default(0),
   solvedAt: timestamp("solved_at", { withTimezone: true }).notNull().defaultNow(),
@@ -58,6 +79,12 @@ export const competitionSolvesTable = pgTable("competition_solves", {
   // The already-solved check the submit path locks on. Unique because a second
   // row for the same (competition, challenge, user) is the double-score bug.
   uniqueIndex("competition_solves_competition_ctf_user_idx").on(table.competitionId, table.ctfId, table.userId),
+  // Shared-solve teams: a challenge counts once for a team even when two members
+  // submit at the same moment. This is the race backstop — the pre-check handles
+  // the sequential case, this stops the concurrent one.
+  uniqueIndex("competition_solves_competition_ctf_team_idx")
+    .on(table.competitionId, table.ctfId, table.teamId)
+    .where(sql`team_id IS NOT NULL`),
   index("competition_solves_competition_id_idx").on(table.competitionId),
 ]);
 

@@ -197,6 +197,54 @@ XSSID=$(q "INSERT INTO competitions (name, type, start_time, end_time) VALUES ('
 check "$(curl -s $API/og/competition/$XSSID | grep -c '<script>x</script>')" "0" "nomdagi HTML qochiriladi (XSS yo'q)"
 
 echo
+resetlimit
+echo "=== ⭐ JAMOA — umumiy yechim (bir yechim butun jamoaga bir marta) ==="
+read -r TT1 T1ID <<< "$(mkuser tu1)"
+read -r TT2 T2ID <<< "$(mkuser tu2)"
+read -r TT3 T3ID <<< "$(mkuser tu3team)"
+TCOMP=$(mkcomp tactive public NULL '-1 hour' '+1 hour')
+TC1=$(mkctf tc1 'Flag{team1}' 150)
+TC2=$(mkctf tc2 'Flag{team2}' 250)
+q "INSERT INTO competition_tasks (competition_id, ctf_id) VALUES ($TCOMP,$TC1),($TCOMP,$TC2)" > /dev/null
+
+# Captain creates a team. This also proves ensureDatabaseShape built the team
+# tables — the insert would fail otherwise.
+CREATE=$(curl -s -X POST $API/competitions/$TCOMP/teams -H "Authorization: Bearer $TT1" \
+  -H 'Content-Type: application/json' -d '{"name":"Alpha"}')
+TEAMCODE=$(echo "$CREATE" | python3 -c 'import sys,json;print(json.load(sys.stdin)["inviteCode"])')
+check "$(echo "$CREATE" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("isCaptain"))')" "True" "kapitan jamoa yaratdi"
+check "$(q "SELECT team_id IS NOT NULL FROM competition_users WHERE competition_id=$TCOMP AND user_id=$T1ID")" "t" "kapitan jamoaga bog'landi"
+
+# A second user joins by the team code.
+check "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/competitions/$TCOMP/teams/join -H "Authorization: Bearer $TT2" \
+  -H 'Content-Type: application/json' -d "{\"inviteCode\":\"$TEAMCODE\"}")" "201" "a'zo kod bilan qo'shildi"
+# Same team name in the same competition is rejected.
+check "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/competitions/$TCOMP/teams -H "Authorization: Bearer $TT3" \
+  -H 'Content-Type: application/json' -d '{"name":"Alpha"}')" "409" "bir xil jamoa nomi rad etildi"
+# A user already in a team cannot create another.
+check "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/competitions/$TCOMP/teams -H "Authorization: Bearer $TT1" \
+  -H 'Content-Type: application/json' -d '{"name":"Beta"}')" "409" "jamoadagi odam ikkinchisini yarata olmaydi"
+
+resetlimit
+# Captain solves tc1 → team earns 150.
+check "$(sub $TT1 $TCOMP $TC1 'Flag{team1}' | python3 -c 'import sys,json;print(json.load(sys.stdin).get("pointsEarned"))')" "150" "kapitan tc1 yechdi +150"
+# Teammate submits the SAME challenge → already solved by the team, 0 points.
+MB=$(sub $TT2 $TCOMP $TC1 'Flag{team1}')
+check "$(echo "$MB" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("alreadySolved"))')" "True" "a'zo uchun jamoa allaqachon yechgan"
+check "$(echo "$MB" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("pointsEarned"))')" "0" "a'zoga ball berilmadi"
+check "$(q "SELECT count(*) FROM competition_solves WHERE competition_id=$TCOMP AND ctf_id=$TC1 AND team_id IS NOT NULL")" "1" "jamoa uchun tc1 aynan bir marta yozildi"
+
+resetlimit
+# Teammate solves a DIFFERENT challenge → the team's shared score grows.
+check "$(sub $TT2 $TCOMP $TC2 'Flag{team2}' | python3 -c 'import sys,json;print(json.load(sys.stdin).get("pointsEarned"))')" "250" "a'zo tc2 yechdi +250"
+
+# Team leaderboard: combined 400, two solves, two members.
+TB=$(curl -s $API/competitions/$TCOMP/teams)
+check "$(echo "$TB" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(d[0]["points"])')" "400" "jamoa balli 150+250=400"
+check "$(echo "$TB" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(d[0]["solvedCount"])')" "2" "jamoa 2 topshiriq yechdi"
+check "$(echo "$TB" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(len(d[0]["members"]))')" "2" "jamoada 2 a'zo"
+
+echo
 echo "=== Scoreboard yechimlarni aks ettiradi ==="
 SB=$(curl -s $API/competitions/$COMP/scoreboard | python3 -c '
 import sys, json

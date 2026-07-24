@@ -734,6 +734,27 @@ paths:
                 items:
                   $ref: "#/components/schemas/ScoreboardEntry"
 
+  /competitions/{id}/teams:
+    get:
+      operationId: getCompetitionTeams
+      tags: [competitions]
+      summary: Get the team leaderboard for a competition
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Ranked teams
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamScoreboardEntry"
+
   # PROFILE
   /users/{id}:
     get:
@@ -2998,6 +3019,25 @@ components:
             type: string
       required: [rank, userId, nickname, points, solvedCtfCount, completedLessonsCount, titles]
 
+    TeamScoreboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        teamId:
+          type: integer
+        name:
+          type: string
+        points:
+          type: integer
+        solvedCount:
+          type: integer
+        members:
+          type: array
+          items:
+            type: string
+      required: [rank, teamId, name, points, solvedCount, members]
+
     TalentEntry:
       type: object
       properties:
@@ -3131,6 +3171,19 @@ components:
         prize:
           type: string
           nullable: true
+        myTeam:
+          nullable: true
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            inviteCode:
+              type: string
+            isCaptain:
+              type: boolean
+          required: [id, name, inviteCode, isCaptain]
       required: [id, name, type, startTime, endTime, status, participantCount, isJoined, challenges]
 
     # Profile

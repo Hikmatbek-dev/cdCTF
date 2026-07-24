@@ -627,6 +627,14 @@ export const GetCompetitionResponse = zod.object({
   sponsorLogoUrl: zod.string().nullish(),
   sponsorUrl: zod.string().nullish(),
   prize: zod.string().nullish(),
+  myTeam: zod
+    .object({
+      id: zod.number(),
+      name: zod.string(),
+      inviteCode: zod.string(),
+      isCaptain: zod.boolean(),
+    })
+    .nullish(),
 });
 
 /**
@@ -660,6 +668,25 @@ export const GetCompetitionScoreboardResponseItem = zod.object({
 });
 export const GetCompetitionScoreboardResponse = zod.array(
   GetCompetitionScoreboardResponseItem,
+);
+
+/**
+ * @summary Get the team leaderboard for a competition
+ */
+export const GetCompetitionTeamsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetCompetitionTeamsResponseItem = zod.object({
+  rank: zod.number(),
+  teamId: zod.number(),
+  name: zod.string(),
+  points: zod.number(),
+  solvedCount: zod.number(),
+  members: zod.array(zod.string()),
+});
+export const GetCompetitionTeamsResponse = zod.array(
+  GetCompetitionTeamsResponseItem,
 );
 
 /**

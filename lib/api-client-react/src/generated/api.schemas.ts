@@ -379,6 +379,15 @@ export interface ScoreboardEntry {
   titles: string[];
 }
 
+export interface TeamScoreboardEntry {
+  rank: number;
+  teamId: number;
+  name: string;
+  points: number;
+  solvedCount: number;
+  members: string[];
+}
+
 export interface TalentEntry {
   userId: number;
   nickname: string;
@@ -451,6 +460,13 @@ export const CompetitionDetailStatus = {
   ended: "ended",
 } as const;
 
+export type CompetitionDetailMyTeam = {
+  id: number;
+  name: string;
+  inviteCode: string;
+  isCaptain: boolean;
+} | null;
+
 export interface CompetitionDetail {
   id: number;
   name: string;
@@ -467,6 +483,7 @@ export interface CompetitionDetail {
   sponsorLogoUrl?: string | null;
   sponsorUrl?: string | null;
   prize?: string | null;
+  myTeam?: CompetitionDetailMyTeam;
 }
 
 export type UserProfileSolvedCtfItem = {

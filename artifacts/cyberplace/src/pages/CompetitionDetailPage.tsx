@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useRoute } from "wouter";
-import { Trophy, Clock, Users, Flag, Lock, Gift } from "lucide-react";
+import { Trophy, Clock, Users, Flag, Lock, Gift, UserPlus, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 import { useToast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/LanguageContext";
-import { useGetCompetition, getGetCompetitionQueryKey, useGetCompetitionScoreboard, getGetCompetitionScoreboardQueryKey } from "@workspace/api-client-react";
+import { useGetCompetition, getGetCompetitionQueryKey, useGetCompetitionScoreboard, getGetCompetitionScoreboardQueryKey, useGetCompetitionTeams, getGetCompetitionTeamsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
 import { Link } from "wouter";
@@ -21,6 +21,9 @@ export default function CompetitionDetailPage() {
   const qc = useQueryClient();
   const [inviteCode, setInviteCode] = useState("");
   const [isJoining, setIsJoining] = useState(false);
+  const [teamName, setTeamName] = useState("");
+  const [teamCode, setTeamCode] = useState("");
+  const [teamBusy, setTeamBusy] = useState(false);
 
   const { data: comp, isLoading } = useGetCompetition(id, {
     query: { enabled: !!id, queryKey: getGetCompetitionQueryKey(id) },
@@ -28,6 +31,10 @@ export default function CompetitionDetailPage() {
 
   const { data: scoreboardData } = useGetCompetitionScoreboard(id, {
     query: { enabled: !!id && comp?.status !== "upcoming", queryKey: getGetCompetitionScoreboardQueryKey(id) },
+  });
+
+  const { data: teamsData } = useGetCompetitionTeams(id, {
+    query: { enabled: !!id, queryKey: getGetCompetitionTeamsQueryKey(id) },
   });
 
   const handleJoin = async () => {
@@ -48,6 +55,62 @@ export default function CompetitionDetailPage() {
     } finally {
       setIsJoining(false);
     }
+  };
+
+  const refreshTeamState = () => {
+    void qc.invalidateQueries({ queryKey: getGetCompetitionQueryKey(id) });
+    void qc.invalidateQueries({ queryKey: getGetCompetitionTeamsQueryKey(id) });
+  };
+
+  const handleCreateTeam = async () => {
+    if (!isAuthenticated || teamBusy) return;
+    setTeamBusy(true);
+    try {
+      const body: Record<string, string> = { name: teamName.trim() };
+      if (comp?.type === "private") body.inviteCode = inviteCode.trim();
+      const response = await fetch(`/api/competitions/${id}/teams`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : "Failed");
+      toast({ title: t("Team created!", "Jamoa yaratildi!", "Команда создана!") });
+      setTeamName("");
+      refreshTeamState();
+    } catch (error) {
+      toast({ title: error instanceof Error ? error.message : "Failed", variant: "destructive" });
+    } finally {
+      setTeamBusy(false);
+    }
+  };
+
+  const handleJoinTeam = async () => {
+    if (!isAuthenticated || teamBusy) return;
+    setTeamBusy(true);
+    try {
+      const response = await fetch(`/api/competitions/${id}/teams/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inviteCode: teamCode.trim() }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : "Failed");
+      toast({ title: t("Joined the team!", "Jamoaga qo'shildingiz!", "Вы вступили в команду!") });
+      setTeamCode("");
+      refreshTeamState();
+    } catch (error) {
+      toast({ title: error instanceof Error ? error.message : "Failed", variant: "destructive" });
+    } finally {
+      setTeamBusy(false);
+    }
+  };
+
+  const copyTeamCode = (code: string) => {
+    navigator.clipboard.writeText(code).then(
+      () => toast({ title: t("Code copied!", "Kod nusxalandi!", "Код скопирован!") }),
+      () => toast({ title: code, variant: "destructive" }),
+    );
   };
 
   const formatDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -73,6 +136,9 @@ export default function CompetitionDetailPage() {
 
   const challenges = normalizeArray<any>(comp.challenges, ["challenges", "data", "items"]);
   const scoreboard = normalizeArray<any>(scoreboardData, ["scoreboard", "entries", "data", "items"]);
+  const teams = normalizeArray<any>(teamsData, ["teams", "data", "items"]);
+  const myTeam = (comp as any).myTeam as { id: number; name: string; inviteCode: string; isCaptain: boolean } | null | undefined;
+  const canManageTeam = isAuthenticated && comp.status !== "ended";
 
   return (
     <div className="min-h-screen bg-background pt-14">
@@ -158,6 +224,67 @@ export default function CompetitionDetailPage() {
               <Button variant="outline" size="sm" className="mt-2">{t("View Certificate", "Sertifikatni Ko'rish", "Посмотреть сертификат")}</Button>
             </a>
           )}
+
+          {/* Team play. A solved challenge counts once for the whole team, so
+              the choice to compete solo or as a team is made here, up front. */}
+          {canManageTeam && (
+            myTeam ? (
+              <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3" data-testid="my-team">
+                <div className="flex items-center gap-2 text-sm">
+                  <Users className="w-4 h-4 text-primary" />
+                  <span className="text-muted-foreground">{t("Your team", "Sizning jamoangiz", "Ваша команда")}:</span>
+                  <span className="font-semibold">{myTeam.name}</span>
+                  {myTeam.isCaptain && <span className="text-xs text-muted-foreground">({t("captain", "kapitan", "капитан")})</span>}
+                </div>
+                {myTeam.isCaptain && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">{t("Invite code", "Taklif kodi", "Код приглашения")}:</span>
+                    <code className="rounded bg-muted px-2 py-0.5 text-sm font-mono" data-testid="team-invite-code">{myTeam.inviteCode}</code>
+                    <button onClick={() => copyTeamCode(myTeam.inviteCode)} className="text-muted-foreground hover:text-primary" title={t("Copy", "Nusxalash", "Копировать")}>
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-xl border border-dashed border-border p-4">
+                <div className="flex items-center gap-2 mb-3 text-sm font-medium">
+                  <Users className="w-4 h-4 text-primary" /> {t("Compete as a team", "Jamoa bo'lib qatnashish", "Участвовать командой")}
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  {t("A challenge solved by one member counts for the whole team.",
+                     "Bir a'zo yechgan topshiriq butun jamoa uchun hisoblanadi.",
+                     "Задание, решённое одним участником, засчитывается всей команде.")}
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="flex gap-2">
+                    <input
+                      value={teamName}
+                      onChange={(e) => setTeamName(e.target.value)}
+                      placeholder={t("New team name", "Yangi jamoa nomi", "Название команды")}
+                      className="h-9 flex-1 rounded-md border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                      data-testid="input-team-name"
+                    />
+                    <Button size="sm" variant="outline" onClick={handleCreateTeam} disabled={teamBusy || teamName.trim().length < 2} className="gap-1.5 shrink-0" data-testid="button-create-team">
+                      <UserPlus className="w-4 h-4" /> {t("Create", "Yaratish", "Создать")}
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      value={teamCode}
+                      onChange={(e) => setTeamCode(e.target.value)}
+                      placeholder={t("Team code", "Jamoa kodi", "Код команды")}
+                      className="h-9 flex-1 rounded-md border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                      data-testid="input-team-code"
+                    />
+                    <Button size="sm" variant="outline" onClick={handleJoinTeam} disabled={teamBusy || !teamCode.trim()} className="gap-1.5 shrink-0" data-testid="button-join-team">
+                      {t("Join", "Qo'shilish", "Войти")}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )
+          )}
         </div>
 
         {/* Winners — the payoff of a sponsored event. Once it has ended, the top
@@ -184,6 +311,34 @@ export default function CompetitionDetailPage() {
                   </Link>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Team leaderboard — only when teams have registered. Ranks teams by
+            their shared score. */}
+        {teams.length > 0 && (
+          <div className="mb-8" data-testid="team-leaderboard">
+            <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary" /> {t("Teams", "Jamoalar", "Команды")} ({teams.length})
+            </h2>
+            <div className="space-y-2">
+              {teams.map((team) => (
+                <div key={team.teamId} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card" data-testid={`team-row-${team.teamId}`}>
+                  <span className="w-6 font-mono text-muted-foreground text-sm">#{team.rank}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium text-sm truncate">{team.name}</div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {team.members?.length ?? 0} {t("members", "a'zo", "участн.")}
+                      {team.members?.length > 0 && ` · ${team.members.slice(0, 3).join(", ")}${team.members.length > 3 ? "…" : ""}`}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="font-mono font-bold text-primary tabular-nums">{team.points}</div>
+                    <div className="text-[11px] text-muted-foreground">{team.solvedCount} {t("solved", "yechim", "решено")}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

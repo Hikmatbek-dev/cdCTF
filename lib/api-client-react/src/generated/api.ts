@@ -103,6 +103,7 @@ import type {
   SubmitTestBody,
   SuccessResponse,
   TalentDirectory,
+  TeamScoreboardEntry,
   TestResult,
   TestStartResponse,
   TwoFactorCodeBody,
@@ -2670,6 +2671,93 @@ export function useGetCompetitionScoreboard<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetCompetitionScoreboardQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get the team leaderboard for a competition
+ */
+export const getGetCompetitionTeamsUrl = (id: number) => {
+  return `/api/competitions/${id}/teams`;
+};
+
+export const getCompetitionTeams = async (
+  id: number,
+  options?: RequestInit,
+): Promise<TeamScoreboardEntry[]> => {
+  return customFetch<TeamScoreboardEntry[]>(getGetCompetitionTeamsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCompetitionTeamsQueryKey = (id: number) => {
+  return [`/api/competitions/${id}/teams`] as const;
+};
+
+export const getGetCompetitionTeamsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCompetitionTeams>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCompetitionTeams>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCompetitionTeamsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCompetitionTeams>>
+  > = ({ signal }) => getCompetitionTeams(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCompetitionTeams>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCompetitionTeamsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCompetitionTeams>>
+>;
+export type GetCompetitionTeamsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get the team leaderboard for a competition
+ */
+
+export function useGetCompetitionTeams<
+  TData = Awaited<ReturnType<typeof getCompetitionTeams>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCompetitionTeams>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCompetitionTeamsQueryOptions(id, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

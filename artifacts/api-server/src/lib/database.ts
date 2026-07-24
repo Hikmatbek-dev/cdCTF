@@ -163,7 +163,26 @@ export async function ensureDatabaseShape() {
   await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS sponsor_logo_url text");
   await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS sponsor_url text");
   await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS prize text");
-  
+
+  // Team play: teams register within a competition, and members join under one.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS competition_teams (
+      id serial PRIMARY KEY,
+      competition_id integer NOT NULL REFERENCES competitions(id),
+      name text NOT NULL,
+      invite_code text NOT NULL,
+      captain_id integer NOT NULL REFERENCES users(id),
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS competition_teams_competition_name_idx ON competition_teams(competition_id, name)");
+  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS competition_teams_invite_code_idx ON competition_teams(invite_code)");
+  await pool.query("ALTER TABLE competition_users ADD COLUMN IF NOT EXISTS team_id integer REFERENCES competition_teams(id)");
+  await pool.query("ALTER TABLE competition_solves ADD COLUMN IF NOT EXISTS team_id integer REFERENCES competition_teams(id)");
+  // One solve per team per challenge — the concurrent-submit backstop for the
+  // shared-solve model.
+  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS competition_solves_competition_ctf_team_idx ON competition_solves(competition_id, ctf_id, team_id) WHERE team_id IS NOT NULL");
+
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token text");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires timestamptz");
 
