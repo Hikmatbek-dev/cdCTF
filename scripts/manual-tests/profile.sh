@@ -129,7 +129,7 @@ echo
 echo "=== ⭐ OG PREVIEW — profil va talent uchun meta teglar ==="
 OGP=$(curl -s $API/og/profile/$UID_)
 check "$(echo "$OGP" | grep -c 'property="og:title" content="'"$U"' ')" "1" "profil og:title taxallus bilan"
-check "$(echo "$OGP" | grep -c 'canonical" href="https://cyberplace.uz/profile/'"$UID_"'"')" "1" "canonical to'g'ri URL"
+check "$(echo "$OGP" | grep -c 'canonical" href="https://cdctf.uz/profile/'"$UID_"'"')" "1" "canonical to'g'ri URL"
 check "$(curl -s -o /dev/null -w '%{http_code}' $API/og/profile/999999)" "200" "yo'q profil 200 (umumiy preview)"
 check "$(curl -s $API/og/talent | grep -c 'property="og:title"')" "1" "talent og:title bor"
 

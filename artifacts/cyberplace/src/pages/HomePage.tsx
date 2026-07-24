@@ -437,8 +437,8 @@ export default function HomePage() {
                   score: 93,
                   serial: "CDCTF-2F9A41C7B0",
                   issued: "21.07.2026",
-                  verifyUrl: "cyberplace.uz/certificate/…",
-                  verifyHref: "https://cyberplace.uz/modules",
+                  verifyUrl: "cdctf.uz/certificate/…",
+                  verifyHref: "https://cdctf.uz/modules",
                   fingerprint: "8deca45f81e1de5d78aa6c1ca47aba2c",
                 }}
                 l={{

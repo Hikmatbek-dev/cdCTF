@@ -8,7 +8,7 @@
  * covers behaviour.
  *
  * Enable by setting, in the Vercel env:
- *   VITE_PLAUSIBLE_DOMAIN   = cyberplace.uz
+ *   VITE_PLAUSIBLE_DOMAIN   = cdctf.uz
  *   VITE_PLAUSIBLE_SRC      = https://plausible.io/js/script.js   (optional; a
  *                             self-hosted umami/plausible URL also works)
  * With no domain set it does nothing, so it is safe to ship dark.

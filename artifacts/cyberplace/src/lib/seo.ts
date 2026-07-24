@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { Language, useLang } from "@/lib/LanguageContext";
 
-const SITE_URL = "https://cyberplace.uz";
+const SITE_URL = "https://cdctf.uz";
 const SITE_NAME = "cdCTF";
 const DEFAULT_IMAGE = `${SITE_URL}/logo.png`;
 

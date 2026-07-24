@@ -18,7 +18,7 @@ import { and, eq, sql } from "drizzle-orm";
  */
 const router = Router();
 
-const SITE_ORIGIN = (process.env.PUBLIC_ORIGIN || "https://cyberplace.uz").replace(/\/$/, "");
+const SITE_ORIGIN = (process.env.PUBLIC_ORIGIN || "https://cdctf.uz").replace(/\/$/, "");
 const DEFAULT_IMAGE = `${SITE_ORIGIN}/logo.png`;
 
 /** HTML-escapes a value for safe interpolation into attributes and text. */
