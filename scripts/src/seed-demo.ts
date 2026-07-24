@@ -20,9 +20,13 @@
  * Optional env:
  *   SEED_SPONSOR_NAME   sponsor credited on the demo competition (default "Example Sponsor")
  *   SEED_SPONSOR_URL    sponsor link
- *   SEED_EMPLOYER_PASS  password for the demo employer login (default printed below)
+ *   SEED_EMPLOYER_PASS  password for the demo employer login. If unset, a strong
+ *                       random one is generated and printed once — never a fixed
+ *                       default, so no known credential can be committed or
+ *                       reused across deployments.
  */
 import { Pool } from "pg";
+import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 
 const DEMO_TAG = "[demo] ";
@@ -43,7 +47,10 @@ async function main() {
 
   const sponsorName = process.env.SEED_SPONSOR_NAME || "Example Sponsor";
   const sponsorUrl = process.env.SEED_SPONSOR_URL || null;
-  const employerPass = process.env.SEED_EMPLOYER_PASS || "DemoEmployer2026!";
+  // Never a fixed default: a committed password would let anyone log into this
+  // account on a live deployment. Generate a strong one and print it once.
+  const generatedPass = randomBytes(15).toString("base64url");
+  const employerPass = process.env.SEED_EMPLOYER_PASS || generatedPass;
 
   // 1) A sponsored competition, active for the next week, attached to up to six
   //    existing published challenges so its page is populated.
