@@ -623,6 +623,36 @@ paths:
               schema:
                 $ref: "#/components/schemas/ScoreboardResponse"
 
+  /jobs:
+    get:
+      operationId: listJobs
+      tags: [jobs]
+      summary: List active job postings
+      responses:
+        "200":
+          description: Active jobs, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Job"
+
+  /jobs/mine:
+    get:
+      operationId: listMyJobs
+      tags: [jobs]
+      summary: The current employer's own postings
+      responses:
+        "200":
+          description: The caller's jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Job"
+
   /talent:
     get:
       operationId: getTalentDirectory
@@ -3018,6 +3048,33 @@ components:
           items:
             type: string
       required: [rank, userId, nickname, points, solvedCtfCount, completedLessonsCount, titles]
+
+    Job:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        company:
+          type: string
+        description:
+          type: string
+        location:
+          type: string
+          nullable: true
+        employmentType:
+          type: string
+          enum: [full_time, part_time, internship, contract]
+        applyUrl:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, title, company, description, employmentType, isActive, createdAt]
 
     TeamScoreboardEntry:
       type: object

@@ -23,6 +23,7 @@ import DiplomaPage from "@/pages/DiplomaPage";
 import DiplomaVerifyPage from "@/pages/DiplomaVerifyPage";
 import ScoreboardPage from "@/pages/ScoreboardPage";
 import TalentPage from "@/pages/TalentPage";
+import JobsPage from "@/pages/JobsPage";
 import CompetitionsPage from "@/pages/CompetitionsPage";
 import CompetitionDetailPage from "@/pages/CompetitionDetailPage";
 import ProfilePage from "@/pages/ProfilePage";
@@ -158,6 +159,9 @@ function Router() {
           </Route>
           <Route path="/talent">
             {() => <PageTransition><TalentPage /></PageTransition>}
+          </Route>
+          <Route path="/jobs">
+            {() => <PageTransition><JobsPage /></PageTransition>}
           </Route>
           <Route path="/competitions">
             {() => <PageTransition><CompetitionsPage /></PageTransition>}

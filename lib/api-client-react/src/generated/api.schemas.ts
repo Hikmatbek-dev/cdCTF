@@ -379,6 +379,28 @@ export interface ScoreboardEntry {
   titles: string[];
 }
 
+export type JobEmploymentType =
+  (typeof JobEmploymentType)[keyof typeof JobEmploymentType];
+
+export const JobEmploymentType = {
+  full_time: "full_time",
+  part_time: "part_time",
+  internship: "internship",
+  contract: "contract",
+} as const;
+
+export interface Job {
+  id: number;
+  title: string;
+  company: string;
+  description: string;
+  location?: string | null;
+  employmentType: JobEmploymentType;
+  applyUrl?: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
 export interface TeamScoreboardEntry {
   rank: number;
   teamId: number;

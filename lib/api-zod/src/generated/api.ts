@@ -545,6 +545,48 @@ export const GetScoreboardResponse = zod.object({
 });
 
 /**
+ * @summary List active job postings
+ */
+export const ListJobsResponseItem = zod.object({
+  id: zod.number(),
+  title: zod.string(),
+  company: zod.string(),
+  description: zod.string(),
+  location: zod.string().nullish(),
+  employmentType: zod.enum([
+    "full_time",
+    "part_time",
+    "internship",
+    "contract",
+  ]),
+  applyUrl: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+export const ListJobsResponse = zod.array(ListJobsResponseItem);
+
+/**
+ * @summary The current employer's own postings
+ */
+export const ListMyJobsResponseItem = zod.object({
+  id: zod.number(),
+  title: zod.string(),
+  company: zod.string(),
+  description: zod.string(),
+  location: zod.string().nullish(),
+  employmentType: zod.enum([
+    "full_time",
+    "part_time",
+    "internship",
+    "contract",
+  ]),
+  applyUrl: zod.string().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+export const ListMyJobsResponse = zod.array(ListMyJobsResponseItem);
+
+/**
  * @summary List learners who are open to work
  */
 export const getTalentDirectoryQueryPageDefault = 1;

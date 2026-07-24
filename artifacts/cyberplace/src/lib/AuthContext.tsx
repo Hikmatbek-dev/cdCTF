@@ -12,6 +12,8 @@ export interface User {
   emailVerified: boolean;
   isBlocked: boolean;
   openToWork?: boolean;
+  isEmployer?: boolean;
+  companyName?: string | null;
   createdAt: string;
 }
 

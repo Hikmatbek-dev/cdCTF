@@ -24,6 +24,7 @@ const NAV_LINKS = [
   { href: "/scoreboard", label: { en: "Ranking", uz: "Reyting", ru: "Рейтинг" } },
   { href: "/competitions", label: { en: "Events", uz: "Tadbirlar", ru: "События" } },
   { href: "/talent", label: { en: "Hire", uz: "Yollash", ru: "Наём" } },
+  { href: "/jobs", label: { en: "Jobs", uz: "Ishlar", ru: "Вакансии" } },
 ];
 
 export function Navbar() {

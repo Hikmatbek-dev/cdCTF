@@ -35,6 +35,14 @@ export const usersTable = pgTable("users", {
    * employer sponsor actually pays to reach.
    */
   openToWork: boolean("open_to_work").notNull().default(false),
+  /**
+   * The employer side of the talent pipeline. A user who registers as an
+   * employer can post jobs; the company fields are what a candidate sees on a
+   * listing. Orthogonal to `role` — an employer is still a normal user.
+   */
+  isEmployer: boolean("is_employer").notNull().default(false),
+  companyName: text("company_name"),
+  companyUrl: text("company_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, table => [
   // The scoreboard's exact filter and sort: non-blocked users, role 'user',

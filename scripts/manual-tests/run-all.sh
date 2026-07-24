@@ -128,7 +128,7 @@ echo "==> Port: $API_PORT"
 # truncated instead. Safe: $DB is created and dropped by this script.
 #
 # lesson-test-honest reuses the lesson that lesson-test-exploit seeds, so order matters.
-SUITES="lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens oauth passkeys scoring scoreboard competitions profile validation body-fields modules-certificates diploma csrf captcha captcha-failclosed rate-limit"
+SUITES="lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens oauth passkeys scoring scoreboard competitions profile jobs validation body-fields modules-certificates diploma csrf captcha captcha-failclosed rate-limit"
 FAILED=""
 
 for suite in $SUITES; do

@@ -244,6 +244,28 @@ export async function ensureDatabaseShape() {
     logger.info({ rowCount }, "Backfilled excluded_from_scoring from the previous hardcoded nickname");
   }
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS open_to_work boolean NOT NULL DEFAULT false");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_employer boolean NOT NULL DEFAULT false");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS company_name text");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS company_url text");
+
+  // Job board — the paid end of the talent pipeline.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS jobs (
+      id serial PRIMARY KEY,
+      employer_id integer NOT NULL REFERENCES users(id),
+      title text NOT NULL,
+      company text NOT NULL,
+      description text NOT NULL,
+      location text,
+      employment_type text NOT NULL DEFAULT 'full_time',
+      apply_url text,
+      is_active boolean NOT NULL DEFAULT true,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query("CREATE INDEX IF NOT EXISTS jobs_active_created_idx ON jobs(is_active, created_at)");
+  await pool.query("CREATE INDEX IF NOT EXISTS jobs_employer_id_idx ON jobs(employer_id)");
 
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret text");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled boolean NOT NULL DEFAULT false");
