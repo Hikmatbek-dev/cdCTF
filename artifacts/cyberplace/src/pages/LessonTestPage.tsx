@@ -226,7 +226,7 @@ export default function LessonTestPage() {
           </p>
           <p className="text-sm text-muted-foreground mb-6">
             {t("Think it was a mistake?", "Xato bo'ldi deb o'ylaysizmi?", "Считаете это ошибкой?")}{" "}
-            <a href="https://t.me/cdctf_uz" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-accent transition-colors">
+            <a href="https://t.me/cdctf" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-accent transition-colors">
               {t("Ask on Telegram", "Telegramda so'rang", "Спросите в Telegram")}
             </a>
           </p>

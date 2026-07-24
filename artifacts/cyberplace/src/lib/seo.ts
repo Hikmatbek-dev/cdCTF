@@ -93,7 +93,7 @@ const publicRoutes: Array<{ match: (path: string) => boolean; config: SeoConfig 
           "alternateName": ["cdCTF Platform", "cdCTF Uzbekistan"],
           "url": SITE_URL,
           "logo": DEFAULT_IMAGE,
-          "sameAs": ["https://t.me/cdctf_uz", "https://instagram.com/cyberplace"],
+          "sameAs": ["https://t.me/cdctf", "https://instagram.com/cdctf.uz"],
           "description": "Leading CTF platform and cybersecurity academy in Uzbekistan focusing on hands-on technical skills.",
           "knowsAbout": ["Web Security", "OSINT", "Cryptography", "Digital Forensics", "Reverse Engineering", "Pwn"]
         },

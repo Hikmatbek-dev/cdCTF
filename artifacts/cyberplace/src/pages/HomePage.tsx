@@ -523,7 +523,7 @@ export default function HomePage() {
                     "Задавайте вопросы, делитесь разборами и находите команду для следующего CTF — на узбекском, с людьми на вашем этапе.",
                   )}
                 </p>
-                <a href="https://t.me/cdctf_uz" target="_blank" rel="noopener noreferrer"
+                <a href="https://t.me/cdctf" target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-6 h-12 rounded-xl bg-[#0077b0] text-white font-medium hover:bg-[#0088cc] transition-colors">
                   <Send className="w-4 h-4" />
                   {t("Join the Telegram", "Telegramga qo'shilish", "Вступить в Telegram")}
@@ -600,7 +600,7 @@ export default function HomePage() {
                   "Академия кибербезопасности для узбекского сообщества — учитесь, практикуйтесь, получайте сертификат.",
                 )}
               </p>
-              <a href="https://t.me/cdctf_uz" target="_blank" rel="noopener noreferrer"
+              <a href="https://t.me/cdctf" target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#0077b0] text-white text-sm font-medium hover:bg-[#0088cc] transition-colors">
                 <Send className="w-4 h-4" />
                 Telegram
