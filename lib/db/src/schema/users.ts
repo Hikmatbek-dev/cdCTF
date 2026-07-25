@@ -43,6 +43,14 @@ export const usersTable = pgTable("users", {
   isEmployer: boolean("is_employer").notNull().default(false),
   companyName: text("company_name"),
   companyUrl: text("company_url"),
+  /**
+   * Daily activity streak — the gamification hook that brings learners back.
+   * `lastActivityDate` is a 'YYYY-MM-DD' UTC day string; a solve or completed
+   * lesson on a new day bumps the streak, a skipped day resets it to 1.
+   */
+  currentStreak: integer("current_streak").notNull().default(0),
+  longestStreak: integer("longest_streak").notNull().default(0),
+  lastActivityDate: text("last_activity_date"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, table => [
   // The scoreboard's exact filter and sort: non-blocked users, role 'user',

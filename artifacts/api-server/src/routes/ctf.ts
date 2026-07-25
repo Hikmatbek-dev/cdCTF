@@ -5,6 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { authenticateToken, optionalAuth, requireScope } from "../middleware/auth";
 import { hashFlag, isHashedFlag, verifyFlag } from "../lib/flags";
 import { awardCategoryTitle, awardPoints } from "../lib/scoring";
+import { touchStreak } from "../lib/streaks";
 import { createRateLimiter } from "../middleware/security";
 import { validateBody } from "../middleware/validate";
 import { SubmitCtfFlagBody } from "@workspace/api-zod";
@@ -179,6 +180,7 @@ async function submitFlagHandler(req: Request, res: Response) {
         // title. It also re-read the challenge and indexed [0] on a result that
         // is empty if the challenge was deleted meanwhile.
         const titlePoints = await awardCategoryTitle(tx, userId, challenge.category);
+        await touchStreak(tx, userId, new Date());
 
         return { status: 200, data: { correct: true, blocked: false, pointsEarned: pointsEarned + titlePoints } };
       } else {

@@ -53,6 +53,8 @@ router.get("/me/dashboard", authenticateToken, async (req, res) => {
       solvedCtfCount: solvedCtf.length,
       completedLessonCount: completedLessons.length,
       titleCount: titles.length,
+      currentStreak: user.currentStreak,
+      longestStreak: user.longestStreak,
     },
     recent: {
       solvedCtf: solvedCtf.slice(-5).reverse().map(item => ({ ctfId: item.ctfId, solvedAt: item.solvedAt })),

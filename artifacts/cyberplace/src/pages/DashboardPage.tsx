@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Activity, BookOpen, ChevronRight, Flag, Star, Trophy, Shield, GraduationCap, ArrowRight } from "lucide-react";
+import { Activity, BookOpen, ChevronRight, Flag, Star, Trophy, Shield, GraduationCap, ArrowRight, Flame } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { normalizeArray } from "@/lib/api-shapes";
 
 type DashboardResponse = {
   user: { id: number; nickname: string; points: number; rank: number };
-  progress: { solvedCtfCount: number; completedLessonCount: number; titleCount: number };
+  progress: { solvedCtfCount: number; completedLessonCount: number; titleCount: number; currentStreak?: number; longestStreak?: number };
   recent: {
     solvedCtf: Array<{ ctfId: number; solvedAt: string | null }>;
     completedLessons: Array<{ lessonId: number; completedAt: string | null }>;
@@ -113,8 +113,9 @@ export default function DashboardPage() {
         )}
 
         {/* Progress metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
           {[
+            { icon: Flame, label: t("Day streak", "Kunlik seriya", "Дней подряд"), value: data.progress.currentStreak ?? 0, color: "text-amber-500" },
             { icon: Flag, label: t("Solved", "Yechilgan", "Решено"), value: data.progress.solvedCtfCount, color: "text-primary" },
             { icon: BookOpen, label: t("Lessons done", "Tugatilgan dars", "Уроков пройдено"), value: data.progress.completedLessonCount, color: "text-foreground" },
             { icon: Star, label: t("Titles", "Unvonlar", "Титулы"), value: data.progress.titleCount, color: "text-foreground" }

@@ -247,6 +247,9 @@ export async function ensureDatabaseShape() {
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_employer boolean NOT NULL DEFAULT false");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS company_name text");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS company_url text");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS current_streak integer NOT NULL DEFAULT 0");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS longest_streak integer NOT NULL DEFAULT 0");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_activity_date text");
 
   // Job board — the paid end of the talent pipeline.
   await pool.query(`

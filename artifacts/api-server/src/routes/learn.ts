@@ -12,6 +12,7 @@ import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import { SubmitLessonTestBody } from "@workspace/api-zod";
 import { awardPoints } from "../lib/scoring";
+import { touchStreak } from "../lib/streaks";
 const router = Router();
 
 // GET /api/learn/categories
@@ -218,6 +219,7 @@ async function submitLessonTestHandler(req: Request, res: Response) {
         .where(eq(userLessonAttemptsTable.id, attempt.id));
 
       pointsEarned = await awardPoints(tx, userId, lesson?.points ?? 0);
+      await touchStreak(tx, userId, new Date());
     } else if (!passed) {
       await tx.update(userLessonAttemptsTable)
         .set({ status: "failed", updatedAt: new Date() })
