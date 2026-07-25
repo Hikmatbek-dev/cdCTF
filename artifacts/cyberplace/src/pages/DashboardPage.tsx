@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { normalizeArray } from "@/lib/api-shapes";
+import { levelFromPoints } from "@/lib/level";
 
 type DashboardResponse = {
   user: { id: number; nickname: string; points: number; rank: number };
@@ -83,6 +84,29 @@ export default function DashboardPage() {
             </Button>
           </Link>
         </div>
+
+        {/* Level & XP — every point moves a bar toward the next level. */}
+        {(() => {
+          const lv = levelFromPoints(data.user.points);
+          return (
+            <div className="glass-card !p-6 mb-10 flex items-center gap-5" data-testid="level-bar">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0 neon-glow">
+                <span className="text-lg font-black text-white tabular-nums">{lv.level}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline justify-between mb-2 gap-4">
+                  <span className="font-semibold">{t("Level", "Daraja", "Уровень")} {lv.level}</span>
+                  <span className="text-xs text-muted-foreground tabular-nums shrink-0">
+                    {lv.toNext} {t("XP to level", "ball keyingi darajaga", "очк. до уровня")} {lv.level + 1}
+                  </span>
+                </div>
+                <div className="h-2.5 rounded-full bg-muted/40 overflow-hidden">
+                  <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all" style={{ width: `${Math.round(lv.progress * 100)}%` }} />
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Onboarding nudge. Almost every account solves challenges and never
             starts a lesson; a returning learner who has completed none gets a

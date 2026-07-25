@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { normalizeArray } from "@/lib/api-shapes";
 import { useToast } from "@/hooks/use-toast";
+import { levelFromPoints } from "@/lib/level";
 
 export default function ProfilePage() {
   const [match, params] = useRoute("/profile/:id");
@@ -123,7 +124,12 @@ export default function ProfilePage() {
                   <div className="eyebrow mb-4">
                     {t("Profile", "Profil", "Профиль")}
                   </div>
-                  <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-2 leading-none">{profile.nickname}</h1>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-none">{profile.nickname}</h1>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gradient-to-br from-primary to-accent text-white text-sm font-bold shadow-lg shadow-primary/20 shrink-0" data-testid="profile-level">
+                      {t("Lvl", "Dja", "Ур")} {levelFromPoints(profile.points).level}
+                    </span>
+                  </div>
                   {profile.openToWork && (
                     <span className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-xs font-medium text-emerald-600 dark:text-emerald-400" data-testid="badge-open-to-work">
                       <Briefcase className="w-3.5 h-3.5" /> {t("Open to work", "Ishga tayyor", "Открыт для работы")}
