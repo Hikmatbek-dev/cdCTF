@@ -196,6 +196,32 @@ router.get("/me/profile", authenticateToken, async (req, res) => {
   }
 });
 
+// GET /api/users/:id/skills — the skill tree: per CTF category, solved vs total.
+router.get("/:id/skills", async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid ID" });
+
+  const [totals, solved] = await Promise.all([
+    db.select({ category: ctfTasksTable.category, total: sql<number>`count(*)::int` })
+      .from(ctfTasksTable).where(eq(ctfTasksTable.isPublished, true)).groupBy(ctfTasksTable.category),
+    db.select({ category: ctfTasksTable.category, solved: sql<number>`count(*)::int` })
+      .from(ctfAttemptsTable)
+      .innerJoin(ctfTasksTable, eq(ctfAttemptsTable.ctfId, ctfTasksTable.id))
+      .where(and(eq(ctfAttemptsTable.userId, id), eq(ctfAttemptsTable.solved, true), eq(ctfTasksTable.isPublished, true)))
+      .groupBy(ctfTasksTable.category),
+  ]);
+
+  const solvedByCat = new Map(solved.map(r => [r.category, r.solved]));
+  const skills = totals
+    .map(t => {
+      const done = solvedByCat.get(t.category) ?? 0;
+      return { category: t.category, solved: done, total: t.total, progress: t.total > 0 ? done / t.total : 0 };
+    })
+    .sort((a, b) => b.progress - a.progress || b.total - a.total);
+
+  res.json({ skills });
+});
+
 // GET /api/users/:id
 router.get("/:id", optionalAuth, async (req, res) => {
   try {

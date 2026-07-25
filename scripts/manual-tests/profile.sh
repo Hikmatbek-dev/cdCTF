@@ -134,6 +134,14 @@ check "$(curl -s -o /dev/null -w '%{http_code}' $API/og/profile/999999)" "200" "
 check "$(curl -s $API/og/talent | grep -c 'property="og:title"')" "1" "talent og:title bor"
 
 echo
+echo "=== ⭐ SKILL-TREE — kategoriya bo'yicha yechimlar ==="
+# Bu foydalanuvchi C1 (Web) va C2 (Crypto) ni yechgan.
+SK=$(curl -s $API/users/$UID_/skills)
+check "$(echo "$SK" | python3 -c 'import sys,json;d=json.load(sys.stdin);s=[x for x in d["skills"] if x["category"]=="Web"];print(s[0]["solved"] if s else "yo_q")')" "1" "Web'da 1 yechim"
+check "$(echo "$SK" | python3 -c 'import sys,json;d=json.load(sys.stdin);s=[x for x in d["skills"] if x["category"]=="Crypto"];print(s[0]["solved"] if s else "yo_q")')" "1" "Crypto'da 1 yechim"
+check "$(echo "$SK" | python3 -c 'import sys,json;d=json.load(sys.stdin);s=[x for x in d["skills"] if x["category"]=="Web"][0];print(0 <= s["progress"] <= 1)')" "True" "progress 0..1 oralig'ida"
+
+echo
 echo "=== ⭐ GET profil bazani O'ZGARTIRMAYDI (idempotent) ==="
 psql "$DATABASE_URL" -q -c "UPDATE users SET points = 350 WHERE nickname='$U';"
 curl -s -o /dev/null $API/users/me/dashboard -H "Authorization: Bearer $T"

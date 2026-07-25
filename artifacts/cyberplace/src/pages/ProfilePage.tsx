@@ -4,6 +4,7 @@ import { Trophy, BookOpen, Target, Calendar, Share2, Shield, Briefcase } from "l
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
 import { useGetUserProfile, getGetUserProfileQueryKey } from "@workspace/api-client-react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { normalizeArray } from "@/lib/api-shapes";
@@ -26,10 +27,20 @@ export default function ProfilePage() {
   const id = match && params?.id ? Number(params.id) : currentUser?.id;
 
   const { data: profile, isLoading, error, isError } = useGetUserProfile(id as number, {
-    query: { 
-      enabled: typeof id === "number" && !isNaN(id) && id > 0, 
-      queryKey: getGetUserProfileQueryKey(id as number) 
+    query: {
+      enabled: typeof id === "number" && !isNaN(id) && id > 0,
+      queryKey: getGetUserProfileQueryKey(id as number)
     },
+  });
+
+  const { data: skillsData } = useQuery({
+    queryKey: ["user-skills", id],
+    queryFn: async () => {
+      const r = await fetch(`/api/users/${id}/skills`);
+      if (!r.ok) throw new Error("skills");
+      return r.json() as Promise<{ skills: Array<{ category: string; solved: number; total: number; progress: number }> }>;
+    },
+    enabled: typeof id === "number" && !isNaN(id) && id > 0,
   });
 
   const handleShare = () => {
@@ -86,6 +97,7 @@ export default function ProfilePage() {
   const solvedCtf = normalizeArray<any>(profile.solvedCtf, ["solvedCtf", "data", "items"]);
   const completedLessons = normalizeArray<any>(profile.completedLessons, ["completedLessons", "data", "items"]);
   const competitionHistory = normalizeArray<any>(profile.competitionHistory, ["competitionHistory", "competitions", "data", "items"]);
+  const skills = normalizeArray<{ category: string; solved: number; total: number; progress: number }>(skillsData?.skills, ["skills", "data", "items"]);
 
   // No `overflow-hidden` on the root: it clipped the fixed backdrop below, and
   // on a page whose content can exceed the viewport it is a way to lose content
@@ -239,6 +251,29 @@ export default function ProfilePage() {
           </div>
 
           <div className="space-y-12">
+            {/* Skill tree — mastery per CTF category. */}
+            {skills.length > 0 && (
+              <section className="glass-card p-8 border-border rounded-[2.5rem]" data-testid="skill-tree">
+                <h2 className="text-sm font-semibold text-muted-foreground mb-8 flex items-center gap-2">
+                  <Target className="w-4 h-4" />
+                  {t("Skills", "Mahoratlar", "Навыки")}
+                </h2>
+                <div className="space-y-5">
+                  {skills.slice(0, 8).map(skill => (
+                    <div key={skill.category}>
+                      <div className="flex items-center justify-between text-xs mb-1.5">
+                        <span className="font-medium text-foreground">{skill.category}</span>
+                        <span className="text-muted-foreground tabular-nums">{skill.solved}/{skill.total}</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-muted/40 overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent" style={{ width: `${Math.round((skill.progress || 0) * 100)}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Academy Logs */}
             {completedLessons.length > 0 && (
               <section className="glass-card p-8 bg-primary/5 border-primary/20 rounded-[2.5rem]">
