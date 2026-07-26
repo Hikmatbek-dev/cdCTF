@@ -8,7 +8,8 @@
     "seed": "tsx ./src/seed.ts",
     "seed-demo": "tsx ./src/seed-demo.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "fix-content": "tsx ./src/fix-challenge-content.ts"
+    "fix-content": "tsx ./src/fix-challenge-content.ts",
+    "import-balance": "tsx ./src/import-balance-challenges.ts"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
