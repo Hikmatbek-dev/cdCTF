@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Briefcase, MapPin, Building2, Plus, ExternalLink, Trash2, EyeOff, Eye } from "lucide-react";
+import { Briefcase, MapPin, Building2, Plus, ExternalLink, Trash2, EyeOff, Eye, Send, Users, Check } from "lucide-react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,6 +16,12 @@ type Job = {
   id: number; title: string; company: string; description: string;
   location?: string | null; employmentType: string; applyUrl?: string | null;
   isActive: boolean; createdAt: string;
+  hasApplied?: boolean; applicationCount?: number;
+};
+
+type Applicant = {
+  userId: number; nickname: string; points: number;
+  openToWork: boolean; solvedCtfCount: number; message?: string | null; createdAt: string;
 };
 
 function useEmploymentLabel() {
@@ -44,6 +51,10 @@ export default function JobsPage() {
   const [showPost, setShowPost] = useState(false);
   const [form, setForm] = useState({ title: "", description: "", location: "", employmentType: "full_time", applyUrl: "" });
   const [busy, setBusy] = useState(false);
+  const [applyFor, setApplyFor] = useState<number | null>(null);
+  const [applyMsg, setApplyMsg] = useState("");
+  const [viewApplicants, setViewApplicants] = useState<number | null>(null);
+  const [applicants, setApplicants] = useState<Applicant[]>([]);
 
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: getListJobsQueryKey() });
@@ -71,6 +82,32 @@ export default function JobsPage() {
     } catch (e) {
       toast({ title: e instanceof Error ? e.message : "Failed", variant: "destructive" });
     } finally { setBusy(false); }
+  };
+
+  const applyToJob = async (jobId: number) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await post(`/api/jobs/${jobId}/apply`, "POST", { message: applyMsg.trim() || null });
+      toast({ title: t("Application sent!", "Ariza yuborildi!", "Заявка отправлена!") });
+      setApplyFor(null); setApplyMsg("");
+      refresh();
+    } catch (e) {
+      toast({ title: e instanceof Error ? e.message : "Failed", variant: "destructive" });
+    } finally { setBusy(false); }
+  };
+
+  const openApplicants = async (jobId: number) => {
+    if (viewApplicants === jobId) { setViewApplicants(null); return; }
+    try {
+      const r = await fetch(`/api/jobs/${jobId}/applications`);
+      const d = await r.json();
+      if (!r.ok) throw new Error(d?.error || "Failed");
+      setApplicants(normalizeArray<Applicant>(d?.applications, ["applications", "data", "items"]));
+      setViewApplicants(jobId);
+    } catch (e) {
+      toast({ title: e instanceof Error ? e.message : "Failed", variant: "destructive" });
+    }
   };
 
   const createJob = async () => {
@@ -146,13 +183,34 @@ export default function JobsPage() {
                 <div className="text-sm text-muted-foreground mb-2">{t("Your postings", "Sizning e'lonlaringiz", "Ваши вакансии")}</div>
                 <div className="space-y-2">
                   {myJobs.map(job => (
-                    <div key={job.id} className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-2.5 text-sm" data-testid={`my-job-${job.id}`}>
-                      <span className={`w-2 h-2 rounded-full ${job.isActive ? "bg-green-500" : "bg-muted-foreground/40"}`} />
-                      <span className="flex-1 truncate font-medium">{job.title}</span>
-                      <button onClick={() => toggleActive(job)} className="text-muted-foreground hover:text-primary" title={job.isActive ? t("Hide", "Yashirish", "Скрыть") : t("Show", "Ko'rsatish", "Показать")}>
-                        {job.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                      <button onClick={() => removeJob(job)} className="text-muted-foreground hover:text-destructive" title={t("Delete", "O'chirish", "Удалить")}><Trash2 className="w-4 h-4" /></button>
+                    <div key={job.id} data-testid={`my-job-${job.id}`}>
+                      <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-2.5 text-sm">
+                        <span className={`w-2 h-2 rounded-full ${job.isActive ? "bg-green-500" : "bg-muted-foreground/40"}`} />
+                        <span className="flex-1 truncate font-medium">{job.title}</span>
+                        <button onClick={() => openApplicants(job.id)} className={`flex items-center gap-1.5 text-xs ${(job.applicationCount ?? 0) > 0 ? "text-primary hover:underline" : "text-muted-foreground"}`} data-testid={`view-applicants-${job.id}`}>
+                          <Users className="w-3.5 h-3.5" /> {job.applicationCount ?? 0} {t("applicants", "arizachi", "заявок")}
+                        </button>
+                        <button onClick={() => toggleActive(job)} className="text-muted-foreground hover:text-primary" title={job.isActive ? t("Hide", "Yashirish", "Скрыть") : t("Show", "Ko'rsatish", "Показать")}>
+                          {job.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                        <button onClick={() => removeJob(job)} className="text-muted-foreground hover:text-destructive" title={t("Delete", "O'chirish", "Удалить")}><Trash2 className="w-4 h-4" /></button>
+                      </div>
+                      {viewApplicants === job.id && (
+                        <div className="mt-2 ml-4 space-y-2 border-l-2 border-primary/20 pl-4" data-testid={`applicants-${job.id}`}>
+                          {applicants.length === 0 && <p className="text-xs text-muted-foreground py-2">{t("No applicants yet.", "Hali arizachi yo'q.", "Заявок пока нет.")}</p>}
+                          {applicants.map(a => (
+                            <div key={a.userId} className="rounded-lg bg-muted/20 p-3 text-sm">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Link href={`/profile/${a.userId}`} className="font-medium hover:text-primary">{a.nickname}</Link>
+                                <span className="text-xs text-muted-foreground tabular-nums">{a.points} {t("pts", "ball", "очк")}</span>
+                                <span className="text-xs text-muted-foreground tabular-nums">· {a.solvedCtfCount} {t("solved", "yechim", "решено")}</span>
+                                {a.openToWork && <span className="text-[10px] text-emerald-500 border border-emerald-500/30 rounded-full px-2">{t("Open to work", "Ishga tayyor", "Открыт")}</span>}
+                              </div>
+                              {a.message && <p className="text-xs text-muted-foreground mt-1.5 whitespace-pre-line">{a.message}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -197,13 +255,42 @@ export default function JobsPage() {
                       <span className="inline-flex items-center rounded-lg border border-border bg-muted/40 px-2 py-0.5 text-xs">{employmentLabel(job.employmentType)}</span>
                     </div>
                   </div>
-                  {job.applyUrl && (
-                    <a href={job.applyUrl} target="_blank" rel="noopener noreferrer" className="shrink-0">
-                      <Button size="sm" className="gap-1.5" data-testid={`apply-${job.id}`}>{t("Apply", "Ariza", "Откликнуться")} <ExternalLink className="w-3.5 h-3.5" /></Button>
-                    </a>
-                  )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {isAuthenticated && !user?.isEmployer && (
+                      job.hasApplied ? (
+                        <span className="inline-flex items-center gap-1.5 text-sm text-emerald-500 font-medium" data-testid={`applied-${job.id}`}><Check className="w-4 h-4" /> {t("Applied", "Ariza berilgan", "Отклик отправлен")}</span>
+                      ) : (
+                        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => { setApplyFor(applyFor === job.id ? null : job.id); setApplyMsg(""); }} data-testid={`apply-btn-${job.id}`}>
+                          <Send className="w-3.5 h-3.5" /> {t("Apply", "Ariza berish", "Откликнуться")}
+                        </Button>
+                      )
+                    )}
+                    {job.applyUrl && (
+                      <a href={job.applyUrl} target="_blank" rel="noopener noreferrer">
+                        <Button size="sm" className="gap-1.5" data-testid={`apply-${job.id}`}>{t("External", "Tashqi", "Внешне")} <ExternalLink className="w-3.5 h-3.5" /></Button>
+                      </a>
+                    )}
+                  </div>
                 </div>
                 <p className="text-sm text-muted-foreground whitespace-pre-line line-clamp-4">{job.description}</p>
+
+                {/* On-platform apply — your cdCTF record comes with it. */}
+                {applyFor === job.id && (
+                  <div className="mt-4 space-y-2 border-t border-border pt-4">
+                    <Textarea value={applyMsg} onChange={e => setApplyMsg(e.target.value)} rows={3}
+                      placeholder={t("A short note to the employer (optional). Your level, solves and skills are attached automatically.",
+                        "Ish beruvchiga qisqa izoh (ixtiyoriy). Darajangiz, yechimlaringiz va mahoratlaringiz avtomatik biriktiriladi.",
+                        "Короткое сообщение работодателю (необязательно). Ваш уровень, решения и навыки прикрепляются автоматически.")}
+                      data-testid={`apply-message-${job.id}`} />
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => setApplyFor(null)}>{t("Cancel", "Bekor", "Отмена")}</Button>
+                      <Button size="sm" onClick={() => applyToJob(job.id)} disabled={busy} data-testid={`apply-submit-${job.id}`}>{t("Send application", "Ariza yuborish", "Отправить заявку")}</Button>
+                    </div>
+                  </div>
+                )}
+                {!isAuthenticated && (
+                  <div className="mt-3 text-xs text-muted-foreground">{t("Sign in to apply with your cdCTF profile.", "cdCTF profilingiz bilan ariza berish uchun kiring.", "Войдите, чтобы откликнуться со своим профилем cdCTF.")}</div>
+                )}
               </div>
             ))}
           </div>

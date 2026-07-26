@@ -269,6 +269,19 @@ export async function ensureDatabaseShape() {
   `);
   await pool.query("CREATE INDEX IF NOT EXISTS jobs_active_created_idx ON jobs(is_active, created_at)");
   await pool.query("CREATE INDEX IF NOT EXISTS jobs_employer_id_idx ON jobs(employer_id)");
+  // On-platform job applications — the tight learn→hire loop.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS job_applications (
+      id serial PRIMARY KEY,
+      job_id integer NOT NULL REFERENCES jobs(id),
+      user_id integer NOT NULL REFERENCES users(id),
+      message text,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS job_applications_job_user_idx ON job_applications(job_id, user_id)");
+  await pool.query("CREATE INDEX IF NOT EXISTS job_applications_job_id_idx ON job_applications(job_id)");
+  await pool.query("CREATE INDEX IF NOT EXISTS job_applications_user_id_idx ON job_applications(user_id)");
 
   // Community writeups — gated to solvers so they are never a spoiler.
   await pool.query(`

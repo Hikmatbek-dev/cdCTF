@@ -50,6 +50,27 @@ echo "=== Ochiq taxta (autentifikatsiyasiz) faol e'lonlarni ko'rsatadi ==="
 check "$(curl -s $API/jobs | python3 -c 'import sys,json;print(any(j["id"]=='"$JOBID"' for j in json.load(sys.stdin)))')" "True" "e'lon ochiq ro'yxatda"
 
 echo
+echo "=== ⭐ Learn→hire: platformada ariza ==="
+apply() {
+  local b="$2"; [ -z "$b" ] && b='{}'
+  curl -s -o /dev/null -w '%{http_code}' -X POST $API/jobs/$JOBID/apply -H "Authorization: Bearer $1" -H 'Content-Type: application/json' -d "$b"
+}
+check "$(apply $EMP)" "400" "ish beruvchi o'ziga ariza bera olmaydi"
+check "$(apply $OUTSIDER '{"message":"Men SOC yonalishida ishlamoqchiman."}')" "201" "arizachi ariza berdi"
+check "$(apply $OUTSIDER)" "409" "takroriy ariza rad etildi"
+# Employer sees the applicant with their cdCTF record.
+APPS=$(curl -s $API/jobs/$JOBID/applications -H "Authorization: Bearer $EMP")
+check "$(echo "$APPS" | python3 -c 'import sys,json;print(len(json.load(sys.stdin)["applications"]))')" "1" "ish beruvchi 1 arizani ko'radi"
+check "$(echo "$APPS" | python3 -c 'import sys,json;print(json.load(sys.stdin)["applications"][0]["nickname"])')" "${TAG}_other" "arizachi taxallusi to'g'ri"
+check "$(echo "$APPS" | python3 -c 'import sys,json;a=json.load(sys.stdin)["applications"][0];print("solvedCtfCount" in a and "points" in a)')" "True" "arizada cdCTF ko'rsatkichlari bor"
+# Non-owner cannot read applicants.
+check "$(curl -s -o /dev/null -w '%{http_code}' $API/jobs/$JOBID/applications -H "Authorization: Bearer $OUTSIDER")" "403" "begona arizalarni ko'ra olmaydi"
+# Public list flags the applicant's own applied jobs.
+check "$(curl -s $API/jobs -H "Authorization: Bearer $OUTSIDER" | python3 -c 'import sys,json;print([j["hasApplied"] for j in json.load(sys.stdin) if j["id"]=='"$JOBID"'][0])')" "True" "ochiq ro'yxatda hasApplied=true"
+# Employer's own list carries applicant counts.
+check "$(curl -s $API/jobs/mine -H "Authorization: Bearer $EMP" | python3 -c 'import sys,json;print([j["applicationCount"] for j in json.load(sys.stdin) if j["id"]=='"$JOBID"'][0])')" "1" "mine ro'yxatida applicationCount=1"
+
+echo
 echo "=== Faqat egasi tahrirlaydi/o'chiradi ==="
 check "$(curl -s -o /dev/null -w '%{http_code}' -X PATCH $API/jobs/$JOBID -H "Authorization: Bearer $OUTSIDER" \
   -H 'Content-Type: application/json' -d '{"title":"Hacked"}')" "403" "begona tahrirlay olmaydi"

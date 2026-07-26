@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { db } from "@workspace/db";
-import { jobsTable, usersTable } from "@workspace/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { jobsTable, jobApplicationsTable, usersTable, ctfAttemptsTable } from "@workspace/db/schema";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
 
 const router = Router();
@@ -46,21 +46,39 @@ router.post("/become-employer", authenticateToken, async (req, res) => {
   res.json({ isEmployer: updated.isEmployer, companyName: updated.companyName, companyUrl: updated.companyUrl });
 });
 
-// GET /api/jobs — the public board: active jobs, newest first.
-router.get("/", async (_req, res) => {
+// GET /api/jobs — the public board: active jobs, newest first. When signed in,
+// each job carries whether the caller has already applied.
+router.get("/", optionalAuth, async (req, res) => {
   const jobs = await db.select().from(jobsTable)
     .where(eq(jobsTable.isActive, true))
     .orderBy(desc(jobsTable.createdAt))
     .limit(200);
-  res.json(jobs.map(publicJob));
+
+  let appliedIds = new Set<number>();
+  if (req.user && jobs.length > 0) {
+    const mine = await db.select({ jobId: jobApplicationsTable.jobId })
+      .from(jobApplicationsTable)
+      .where(and(eq(jobApplicationsTable.userId, req.user.userId), inArray(jobApplicationsTable.jobId, jobs.map(j => j.id))));
+    appliedIds = new Set(mine.map(m => m.jobId));
+  }
+  res.json(jobs.map(j => ({ ...publicJob(j), hasApplied: appliedIds.has(j.id) })));
 });
 
-// GET /api/jobs/mine — the employer's own postings (active or not).
+// GET /api/jobs/mine — the employer's own postings with applicant counts.
 router.get("/mine", authenticateToken, async (req, res) => {
   const jobs = await db.select().from(jobsTable)
     .where(eq(jobsTable.employerId, req.user!.userId))
     .orderBy(desc(jobsTable.createdAt));
-  res.json(jobs.map(publicJob));
+
+  const counts = new Map<number, number>();
+  if (jobs.length > 0) {
+    const rows = await db.select({ jobId: jobApplicationsTable.jobId, n: sql<number>`count(*)::int` })
+      .from(jobApplicationsTable)
+      .where(inArray(jobApplicationsTable.jobId, jobs.map(j => j.id)))
+      .groupBy(jobApplicationsTable.jobId);
+    for (const r of rows) counts.set(r.jobId, r.n);
+  }
+  res.json(jobs.map(j => ({ ...publicJob(j), applicationCount: counts.get(j.id) ?? 0 })));
 });
 
 // GET /api/jobs/:id — a single active job (or the owner's own inactive one).
@@ -146,12 +164,77 @@ router.patch("/:id", authenticateToken, async (req, res) => {
   res.json(publicJob(updated));
 });
 
-// DELETE /api/jobs/:id — remove a listing (owner or admin).
+// DELETE /api/jobs/:id — remove a listing (owner or admin), and its applications.
 router.delete("/:id", authenticateToken, async (req, res) => {
   const job = await loadOwnedJob(req, res);
   if (!job) return;
+  await db.delete(jobApplicationsTable).where(eq(jobApplicationsTable.jobId, job.id));
   await db.delete(jobsTable).where(eq(jobsTable.id, job.id));
   res.json({ success: true });
+});
+
+// POST /api/jobs/:id/apply — apply to an active job with your cdCTF record.
+router.post("/:id/apply", authenticateToken, async (req, res) => {
+  const jobId = Number(req.params.id);
+  const userId = req.user!.userId;
+  if (!Number.isInteger(jobId) || jobId <= 0) return res.status(400).json({ error: "Invalid id" });
+
+  const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, jobId)).limit(1);
+  if (!job || !job.isActive) return res.status(404).json({ error: "Not found" });
+  if (job.employerId === userId) return res.status(400).json({ error: "You cannot apply to your own posting" });
+
+  const message = cleanText(req.body?.message);
+  if (message && message.length > 2000) return res.status(400).json({ error: "Message is too long" });
+
+  const [existing] = await db.select({ id: jobApplicationsTable.id }).from(jobApplicationsTable)
+    .where(and(eq(jobApplicationsTable.jobId, jobId), eq(jobApplicationsTable.userId, userId))).limit(1);
+  if (existing) return res.status(409).json({ error: "You have already applied" });
+
+  await db.insert(jobApplicationsTable).values({ jobId, userId, message });
+  res.status(201).json({ applied: true });
+});
+
+// GET /api/jobs/:id/applications — the applicants and their cdCTF record.
+// Owner employer or admin only: candidates' profiles are not public here.
+router.get("/:id/applications", authenticateToken, async (req, res) => {
+  const jobId = Number(req.params.id);
+  if (!Number.isInteger(jobId) || jobId <= 0) return res.status(400).json({ error: "Invalid id" });
+
+  const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, jobId)).limit(1);
+  if (!job) return res.status(404).json({ error: "Not found" });
+  if (job.employerId !== req.user!.userId && req.user!.role !== "admin") return res.status(403).json({ error: "Forbidden" });
+
+  const apps = await db.select({
+    userId: jobApplicationsTable.userId,
+    message: jobApplicationsTable.message,
+    createdAt: jobApplicationsTable.createdAt,
+    nickname: usersTable.nickname,
+    points: usersTable.points,
+    openToWork: usersTable.openToWork,
+  })
+    .from(jobApplicationsTable)
+    .innerJoin(usersTable, eq(jobApplicationsTable.userId, usersTable.id))
+    .where(eq(jobApplicationsTable.jobId, jobId))
+    .orderBy(desc(jobApplicationsTable.createdAt));
+
+  // Each applicant's solve count — the proof that comes with the application.
+  const userIds = apps.map(a => a.userId);
+  const solves = new Map<number, number>();
+  if (userIds.length > 0) {
+    const rows = await db.select({ userId: ctfAttemptsTable.userId, n: sql<number>`count(*)::int` })
+      .from(ctfAttemptsTable)
+      .where(and(inArray(ctfAttemptsTable.userId, userIds), eq(ctfAttemptsTable.solved, true)))
+      .groupBy(ctfAttemptsTable.userId);
+    for (const r of rows) solves.set(r.userId, r.n);
+  }
+
+  res.json({
+    applications: apps.map(a => ({
+      userId: a.userId, nickname: a.nickname, points: a.points,
+      openToWork: a.openToWork, solvedCtfCount: solves.get(a.userId) ?? 0,
+      message: a.message, createdAt: a.createdAt,
+    })),
+  });
 });
 
 export default router;

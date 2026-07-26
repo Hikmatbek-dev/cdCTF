@@ -1,10 +1,10 @@
-import { pgTable, serial, text, integer, boolean, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, boolean, timestamp, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
 /**
  * The job board — the paid end of the talent pipeline. An employer posts a
- * role; candidates browse them. Applications happen off-platform (an apply URL
- * or contact), so this stores the listing, not an application pipeline.
+ * role; candidates apply on-platform (see jobApplicationsTable) so the employer
+ * sees each applicant's proven cdCTF record, or off-platform via an apply URL.
  */
 export const jobsTable = pgTable("jobs", {
   id: serial("id").primaryKey(),
@@ -29,3 +29,23 @@ export const jobsTable = pgTable("jobs", {
 ]);
 
 export type Job = typeof jobsTable.$inferSelect;
+
+/**
+ * On-platform job applications — the tight end of the learn→hire loop. A learner
+ * applies with a short note and their cdCTF record (level, solves, skills) comes
+ * with it, so the employer sees proven ability, not just a CV. One application
+ * per learner per job.
+ */
+export const jobApplicationsTable = pgTable("job_applications", {
+  id: serial("id").primaryKey(),
+  jobId: integer("job_id").notNull().references(() => jobsTable.id),
+  userId: integer("user_id").notNull().references(() => usersTable.id),
+  message: text("message"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  uniqueIndex("job_applications_job_user_idx").on(table.jobId, table.userId),
+  index("job_applications_job_id_idx").on(table.jobId),
+  index("job_applications_user_id_idx").on(table.userId),
+]);
+
+export type JobApplication = typeof jobApplicationsTable.$inferSelect;
