@@ -103,4 +103,29 @@ check "$(pointsOf "$U")" "200" "qo'lda buzilgan ball to'g'rilandi (200)"
 check "$(psql "$DATABASE_URL" -tAqc "SELECT count(*) FROM user_titles WHERE user_id=(SELECT id FROM users WHERE nickname='$U');")" "0" "title olib qo'yildi (endi 2 ta yechim)"
 
 echo
+echo "=== ⭐ MASLAHAT (hint) — ball evaziga ochiladi va qaytarilmaydi ==="
+# The schema carried hint/hint_cost/hint_used from the start but nothing ever
+# exposed them: no endpoint, no UI. Hints existed and no learner could read one.
+HU=$(mkuser user); HU_TOK=$(tokenOf "$HU")
+HCTF=$(psql "$DATABASE_URL" -tAqc "INSERT INTO ctf_tasks (name, description, category, difficulty, points, hint, hint_cost, flag, is_published) VALUES ('${TAG}_hint','d','Crypto','easy',100,'Base64 dekodlang',30,'sha256\$$(printf 'Flag{hint}' | sha256sum | cut -d' ' -f1)', true) RETURNING id;")
+# Earn points first so there is something to spend.
+curl -s -o /dev/null -X POST $API/ctf/$HCTF/submit -H 'Content-Type: application/json' -H "Authorization: Bearer $HU_TOK" -d '{"flag":"Flag{hint}"}'
+check "$(pointsOf "$HU")" "100" "yechim uchun 100 ball"
+# Reveal the hint: costs 30.
+HR=$(curl -s -X POST $API/ctf/$HCTF/hint -H "Authorization: Bearer $HU_TOK")
+check "$(echo "$HR" | json hint)" "Base64 dekodlang" "maslahat matni qaytdi"
+check "$(echo "$HR" | json pointsSpent)" "30" "30 ball yechildi"
+check "$(pointsOf "$HU")" "70" "ball 100 → 70"
+# Second reveal is free — no double charge.
+check "$(curl -s -X POST $API/ctf/$HCTF/hint -H "Authorization: Bearer $HU_TOK" | json pointsSpent)" "0" "ikkinchi marta bepul"
+check "$(pointsOf "$HU")" "70" "ball o'zgarmadi"
+# ⭐ The charge must survive a recalculation, or an admin repair silently refunds it.
+curl -s -o /dev/null -X POST $API/admin/users/recalculate-points -H "Authorization: Bearer $A_TOK"
+check "$(pointsOf "$HU")" "70" "qayta hisoblashdan keyin ham 70 (maslahat qaytarilmadi)"
+# The hint text must not leak to someone who has not paid.
+HU2=$(mkuser user); HU2_TOK=$(tokenOf "$HU2")
+check "$(curl -s $API/ctf/$HCTF -H "Authorization: Bearer $HU2_TOK" | json hint)" "None" "to'lamagan foydalanuvchiga matn ko'rinmaydi"
+check "$(curl -s $API/ctf/$HCTF -H "Authorization: Bearer $HU2_TOK" | json hasHint)" "True" "lekin maslahat borligi bilinadi"
+
+echo
 [ -z "$FAILED" ] && echo "🎉 BALL TIZIMI IZCHIL" || echo "⚠️  BA'ZI SINOVLAR YIQILDI"

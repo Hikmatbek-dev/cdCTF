@@ -133,6 +133,64 @@ router.get("/:id", optionalAuth, requireScope("ctf:read"), async (req, res) => {
     isSolved: userAttempt?.solved ?? false,
     isBlocked: userAttempt?.blocked ?? false,
     wrongAttempts: userAttempt?.wrongAttempts ?? 0,
+    // Hint state, not the hint itself. The text only travels once it has been
+    // paid for — otherwise anyone could read it out of the network response and
+    // the cost would mean nothing.
+    hasHint: Boolean(challenge.hint?.trim()),
+    hintCost: challenge.hintCost,
+    hintUsed: userAttempt?.hintUsed ?? false,
+    hint: userAttempt?.hintUsed ? challenge.hint : null,
+    hintUz: userAttempt?.hintUsed ? challenge.hintUz : null,
+    hintRu: userAttempt?.hintUsed ? challenge.hintRu : null,
+  });
+});
+
+// POST /api/ctf/:id/hint — buy the hint with points.
+//
+// The schema has carried `hint`, `hint_cost` and `hint_used` from the start and
+// challenges were imported with hints written, but nothing ever exposed them:
+// no endpoint, no UI. The hints existed and no learner could ever read one.
+router.post("/:id/hint", authenticateToken, async (req, res) => {
+  const ctfId = Number(req.params.id);
+  const userId = req.user!.userId;
+  if (!Number.isInteger(ctfId) || ctfId <= 0) return res.status(400).json({ error: "Invalid CTF id" });
+
+  const [challenge] = await db.select().from(ctfTasksTable)
+    .where(and(eq(ctfTasksTable.id, ctfId), eq(ctfTasksTable.isPublished, true))).limit(1);
+  if (!challenge) return res.status(404).json({ error: "Not found" });
+  if (!challenge.hint?.trim()) return res.status(404).json({ error: "This challenge has no hint" });
+
+  const payload = await db.transaction(async tx => {
+    const [attempt] = await tx.select().from(ctfAttemptsTable)
+      .where(and(eq(ctfAttemptsTable.userId, userId), eq(ctfAttemptsTable.ctfId, ctfId)))
+      .limit(1).for("update");
+
+    // Already paid: hand it back for free rather than charging twice.
+    if (attempt?.hintUsed) return { charged: 0 };
+
+    if (attempt) {
+      await tx.update(ctfAttemptsTable).set({ hintUsed: true, updatedAt: new Date() })
+        .where(eq(ctfAttemptsTable.id, attempt.id));
+    } else {
+      await tx.insert(ctfAttemptsTable).values({ userId, ctfId, hintUsed: true, updatedAt: new Date() });
+    }
+
+    // Charge, never below zero. recalculateUserPoints subtracts the same hint
+    // costs, so a later repair does not refund this.
+    const [user] = await tx.select({ points: usersTable.points }).from(usersTable)
+      .where(eq(usersTable.id, userId)).limit(1).for("update");
+    const charged = Math.min(user?.points ?? 0, challenge.hintCost);
+    if (charged > 0) {
+      await tx.update(usersTable).set({ points: (user!.points) - charged }).where(eq(usersTable.id, userId));
+    }
+    return { charged };
+  });
+
+  res.json({
+    hint: challenge.hint,
+    hintUz: challenge.hintUz,
+    hintRu: challenge.hintRu,
+    pointsSpent: payload.charged,
   });
 });
 

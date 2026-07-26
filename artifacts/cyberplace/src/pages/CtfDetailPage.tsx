@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useRoute, Link } from "wouter";
-import { Download, Flag, AlertTriangle, CheckCircle2, Lock, ExternalLink, Zap, Cpu, GraduationCap, ChevronRight } from "lucide-react";
+import { Download, Flag, AlertTriangle, CheckCircle2, Lock, ExternalLink, Zap, Cpu, GraduationCap, ChevronRight, Lightbulb } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -42,11 +43,33 @@ export default function CtfDetailPage() {
   const { t } = useLang();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const { isAuthenticated } = useAuth();
   const [flag, setFlag] = useState("");
+  const [revealedHint, setRevealedHint] = useState<string | null>(null);
+  const [hintLoading, setHintLoading] = useState(false);
 
   const { data: challenge, isLoading } = useGetCtfChallenge(id, {
     query: { enabled: !!id, queryKey: getGetCtfChallengeQueryKey(id) },
   });
+
+  const revealHint = async () => {
+    if (hintLoading) return;
+    setHintLoading(true);
+    try {
+      const r = await fetch(`/api/ctf/${id}/hint`, { method: "POST", headers: { "Content-Type": "application/json" } });
+      const d = await r.json();
+      if (!r.ok) throw new Error(typeof d?.error === "string" ? d.error : "Failed");
+      setRevealedHint(t(d.hint ?? "", d.hintUz || d.hint || "", d.hintRu || d.hint || ""));
+      if (d.pointsSpent > 0) {
+        toast({ title: t(`Hint revealed — ${d.pointsSpent} points spent`, `Maslahat ochildi — ${d.pointsSpent} ball sarflandi`, `Подсказка открыта — потрачено ${d.pointsSpent} очк.`) });
+      }
+      void qc.invalidateQueries({ queryKey: getGetCtfChallengeQueryKey(id) });
+    } catch (e) {
+      toast({ title: e instanceof Error ? e.message : "Failed", variant: "destructive" });
+    } finally {
+      setHintLoading(false);
+    }
+  };
 
   const { data: scoreboard } = useGetScoreboard({ limit: 1 });
 
@@ -195,10 +218,14 @@ export default function CtfDetailPage() {
                         </div>
                         <div>
                           <h3 className="text-sm font-semibold text-foreground">
-                            {isUrl ? t("REMOTE_ACCESS_POINT", "TASHQI HAVOLA", "ТОЧКА_УДАЛЕННОГО_ДОСТУПА") : t("ENCRYPTED_DATA_OBJECT", "MA'LUMOT_PAKETI", "ЗАШИФРОВАННЫЙ_ОБЪЕКТ")}
+                            {isUrl
+                              ? t("Challenge link", "Topshiriq havolasi", "Ссылка задания")
+                              : t("Challenge file", "Topshiriq fayli", "Файл задания")}
                           </h3>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {isUrl ? "ESTABLISH_CONNECTION" : "EXTRACT_FOR_LOCAL_ANALYSIS"}
+                            {isUrl
+                              ? t("Opens in a new tab", "Yangi oynada ochiladi", "Откроется в новой вкладке")
+                              : t("Download it and analyse it locally", "Yuklab oling va tahlil qiling", "Скачайте и изучите локально")}
                           </p>
                         </div>
                       </div>
@@ -210,6 +237,50 @@ export default function CtfDetailPage() {
                     </div>
                   );
                 })()}
+              </FadeIn>
+            )}
+
+            {/* Hint. Costs points the first time; free to re-read afterwards.
+                The text never arrives until it is paid for. */}
+            {(challenge as any).hasHint && !challenge.isSolved && (
+              <FadeIn delay={0.35}>
+                <div className="glass-card p-6 sm:p-8 rounded-xl border-amber-500/25">
+                  {revealedHint || (challenge as any).hintUsed ? (
+                    <div className="flex items-start gap-4">
+                      <Lightbulb className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                      <div>
+                        <h3 className="text-sm font-semibold mb-2">{t("Hint", "Maslahat", "Подсказка")}</h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed" data-testid="hint-text">
+                          {revealedHint ?? t((challenge as any).hint ?? "", (challenge as any).hintUz ?? (challenge as any).hint ?? "", (challenge as any).hintRu ?? (challenge as any).hint ?? "")}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-start gap-4">
+                        <Lightbulb className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                        <div>
+                          <h3 className="text-sm font-semibold">{t("Stuck?", "Tiqilib qoldingizmi?", "Застряли?")}</h3>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {t(`Reveal a hint for ${(challenge as any).hintCost} points.`,
+                               `${(challenge as any).hintCost} ball evaziga maslahat oling.`,
+                               `Открыть подсказку за ${(challenge as any).hintCost} очк.`)}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={revealHint}
+                        disabled={hintLoading || !isAuthenticated}
+                        className="cyber-button-outline h-11 px-6 shrink-0 disabled:opacity-50"
+                        data-testid="reveal-hint"
+                      >
+                        {!isAuthenticated
+                          ? t("Sign in for a hint", "Maslahat uchun kiring", "Войдите за подсказкой")
+                          : hintLoading ? t("Opening…", "Ochilmoqda…", "Открываем…") : t("Show hint", "Maslahatni ko'rsatish", "Показать подсказку")}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </FadeIn>
             )}
 

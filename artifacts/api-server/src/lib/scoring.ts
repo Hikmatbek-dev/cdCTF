@@ -124,9 +124,21 @@ export async function recalculateUserPoints(tx: Executor, userId: number): Promi
     titlePoints += title.points;
   }
 
+  // Hints are bought with points, so the charge has to be part of the formula —
+  // not a one-off subtraction from users.points. Otherwise the next
+  // recalculation (a challenge edit, an admin repair) silently refunds every
+  // hint the user ever revealed.
+  const hints = await tx.select({ cost: ctfTasksTable.hintCost })
+    .from(ctfAttemptsTable)
+    .innerJoin(ctfTasksTable, eq(ctfAttemptsTable.ctfId, ctfTasksTable.id))
+    .where(and(eq(ctfAttemptsTable.userId, userId), eq(ctfAttemptsTable.hintUsed, true)));
+  const hintPenalty = hints.reduce((sum, hint) => sum + hint.cost, 0);
+
   const ctfPoints = solves.reduce((sum, solve) => sum + solve.points, 0);
   const lessonPoints = lessons.reduce((sum, lesson) => sum + lesson.points, 0);
-  const total = earnsPoints(user) ? ctfPoints + lessonPoints + titlePoints : 0;
+  const total = earnsPoints(user)
+    ? Math.max(0, ctfPoints + lessonPoints + titlePoints - hintPenalty)
+    : 0;
 
   await tx.update(usersTable).set({ points: total }).where(eq(usersTable.id, userId));
   return total;

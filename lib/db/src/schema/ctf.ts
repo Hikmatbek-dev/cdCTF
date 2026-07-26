@@ -17,6 +17,8 @@ export const ctfTasksTable = pgTable("ctf_tasks", {
   points: integer("points").notNull().default(100),
   hintCost: integer("hint_cost").notNull().default(10),
   hint: text("hint"),
+  hintUz: text("hint_uz"),
+  hintRu: text("hint_ru"),
   flag: text("flag").notNull(),
   fileUrl: text("file_url"),
   fileId: integer("file_id").references(() => ctfFilesTable.id),
