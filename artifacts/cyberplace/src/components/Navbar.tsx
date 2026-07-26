@@ -46,11 +46,11 @@ export function Navbar() {
 
   return (
     <div className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 px-6 ${scrolled ? "pt-4" : "pt-8"}`}>
-      <nav className={`max-w-7xl mx-auto transition-all duration-500 rounded-[2rem] border ${scrolled ? "bg-card/40 backdrop-blur-2xl border-foreground/10 shadow-2xl py-3 px-8" : "bg-transparent border-transparent py-4 px-8"}`}>
+      <nav className={`max-w-7xl mx-auto transition-all duration-500 rounded-xl border ${scrolled ? "bg-card/40 -2xl border-foreground/10 shadow-2xl py-3 px-8" : "bg-transparent border-transparent py-4 px-8"}`}>
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform duration-500">
+            <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform duration-500">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div className="flex items-center font-display text-2xl font-black tracking-tighter">
@@ -60,7 +60,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-2 bg-foreground/5 p-1.5 rounded-2xl border border-foreground/5 backdrop-blur-md">
+          <div className="hidden md:flex items-center gap-2 bg-foreground/5 p-1.5 rounded-2xl border border-foreground/5 ">
             {NAV_LINKS.map(link => (
               <Link
                 key={link.href}
@@ -100,7 +100,7 @@ export function Navbar() {
                     {lang} <ChevronDown className="w-3 h-3 ml-2 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-xl border border-foreground/10 rounded-2xl min-w-[140px] p-2 mt-2 shadow-2xl">
+                <DropdownMenuContent align="end" className="bg-card/95 border border-foreground/10 rounded-2xl min-w-[140px] p-2 mt-2 shadow-2xl">
                   {(["en", "uz", "ru"] as Language[]).map(l => (
                     <DropdownMenuItem key={l} onClick={() => setLang(l)} className={`rounded-xl px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-foreground/5 transition-colors ${lang === l ? "text-primary bg-primary/5" : "text-muted-foreground"}`}>
                       {l === "en" ? "English" : l === "uz" ? "O'zbek" : "Русский"}
@@ -132,7 +132,7 @@ export function Navbar() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-3 hover:opacity-80 transition-all p-1 pr-4 bg-foreground/5 rounded-2xl border border-foreground/5">
-                    <div className="w-9 h-9 bg-gradient-to-br from-primary/20 to-accent/20 border border-foreground/10 rounded-xl flex items-center justify-center text-xs font-black text-primary shadow-lg">
+                    <div className="w-9 h-9 bg-primary/10 border border-foreground/10 rounded-xl flex items-center justify-center text-xs font-black text-primary shadow-lg">
                       {user.nickname[0].toUpperCase()}
                     </div>
                     <div className="text-left hidden lg:block">
@@ -141,7 +141,7 @@ export function Navbar() {
                     </div>
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-xl border border-foreground/10 rounded-[2rem] w-64 p-2 mt-2 shadow-2xl">
+                <DropdownMenuContent align="end" className="bg-card/95 border border-foreground/10 rounded-xl w-64 p-2 mt-2 shadow-2xl">
                   <div className="p-4 mb-2 bg-foreground/5 rounded-2xl border border-foreground/5">
                     <div className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-[0.15em] mb-1">{t("Signed in as", "Kirgan foydalanuvchi", "Вы вошли как")}</div>
                     <div className="text-sm font-semibold text-foreground">{user.nickname}</div>
@@ -214,7 +214,7 @@ export function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             id="mobile-menu"
-            className="md:hidden mt-4 bg-card/95 backdrop-blur-2xl border border-foreground/10 rounded-[2.5rem] p-6 shadow-2xl"
+            className="md:hidden mt-4 bg-card/95 -2xl border border-foreground/10 rounded-xl p-6 shadow-2xl"
           >
             <div className="space-y-2">
               {NAV_LINKS.map(link => (

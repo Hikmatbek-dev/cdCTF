@@ -130,7 +130,7 @@ export default function ModulesPage() {
                           {/* A slim progress bar only when there is progress, to keep untouched cards clean. */}
                           {percent > 0 && !done && (
                             <div className="mt-2 h-1 rounded-full bg-muted overflow-hidden">
-                              <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-500" style={{ width: `${percent}%` }} />
+                              <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${percent}%` }} />
                             </div>
                           )}
                         </div>

@@ -136,14 +136,14 @@ export default function LoginPage() {
       {/* Background Effects */}
       <div className="fixed inset-0 mono-grid opacity-10 pointer-events-none" />
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[30%] left-[-10%] w-[50%] h-[50%] bg-primary/5 blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[30%] right-[-10%] w-[50%] h-[50%] bg-accent/5 blur-[120px] rounded-full animate-pulse delay-1000" />
+        <div className="absolute top-[30%] left-[-10%] w-[50%] h-[50%] bg-primary/5 hidden rounded-full animate-pulse" />
+        <div className="absolute bottom-[30%] right-[-10%] w-[50%] h-[50%] bg-accent/5 hidden rounded-full animate-pulse delay-1000" />
       </div>
 
       <div className="w-full max-w-md relative z-10">
         <ScaleIn>
           <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-[2rem] bg-gradient-to-br from-primary/20 to-accent/20 border border-foreground/10 mb-8 animate-float shadow-2xl backdrop-blur-md">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl bg-primary/10 border border-foreground/10 mb-8 animate-float shadow-2xl ">
               <Shield className="w-10 h-10 text-primary" />
             </div>
             <h1 className="text-3xl font-bold tracking-tight mb-2">{t("Sign in", "Kirish", "Вход")}</h1>
@@ -152,7 +152,7 @@ export default function LoginPage() {
         </ScaleIn>
 
         <FadeIn delay={0.2}>
-          <div className="glass-card p-10 rounded-[3rem] border-foreground/10 shadow-2xl">
+          <div className="glass-card p-10 rounded-xl border-foreground/10 shadow-2xl">
             {oauthError && (
               <div
                 role="alert"

@@ -268,7 +268,7 @@ export default function HomePage() {
                     {/* The cover is the hero of the card, not a small icon. */}
                     <div className="relative aspect-[16/10] bg-gradient-to-br from-primary/[0.12] to-accent/[0.05] border-b border-border overflow-hidden">
                       <Art className="absolute inset-0 w-full h-full p-3" />
-                      <span className="absolute top-3 left-3 font-mono text-[10px] text-muted-foreground bg-background/70 backdrop-blur-sm rounded px-1.5 py-0.5">
+                      <span className="absolute top-3 left-3 font-mono text-[10px] text-muted-foreground bg-background/70 rounded px-1.5 py-0.5">
                         {String(i + 1).padStart(2, "0")}
                       </span>
                     </div>
@@ -330,7 +330,7 @@ export default function HomePage() {
 
             {/* A live miniature of the reader, rather than a static image. */}
             <div className="relative">
-              <div className="absolute -inset-6 rounded-[3rem] blur-3xl pointer-events-none"
+              <div className="absolute -inset-6 rounded-xl blur-3xl pointer-events-none"
                 style={{ background: "radial-gradient(60% 60% at 50% 50%, hsl(var(--accent) / 0.22), transparent 70%)" }} />
               <div className="relative glass-card !p-0 overflow-hidden">
                 <div className="px-5 py-3 border-b border-border flex items-center gap-2 text-xs text-muted-foreground">
@@ -510,7 +510,7 @@ export default function HomePage() {
               <div className="absolute inset-0 pointer-events-none"
                 style={{ background: "radial-gradient(50% 70% at 50% 0%, hsl(var(--primary) / 0.16), transparent 70%)" }} />
               <div className="relative">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-5">
+                <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-5">
                   <Users className="w-7 h-7 text-white" />
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-3">

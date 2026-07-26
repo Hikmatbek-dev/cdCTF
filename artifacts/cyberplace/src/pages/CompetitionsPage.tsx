@@ -30,7 +30,7 @@ export default function CompetitionsPage() {
   return (
     <div className="min-h-screen bg-background pt-24 relative overflow-hidden">
       {/* Background Glow */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full hidden pointer-events-none" />
 
       <div className="max-w-4xl mx-auto px-4 py-8 relative z-10">
         <div className="flex items-center gap-4 mb-12">
@@ -45,10 +45,10 @@ export default function CompetitionsPage() {
 
         {isLoading ? (
           <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-[2.5rem] bg-foreground/5" />)}
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-xl bg-foreground/5" />)}
           </div>
         ) : competitionList.length === 0 ? (
-          <div className="glass-card rounded-[2.5rem] py-24 text-center border-foreground/5">
+          <div className="glass-card rounded-xl py-24 text-center border-foreground/5">
             <div className="w-20 h-20 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-6">
               <Trophy className="w-8 h-8 text-primary/40" />
             </div>
@@ -60,7 +60,7 @@ export default function CompetitionsPage() {
             {competitionList.map(comp => (
               <Link href={`/competitions/${comp.id}`} key={comp.id}>
                 <div
-                  className="group relative p-8 rounded-[2.5rem] glass-card border-foreground/5 hover:border-primary/30 transition-all duration-300 cursor-pointer overflow-hidden"
+                  className="group relative p-8 rounded-xl glass-card border-foreground/5 hover:border-primary/30 transition-all duration-300 cursor-pointer overflow-hidden"
                   data-testid={`card-competition-${comp.id}`}
                 >
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors" />

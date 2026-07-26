@@ -39,11 +39,11 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-background pt-24 px-6">
         <div className="max-w-6xl mx-auto space-y-8">
-          <Skeleton className="h-32 w-full bg-muted rounded-[2.5rem]" />
+          <Skeleton className="h-32 w-full bg-muted rounded-xl" />
           <div className="grid md:grid-cols-3 gap-6">
-            <Skeleton className="h-32 bg-muted rounded-[2rem]" />
-            <Skeleton className="h-32 bg-muted rounded-[2rem]" />
-            <Skeleton className="h-32 bg-muted rounded-[2rem]" />
+            <Skeleton className="h-32 bg-muted rounded-xl" />
+            <Skeleton className="h-32 bg-muted rounded-xl" />
+            <Skeleton className="h-32 bg-muted rounded-xl" />
           </div>
         </div>
       </div>
@@ -91,7 +91,7 @@ export default function DashboardPage() {
           const lv = levelFromPoints(data.user.points);
           return (
             <div className="glass-card !p-6 mb-10 flex items-center gap-5" data-testid="level-bar">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0 neon-glow">
+              <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shrink-0 neon-glow">
                 <span className="text-lg font-black text-white tabular-nums">{lv.level}</span>
               </div>
               <div className="flex-1 min-w-0">
@@ -102,7 +102,7 @@ export default function DashboardPage() {
                   </span>
                 </div>
                 <div className="h-2.5 rounded-full bg-muted/40 overflow-hidden">
-                  <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all" style={{ width: `${Math.round(lv.progress * 100)}%` }} />
+                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.round(lv.progress * 100)}%` }} />
                 </div>
               </div>
             </div>
@@ -116,7 +116,7 @@ export default function DashboardPage() {
           <Link href="/modules" className="block mb-10">
             <div className="glass-card !p-8 border-primary/30 flex flex-col sm:flex-row sm:items-center justify-between gap-6 group cursor-pointer">
               <div className="flex items-center gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0 neon-glow">
+                <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shrink-0 neon-glow">
                   <GraduationCap className="w-7 h-7 text-white" />
                 </div>
                 <div>
@@ -143,7 +143,7 @@ export default function DashboardPage() {
           <Link href={`/learn/${data.nextLesson.id}`} className="block mb-10">
             <div className="glass-card !p-8 border-primary/30 flex flex-col sm:flex-row sm:items-center justify-between gap-6 group cursor-pointer">
               <div className="flex items-center gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0 neon-glow">
+                <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shrink-0 neon-glow">
                   <BookOpen className="w-7 h-7 text-white" />
                 </div>
                 <div>
@@ -172,7 +172,7 @@ export default function DashboardPage() {
             { icon: BookOpen, label: t("Lessons done", "Tugatilgan dars", "Уроков пройдено"), value: data.progress.completedLessonCount, color: "text-foreground" },
             { icon: Star, label: t("Titles", "Unvonlar", "Титулы"), value: data.progress.titleCount, color: "text-foreground" }
           ].map((stat, i) => (
-            <div key={i} className="glass-card bg-muted/10 p-10 rounded-[2.5rem] group hover:bg-muted/20 transition-all border-border hover:border-primary/20">
+            <div key={i} className="glass-card bg-muted/10 p-10 rounded-xl group hover:bg-muted/20 transition-all border-border hover:border-primary/20">
               <div className="flex items-center gap-4 mb-6">
                 <stat.icon className={`w-5 h-5 ${stat.color} group-hover:scale-110 transition-transform`} />
                 <span className="text-xs text-muted-foreground">{stat.label}</span>
@@ -185,7 +185,7 @@ export default function DashboardPage() {
         <div className="grid lg:grid-cols-5 gap-8">
           {/* Mission Stream */}
           <div className="lg:col-span-3">
-            <div className="glass-card bg-muted/10 p-10 rounded-[3rem] border-border h-full">
+            <div className="glass-card bg-muted/10 p-10 rounded-xl border-border h-full">
               <div className="flex items-center gap-4 mb-10">
                 <Activity className="w-5 h-5 text-primary" />
                 <h2 className="text-lg font-semibold tracking-tight">{t("Recent activity", "So'nggi faoliyat", "Недавняя активность")}</h2>
@@ -228,7 +228,7 @@ export default function DashboardPage() {
                 ))}
                 
                 {solvedCtf.length === 0 && completedLessons.length === 0 && (
-                  <div className="py-24 text-center border-2 border-dashed border-border rounded-[2.5rem]">
+                  <div className="py-24 text-center border-2 border-dashed border-border rounded-xl">
                     <p className="text-sm text-muted-foreground">
                       {t("NO_STREAMS_DETECTED", "FAOLLIK YO'Q", "ПОТОКИ_ДАННЫХ_ОТСУТСТВУЮТ")}
                     </p>
@@ -240,7 +240,7 @@ export default function DashboardPage() {
 
           {/* Specializations */}
           <div className="lg:col-span-2">
-            <div className="glass-card bg-primary/5 p-10 rounded-[3rem] border-primary/20 h-full">
+            <div className="glass-card bg-primary/5 p-10 rounded-xl border-primary/20 h-full">
               <div className="flex items-center gap-4 mb-10">
                 <Trophy className="w-5 h-5 text-primary" />
                 <h2 className="text-lg font-semibold tracking-tight">{t("Titles", "Unvonlar", "Титулы")}</h2>
@@ -253,7 +253,7 @@ export default function DashboardPage() {
                     {title.name ?? t("Untitled", "Nomsiz", "Без названия")}
                   </div>
                 )) : (
-                  <div className="text-center py-20 w-full border border-dashed border-primary/20 rounded-[2.5rem]">
+                  <div className="text-center py-20 w-full border border-dashed border-primary/20 rounded-xl">
                     <p className="text-sm leading-relaxed text-muted-foreground px-8">
                       {t("INSUFFICIENT_DATA_FOR_TITLES", "UNVONLAR YO'Q", "НЕДОСТАТОЧНО_ДАННЫХ")}
                     </p>

@@ -33,7 +33,7 @@ export default function ImpactPage() {
 
   return (
     <div className="min-h-screen bg-background pt-24 relative overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full hidden pointer-events-none" />
 
       <div className="max-w-5xl mx-auto px-4 py-8 relative z-10">
         {/* Mission */}
@@ -55,14 +55,14 @@ export default function ImpactPage() {
 
         {isLoading ? (
           <div className="grid sm:grid-cols-3 gap-6 mb-8">
-            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-[2rem] bg-foreground/5" />)}
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-xl bg-foreground/5" />)}
           </div>
         ) : (
           <>
             {/* Headline metrics */}
             <div className="grid sm:grid-cols-3 gap-6 mb-6">
               {headline.map((m, i) => (
-                <div key={i} className="rounded-[2rem] border border-border bg-card p-8 text-center" data-testid={`stat-headline-${i}`}>
+                <div key={i} className="rounded-xl border border-border bg-card p-8 text-center" data-testid={`stat-headline-${i}`}>
                   <m.icon className={`w-7 h-7 ${m.color} mx-auto mb-4`} />
                   <div className="text-5xl font-black tracking-tight tabular-nums mb-2">{fmt(m.value)}</div>
                   <div className="text-sm text-muted-foreground">{m.label}</div>

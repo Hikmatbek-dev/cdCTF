@@ -49,8 +49,8 @@ export default function ScoreboardPage() {
       {/* Background Effects */}
       <div className="fixed inset-0 mono-grid opacity-20 pointer-events-none" />
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[15%] right-[-10%] w-[50%] h-[50%] bg-primary/5 blur-[120px] rounded-full opacity-30" />
-        <div className="absolute bottom-[15%] left-[-10%] w-[50%] h-[50%] bg-accent/5 blur-[120px] rounded-full opacity-30" />
+        <div className="absolute top-[15%] right-[-10%] w-[50%] h-[50%] bg-primary/5 hidden rounded-full opacity-30" />
+        <div className="absolute bottom-[15%] left-[-10%] w-[50%] h-[50%] bg-accent/5 hidden rounded-full opacity-30" />
       </div>
 
       <div className="max-w-5xl mx-auto px-6 relative z-10">
@@ -58,7 +58,7 @@ export default function ScoreboardPage() {
         <div className="mb-20">
           <FadeIn>
             <div className="flex items-center gap-8 mb-12">
-              <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-accent/20 border border-foreground/10 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-primary/10 backdrop-blur-md animate-float">
+              <div className="w-20 h-20 bg-primary/10 border border-foreground/10 rounded-xl flex items-center justify-center shadow-2xl shadow-primary/10 animate-float">
                 <Trophy className="w-10 h-10 text-primary" />
               </div>
               <div>
@@ -82,7 +82,7 @@ export default function ScoreboardPage() {
                 placeholder={t("Search players…", "Foydalanuvchilarni qidirish…", "Поиск игроков…")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full h-20 pl-16 pr-8 bg-foreground/5 border border-foreground/5 rounded-[2rem] font-bold uppercase tracking-[0.2em] focus:border-primary focus:ring-8 focus:ring-primary/5 transition-all text-sm placeholder:text-muted-foreground/20"
+                className="w-full h-20 pl-16 pr-8 bg-foreground/5 border border-foreground/5 rounded-xl font-bold uppercase tracking-[0.2em] focus:border-primary focus:ring-8 focus:ring-primary/5 transition-all text-sm placeholder:text-muted-foreground/20"
               />
             </div>
           </FadeIn>
@@ -91,7 +91,7 @@ export default function ScoreboardPage() {
         {/* User Stats Card */}
         {data?.currentUserRank && !debouncedSearch && page === 1 && (
           <FadeIn delay={0.2}>
-            <div className="mb-20 glass-card bg-primary/10 p-12 rounded-[3.5rem] flex flex-col md:flex-row items-center justify-between border-primary/20 shadow-2xl shadow-primary/5 relative overflow-hidden group">
+            <div className="mb-20 glass-card bg-primary/10 p-12 rounded-xl flex flex-col md:flex-row items-center justify-between border-primary/20 shadow-2xl shadow-primary/5 relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-12 opacity-[0.03] group-hover:scale-125 transition-transform duration-700 pointer-events-none">
                 <Shield className="w-80 h-80 text-primary" />
               </div>
@@ -117,14 +117,14 @@ export default function ScoreboardPage() {
               exit={{ opacity: 0 }}
               className="space-y-4"
             >
-              {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-24 bg-foreground/5 rounded-[2rem]" />)}
+              {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-24 bg-foreground/5 rounded-xl" />)}
             </motion.div>
           ) : entries.length === 0 ? (
             <motion.div 
               key="empty"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="glass-card py-40 text-center rounded-[3rem] border-foreground/5"
+              className="glass-card py-40 text-center rounded-xl border-foreground/5"
             >
                <div className="w-20 h-20 bg-foreground/5 border border-foreground/5 rounded-3xl flex items-center justify-center mx-auto mb-8">
                 <Target className="w-10 h-10 text-muted-foreground/20" />
@@ -138,7 +138,7 @@ export default function ScoreboardPage() {
               animate={{ opacity: 1 }}
               className="space-y-4"
             >
-              <div className="glass-card p-2 rounded-[3.5rem] border-foreground/5 bg-foreground/[0.01] mb-16 shadow-2xl">
+              <div className="glass-card p-2 rounded-xl border-foreground/5 bg-foreground/[0.01] mb-16 shadow-2xl">
                 {entries.map((entry, i) => {
                   const isMe = user?.id === entry.userId;
                   const rank = entry.rank;
@@ -152,7 +152,7 @@ export default function ScoreboardPage() {
                     <FadeIn key={entry.userId} delay={i * 0.03}>
                       <Link href={`/profile/${entry.userId}`}>
                         <div
-                          className={`group flex items-center gap-8 p-6 md:p-8 transition-all duration-500 cursor-pointer rounded-[2.5rem] mb-2 last:mb-0 hover:bg-foreground/5 hover:scale-[1.01] active:scale-[0.99] border border-transparent ${
+                          className={`group flex items-center gap-8 p-6 md:p-8 transition-all duration-500 cursor-pointer rounded-xl mb-2 last:mb-0 hover:bg-foreground/5 hover:scale-[1.01] active:scale-[0.99] border border-transparent ${
                             isMe ? "bg-primary/[0.08] border-primary/20 shadow-xl shadow-primary/5" : ""
                           }`}
                         >

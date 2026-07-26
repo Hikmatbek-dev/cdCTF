@@ -137,7 +137,7 @@ export default function JobsPage() {
 
   return (
     <div className="min-h-screen bg-background pt-24 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full hidden pointer-events-none" />
 
       <div className="max-w-4xl mx-auto px-4 py-8 relative z-10">
         <div className="flex items-center gap-4 mb-8">
@@ -242,7 +242,7 @@ export default function JobsPage() {
         {isLoading ? (
           <div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl bg-foreground/5" />)}</div>
         ) : jobs.length === 0 ? (
-          <div className="glass-card rounded-[2.5rem] py-24 text-center border-foreground/5">
+          <div className="glass-card rounded-xl py-24 text-center border-foreground/5">
             <div className="w-20 h-20 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-6"><Briefcase className="w-8 h-8 text-primary/40" /></div>
             <h3 className="text-xl font-display font-bold mb-2">{t("No open positions yet", "Hozircha ochiq ish o'rni yo'q", "Пока нет открытых вакансий")}</h3>
             <p className="text-sm text-muted-foreground">{t("Check back soon.", "Tez orada qayting.", "Загляните позже.")}</p>

@@ -68,7 +68,7 @@ export function Writeups({ ctfId }: { ctfId: number }) {
   };
 
   return (
-    <div className="glass-card p-8 rounded-[2.5rem] border-foreground/5" data-testid="writeups">
+    <div className="glass-card p-8 rounded-xl border-foreground/5" data-testid="writeups">
       <h3 className="text-lg font-semibold tracking-tight mb-6 flex items-center gap-3">
         <FileText className="w-5 h-5 text-primary" />
         {t("Writeups", "Yechim izohlari", "Разборы")}

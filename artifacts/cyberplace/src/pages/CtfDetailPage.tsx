@@ -92,8 +92,8 @@ export default function CtfDetailPage() {
         <div className="max-w-5xl mx-auto space-y-12">
           <Skeleton className="h-16 w-96 bg-foreground/5 rounded-2xl" />
           <div className="grid lg:grid-cols-3 gap-12">
-            <Skeleton className="lg:col-span-2 h-[400px] bg-foreground/5 rounded-[3rem]" />
-            <Skeleton className="h-[400px] bg-foreground/5 rounded-[3rem]" />
+            <Skeleton className="lg:col-span-2 h-[400px] bg-foreground/5 rounded-xl" />
+            <Skeleton className="h-[400px] bg-foreground/5 rounded-xl" />
           </div>
         </div>
       </div>
@@ -120,8 +120,8 @@ export default function CtfDetailPage() {
       {/* Background Effects */}
       <div className="fixed inset-0 mono-grid opacity-20 pointer-events-none" />
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[10%] left-[-10%] w-[50%] h-[50%] bg-primary/5 blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[10%] right-[-10%] w-[50%] h-[50%] bg-accent/5 blur-[120px] rounded-full animate-pulse delay-1000" />
+        <div className="absolute top-[10%] left-[-10%] w-[50%] h-[50%] bg-primary/5 hidden rounded-full animate-pulse" />
+        <div className="absolute bottom-[10%] right-[-10%] w-[50%] h-[50%] bg-accent/5 hidden rounded-full animate-pulse delay-1000" />
       </div>
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
@@ -130,7 +130,7 @@ export default function CtfDetailPage() {
           <FadeIn>
             <div className="flex flex-wrap items-center gap-4 mb-10">
               <DifficultyBadge difficulty={challenge.difficulty} className="rounded-lg px-3 py-1 text-[11px] font-medium shadow-lg border-foreground/5" />
-              <div className="px-4 py-1.5 bg-foreground/5 border border-foreground/5 rounded-lg text-xs font-medium text-muted-foreground backdrop-blur-md">{challenge.category}</div>
+              <div className="px-4 py-1.5 bg-foreground/5 border border-foreground/5 rounded-lg text-xs font-medium text-muted-foreground ">{challenge.category}</div>
               
               {challenge.isSolved && (
                 <div className="flex items-center gap-2 px-4 py-1.5 bg-primary/10 border border-primary/20 text-sm font-medium text-primary shadow-xl shadow-primary/10 rounded-xl">
@@ -167,7 +167,7 @@ export default function CtfDetailPage() {
           <div className="lg:col-span-2 space-y-12">
             {/* Briefing */}
             <FadeIn delay={0.2}>
-              <div className="glass-card p-10 rounded-[3rem] relative group overflow-hidden border-foreground/10 shadow-2xl">
+              <div className="glass-card p-10 rounded-xl relative group overflow-hidden border-foreground/10 shadow-2xl">
                 <div className="absolute top-0 right-0 p-10 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity pointer-events-none">
                   <Cpu className="w-80 h-80 text-primary" />
                 </div>
@@ -188,7 +188,7 @@ export default function CtfDetailPage() {
                   const isUrl = challenge.fileUrl.startsWith("http://") || challenge.fileUrl.startsWith("https://");
                   const Icon = isUrl ? ExternalLink : Download;
                   return (
-                    <div className="glass-card p-8 flex items-center justify-between group hover:border-primary/40 transition-all rounded-[2.5rem] border-foreground/5">
+                    <div className="glass-card p-8 flex items-center justify-between group hover:border-primary/40 transition-all rounded-xl border-foreground/5">
                       <div className="flex items-center gap-8">
                         <div className="w-16 h-16 bg-foreground/5 border border-foreground/5 rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500 shadow-xl">
                           <Icon className="w-7 h-7" />
@@ -216,7 +216,7 @@ export default function CtfDetailPage() {
             {/* Submission Zone */}
             {!challenge.isSolved && !challenge.isBlocked && (
               <FadeIn delay={0.4}>
-                <div className="glass-card p-10 rounded-[3rem] border-primary/20 bg-primary/[0.02]">
+                <div className="glass-card p-10 rounded-xl border-primary/20 bg-primary/[0.02]">
                   <h2 className="text-sm font-semibold text-primary mb-6 flex items-center gap-3">
                     <Flag className="w-5 h-5" /> {t("Submit the flag", "Flagni topshirish", "Отправить флаг")}
                   </h2>
@@ -265,7 +265,7 @@ export default function CtfDetailPage() {
 
             {challenge.isSolved && (
               <ScaleIn>
-                <div className="glass-card p-16 text-center border-primary/40 bg-primary/[0.03] rounded-[3.5rem] shadow-2xl shadow-primary/5">
+                <div className="glass-card p-16 text-center border-primary/40 bg-primary/[0.03] rounded-xl shadow-2xl shadow-primary/5">
                   <div className="w-24 h-24 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-10 shadow-xl shadow-primary/20 animate-pulse-glow">
                     <CheckCircle2 className="w-12 h-12 text-primary" />
                   </div>
@@ -280,7 +280,7 @@ export default function CtfDetailPage() {
 
             {challenge.isBlocked && (
               <ScaleIn>
-                <div className="glass-card p-16 text-center border-destructive/40 bg-destructive/[0.03] rounded-[3.5rem] shadow-2xl shadow-destructive/5">
+                <div className="glass-card p-16 text-center border-destructive/40 bg-destructive/[0.03] rounded-xl shadow-2xl shadow-destructive/5">
                   <div className="w-24 h-24 rounded-3xl bg-destructive/10 border border-destructive/20 flex items-center justify-center mx-auto mb-10 shadow-xl shadow-destructive/20">
                     <Lock className="w-12 h-12 text-destructive" />
                   </div>
@@ -293,7 +293,7 @@ export default function CtfDetailPage() {
 
           <div className="space-y-8">
             <FadeIn delay={0.5}>
-              <div className="glass-card p-10 rounded-[3rem] border-foreground/5 relative overflow-hidden">
+              <div className="glass-card p-10 rounded-xl border-foreground/5 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
                 <h3 className="text-sm font-semibold text-muted-foreground mb-6">{t("Details", "Tafsilotlar", "Детали")}</h3>
                 <div className="space-y-10">
@@ -318,7 +318,7 @@ export default function CtfDetailPage() {
             {teachingModule && (
               <FadeIn delay={0.6}>
                 <Link href={`/modules/${teachingModule.id}`}>
-                  <div className="glass-card p-8 rounded-[3rem] border-primary/25 cursor-pointer group hover:border-primary/50 transition-colors">
+                  <div className="glass-card p-8 rounded-xl border-primary/25 cursor-pointer group hover:border-primary/50 transition-colors">
                     <div className="eyebrow mb-3">
                       <GraduationCap className="w-3.5 h-3.5" />
                       {t("Stuck?", "Qiynalyapsizmi?", "Застряли?")}
@@ -343,7 +343,7 @@ export default function CtfDetailPage() {
             )}
 
             <FadeIn delay={0.7}>
-              <div className="glass-card p-8 rounded-[3rem] bg-accent/[0.02] border-accent/20">
+              <div className="glass-card p-8 rounded-xl bg-accent/[0.02] border-accent/20">
                 <div className="flex items-center gap-3 mb-3">
                   <AlertTriangle className="w-4 h-4 text-accent shrink-0" />
                   <h3 className="text-sm font-semibold">{t("One rule", "Bitta qoida", "Одно правило")}</h3>

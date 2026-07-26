@@ -62,10 +62,10 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-background pt-24 px-6">
         <div className="max-w-5xl mx-auto space-y-8">
-          <Skeleton className="h-64 w-full bg-muted rounded-[2.5rem]" />
+          <Skeleton className="h-64 w-full bg-muted rounded-xl" />
           <div className="grid md:grid-cols-2 gap-8">
-            <Skeleton className="h-96 bg-muted rounded-[2.5rem]" />
-            <Skeleton className="h-96 bg-muted rounded-[2.5rem]" />
+            <Skeleton className="h-96 bg-muted rounded-xl" />
+            <Skeleton className="h-96 bg-muted rounded-xl" />
           </div>
         </div>
       </div>
@@ -126,14 +126,14 @@ export default function ProfilePage() {
 
       <div className="max-w-5xl mx-auto px-6 relative z-10">
         {/* Profile Dossier Header */}
-        <div className="glass-card bg-muted/10 border-border p-10 mb-12 relative overflow-hidden rounded-[3rem]">
+        <div className="glass-card bg-muted/10 border-border p-10 mb-12 relative overflow-hidden rounded-xl">
           <div className="absolute top-0 right-0 p-8 opacity-5">
             <Shield className="w-64 h-64 text-primary" />
           </div>
           
           <div className="flex flex-col md:flex-row items-center md:items-start gap-12 relative z-10">
             <div className="shrink-0 relative group">
-              <div className="w-40 h-40 bg-muted border-2 border-border p-1 rounded-[2.5rem] flex items-center justify-center relative overflow-hidden transition-all group-hover:border-primary/50 group-hover:shadow-2xl group-hover:shadow-primary/20">
+              <div className="w-40 h-40 bg-muted border-2 border-border p-1 rounded-xl flex items-center justify-center relative overflow-hidden transition-all group-hover:border-primary/50 group-hover:shadow-2xl group-hover:shadow-primary/20">
                 {profile.avatarUrl ? (
                   <img src={profile.avatarUrl} alt={profile.nickname} className="w-full h-full object-cover rounded-[2.2rem]" />
                 ) : (
@@ -155,7 +155,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="flex items-center gap-3 mb-2">
                     <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-none">{profile.nickname}</h1>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gradient-to-br from-primary to-accent text-white text-sm font-bold shadow-lg shadow-primary/20 shrink-0" data-testid="profile-level">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-primary text-white text-sm font-bold shadow-lg shadow-primary/20 shrink-0" data-testid="profile-level">
                       {t("Lvl", "Dja", "Ур")} {levelFromPoints(profile.points).level}
                     </span>
                   </div>
@@ -229,7 +229,7 @@ export default function ProfilePage() {
               </div>
 
               {solvedCtf.length === 0 ? (
-                <div className="glass-card bg-muted/5 border-dashed border-border py-24 text-center rounded-[2.5rem]">
+                <div className="glass-card bg-muted/5 border-dashed border-border py-24 text-center rounded-xl">
                   <p className="text-muted-foreground">{t("Nothing solved yet", "Hali hech narsa yechilmagan", "Пока ничего не решено")}</p>
                   {isOwn && (
                     <Link href="/ctf">
@@ -269,7 +269,7 @@ export default function ProfilePage() {
 
           <div className="space-y-12">
             {/* Badges — milestones, earned in colour, locked ones greyed. */}
-            <section className="glass-card p-8 border-border rounded-[2.5rem]" data-testid="badges">
+            <section className="glass-card p-8 border-border rounded-xl" data-testid="badges">
               <h2 className="text-sm font-semibold text-muted-foreground mb-8 flex items-center gap-2">
                 <Award className="w-4 h-4" />
                 {t("Badges", "Nishonlar", "Значки")}
@@ -278,7 +278,7 @@ export default function ProfilePage() {
               <div className="grid grid-cols-4 gap-4">
                 {badges.map(b => (
                   <div key={b.id} className="flex flex-col items-center gap-2 text-center" data-testid={`badge-${b.id}`} title={b.label}>
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${b.earned ? "bg-gradient-to-br from-primary to-accent text-white shadow-lg shadow-primary/20" : "bg-muted/30 text-muted-foreground/40"}`}>
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${b.earned ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-muted/30 text-muted-foreground/40"}`}>
                       <b.icon className="w-5 h-5" />
                     </div>
                     <span className={`text-[10px] leading-tight ${b.earned ? "text-foreground" : "text-muted-foreground/40"}`}>{b.label}</span>
@@ -289,7 +289,7 @@ export default function ProfilePage() {
 
             {/* Skill tree — mastery per CTF category. */}
             {skills.length > 0 && (
-              <section className="glass-card p-8 border-border rounded-[2.5rem]" data-testid="skill-tree">
+              <section className="glass-card p-8 border-border rounded-xl" data-testid="skill-tree">
                 <h2 className="text-sm font-semibold text-muted-foreground mb-8 flex items-center gap-2">
                   <Target className="w-4 h-4" />
                   {t("Skills", "Mahoratlar", "Навыки")}
@@ -302,7 +302,7 @@ export default function ProfilePage() {
                         <span className="text-muted-foreground tabular-nums">{skill.solved}/{skill.total}</span>
                       </div>
                       <div className="h-2 rounded-full bg-muted/40 overflow-hidden">
-                        <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent" style={{ width: `${Math.round((skill.progress || 0) * 100)}%` }} />
+                        <div className="h-full rounded-full bg-primary" style={{ width: `${Math.round((skill.progress || 0) * 100)}%` }} />
                       </div>
                     </div>
                   ))}
@@ -312,7 +312,7 @@ export default function ProfilePage() {
 
             {/* Academy Logs */}
             {completedLessons.length > 0 && (
-              <section className="glass-card p-8 bg-primary/5 border-primary/20 rounded-[2.5rem]">
+              <section className="glass-card p-8 bg-primary/5 border-primary/20 rounded-xl">
                 <h2 className="text-sm font-semibold text-primary mb-8 flex items-center gap-2">
                   <BookOpen className="w-4 h-4" />
                   {t("Completed lessons", "Tugatilgan darslar", "Пройденные уроки")}
@@ -330,7 +330,7 @@ export default function ProfilePage() {
 
             {/* Tournament Records */}
             {competitionHistory.length > 0 && (
-              <section className="glass-card p-8 border-border rounded-[2.5rem]">
+              <section className="glass-card p-8 border-border rounded-xl">
                 <h2 className="text-sm font-semibold text-muted-foreground mb-8 flex items-center gap-2">
                   <Trophy className="w-4 h-4" />
                   {t("Competitions", "Musobaqalar", "Соревнования")}

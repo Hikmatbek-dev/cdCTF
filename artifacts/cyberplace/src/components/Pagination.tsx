@@ -13,7 +13,7 @@ export function Pagination({ currentPage, totalPages, onPageChange, className = 
 
   return (
     <div className={`flex items-center justify-center gap-1 ${className}`}>
-      <div className="flex items-center bg-background/50 backdrop-blur-md border border-border rounded-xl overflow-hidden shadow-xl">
+      <div className="flex items-center bg-background/50 border border-border rounded-xl overflow-hidden shadow-xl">
         <Button
           variant="ghost"
           size="icon"

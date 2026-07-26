@@ -64,7 +64,7 @@ function CodeBlock({ code, lang }: { code: string; lang: string }) {
   };
 
   return (
-    <div className="my-5 rounded-xl overflow-hidden border border-border bg-[hsl(var(--card))]/60 backdrop-blur-sm group/code">
+    <div className="my-5 rounded-xl overflow-hidden border border-border bg-[hsl(var(--card))]/60 group/code">
       <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-primary/[0.04]">
         <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
           {lang || t("shell", "shell", "shell")}
@@ -256,7 +256,7 @@ export default function LessonDetailPage() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Reading-progress bar, pinned under the navbar. */}
       <div className="fixed top-0 left-0 right-0 z-40 h-0.5 bg-transparent">
-        <div className="h-full bg-gradient-to-r from-primary to-accent transition-[width] duration-150" style={{ width: `${readProgress}%` }} />
+        <div className="h-full bg-primary transition-[width] duration-150" style={{ width: `${readProgress}%` }} />
       </div>
 
       <div className="max-w-6xl mx-auto px-6 pt-28 pb-24">

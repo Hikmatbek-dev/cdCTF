@@ -53,7 +53,7 @@ export function HeroTerminal() {
     <div className="relative">
       {/* Glow pooled under the window. */}
       <div
-        className="absolute -inset-8 rounded-[3rem] blur-3xl pointer-events-none"
+        className="absolute -inset-8 rounded-xl blur-3xl pointer-events-none"
         style={{ background: "radial-gradient(60% 60% at 50% 50%, hsl(var(--primary) / 0.28), transparent 70%)" }}
         aria-hidden="true"
       />
@@ -82,7 +82,7 @@ export function HeroTerminal() {
 
       {/* Floating badges — depth, and a hint at the reward. */}
       <div className="absolute -right-3 sm:-right-6 top-16 glass-card !p-3 flex items-center gap-2.5 animate-float shadow-xl">
-        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
           <Award className="w-4.5 h-4.5 text-white" />
         </div>
         <div className="leading-tight">

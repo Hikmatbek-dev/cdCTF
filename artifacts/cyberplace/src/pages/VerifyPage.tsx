@@ -41,7 +41,7 @@ export default function VerifyPage() {
 
   return (
     <div className="min-h-screen bg-background pt-24 relative overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-primary/5 rounded-full blur-[130px] pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-primary/5 rounded-full hidden pointer-events-none" />
 
       <div className="max-w-2xl mx-auto px-4 py-8 relative z-10">
         <div className="text-center mb-10">
@@ -85,7 +85,7 @@ export default function VerifyPage() {
         )}
 
         {status === "ok" && result && (
-          <div className="rounded-[2rem] border border-emerald-500/30 bg-gradient-to-b from-emerald-500/5 to-transparent p-8" data-testid="verify-ok">
+          <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-b from-emerald-500/5 to-transparent p-8" data-testid="verify-ok">
             <div className="flex items-center gap-2 text-emerald-500 font-semibold mb-6">
               <BadgeCheck className="w-5 h-5" /> {t("Verified — genuine credential", "Tasdiqlandi — haqiqiy sertifikat", "Подтверждено — подлинный сертификат")}
             </div>

@@ -94,7 +94,7 @@
   --app-font-sans: "Inter", system-ui, sans-serif;
   --app-font-display: "Inter", system-ui, sans-serif;
   --app-font-mono: "JetBrains Mono", ui-monospace, monospace;
-  --radius: 0.9rem;
+  --radius: 0.65rem;
 
   --glow: 262 62% 48%;
   --grid-line: 262 30% 12%;
@@ -173,21 +173,9 @@
     @apply font-sans antialiased bg-background text-foreground selection:bg-primary/25 selection:text-foreground;
   }
 
-  /* Two soft aurora glows — violet up top, blue to the side — fixed so they
-     never repaint on scroll. This is what makes the deep-violet page feel like
-     it has depth and light behind the glass. Purely decorative. */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background:
-      radial-gradient(70rem 45rem at 50% -12%, hsl(var(--primary) / 0.16), transparent 68%),
-      radial-gradient(55rem 35rem at 100% 5%, hsl(var(--accent) / 0.12), transparent 70%),
-      radial-gradient(45rem 30rem at 0% 100%, hsl(var(--primary) / 0.08), transparent 70%);
-  }
-  /* App chrome sits above the glow. */
+  /* Strong minimalist: the page is one calm, flat surface. No aurora glow, no
+     light "behind glass" — depth comes from hairline borders and whitespace,
+     not decorative gradients. */
   #root { position: relative; z-index: 1; }
 
   h1, h2, h3, h4, h5, h6 {
@@ -200,97 +188,66 @@
    chrome: frosted glass cards, glossy violet→blue buttons, and a gradient
    eyebrow label for the small caps above headings. */
 @layer components {
-  /* Frosted glass: a violet→blue sheen laid over the (blurred) card surface, a
-     hairline highlight along the top edge, and a soft violet drop-glow so the
-     card floats above the aurora background. On hover the border and glow lift. */
+  /* Strong minimalist card: a flat solid surface and a single hairline border.
+     No frost, no glow, no gradient sheen. Depth is the border and the space
+     around it; on hover the border simply firms up. */
   .glass-card {
-    @apply relative border p-6 transition-all duration-200;
-    border-radius: 1.15rem;
+    @apply relative border p-6 transition-colors duration-150;
+    border-radius: var(--radius-lg);
     border-color: hsl(var(--card-border));
-    background-image:
-      linear-gradient(135deg, hsl(var(--primary) / 0.10), hsl(var(--accent) / 0.05)),
-      linear-gradient(180deg, hsl(var(--card) / 0.92), hsl(var(--card) / 0.72));
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow:
-      0 16px 50px -24px hsl(var(--glow) / 0.40),
-      inset 0 1px 0 0 hsl(0 0% 100% / 0.10);
+    background-color: hsl(var(--card));
   }
   .glass-card:hover {
-    border-color: hsl(var(--primary) / 0.45);
-    box-shadow:
-      0 0 0 1px hsl(var(--primary) / 0.20),
-      0 20px 60px -20px hsl(var(--glow) / 0.55),
-      inset 0 1px 0 0 hsl(0 0% 100% / 0.14);
+    border-color: hsl(var(--border) / 0.85);
   }
 
-  /* Glossy violet→blue fill, white text, a top highlight and a coloured drop-
-     glow that intensifies on hover. This is the signature "premium" button. */
+  /* Solid accent button. One flat violet fill (the WCAG-safe stop), white text,
+     no gradient and no glow; hover just darkens a touch. */
   .cyber-button {
-    @apply inline-flex items-center justify-center gap-2 text-white px-5 py-2.5 font-semibold text-sm transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;
-    border-radius: 0.8rem;
-    background-image: linear-gradient(135deg, hsl(var(--btn-from)), hsl(var(--btn-to)));
-    box-shadow:
-      0 10px 28px -8px hsl(var(--glow) / 0.65),
-      inset 0 1px 0 0 hsl(0 0% 100% / 0.25);
+    @apply inline-flex items-center justify-center gap-2 text-white px-5 py-2.5 font-semibold text-sm transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none;
+    border-radius: var(--radius-md);
+    background-color: hsl(var(--btn-from));
   }
   .cyber-button:hover:not(:disabled) {
-    box-shadow:
-      0 14px 36px -6px hsl(var(--glow) / 0.85),
-      inset 0 1px 0 0 hsl(0 0% 100% / 0.3);
-    filter: brightness(1.06);
+    background-color: hsl(var(--btn-to));
   }
 
+  /* Quiet secondary: transparent with a hairline border; hover fills faintly. */
   .cyber-button-outline {
-    @apply inline-flex items-center justify-center gap-2 border text-foreground px-5 py-2.5 font-medium text-sm transition-all disabled:opacity-50 disabled:pointer-events-none;
-    border-radius: 0.8rem;
+    @apply inline-flex items-center justify-center gap-2 border text-foreground px-5 py-2.5 font-medium text-sm transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none;
+    border-radius: var(--radius-md);
     border-color: hsl(var(--border));
-    background-image: linear-gradient(180deg, hsl(var(--card) / 0.6), hsl(var(--card) / 0.35));
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background-color: transparent;
   }
   .cyber-button-outline:hover:not(:disabled) {
-    border-color: hsl(var(--primary) / 0.5);
-    background-image: linear-gradient(180deg, hsl(var(--primary) / 0.12), hsl(var(--accent) / 0.06));
+    border-color: hsl(var(--primary) / 0.55);
+    background-color: hsl(var(--primary) / 0.06);
   }
 
-  /* The small caps above a heading — "MODUL 06 · ILG'OR" — now a violet→blue
-     gradient instead of a flat colour, so the eyebrow carries the brand too. */
+  /* Small-caps label above a heading — a single flat accent colour, no gradient. */
   .eyebrow {
     @apply font-mono text-[11px] uppercase tracking-[0.18em] font-semibold inline-flex items-center gap-2;
-    background-image: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: hsl(var(--primary));
     width: fit-content;
   }
-  /* The gradient clips to the text glyphs, but an icon inside the eyebrow uses
-     currentColor — which the transparent text colour would erase. Give icons a
-     solid violet so they stay visible. */
   .eyebrow svg {
     color: hsl(var(--primary));
-    -webkit-text-fill-color: hsl(var(--primary));
   }
 
-  /* A coloured glow for elements that deserve emphasis (an active progress bar,
-     a featured badge). Not sprayed on every surface. */
+  /* Emphasis without glow: a thin accent ring. Kept for API compatibility with
+     the many `neon-glow` call sites; it just no longer glows. */
   .neon-glow {
-    box-shadow: 0 0 22px -4px hsl(var(--glow) / 0.6);
+    box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.25);
   }
 
   .terminal-input {
-    @apply border border-input rounded-lg px-4 py-2.5 text-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/25;
-    background-color: hsl(var(--card) / 0.5);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    @apply border border-input rounded-lg px-4 py-2.5 text-sm transition-colors focus:border-primary focus:ring-2 focus:ring-primary/25;
+    background-color: hsl(var(--card));
   }
 
-  /* Violet→blue gradient text for hero headings and accents. */
+  /* Accent heading text — a single flat colour now, not a gradient. */
   .gradient-text {
-    background-image: linear-gradient(120deg, hsl(var(--primary)), hsl(var(--accent)));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: hsl(var(--primary));
   }
 }
 
@@ -342,18 +299,13 @@
   --glow: 262 62% 48%;
 }
 
-/* Inside a bright band the frosted-glass treatment reads as muddy grey, so
-   cards there become clean opaque surfaces with a soft neutral shadow. */
+/* In a bright band the card is a clean flat white surface with a hairline
+   border — same minimalist treatment, inverted palette. */
 .dark .section-alt .glass-card {
-  background-image: none;
   background-color: hsl(var(--card));
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  box-shadow: 0 1px 2px hsl(262 30% 12% / 0.06), 0 8px 24px -12px hsl(262 30% 12% / 0.18);
 }
 .dark .section-alt .glass-card:hover {
-  border-color: hsl(var(--primary) / 0.45);
-  box-shadow: 0 2px 4px hsl(262 30% 12% / 0.07), 0 16px 36px -14px hsl(262 30% 12% / 0.26);
+  border-color: hsl(var(--border) / 0.85);
 }
 
 /* ── Printing a credential ───────────────────────────────────────────────────
@@ -445,8 +397,8 @@ details:not([open]) > summary .chev-open { display: none; }
   50% { transform: translateY(-6px); }
 }
 @keyframes cd-pulse-glow {
-  0%, 100% { box-shadow: 0 0 18px -6px hsl(var(--glow) / 0.4); }
-  50% { box-shadow: 0 0 28px -4px hsl(var(--glow) / 0.7); }
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: none; }
 }
 .animate-float { animation: cd-float 6s ease-in-out infinite; }
 .animate-pulse-glow { animation: cd-pulse-glow 3.5s ease-in-out infinite; }
