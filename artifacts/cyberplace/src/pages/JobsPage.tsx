@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Briefcase, MapPin, Building2, Plus, ExternalLink, Trash2, EyeOff, Eye, Send, Users, Check } from "lucide-react";
+import { Briefcase, MapPin, Building2, Plus, ExternalLink, Trash2, EyeOff, Eye, Send, Users, Check, ShieldCheck } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -148,6 +148,11 @@ export default function JobsPage() {
             <h1 className="text-4xl font-display font-bold tracking-tight">{t("Jobs", "Ishlar", "Вакансии")}</h1>
             <p className="text-muted-foreground">{t("Cybersecurity roles from companies in the community.", "Hamjamiyatdagi kompaniyalardan kiberxavfsizlik ishlari.", "Роли в кибербезопасности от компаний сообщества.")}</p>
           </div>
+          <Link href="/verify" className="ml-auto hidden sm:block">
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <ShieldCheck className="w-4 h-4" /> {t("Verify a credential", "Sertifikatni tekshirish", "Проверить сертификат")}
+            </Button>
+          </Link>
         </div>
 
         {/* Employer panel. A logged-in employer can post; anyone else logged in

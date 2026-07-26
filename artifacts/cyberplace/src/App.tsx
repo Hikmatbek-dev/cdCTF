@@ -25,6 +25,7 @@ import ScoreboardPage from "@/pages/ScoreboardPage";
 import TalentPage from "@/pages/TalentPage";
 import JobsPage from "@/pages/JobsPage";
 import ImpactPage from "@/pages/ImpactPage";
+import VerifyPage from "@/pages/VerifyPage";
 import CompetitionsPage from "@/pages/CompetitionsPage";
 import CompetitionDetailPage from "@/pages/CompetitionDetailPage";
 import ProfilePage from "@/pages/ProfilePage";
@@ -166,6 +167,9 @@ function Router() {
           </Route>
           <Route path="/impact">
             {() => <PageTransition><ImpactPage /></PageTransition>}
+          </Route>
+          <Route path="/verify">
+            {() => <PageTransition><VerifyPage /></PageTransition>}
           </Route>
           <Route path="/competitions">
             {() => <PageTransition><CompetitionsPage /></PageTransition>}
