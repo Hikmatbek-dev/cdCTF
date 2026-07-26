@@ -140,6 +140,8 @@ SK=$(curl -s $API/users/$UID_/skills)
 check "$(echo "$SK" | python3 -c 'import sys,json;d=json.load(sys.stdin);s=[x for x in d["skills"] if x["category"]=="Web"];print(s[0]["solved"] if s else "yo_q")')" "1" "Web'da 1 yechim"
 check "$(echo "$SK" | python3 -c 'import sys,json;d=json.load(sys.stdin);s=[x for x in d["skills"] if x["category"]=="Crypto"];print(s[0]["solved"] if s else "yo_q")')" "1" "Crypto'da 1 yechim"
 check "$(echo "$SK" | python3 -c 'import sys,json;d=json.load(sys.stdin);s=[x for x in d["skills"] if x["category"]=="Web"][0];print(0 <= s["progress"] <= 1)')" "True" "progress 0..1 oralig'ida"
+# Profil javobi streak maydonlarini ham qaytaradi (badge shartlari uchun).
+check "$(curl -s $API/users/me/profile -H "Authorization: Bearer $T" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(isinstance(d.get("longestStreak"),int) and isinstance(d.get("currentStreak"),int))')" "True" "profil streak maydonlarini qaytaradi"
 
 echo
 echo "=== ⭐ GET profil bazani O'ZGARTIRMAYDI (idempotent) ==="

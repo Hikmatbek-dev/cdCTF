@@ -766,6 +766,8 @@ export const GetUserProfileResponse = zod.object({
     .boolean()
     .optional()
     .describe("The learner has flagged themselves as available to recruiters."),
+  currentStreak: zod.number().optional(),
+  longestStreak: zod.number().optional(),
   solvedCtf: zod.array(
     zod.object({
       id: zod.number(),
@@ -850,6 +852,8 @@ export const UpdateUserProfileResponse = zod.object({
     .boolean()
     .optional()
     .describe("The learner has flagged themselves as available to recruiters."),
+  currentStreak: zod.number().optional(),
+  longestStreak: zod.number().optional(),
   solvedCtf: zod.array(
     zod.object({
       id: zod.number(),
@@ -2165,6 +2169,8 @@ export const GetMyProfileResponse = zod.object({
     .boolean()
     .optional()
     .describe("The learner has flagged themselves as available to recruiters."),
+  currentStreak: zod.number().optional(),
+  longestStreak: zod.number().optional(),
   solvedCtf: zod.array(
     zod.object({
       id: zod.number(),

@@ -178,6 +178,7 @@ async function getProfileData(id: number, requestingUserId?: number, requestingU
     points: earnsPoints(user) ? user.points : 0,
     role: user.role, emailVerified: user.emailVerified, isBlocked: user.isBlocked,
     openToWork: user.openToWork,
+    currentStreak: user.currentStreak, longestStreak: user.longestStreak,
     createdAt: user.createdAt, rank,
     titles: userTitles.map(t => ({ id: t.id, name: t.name, category: t.category, points: t.points, earnedAt: t.earnedAt })),
     solvedCtf, completedLessons, competitionHistory,

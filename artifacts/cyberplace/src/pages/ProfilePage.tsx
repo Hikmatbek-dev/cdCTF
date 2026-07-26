@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useRoute, Link, useLocation } from "wouter";
-import { Trophy, BookOpen, Target, Calendar, Share2, Shield, Briefcase } from "lucide-react";
+import { Trophy, BookOpen, Target, Calendar, Share2, Shield, Briefcase, Flame, Flag, Star, Award } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
 import { useGetUserProfile, getGetUserProfileQueryKey } from "@workspace/api-client-react";
@@ -98,6 +98,23 @@ export default function ProfilePage() {
   const completedLessons = normalizeArray<any>(profile.completedLessons, ["completedLessons", "data", "items"]);
   const competitionHistory = normalizeArray<any>(profile.competitionHistory, ["competitionHistory", "competitions", "data", "items"]);
   const skills = normalizeArray<{ category: string; solved: number; total: number; progress: number }>(skillsData?.skills, ["skills", "data", "items"]);
+
+  // Badges — milestones computed from the numbers the profile already carries,
+  // so there is nothing to award or store. Earned ones show in colour, the rest
+  // stay locked as a goal to chase.
+  const longestStreak = (profile as any).longestStreak ?? 0;
+  const level = levelFromPoints(profile.points).level;
+  const badges = [
+    { id: "first-solve", icon: Flag, earned: solvedCtf.length >= 1, label: t("First solve", "Ilk yechim", "Первое решение") },
+    { id: "first-lesson", icon: BookOpen, earned: completedLessons.length >= 1, label: t("First lesson", "Ilk dars", "Первый урок") },
+    { id: "ten-solves", icon: Target, earned: solvedCtf.length >= 10, label: t("10 solves", "10 yechim", "10 решений") },
+    { id: "fifty-solves", icon: Award, earned: solvedCtf.length >= 50, label: t("50 solves", "50 yechim", "50 решений") },
+    { id: "streak-7", icon: Flame, earned: longestStreak >= 7, label: t("7-day streak", "7 kunlik seriya", "7 дней подряд") },
+    { id: "streak-30", icon: Flame, earned: longestStreak >= 30, label: t("30-day streak", "30 kunlik seriya", "30 дней подряд") },
+    { id: "level-5", icon: Star, earned: level >= 5, label: t("Level 5", "5-daraja", "Уровень 5") },
+    { id: "titled", icon: Trophy, earned: titles.length >= 1, label: t("First title", "Ilk unvon", "Первый титул") },
+  ];
+  const earnedBadges = badges.filter(b => b.earned).length;
 
   // No `overflow-hidden` on the root: it clipped the fixed backdrop below, and
   // on a page whose content can exceed the viewport it is a way to lose content
@@ -251,6 +268,25 @@ export default function ProfilePage() {
           </div>
 
           <div className="space-y-12">
+            {/* Badges — milestones, earned in colour, locked ones greyed. */}
+            <section className="glass-card p-8 border-border rounded-[2.5rem]" data-testid="badges">
+              <h2 className="text-sm font-semibold text-muted-foreground mb-8 flex items-center gap-2">
+                <Award className="w-4 h-4" />
+                {t("Badges", "Nishonlar", "Значки")}
+                <span className="ml-auto text-xs tabular-nums">{earnedBadges}/{badges.length}</span>
+              </h2>
+              <div className="grid grid-cols-4 gap-4">
+                {badges.map(b => (
+                  <div key={b.id} className="flex flex-col items-center gap-2 text-center" data-testid={`badge-${b.id}`} title={b.label}>
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${b.earned ? "bg-gradient-to-br from-primary to-accent text-white shadow-lg shadow-primary/20" : "bg-muted/30 text-muted-foreground/40"}`}>
+                      <b.icon className="w-5 h-5" />
+                    </div>
+                    <span className={`text-[10px] leading-tight ${b.earned ? "text-foreground" : "text-muted-foreground/40"}`}>{b.label}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
             {/* Skill tree — mastery per CTF category. */}
             {skills.length > 0 && (
               <section className="glass-card p-8 border-border rounded-[2.5rem]" data-testid="skill-tree">

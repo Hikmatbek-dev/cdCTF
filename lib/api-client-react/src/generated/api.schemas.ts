@@ -562,6 +562,8 @@ export interface UserProfile {
   isBlocked: boolean;
   /** The learner has flagged themselves as available to recruiters. */
   openToWork?: boolean;
+  currentStreak?: number;
+  longestStreak?: number;
   solvedCtf: UserProfileSolvedCtfItem[];
   completedLessons: UserProfileCompletedLessonsItem[];
   competitionHistory: UserProfileCompetitionHistoryItem[];

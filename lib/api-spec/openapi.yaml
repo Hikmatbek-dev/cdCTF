@@ -3303,6 +3303,10 @@ components:
         openToWork:
           type: boolean
           description: The learner has flagged themselves as available to recruiters.
+        currentStreak:
+          type: integer
+        longestStreak:
+          type: integer
         solvedCtf:
           type: array
           items:
