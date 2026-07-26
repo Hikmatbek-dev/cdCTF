@@ -16,6 +16,7 @@ type DashboardResponse = {
     completedLessons: Array<{ lessonId: number; completedAt: string | null }>;
   };
   titles: Array<{ id: number | null; name: string | null; category: string | null; earnedAt: string | null }>;
+  nextLesson: { id: number; title: string; titleUz: string | null; titleRu: string | null; moduleId: number | null } | null;
 };
 
 async function fetchDashboard() {
@@ -130,6 +131,33 @@ export default function DashboardPage() {
               </div>
               <button className="cyber-button h-11 px-6 shrink-0">
                 {t("Start module 01", "01-moduldan boshlash", "Начать с модуля 01")}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </Link>
+        )}
+
+        {/* Continue learning — resume at the next incomplete lesson so a returning
+            learner picks up exactly where they left off. */}
+        {data.progress.completedLessonCount > 0 && data.nextLesson && (
+          <Link href={`/learn/${data.nextLesson.id}`} className="block mb-10">
+            <div className="glass-card !p-8 border-primary/30 flex flex-col sm:flex-row sm:items-center justify-between gap-6 group cursor-pointer">
+              <div className="flex items-center gap-5">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0 neon-glow">
+                  <BookOpen className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <div className="eyebrow mb-1">{t("Continue learning", "O'qishni davom eting", "Продолжить обучение")}</div>
+                  <h2 className="text-xl font-semibold group-hover:text-primary transition-colors">
+                    {t(data.nextLesson.title, data.nextLesson.titleUz || data.nextLesson.title, data.nextLesson.titleRu || data.nextLesson.title)}
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {t("Pick up where you left off.", "Qolgan joyingizdan davom eting.", "Продолжите с того места, где остановились.")}
+                  </p>
+                </div>
+              </div>
+              <button className="cyber-button h-11 px-6 shrink-0">
+                {t("Continue", "Davom etish", "Продолжить")}
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

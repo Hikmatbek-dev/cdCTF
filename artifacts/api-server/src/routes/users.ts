@@ -2,8 +2,8 @@ import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import multer from "multer";
 import { db } from "@workspace/db";
-import { usersTable, ctfAttemptsTable, ctfTasksTable, userLessonAttemptsTable, lessonsTable, competitionUsersTable, userTitlesTable, titlesTable } from "@workspace/db/schema";
-import { and, eq, or, sql } from "drizzle-orm";
+import { usersTable, ctfAttemptsTable, ctfTasksTable, userLessonAttemptsTable, lessonsTable, modulesTable, competitionUsersTable, userTitlesTable, titlesTable } from "@workspace/db/schema";
+import { and, asc, eq, or, sql } from "drizzle-orm";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import { UpdateUserProfileBody } from "@workspace/api-zod";
@@ -47,6 +47,20 @@ router.get("/me/dashboard", authenticateToken, async (req, res) => {
     rankOf(user),
   ]);
 
+  // Resume point: the first published lesson, in module then lesson order, that
+  // this learner has not completed. Powers the dashboard "Continue" card so the
+  // curriculum picks up where they left off instead of dumping them at the top.
+  const completedIds = new Set(completedLessons.map(l => l.lessonId));
+  const ordered = await db.select({
+    id: lessonsTable.id, title: lessonsTable.title, titleUz: lessonsTable.titleUz, titleRu: lessonsTable.titleRu,
+    moduleId: lessonsTable.moduleId,
+  })
+    .from(lessonsTable)
+    .innerJoin(modulesTable, eq(lessonsTable.moduleId, modulesTable.id))
+    .where(and(eq(lessonsTable.isPublished, true), eq(modulesTable.isPublished, true)))
+    .orderBy(asc(modulesTable.orderIndex), asc(lessonsTable.orderIndex));
+  const nextLesson = ordered.find(l => !completedIds.has(l.id)) ?? null;
+
   res.json({
     user: { id: user.id, nickname: user.nickname, points: earnsPoints(user) ? user.points : 0, rank },
     progress: {
@@ -56,6 +70,7 @@ router.get("/me/dashboard", authenticateToken, async (req, res) => {
       currentStreak: user.currentStreak,
       longestStreak: user.longestStreak,
     },
+    nextLesson,
     recent: {
       solvedCtf: solvedCtf.slice(-5).reverse().map(item => ({ ctfId: item.ctfId, solvedAt: item.solvedAt })),
       completedLessons: completedLessons.slice(-5).reverse().map(item => ({ lessonId: item.lessonId, completedAt: item.completedAt })),

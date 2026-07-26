@@ -144,6 +144,17 @@ check "$(echo "$SK" | python3 -c 'import sys,json;d=json.load(sys.stdin);s=[x fo
 check "$(curl -s $API/users/me/profile -H "Authorization: Bearer $T" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(isinstance(d.get("longestStreak"),int) and isinstance(d.get("currentStreak"),int))')" "True" "profil streak maydonlarini qaytaradi"
 
 echo
+echo "=== ⭐ DASHBOARD nextLesson — tugallangan dars qaytmaydi ==="
+NLMOD=$(q "INSERT INTO modules (slug,title,description,order_index,is_published) VALUES ('${TAG}-nl','NL','d',1,true) RETURNING id")
+NLL1=$(q "INSERT INTO lessons (title,content,category_id,module_id,order_index,points,is_published) VALUES ('${TAG}_nll1','c',$CAT,$NLMOD,1,10,true) RETURNING id")
+q "INSERT INTO lessons (title,content,category_id,module_id,order_index,points,is_published) VALUES ('${TAG}_nll2','c',$CAT,$NLMOD,2,10,true)" > /dev/null
+q "INSERT INTO user_lesson_attempts (user_id,lesson_id,status,completed_at) VALUES ($UID_,$NLL1,'completed',now())" > /dev/null
+NLRESP=$(curl -s $API/users/me/dashboard -H "Authorization: Bearer $T")
+check "$(echo "$NLRESP" | python3 -c 'import sys,json;print("nextLesson" in json.load(sys.stdin))')" "True" "dashboard nextLesson maydonini qaytaradi"
+NLID=$(echo "$NLRESP" | python3 -c 'import sys,json;d=json.load(sys.stdin);print((d.get("nextLesson") or {}).get("id","null"))')
+check "$([ "$NLID" != "$NLL1" ] && echo ok || echo bad)" "ok" "tugallangan dars nextLesson sifatida qaytmaydi"
+
+echo
 echo "=== ⭐ GET profil bazani O'ZGARTIRMAYDI (idempotent) ==="
 psql "$DATABASE_URL" -q -c "UPDATE users SET points = 350 WHERE nickname='$U';"
 curl -s -o /dev/null $API/users/me/dashboard -H "Authorization: Bearer $T"
