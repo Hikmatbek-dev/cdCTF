@@ -8,7 +8,6 @@ import { Pagination } from "@/components/Pagination";
 import { useLang } from "@/lib/LanguageContext";
 import { useListCtfChallenges, getListCtfChallengesQueryKey } from "@workspace/api-client-react";
 import { normalizeCtfChallenges } from "@/lib/api-shapes";
-import { motion, AnimatePresence } from "framer-motion";
 import { FadeIn } from "@/components/PageTransition";
 
 /** Order difficulties by how hard they are, not by how many exist. */
@@ -174,40 +173,26 @@ export default function CtfListPage() {
           </div>
         </FadeIn>
 
-        {/* Assets Grid */}
-        <AnimatePresence mode="wait">
+        {/* Challenge grid. Rendered directly — an enter/exit animation wrapper
+            here could leave the grid stuck on skeletons if a transition stalled,
+            hiding challenges that had already loaded. */}
+        <div>
           {isLoading ? (
-            <motion.div 
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-            >
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {Array.from({ length: 8 }).map((_, i) => (
                 <Skeleton key={i} className="h-72 bg-foreground/5 rounded-xl" />
               ))}
-            </motion.div>
+            </div>
           ) : challenges.length === 0 ? (
-            <motion.div 
-              key="empty"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="glass-card py-40 text-center rounded-xl border-foreground/5"
-            >
+            <div className="glass-card py-40 text-center rounded-xl border-foreground/5">
               <div className="w-20 h-20 bg-foreground/5 border border-foreground/5 rounded-3xl flex items-center justify-center mx-auto mb-8 animate-float">
                 <Target className="w-10 h-10 text-muted-foreground/30" />
               </div>
               <h3 className="text-lg font-semibold mb-2">{t("Nothing matches these filters", "Bu filtrlarga mos topshiriq yo'q", "По этим фильтрам ничего нет")}</h3>
               <p className="text-sm text-muted-foreground">{t("Try clearing the search or picking another category.", "Qidiruvni tozalang yoki boshqa kategoriya tanlang.", "Очистите поиск или выберите другую категорию.")}</p>
-            </motion.div>
+            </div>
           ) : (
-            <motion.div 
-              key="grid"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="space-y-16"
-            >
+            <div className="space-y-16">
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {challenges.map((ch, i) => (
                   <FadeIn key={ch.id} delay={i * 0.05}>
@@ -264,9 +249,9 @@ export default function CtfListPage() {
                   onPageChange={handlePageChange}
                 />
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+        </div>
       </div>
     </div>
   );

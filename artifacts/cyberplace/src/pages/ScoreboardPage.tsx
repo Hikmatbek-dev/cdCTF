@@ -7,7 +7,6 @@ import { useLang } from "@/lib/LanguageContext";
 import { useGetScoreboard, getGetScoreboardQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/AuthContext";
 import { normalizeArray } from "@/lib/api-shapes";
-import { motion, AnimatePresence } from "framer-motion";
 import { FadeIn } from "@/components/PageTransition";
 
 export default function ScoreboardPage() {
@@ -107,37 +106,24 @@ export default function ScoreboardPage() {
           </FadeIn>
         )}
 
-        {/* Leaderboard Table */}
-        <AnimatePresence mode="wait">
+        {/* Leaderboard table. Rendered directly, with no enter/exit animation
+            wrapper: the rows are the content people came for, and an animation
+            layer here meant a stalled transition could leave the list stuck on
+            skeletons even after the data had arrived. */}
+        <div>
           {isLoading ? (
-            <motion.div 
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="space-y-4"
-            >
+            <div className="space-y-4">
               {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-24 bg-foreground/5 rounded-xl" />)}
-            </motion.div>
+            </div>
           ) : entries.length === 0 ? (
-            <motion.div 
-              key="empty"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="glass-card py-40 text-center rounded-xl border-foreground/5"
-            >
+            <div className="glass-card py-40 text-center rounded-xl border-foreground/5">
                <div className="w-20 h-20 bg-foreground/5 border border-foreground/5 rounded-3xl flex items-center justify-center mx-auto mb-8">
                 <Target className="w-10 h-10 text-muted-foreground/20" />
                </div>
                <p className="text-muted-foreground">{t("No players match your search", "Qidiruvingizga mos foydalanuvchi yo'q", "Игроки не найдены")}</p>
-            </motion.div>
+            </div>
           ) : (
-            <motion.div 
-              key="list"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="space-y-4"
-            >
+            <div className="space-y-4">
               <div className="glass-card p-2 rounded-xl border-foreground/5 bg-foreground/[0.01] mb-16 shadow-2xl">
                 {entries.map((entry, i) => {
                   const isMe = user?.id === entry.userId;
@@ -149,7 +135,7 @@ export default function ScoreboardPage() {
                   const rankGlow = rank === 1 ? "shadow-yellow-500/20" : rank === 2 ? "shadow-slate-400/20" : rank === 3 ? "shadow-amber-600/20" : "";
 
                   return (
-                    <FadeIn key={entry.userId} delay={i * 0.03}>
+                    <div key={entry.userId}>
                       <Link href={`/profile/${entry.userId}`}>
                         <div
                           className={`group flex items-center gap-8 p-6 md:p-8 transition-all duration-500 cursor-pointer rounded-xl mb-2 last:mb-0 hover:bg-foreground/5 hover:scale-[1.01] active:scale-[0.99] border border-transparent ${
@@ -207,7 +193,7 @@ export default function ScoreboardPage() {
                           </div>
                         </div>
                       </Link>
-                    </FadeIn>
+                    </div>
                   );
                 })}
               </div>
@@ -219,9 +205,9 @@ export default function ScoreboardPage() {
                   onPageChange={handlePageChange}
                 />
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+        </div>
       </div>
     </div>
   );
