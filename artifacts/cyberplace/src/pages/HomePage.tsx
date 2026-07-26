@@ -588,8 +588,8 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="border-t border-border py-14 relative">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="grid gap-10 sm:grid-cols-3 mb-10">
-            <div className="sm:col-span-1">
+          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 mb-10">
+            <div className="sm:col-span-2 lg:col-span-1">
               <div className="text-2xl font-bold tracking-tight mb-3">
                 <span className="gradient-text">cd</span><span className="text-foreground/60">CTF</span>
               </div>
@@ -619,6 +619,18 @@ export default function HomePage() {
               <ul className="space-y-2.5 text-sm">
                 <li><Link href="/scoreboard" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("Leaderboard", "Reyting", "Рейтинг")}</Link></li>
                 <li><Link href="/competitions" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("Competitions", "Musobaqalar", "Соревнования")}</Link></li>
+              </ul>
+            </div>
+            {/* Careers and the platform pages. Impact and the credential check
+                live here rather than in the main nav — they matter to employers
+                and visitors, not to someone working through the course. */}
+            <div>
+              <div className="eyebrow mb-4">{t("More", "Yana", "Ещё")}</div>
+              <ul className="space-y-2.5 text-sm">
+                <li><Link href="/jobs" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("Careers", "Karyera", "Карьера")}</Link></li>
+                <li><Link href="/talent" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("Hire from cdCTF", "cdCTF'dan yollash", "Наём с cdCTF")}</Link></li>
+                <li><Link href="/verify" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("Verify a credential", "Sertifikatni tekshirish", "Проверить сертификат")}</Link></li>
+                <li><Link href="/impact" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("Impact", "Ta'sir", "Влияние")}</Link></li>
               </ul>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Briefcase, MapPin, Building2, Plus, ExternalLink, Trash2, EyeOff, Eye, Send, Users, Check, ShieldCheck } from "lucide-react";
+import { Briefcase, MapPin, Building2, Plus, ExternalLink, Trash2, EyeOff, Eye, Send, Users, Check, ShieldCheck, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -145,13 +145,30 @@ export default function JobsPage() {
             <Briefcase className="w-7 h-7 text-primary" />
           </div>
           <div>
-            <h1 className="text-4xl font-display font-bold tracking-tight">{t("Jobs", "Ishlar", "Вакансии")}</h1>
+            <h1 className="text-4xl font-display font-bold tracking-tight">{t("Careers", "Karyera", "Карьера")}</h1>
             <p className="text-muted-foreground">{t("Cybersecurity roles from companies in the community.", "Hamjamiyatdagi kompaniyalardan kiberxavfsizlik ishlari.", "Роли в кибербезопасности от компаний сообщества.")}</p>
           </div>
           <Link href="/verify" className="ml-auto hidden sm:block">
             <Button variant="outline" size="sm" className="gap-1.5">
               <ShieldCheck className="w-4 h-4" /> {t("Verify a credential", "Sertifikatni tekshirish", "Проверить сертификат")}
             </Button>
+          </Link>
+        </div>
+
+        {/* Careers serves two opposite audiences. Say which is which up front,
+            rather than making people guess from a nav label. */}
+        <div className="grid sm:grid-cols-2 gap-3 mb-8">
+          <div className="rounded-xl border border-border bg-muted/20 px-5 py-4">
+            <div className="text-sm font-semibold mb-1">{t("Looking for a job", "Ish qidiryapsizmi", "Ищете работу")}</div>
+            <p className="text-xs text-muted-foreground">{t("Open positions are listed below. Apply with your cdCTF record attached.", "Ochiq ish o'rinlari quyida. cdCTF natijangiz bilan ariza bering.", "Открытые вакансии — ниже. Откликайтесь вместе со своим профилем cdCTF.")}</p>
+          </div>
+          <Link href="/talent">
+            <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 px-5 py-4 h-full hover:border-emerald-500/50 transition-colors cursor-pointer">
+              <div className="text-sm font-semibold mb-1 flex items-center gap-1.5">
+                {t("Hiring", "Xodim izlayapsizmi", "Нанимаете")} <ArrowRight className="w-3.5 h-3.5 text-emerald-500" />
+              </div>
+              <p className="text-xs text-muted-foreground">{t("Browse candidates who are open to work, ranked by what they have solved.", "Ishga tayyor nomzodlarni ko'ring — yechgan topshiriqlari bo'yicha saralangan.", "Смотрите кандидатов, открытых к работе, по их решённым заданиям.")}</p>
+            </div>
           </Link>
         </div>
 

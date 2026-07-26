@@ -42,16 +42,22 @@ export default function LearnPage() {
             <BookOpen className="w-3.5 h-3.5" />
             {t("cdCTF · Lessons", "cdCTF · Darslar", "cdCTF · Уроки")}
           </div>
+          {/* Named for what it is — a flat index of every lesson — so it does
+              not read as a second, competing course next to the module path. */}
           <h1 className="text-4xl font-bold tracking-tight mb-3">
-            <span className="gradient-text">{t("Academy", "O'rganish", "Академия")}</span>
+            <span className="gradient-text">{t("All lessons", "Barcha darslar", "Все уроки")}</span>
           </h1>
           <p className="text-muted-foreground max-w-2xl">
             {t(
-              "Individual lessons across every domain. For the structured six-month path, follow the Modules.",
-              "Har bir yo'nalish bo'yicha alohida darslar. Tuzilgan 6 oylik yo'l uchun Modullarni kuzating.",
-              "Отдельные уроки по всем направлениям. Для структурированного 6-месячного пути смотрите Модули.",
+              "Every lesson on the platform, searchable by topic — useful for looking one thing up.",
+              "Platformadagi barcha darslar, mavzu bo'yicha qidiriladi — bitta narsani izlash uchun qulay.",
+              "Все уроки платформы с поиском по темам — удобно, когда нужно найти что-то одно.",
             )}
           </p>
+          <Link href="/modules" className="inline-flex items-center gap-1.5 mt-3 text-sm text-primary hover:text-accent transition-colors">
+            {t("Starting out? Follow the module path instead", "Endi boshlayapsizmi? Modullar yo'lidan boring", "Только начинаете? Идите по пути модулей")}
+            <ChevronRight className="w-4 h-4" />
+          </Link>
         </header>
 
         <div className="flex flex-col lg:flex-row gap-10">

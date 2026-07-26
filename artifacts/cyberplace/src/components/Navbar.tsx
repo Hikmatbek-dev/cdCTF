@@ -18,14 +18,18 @@ import {
 // The standalone-lessons library (/learn) stays reachable from the footer and
 // from deep links; two competing "learn" buttons in the header only confused
 // people about where to start.
+// Five items, in the order someone actually moves through the site: learn,
+// practise, see where you stand, compete, then find work. It was seven, and two
+// of them — "Hire" (employers browsing candidates) and "Jobs" (candidates
+// browsing openings) — sat side by side with nothing to tell them apart. Both
+// now live under Careers, which opens on the job board and offers the employer
+// side there. Impact is a marketing page and moved to the footer.
 const NAV_LINKS = [
   { href: "/modules", label: { en: "Learn", uz: "O'rganish", ru: "Обучение" } },
-  { href: "/ctf", label: { en: "CTF", uz: "CTF", ru: "CTF" } },
+  { href: "/ctf", label: { en: "Practice", uz: "Mashq", ru: "Практика" } },
   { href: "/scoreboard", label: { en: "Ranking", uz: "Reyting", ru: "Рейтинг" } },
   { href: "/competitions", label: { en: "Events", uz: "Tadbirlar", ru: "События" } },
-  { href: "/talent", label: { en: "Hire", uz: "Yollash", ru: "Наём" } },
-  { href: "/jobs", label: { en: "Jobs", uz: "Ishlar", ru: "Вакансии" } },
-  { href: "/impact", label: { en: "Impact", uz: "Ta'sir", ru: "Влияние" } },
+  { href: "/jobs", label: { en: "Careers", uz: "Karyera", ru: "Карьера" } },
 ];
 
 export function Navbar() {
