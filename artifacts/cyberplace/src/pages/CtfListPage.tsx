@@ -55,7 +55,7 @@ export default function CtfListPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-32 pb-24 relative overflow-hidden">
+    <div className="min-h-screen bg-background text-foreground pt-24 sm:pt-32 pb-24 relative overflow-hidden">
       {/* Background Effects */}
       <div className="fixed inset-0 mono-grid opacity-20 pointer-events-none" />
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -63,20 +63,23 @@ export default function CtfListPage() {
         <div className="absolute bottom-[20%] left-[-10%] w-[40%] h-[40%] bg-accent/5 hidden rounded-full opacity-30" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
         {/* Header. The old one said MISSION_DATABASE over
             CONNECTION_ENCRYPTED // ACCESS_LEVEL: OPERATIVE, which tells a
             newcomer nothing about what this page is or how to use it. */}
-        <div className="mb-10">
+        <div className="mb-6 sm:mb-10">
           <FadeIn>
             <div className="eyebrow mb-3">
               <Shield className="w-3.5 h-3.5" />
               {t("cdCTF · Practice", "cdCTF · Amaliyot", "cdCTF · Практика")}
             </div>
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
+            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight mb-3 sm:mb-4">
               <span className="gradient-text">{t("CTF challenges", "CTF topshiriqlar", "CTF задания")}</span>
             </h1>
-            <p className="text-muted-foreground max-w-2xl leading-relaxed mb-6">
+            {/* The full explainer is desktop-only: on a phone it pushed the
+                challenges themselves below the fold. Small screens get the one
+                line that actually matters. */}
+            <p className="hidden sm:block text-muted-foreground max-w-2xl leading-relaxed mb-6">
               {t(
                 "Each challenge hides a secret string — the flag. Break in however you can, then submit the flag to score. Points go to the leaderboard.",
                 "Har topshiriqda yashirin satr — flag bor. Uni istalgan yo'l bilan toping va topshiring, ball olasiz. Ballar reytingga qo'shiladi.",
@@ -98,7 +101,7 @@ export default function CtfListPage() {
 
         {/* Filters Panel */}
         <FadeIn delay={0.1}>
-          <div className="glass-card p-6 flex flex-wrap items-center gap-6 mb-16 rounded-xl border-foreground/10">
+          <div className="glass-card p-4 sm:p-6 flex flex-wrap items-center gap-3 sm:gap-6 mb-8 sm:mb-16 rounded-xl border-foreground/10">
             <div className="relative flex-1 min-w-[300px]">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" aria-hidden="true" />
               {/* A placeholder is not a label: it vanishes as soon as you type,
