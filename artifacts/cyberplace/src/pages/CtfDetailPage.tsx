@@ -319,8 +319,14 @@ export default function CtfDetailPage() {
                       className="cyber-button h-18 px-12 group"
                       data-testid="button-submit-flag"
                     >
+                      {/* The button says what it does. It used to read
+                          "TRANSMIT" / "SYNCING…", which is set dressing, not a
+                          label — and it was the only untranslated control on
+                          the page a learner has to press to score. */}
                       <span className="flex items-center gap-3">
-                        {submitFlag.isPending ? "SYNCING..." : "TRANSMIT"}
+                        {submitFlag.isPending
+                          ? t("Checking…", "Tekshirilmoqda…", "Проверяем…")
+                          : t("Submit", "Topshirish", "Отправить")}
                         <Zap className="w-4 h-4 group-hover:scale-125 transition-transform" />
                       </span>
                     </button>

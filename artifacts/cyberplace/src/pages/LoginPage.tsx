@@ -172,7 +172,7 @@ export default function LoginPage() {
                     htmlFor="mfa-code"
                     className="block text-sm font-medium text-muted-foreground ml-1 mb-2"
                   >
-                    {t("VERIFICATION_CODE", "TASDIQLASH KODI", "КОД ПОДТВЕРЖДЕНИЯ")}
+                    {t("Verification code", "Tasdiqlash kodi", "Код подтверждения")}
                   </label>
                   <div className="relative">
                     <Shield className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/40" aria-hidden="true" />
@@ -205,7 +205,7 @@ export default function LoginPage() {
                 >
                   {verifyMutation.isPending
                     ? t("VERIFYING...", "TEKSHIRILMOQDA...", "ПРОВЕРКА...")
-                    : t("VERIFY", "TASDIQLASH", "ПОДТВЕРДИТЬ")}
+                    : t("Verify", "Tasdiqlash", "Подтвердить")}
                   <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
                 </Button>
 
@@ -214,7 +214,7 @@ export default function LoginPage() {
                   onClick={() => { setMfaToken(null); setCode(""); }}
                   className="w-full text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
-                  {t("BACK", "ORQAGA", "НАЗАД")}
+                  {t("Back", "Orqaga", "Назад")}
                 </button>
               </form>
             ) : (

@@ -29,7 +29,7 @@ const LINES: { text: string; cls?: string; d: number }[] = [
   { text: "[+] flag{uz_c7f_m4st3r}", cls: "text-primary font-semibold", d: 3400 },
 ];
 
-export function HeroTerminal() {
+export function HeroTerminal({ challengeCount }: { challengeCount?: number } = {}) {
   const { t } = useLang();
   const [shown, setShown] = useState(0);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -100,7 +100,13 @@ export function HeroTerminal() {
         </div>
         <div className="leading-tight">
           <div className="text-[11px] font-semibold font-mono">flag&#123;...&#125;</div>
-          <div className="text-[10px] text-muted-foreground">{t("40+ challenges", "40+ topshiriq", "40+ заданий")}</div>
+          {/* The live count. This badge said "40+" while the stat row beside it
+              read the real number — two different answers on one screen. */}
+          <div className="text-[10px] text-muted-foreground">
+            {challengeCount && challengeCount > 0
+              ? t(`${challengeCount} challenges`, `${challengeCount} topshiriq`, `${challengeCount} заданий`)
+              : t("Practice challenges", "Mashq topshiriqlari", "Практические задания")}
+          </div>
         </div>
       </div>
     </div>

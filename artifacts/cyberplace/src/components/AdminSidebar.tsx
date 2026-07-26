@@ -31,7 +31,7 @@ export function AdminSidebar() {
         </div>
 
         <Link href="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors mb-10 px-2">
-          <ChevronLeft className="w-3 h-3" /> {t("EXIT_TO_SITE", "SAYTGA QAYTISH", "ВЫХОД")}
+          <ChevronLeft className="w-3 h-3" /> {t("Back to the site", "Saytga qaytish", "Вернуться на сайт")}
         </Link>
         
         <nav className="space-y-1">

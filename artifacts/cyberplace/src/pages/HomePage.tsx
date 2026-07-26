@@ -144,7 +144,11 @@ export default function HomePage() {
                 {t("cdCTF · Cybersecurity Academy", "cdCTF · Kiberxavfsizlik akademiyasi", "cdCTF · Академия кибербезопасности")}
               </div>
               <h1 className="text-[2.75rem] sm:text-6xl lg:text-[4.25rem] font-bold tracking-tight leading-[1.04] mb-6">
-                {t("Learn to hack.", "Hacking'ni o'rganing.", "Учитесь взламывать.")}<br />
+                {/* The Uzbek line was "Hacking'ni o'rganing" — an English noun
+                    with a Uzbek suffix bolted on. "Hujumni" is the word people
+                    actually use, and it mirrors "Himoyani" the way the English
+                    pair mirrors itself. */}
+                {t("Learn to hack.", "Hujumni o'rganing.", "Учитесь взламывать.")}<br />
                 <span className="gradient-text">{t("Learn to defend.", "Himoyani o'rganing.", "Учитесь защищать.")}</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0 mb-9 leading-relaxed">
@@ -181,7 +185,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="lg:pl-4"><HeroTerminal /></div>
+            <div className="lg:pl-4"><HeroTerminal challengeCount={ctfCount} /></div>
           </section>
 
           {/* Trust band */}

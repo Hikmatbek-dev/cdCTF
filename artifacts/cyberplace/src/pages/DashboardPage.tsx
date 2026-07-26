@@ -230,7 +230,7 @@ export default function DashboardPage() {
                 {solvedCtf.length === 0 && completedLessons.length === 0 && (
                   <div className="py-24 text-center border-2 border-dashed border-border rounded-xl">
                     <p className="text-sm text-muted-foreground">
-                      {t("NO_STREAMS_DETECTED", "FAOLLIK YO'Q", "ПОТОКИ_ДАННЫХ_ОТСУТСТВУЮТ")}
+                      {t("Nothing here yet — your solved challenges and finished lessons will show up here", "Hozircha bo'sh — yechgan topshiriq va tugatgan darslaringiz shu yerda chiqadi", "Пока пусто — здесь появятся решённые задания и пройденные уроки")}
                     </p>
                   </div>
                 )}
@@ -255,7 +255,7 @@ export default function DashboardPage() {
                 )) : (
                   <div className="text-center py-20 w-full border border-dashed border-primary/20 rounded-xl">
                     <p className="text-sm leading-relaxed text-muted-foreground px-8">
-                      {t("INSUFFICIENT_DATA_FOR_TITLES", "UNVONLAR YO'Q", "НЕДОСТАТОЧНО_ДАННЫХ")}
+                      {t("No titles yet — solve three challenges in a category to earn one", "Hali unvon yo'q — unvon uchun bitta yo'nalishda uchta topshiriq yeching", "Титулов пока нет — решите три задания в одной категории")}
                     </p>
                   </div>
                 )}
