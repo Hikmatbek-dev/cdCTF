@@ -59,14 +59,26 @@ export default function TalentPage() {
             {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-xl bg-foreground/5" />)}
           </div>
         ) : entries.length === 0 ? (
-          <div className="glass-card rounded-xl py-24 text-center border-foreground/5">
-            <div className="w-20 h-20 rounded-full bg-emerald-500/5 flex items-center justify-center mx-auto mb-6">
-              <Briefcase className="w-8 h-8 text-emerald-500/40" />
+          /* Tell a learner exactly where the switch is — that is the only way
+              this directory ever fills up. */
+          <div className="glass-card rounded-xl py-16 px-8 text-center border-foreground/5">
+            <div className="w-16 h-16 rounded-full bg-emerald-500/5 flex items-center justify-center mx-auto mb-5">
+              <Briefcase className="w-7 h-7 text-emerald-500/40" />
             </div>
             <h3 className="text-xl font-display font-bold mb-2">{t("No one is open to work yet", "Hozircha ishga tayyor odam yo'q", "Пока никто не открыт для работы")}</h3>
-            <p className="text-sm text-muted-foreground">
-              {t("Learners can switch this on in their settings.", "O'quvchilar buni sozlamalarda yoqishlari mumkin.", "Соискатели могут включить это в настройках.")}
+            <p className="text-sm text-muted-foreground max-w-md mx-auto mb-7">
+              {t("Learning here and want to be found? Turn on \"Open to work\" in your settings and your profile shows up on this page.",
+                 "Bu yerda o'rganyapsizmi va topilishni istaysizmi? Sozlamalarda \"Ishga tayyorman\" ni yoqing — profilingiz shu sahifada chiqadi.",
+                 "Учитесь здесь и хотите, чтобы вас нашли? Включите «Открыт для работы» в настройках — ваш профиль появится на этой странице.")}
             </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link href="/profile/edit">
+                <button className="cyber-button h-11 px-6">{t("Open my settings", "Sozlamalarimni ochish", "Открыть настройки")}</button>
+              </Link>
+              <Link href="/scoreboard">
+                <button className="cyber-button-outline h-11 px-6">{t("See the leaderboard", "Reytingni ko'rish", "Смотреть рейтинг")}</button>
+              </Link>
+            </div>
           </div>
         ) : (
           <>

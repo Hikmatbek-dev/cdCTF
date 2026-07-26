@@ -48,12 +48,32 @@ export default function CompetitionsPage() {
             {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-xl bg-foreground/5" />)}
           </div>
         ) : competitionList.length === 0 ? (
-          <div className="glass-card rounded-xl py-24 text-center border-foreground/5">
-            <div className="w-20 h-20 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-6">
-              <Trophy className="w-8 h-8 text-primary/40" />
+          /* An empty page that only says "check back later" is a dead end.
+              Send people to the 97 challenges that are live right now, and tell
+              a company how to put its name on the first event. */
+          <div className="glass-card rounded-xl py-16 px-8 text-center border-foreground/5">
+            <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-5">
+              <Trophy className="w-7 h-7 text-primary/40" />
             </div>
-            <h3 className="text-xl font-display font-bold mb-2">{t("No competitions scheduled", "Hozircha musobaqalar yo'q", "Пока нет соревнований")}</h3>
-            <p className="text-sm text-muted-foreground">{t("Check back later for upcoming elite events.", "Yangi musobaqalarni kuting.", "Следите за новыми событиями.")}</p>
+            <h3 className="text-xl font-display font-bold mb-2">{t("No competitions scheduled yet", "Hozircha musobaqalar yo'q", "Пока нет соревнований")}</h3>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto mb-7">
+              {t("Timed events run here. In the meantime the full challenge set is open — practise any time.",
+                 "Vaqtli tadbirlar shu yerda o'tadi. Shu vaqtda to'liq topshiriqlar to'plami ochiq — istalgan vaqtda mashq qiling.",
+                 "Здесь проходят события по времени. А пока весь набор заданий открыт — тренируйтесь в любое время.")}
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link href="/ctf">
+                <button className="cyber-button h-11 px-6">{t("Practise now", "Hozir mashq qilish", "Тренироваться сейчас")}</button>
+              </Link>
+              <Link href="/modules">
+                <button className="cyber-button-outline h-11 px-6">{t("Start learning", "O'rganishni boshlash", "Начать обучение")}</button>
+              </Link>
+            </div>
+            <p className="text-xs text-muted-foreground mt-8">
+              {t("Want to sponsor the first event? Get in touch — your brand goes on it.",
+                 "Birinchi tadbirga homiylik qilmoqchimisiz? Bog'laning — brendingiz unda bo'ladi.",
+                 "Хотите стать спонсором первого события? Напишите — ваш бренд будет на нём.")}
+            </p>
           </div>
         ) : (
           <div className="space-y-6">

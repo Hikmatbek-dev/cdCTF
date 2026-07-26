@@ -242,10 +242,24 @@ export default function JobsPage() {
         {isLoading ? (
           <div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl bg-foreground/5" />)}</div>
         ) : jobs.length === 0 ? (
-          <div className="glass-card rounded-xl py-24 text-center border-foreground/5">
-            <div className="w-20 h-20 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-6"><Briefcase className="w-8 h-8 text-primary/40" /></div>
+          /* Both sides of an empty board get a next step: a candidate goes and
+              builds a record worth hiring, a company posts the first role. */
+          <div className="glass-card rounded-xl py-16 px-8 text-center border-foreground/5">
+            <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-5"><Briefcase className="w-7 h-7 text-primary/40" /></div>
             <h3 className="text-xl font-display font-bold mb-2">{t("No open positions yet", "Hozircha ochiq ish o'rni yo'q", "Пока нет открытых вакансий")}</h3>
-            <p className="text-sm text-muted-foreground">{t("Check back soon.", "Tez orada qayting.", "Загляните позже.")}</p>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto mb-7">
+              {t("When companies post roles they appear here. Until then, build the record that gets you hired — solved challenges and finished modules are what employers see.",
+                 "Kompaniyalar e'lon joylaganda ular shu yerda chiqadi. Shu vaqtgacha ishga olinadigan natijangizni to'plang — ish beruvchilar yechgan topshiriq va tugatgan modullaringizni ko'radi.",
+                 "Когда компании опубликуют вакансии, они появятся здесь. А пока копите результат: работодатели смотрят на решённые задания и пройденные модули.")}
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link href="/modules">
+                <button className="cyber-button h-11 px-6">{t("Start learning", "O'rganishni boshlash", "Начать обучение")}</button>
+              </Link>
+              <Link href="/talent">
+                <button className="cyber-button-outline h-11 px-6">{t("See the candidates", "Nomzodlarni ko'rish", "Смотреть кандидатов")}</button>
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
