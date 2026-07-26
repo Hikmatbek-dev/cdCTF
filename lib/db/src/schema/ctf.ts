@@ -64,6 +64,27 @@ export const ctfAttemptsTable = pgTable("ctf_attempts", {
   index("ctf_attempts_blocked_idx").on(table.ctfId).where(sql`blocked`),
 ]);
 
+/**
+ * Community writeups — how a solver explains the way they cracked a challenge.
+ * Gated to solvers on both write and read (see the routes) so a writeup is never
+ * a spoiler: you only see them once you've solved the challenge yourself.
+ */
+export const ctfWriteupsTable = pgTable("ctf_writeups", {
+  id: serial("id").primaryKey(),
+  ctfId: integer("ctf_id").notNull().references(() => ctfTasksTable.id),
+  userId: integer("user_id").notNull().references(() => usersTable.id),
+  content: text("content").notNull(),
+  isPublished: boolean("is_published").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  // One writeup per solver per challenge — the create path upserts on it.
+  uniqueIndex("ctf_writeups_ctf_user_idx").on(table.ctfId, table.userId),
+  index("ctf_writeups_ctf_id_idx").on(table.ctfId),
+]);
+
+export type CtfWriteup = typeof ctfWriteupsTable.$inferSelect;
+
 export const insertCtfTaskSchema = createInsertSchema(ctfTasksTable).omit({ id: true, createdAt: true });
 export type InsertCtfTask = z.infer<typeof insertCtfTaskSchema>;
 export type CtfTask = typeof ctfTasksTable.$inferSelect;

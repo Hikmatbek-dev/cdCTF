@@ -8,6 +8,7 @@ import { useLang } from "@/lib/LanguageContext";
 import { useGetCtfChallenge, getGetCtfChallengeQueryKey, useSubmitCtfFlag, useGetScoreboard, useListModules, getListModulesQueryKey } from "@workspace/api-client-react";
 import { normalizeArray } from "@/lib/api-shapes";
 import { useQueryClient } from "@tanstack/react-query";
+import { Writeups } from "@/components/Writeups";
 import { motion } from "framer-motion";
 import { FadeIn, ScaleIn } from "@/components/PageTransition";
 
@@ -273,6 +274,9 @@ export default function CtfDetailPage() {
                 </div>
               </ScaleIn>
             )}
+
+            {/* Writeups unlock only after solving — never a spoiler. */}
+            {challenge.isSolved && <Writeups ctfId={id} />}
 
             {challenge.isBlocked && (
               <ScaleIn>

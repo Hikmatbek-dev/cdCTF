@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { db } from "@workspace/db";
-import { ctfTasksTable, ctfAttemptsTable, titlesTable } from "@workspace/db/schema";
-import { eq, and } from "drizzle-orm";
+import { ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, titlesTable, usersTable } from "@workspace/db/schema";
+import { eq, and, desc } from "drizzle-orm";
 import { authenticateToken, optionalAuth, requireScope } from "../middleware/auth";
 import { hashFlag, isHashedFlag, verifyFlag } from "../lib/flags";
 import { awardCategoryTitle, awardPoints } from "../lib/scoring";
@@ -210,5 +210,74 @@ router.post("/:id/submit", authenticateToken, requireScope("ctf:submit"), flagRa
 // Backward-compatible alias.
 router.post("/:id/flag", authenticateToken, requireScope("ctf:submit"), flagRateLimit, validateBody(SubmitCtfFlagBody), submitFlagHandler);
 
+/** True if `userId` has solved challenge `ctfId`. Writeups are gated on this so
+ * they never leak the answer to someone who hasn't solved it yet. */
+async function hasSolved(userId: number, ctfId: number): Promise<boolean> {
+  const [row] = await db.select({ id: ctfAttemptsTable.id }).from(ctfAttemptsTable)
+    .where(and(eq(ctfAttemptsTable.userId, userId), eq(ctfAttemptsTable.ctfId, ctfId), eq(ctfAttemptsTable.solved, true)))
+    .limit(1);
+  return !!row;
+}
+
+// GET /api/ctf/:id/writeups — solvers (and admins) only; a spoiler otherwise.
+router.get("/:id/writeups", authenticateToken, async (req, res) => {
+  const ctfId = Number(req.params.id);
+  if (!Number.isInteger(ctfId) || ctfId <= 0) return res.status(400).json({ error: "Invalid id" });
+  const isAdmin = req.user!.role === "admin";
+  if (!isAdmin && !await hasSolved(req.user!.userId, ctfId)) {
+    return res.status(403).json({ error: "Solve the challenge to read writeups" });
+  }
+
+  const rows = await db.select({
+    id: ctfWriteupsTable.id,
+    content: ctfWriteupsTable.content,
+    createdAt: ctfWriteupsTable.createdAt,
+    updatedAt: ctfWriteupsTable.updatedAt,
+    authorId: ctfWriteupsTable.userId,
+    authorNickname: usersTable.nickname,
+  })
+    .from(ctfWriteupsTable)
+    .innerJoin(usersTable, eq(ctfWriteupsTable.userId, usersTable.id))
+    .where(and(eq(ctfWriteupsTable.ctfId, ctfId), eq(ctfWriteupsTable.isPublished, true)))
+    .orderBy(desc(ctfWriteupsTable.createdAt));
+
+  res.json({ writeups: rows, mine: rows.find(r => r.authorId === req.user!.userId) ?? null });
+});
+
+// POST /api/ctf/:id/writeups — create or update your own; must have solved.
+router.post("/:id/writeups", authenticateToken, async (req, res) => {
+  const ctfId = Number(req.params.id);
+  const userId = req.user!.userId;
+  if (!Number.isInteger(ctfId) || ctfId <= 0) return res.status(400).json({ error: "Invalid id" });
+
+  const content = typeof req.body?.content === "string" ? req.body.content.trim() : "";
+  if (content.length < 20) return res.status(400).json({ error: "Writeup is too short (min 20 characters)" });
+  if (content.length > 20000) return res.status(400).json({ error: "Writeup is too long" });
+
+  if (!await hasSolved(userId, ctfId)) return res.status(403).json({ error: "Solve the challenge before writing it up" });
+
+  const [existing] = await db.select({ id: ctfWriteupsTable.id }).from(ctfWriteupsTable)
+    .where(and(eq(ctfWriteupsTable.ctfId, ctfId), eq(ctfWriteupsTable.userId, userId))).limit(1);
+
+  let saved;
+  if (existing) {
+    [saved] = await db.update(ctfWriteupsTable).set({ content, updatedAt: new Date() })
+      .where(eq(ctfWriteupsTable.id, existing.id)).returning();
+  } else {
+    [saved] = await db.insert(ctfWriteupsTable).values({ ctfId, userId, content }).returning();
+  }
+  res.status(existing ? 200 : 201).json({ id: saved.id, content: saved.content, updatedAt: saved.updatedAt });
+});
+
+// DELETE /api/ctf/:id/writeups/:writeupId — author or admin.
+router.delete("/:id/writeups/:writeupId", authenticateToken, async (req, res) => {
+  const writeupId = Number(req.params.writeupId);
+  if (!Number.isInteger(writeupId) || writeupId <= 0) return res.status(400).json({ error: "Invalid id" });
+  const [w] = await db.select().from(ctfWriteupsTable).where(eq(ctfWriteupsTable.id, writeupId)).limit(1);
+  if (!w) return res.status(404).json({ error: "Not found" });
+  if (w.userId !== req.user!.userId && req.user!.role !== "admin") return res.status(403).json({ error: "Forbidden" });
+  await db.delete(ctfWriteupsTable).where(eq(ctfWriteupsTable.id, writeupId));
+  res.json({ success: true });
+});
 
 export default router;

@@ -270,6 +270,21 @@ export async function ensureDatabaseShape() {
   await pool.query("CREATE INDEX IF NOT EXISTS jobs_active_created_idx ON jobs(is_active, created_at)");
   await pool.query("CREATE INDEX IF NOT EXISTS jobs_employer_id_idx ON jobs(employer_id)");
 
+  // Community writeups — gated to solvers so they are never a spoiler.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS ctf_writeups (
+      id serial PRIMARY KEY,
+      ctf_id integer NOT NULL REFERENCES ctf_tasks(id),
+      user_id integer NOT NULL REFERENCES users(id),
+      content text NOT NULL,
+      is_published boolean NOT NULL DEFAULT true,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS ctf_writeups_ctf_user_idx ON ctf_writeups(ctf_id, user_id)");
+  await pool.query("CREATE INDEX IF NOT EXISTS ctf_writeups_ctf_id_idx ON ctf_writeups(ctf_id)");
+
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret text");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled boolean NOT NULL DEFAULT false");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_last_used_step integer");
