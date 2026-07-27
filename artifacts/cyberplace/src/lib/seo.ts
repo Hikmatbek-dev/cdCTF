@@ -188,6 +188,145 @@ const publicRoutes: Array<{ match: (path: string) => boolean; config: SeoConfig 
         ])
       ]
     }
+  },
+  {
+    // The first page a new account sees. It was falling through to the 404
+    // config, so the browser tab of a working page read "404 - Terminal Error".
+    match: (path) => path === "/start",
+    config: {
+      title: text("Start here — find your first lesson | cdCTF", "Shu yerdan boshlang — birinchi darsingiz | cdCTF", "Начните здесь — ваш первый урок | cdCTF"),
+      description: text(
+        "Two questions and you are learning: tell us where you are starting from and what you are here for, and cdCTF opens the right first lesson.",
+        "Ikki savol — va o'rganish boshlanadi: qayerdan boshlayotganingiz va maqsadingizni ayting, cdCTF kerakli birinchi darsni ochadi.",
+        "Два вопроса — и вы учитесь: скажите, с чего начинаете и зачем, и cdCTF откроет нужный первый урок."
+      ),
+      structuredData: [
+        getBreadcrumbs([
+          { name: text("Home", "Bosh sahifa", "Главная"), item: "/" },
+          { name: text("Start", "Boshlash", "Начать"), item: "/start" }
+        ])
+      ]
+    }
+  },
+  {
+    // Sponsor-facing event posters. The per-event title comes from the crawler
+    // preview (see the API's og routes); this is the in-browser tab title.
+    match: (path) => /^\/e\/\d+$/.test(path),
+    config: {
+      title: text("CTF event | cdCTF", "CTF tadbiri | cdCTF", "CTF-событие | cdCTF"),
+      description: text(
+        "A free CTF competition on cdCTF — register, solve, and climb the scoreboard.",
+        "cdCTF'dagi bepul CTF musobaqasi — ro'yxatdan o'ting, yeching va reytingda ko'tariling.",
+        "Бесплатное CTF-соревнование на cdCTF — регистрируйтесь, решайте, поднимайтесь в рейтинге."
+      )
+    }
+  },
+
+  /*
+   * Everything below was falling through to the 404 config — measured on the
+   * live site, where /start rendered perfectly under a tab reading "404 -
+   * Terminal Error". Only the five landing pages above had ever been named, so
+   * every detail page, and every page added since, was telling search engines
+   * and link previews that it did not exist.
+   */
+  {
+    match: (path) => path === "/talent",
+    config: {
+      title: text("Hire from cdCTF — security talent in Uzbekistan | cdCTF", "cdCTF'dan yollash — O'zbekistondagi kiberxavfsizlik iste'dodlari | cdCTF", "Наём с cdCTF — специалисты по кибербезопасности | cdCTF"),
+      description: text(
+        "Learners who opted in to be found, ranked by what they have actually solved — not by what a CV claims.",
+        "Topilishga rozilik bergan o'quvchilar — CV emas, haqiqatan yechgani bo'yicha saralangan.",
+        "Соискатели, давшие согласие, отсортированные по решённым заданиям, а не по резюме."
+      )
+    }
+  },
+  {
+    match: (path) => path === "/jobs",
+    config: {
+      title: text("Cybersecurity jobs in Uzbekistan | cdCTF", "O'zbekistonda kiberxavfsizlik ishlari | cdCTF", "Вакансии по кибербезопасности в Узбекистане | cdCTF"),
+      description: text(
+        "Open security roles posted by employers, alongside the learners qualified to fill them.",
+        "Ish beruvchilar joylagan ochiq vakansiyalar va ularga mos o'quvchilar.",
+        "Открытые вакансии от работодателей и специалисты, готовые их занять."
+      )
+    }
+  },
+  {
+    match: (path) => path === "/impact",
+    config: {
+      title: text("Impact — cdCTF in numbers | cdCTF", "Ta'sir — raqamlarda cdCTF | cdCTF", "Влияние — cdCTF в цифрах | cdCTF"),
+      description: text(
+        "Live platform statistics: learners, lessons, challenges solved and credentials issued. Nothing here is estimated.",
+        "Jonli statistika: o'quvchilar, darslar, yechilgan topshiriqlar va berilgan sertifikatlar. Bu yerda taxmin yo'q.",
+        "Живая статистика: учащиеся, уроки, решённые задания и выданные сертификаты. Ничего не оценочного."
+      )
+    }
+  },
+  {
+    match: (path) => path === "/labs",
+    config: {
+      title: text("Hands-on labs | cdCTF", "Amaliy laboratoriyalar | cdCTF", "Практические лаборатории | cdCTF"),
+      description: text(
+        "Isolated machines you can start in one click and attack safely.",
+        "Bir bosishda ishga tushadigan va xavfsiz hujum qilinadigan izolyatsiyalangan mashinalar.",
+        "Изолированные машины, запускаемые в один клик, для безопасной атаки."
+      )
+    }
+  },
+  {
+    match: (path) => path === "/competitions" || /^\/competitions\/\d+/.test(path),
+    config: {
+      title: text("CTF competitions | cdCTF", "CTF musobaqalari | cdCTF", "CTF-соревнования | cdCTF"),
+      description: text(
+        "Timed CTF events, team registration and live scoreboards — free to enter.",
+        "Vaqtli CTF tadbirlari, jamoaviy ro'yxat va jonli reyting — kirish bepul.",
+        "CTF-события на время, командная регистрация и живой рейтинг — вход бесплатный."
+      )
+    }
+  },
+  {
+    match: (path) => /^\/ctf\/\d+/.test(path),
+    config: {
+      title: text("CTF challenge | cdCTF", "CTF topshirig'i | cdCTF", "CTF-задание | cdCTF"),
+      description: text(
+        "A hands-on security challenge with hints, a writeup section, and the lesson that teaches it.",
+        "Maslahat, writeup bo'limi va uni o'rgatadigan dars bilan amaliy topshiriq.",
+        "Практическое задание с подсказками, разделом writeup и уроком по теме."
+      )
+    }
+  },
+  {
+    match: (path) => /^\/modules\/\d+/.test(path),
+    config: {
+      title: text("Module | cdCTF", "Modul | cdCTF", "Модуль | cdCTF"),
+      description: text(
+        "Lessons, a final exam and the practice challenges that drill what the module teaches.",
+        "Darslar, yakuniy imtihon va modul o'rgatgan narsani mashq qiladigan topshiriqlar.",
+        "Уроки, итоговый экзамен и задания, закрепляющие материал модуля."
+      )
+    }
+  },
+  {
+    match: (path) => /^\/learn\/\d+/.test(path),
+    config: {
+      title: text("Lesson | cdCTF", "Dars | cdCTF", "Урок | cdCTF"),
+      description: text(
+        "A short lesson that ends with a practical task and hands you the challenges that use it.",
+        "Amaliy topshiriq bilan tugaydigan va uni ishlatadigan topshiriqlarni beradigan qisqa dars.",
+        "Короткий урок, который заканчивается практикой и ведёт к заданиям по теме."
+      )
+    }
+  },
+  {
+    match: (path) => path === "/verify",
+    config: {
+      title: text("Verify a cdCTF credential | cdCTF", "cdCTF sertifikatini tekshirish | cdCTF", "Проверка сертификата cdCTF | cdCTF"),
+      description: text(
+        "Enter a serial number to confirm a cdCTF certificate or diploma is genuine.",
+        "cdCTF sertifikati yoki diplomi haqiqiyligini tasdiqlash uchun seriya raqamini kiriting.",
+        "Введите серийный номер, чтобы подтвердить подлинность сертификата или диплома cdCTF."
+      )
+    }
   }
 ];
 
@@ -197,6 +336,33 @@ const privateOrUtilityRoutes: Array<{ match: (path: string) => boolean; config: 
     config: {
       title: text("Authentication | cdCTF", "Hisobga kirish | cdCTF", "Аутентификация | cdCTF"),
       description: text("Manage your cdCTF account and track your progress.", "cdCTF hisobingizni boshqaring va natijalaringizni ko'ring.", "Управляйте своим аккаунтом cdCTF."),
+      robots: "noindex, nofollow"
+    }
+  },
+  {
+    // A credential carries someone's real name and score. It has to be public
+    // — that is what makes it verifiable — but it should not be indexed, and it
+    // certainly should not be titled "404" for the employer who opens it.
+    match: (path) => /^\/(certificate|diploma)\//.test(path) || path === "/diploma",
+    config: {
+      title: text("Credential | cdCTF", "Sertifikat | cdCTF", "Сертификат | cdCTF"),
+      description: text(
+        "A cdCTF credential, verifiable by its serial number and fingerprint.",
+        "Seriya raqami va barmoq izi orqali tekshiriladigan cdCTF sertifikati.",
+        "Сертификат cdCTF, проверяемый по серийному номеру и отпечатку."
+      ),
+      robots: "noindex, nofollow"
+    }
+  },
+  {
+    match: (path) => /^\/profile\/\d+/.test(path) || path === "/profile",
+    config: {
+      title: text("Learner profile | cdCTF", "O'quvchi profili | cdCTF", "Профиль учащегося | cdCTF"),
+      description: text(
+        "Solved challenges, finished modules and earned titles.",
+        "Yechilgan topshiriqlar, tugatilgan modullar va olingan unvonlar.",
+        "Решённые задания, пройденные модули и полученные титулы."
+      ),
       robots: "noindex, nofollow"
     }
   },
