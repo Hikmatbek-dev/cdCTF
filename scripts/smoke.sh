@@ -18,13 +18,13 @@
 # Usage:
 #   bash scripts/smoke.sh                       # checks https://cdctf.vercel.app
 #   bash scripts/smoke.sh https://cdctf.uz      # or any deployment
-#   EXPECT_BUNDLE=1 bash scripts/smoke.sh       # also assert the live bundle
-#                                               # matches the local build
+#   EXPECT_STRING="Boshlanish nuqtangiz" bash scripts/smoke.sh
+#       ↳ also assert the live JS bundle contains a string you just added, which
+#         is how you prove the deploy actually landed
 set -u
 SITE="${1:-https://cdctf.vercel.app}"
 SITE="${SITE%/}"
 BOT="TelegramBot (like TwitterBot)"
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
 
 FAILED=""
 pass() { echo "  ✅ $1"; }
@@ -47,17 +47,17 @@ if [ -z "$LIVE_BUNDLE" ]; then
   fail "jonli bundle nomi topilmadi — bosh sahifa kutilganidek emas"
 else
   pass "jonli bundle: $LIVE_BUNDLE"
-  # The check that would have caught the silent cron failure: a build that never
-  # landed leaves production on the previous bundle, and nothing else says so.
-  LOCAL_BUNDLE=$(grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' "$ROOT/artifacts/cyberplace/dist/public/index.html" 2>/dev/null | head -1)
-  if [ -n "${EXPECT_BUNDLE:-}" ]; then
-    if [ -z "$LOCAL_BUNDLE" ]; then
-      fail "mahalliy build yo'q — avval 'pnpm run build' qiling"
+  # Comparing this hash against a local build does not work: Vercel builds with
+  # the project's own VITE_* variables, so the same source legitimately hashes
+  # differently. Asserting a string only the new code contains does work, and it
+  # is the check that would have caught the two days production spent quietly
+  # serving the previous build.
+  if [ -n "${EXPECT_STRING:-}" ]; then
+    if curl -s --max-time 30 "$SITE/$LIVE_BUNDLE" | grep -qF "$EXPECT_STRING"; then
+      pass "yangi kod jonli bundle ichida ('$EXPECT_STRING')"
     else
-      check "$LIVE_BUNDLE" "$LOCAL_BUNDLE" "jonli bundle mahalliy build bilan bir xil"
+      fail "'$EXPECT_STRING' jonli bundle'da yo'q — deploy yetib bormagan"
     fi
-  elif [ -n "$LOCAL_BUNDLE" ] && [ "$LIVE_BUNDLE" != "$LOCAL_BUNDLE" ]; then
-    echo "  ⓘ  mahalliy build boshqacha ($LOCAL_BUNDLE) — deploy qilinmagan bo'lishi mumkin"
   fi
 fi
 
@@ -88,7 +88,7 @@ check "$BAD" "0" "sitemapdagi havolalar ochiladi"
 echo
 echo "=== Ijtimoiy tarmoq preview'lari ==="
 # The exact request Telegram makes. This is the check that was never run.
-for path in / /talent /modules/1; do
+for path in /talent /modules/1 /ctf/1; do
   BODY=$(curl -s --max-time 20 -A "$BOT" "$SITE$path")
   OG_URL=$(printf '%s' "$BODY" | grep -oE '<meta property="og:url" content="[^"]*"' | sed 's/.*content="//;s/"$//' | head -1)
   if [ -z "$OG_URL" ]; then
@@ -100,6 +100,18 @@ for path in / /talent /modules/1; do
   fi
 done
 
+# "/" is a real file, so no rewrite can reach it — index.html answers every
+# crawler. It must therefore carry NO absolute og:url, or the preview links
+# wherever that string happens to point rather than where the reader is.
+HOME_OG_URL=$(curl -s --max-time 20 -A "$BOT" "$SITE/" | grep -oE '<meta property="og:url" content="[^"]*"' | sed 's/.*content="//;s/"$//' | head -1)
+if [ -z "$HOME_OG_URL" ]; then
+  pass "/ — og:url yo'q, crawler o'zi ochgan URL'ni ishlatadi"
+elif [ "${HOME_OG_URL#$SITE}" = "$HOME_OG_URL" ]; then
+  fail "/ — og:url boshqa domenda: $HOME_OG_URL"
+else
+  pass "/ — og:url $HOME_OG_URL"
+fi
+
 # A preview whose image 404s renders as a grey box in every chat app.
 OG_IMAGE=$(curl -s --max-time 20 -A "$BOT" "$SITE/talent" | grep -oE '<meta property="og:image" content="[^"]*"' | sed 's/.*content="//;s/"$//' | head -1)
 if [ -z "$OG_IMAGE" ]; then
@@ -110,8 +122,9 @@ fi
 
 # Distinct previews are the whole point: if two different pages produce the same
 # title, the per-entity rewrites are falling through to index.html again.
-T_HOME=$(curl -s --max-time 20 -A "$BOT" "$SITE/" | grep -oE '<meta property="og:title" content="[^"]*"' | head -1)
-T_TALENT=$(curl -s --max-time 20 -A "$BOT" "$SITE/talent" | grep -oE '<meta property="og:title" content="[^"]*"' | head -1)
+og_title() { curl -s --max-time 20 -A "$BOT" "$1" | grep -oE '<meta property="og:title" content="[^"]*"' | head -1; }
+T_HOME=$(og_title "$SITE/")
+T_TALENT=$(og_title "$SITE/talent")
 if [ -n "$T_HOME" ] && [ "$T_HOME" = "$T_TALENT" ]; then
   fail "bosh sahifa va /talent bir xil preview beradi — rewrite tushib qolgan"
 else

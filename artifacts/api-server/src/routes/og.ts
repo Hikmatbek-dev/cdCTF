@@ -167,29 +167,6 @@ function summarise(text: string | null | undefined, fallback: string): string {
   return clean.slice(0, 177).replace(/\s+\S*$/, "") + "…";
 }
 
-/**
- * The home page preview.
- *
- * index.html carries perfectly good OG tags — but they hardcode
- * https://cdctf.uz for og:url and og:image, so on the host the site actually
- * runs on, a shared home-page link had a broken image and a click-through to
- * nothing. Only *social* crawlers are routed here (see vercel.json); search
- * engines keep index.html, which has the full JSON-LD this stub does not.
- */
-const siteOg: Handler = async (req, res) => {
-  const [{ learners }] = await db
-    .select({ learners: sql<number>`count(*)::int` })
-    .from(usersTable)
-    .where(and(eq(usersTable.isBlocked, false), eq(usersTable.role, "user")));
-
-  sendOg(res, {
-    title: "cdCTF — kiberxavfsizlik akademiyasi va CTF platformasi",
-    description: `O'zbek, rus va ingliz tillarida bepul: darslar, CTF topshiriqlari va tekshiriladigan sertifikat. ${learners} ta o'quvchi allaqachon boshlagan.`,
-    image: defaultImage(req),
-    url: `${siteOrigin(req)}/`,
-  });
-};
-
 const challengeOg: Handler = async (req, res) => {
   const id = Number(req.params.id);
   const url = `${siteOrigin(req)}/ctf/${Number.isInteger(id) ? id : ""}`;
@@ -274,7 +251,6 @@ crawlerRouter.get("/profile/:id", profileOg);
 crawlerRouter.get("/talent", talentOg);
 crawlerRouter.get("/ctf/:id", challengeOg);
 crawlerRouter.get("/modules/:id", moduleOg);
-crawlerRouter.get("/", siteOg);
 
 /**
  * robots.txt and sitemap.xml, generated rather than checked in.

@@ -132,17 +132,6 @@
       "destination": "/api/[...path]"
     },
     {
-      "source": "/",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": ".*(?:TelegramBot|facebookexternalhit|Twitterbot|WhatsApp|Slackbot|Discordbot|LinkedInBot|vkShare|Pinterest|redditbot|SkypeUriPreview).*"
-        }
-      ],
-      "destination": "/api/[...path]"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

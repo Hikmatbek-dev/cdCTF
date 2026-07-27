@@ -75,10 +75,12 @@ check "$(contains "${TAG} Modul" "$M")" "yes" "og:title da modul nomi"
 check "$(contains "og:url\" content=\"$ORIGIN/modules/$MID\"" "$M")" "yes" "og:url to'g'ri"
 
 echo
-echo "=== ⭐ Bosh sahifa preview'i ==="
-H=$(curl -s -A "$BOT" $API/)
-check "$(contains "og:url\" content=\"$ORIGIN/\"" "$H")" "yes" "bosh sahifa og:url to'g'ri"
-check "$(contains "cdCTF" "$H")" "yes" "sarlavhada brend bor"
+echo "=== \"/\" bu yerda javob bermaydi (index.html javob beradi) ==="
+# "/" is a real file in the static output, and Vercel serves the filesystem
+# before rewrites — so no rule can ever route it here. A handler for it would be
+# dead code that looks like a feature, which is exactly what it was until this
+# was measured on the live site.
+check "$(curl -s -o /dev/null -w '%{http_code}' -A "$BOT" $API/)" "404" "API '/' ni egallab olmaydi"
 
 echo
 echo "=== Mavjud bo'lmagan yozuv ham 200 qaytaradi (crawler 404 ni keshlaydi) ==="

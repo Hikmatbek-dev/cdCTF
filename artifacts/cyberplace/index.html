@@ -10,18 +10,32 @@
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="theme-color" content="#8b5cf6" />
 
-    <link rel="canonical" href="https://cdctf.uz/" />
-    <link rel="alternate" hreflang="uz" href="https://cdctf.uz/" />
-    <link rel="alternate" hreflang="en" href="https://cdctf.uz/" />
-    <link rel="alternate" hreflang="ru" href="https://cdctf.uz/" />
-    <link rel="alternate" hreflang="x-default" href="https://cdctf.uz/" />
+    <!--
+      No hardcoded canonical or hreflang here on purpose.
+
+      "/" is a real file, so Vercel serves it from the filesystem before any
+      rewrite can run — these tags cannot be generated per host the way the
+      other pages' are. They used to name https://cdctf.uz, which is not
+      connected: a canonical pointing at a host that answers nothing tells a
+      search engine the page it just crawled does not belong here.
+
+      Absent, a crawler treats the URL it fetched as canonical, which is right
+      on every host. SeoManager (src/lib/seo.ts) then injects the real canonical
+      and hreflang set at runtime from window.location.origin.
+
+      Once cdctf.uz is connected, these can come back as static tags.
+    -->
 
     <meta property="og:site_name" content="cdCTF" />
     <meta property="og:title" content="cdCTF — Kiberxavfsizlik akademiyasi | 6 oylik dastur" />
     <meta property="og:description" content="A hands-on, six-month cybersecurity program in Uzbek, Russian and English — real terminal commands, CTF challenges, and a certificate at the end." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://cdctf.uz/" />
-    <meta property="og:image" content="https://cdctf.uz/logo.png" />
+    <!-- og:url omitted: with none, a crawler uses the URL it fetched, so the
+         preview links back to the host the reader actually clicked from.
+         og:image is relative for the same reason — resolved against that URL,
+         it always exists; the absolute one pointed at an unconnected domain and
+         rendered as an empty grey box in every chat app. -->
+    <meta property="og:image" content="/logo.png" />
     <meta property="og:locale" content="uz_UZ" />
     <meta property="og:locale:alternate" content="ru_RU" />
     <meta property="og:locale:alternate" content="en_US" />
@@ -29,7 +43,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="cdCTF — Kiberxavfsizlik akademiyasi" />
     <meta name="twitter:description" content="A hands-on, six-month cybersecurity program in Uzbek, Russian and English — with real commands, CTF, and a certificate." />
-    <meta name="twitter:image" content="https://cdctf.uz/logo.png" />
+    <meta name="twitter:image" content="/logo.png" />
 
     <link rel="icon" type="image/jpeg" href="/icon.jpg" />
     <link rel="apple-touch-icon" href="/logo.png" />
