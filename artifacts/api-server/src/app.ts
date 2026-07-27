@@ -5,6 +5,7 @@ import multer from "multer";
 import path from "node:path";
 import { getLocalUploadsRoot } from "./lib/storage";
 import router from "./routes";
+import { crawlerRouter } from "./routes/og";
 import { logger } from "./lib/logger";
 import { reportErrorToSentry } from "./lib/integrations";
 import { CorsOriginError, corsOptions, createRateLimiter, securityHeaders } from "./middleware/security";
@@ -72,6 +73,11 @@ app.get("/uploads/ctf/:filename", async (req, res, next) => {
   }
   next();
 });
+
+// Social-crawler previews, answered at the public paths. See crawlerRouter's
+// comment: only a user-agent-matched Vercel rewrite routes traffic here, and
+// this app never serves the SPA, so nothing a person requests is affected.
+app.use(crawlerRouter);
 
 app.use("/api", router);
 

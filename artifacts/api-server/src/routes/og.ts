@@ -1,4 +1,6 @@
-import { Router } from "express";
+import { Router, type RequestHandler } from "express";
+
+type Handler = RequestHandler<{ id: string }>;
 import { db } from "@workspace/db";
 import { competitionsTable, usersTable } from "@workspace/db/schema";
 import { and, eq, sql } from "drizzle-orm";
@@ -77,15 +79,13 @@ function sendOg(res: import("express").Response, meta: Meta) {
   res.send(renderOgHtml(meta));
 }
 
-// GET /api/og/competition/:id
-router.get("/competition/:id", async (req, res) => {
+const competitionOg: Handler = async (req, res) => {
   const id = Number(req.params.id);
   // The same competition is reachable at two paths: the participant console at
   // /competitions/:id and the shareable poster at /e/:id. The canonical link —
   // and the redirect a human following the preview gets — has to match the one
   // that was actually shared, or a sponsor's audience lands on the console.
-  // vercel.json passes ?p=e from the /e/:id rewrite; anything else is the console.
-  const basePath = req.query.p === "e" ? "/e" : "/competitions";
+  const basePath = req.path.startsWith("/e/") || req.query.p === "e" ? "/e" : "/competitions";
   const url = `${SITE_ORIGIN}${basePath}/${Number.isInteger(id) ? id : ""}`;
   if (!Number.isInteger(id) || id <= 0) {
     return sendOg(res, { title: "cdCTF", description: "Kiberxavfsizlik musobaqasi", image: DEFAULT_IMAGE, url: `${SITE_ORIGIN}/competitions` });
@@ -108,10 +108,9 @@ router.get("/competition/:id", async (req, res) => {
     image: safeImage(comp.sponsorLogoUrl),
     url,
   });
-});
+};
 
-// GET /api/og/profile/:id
-router.get("/profile/:id", async (req, res) => {
+const profileOg: Handler = async (req, res) => {
   const id = Number(req.params.id);
   const url = `${SITE_ORIGIN}/profile/${Number.isInteger(id) ? id : ""}`;
   if (!Number.isInteger(id) || id <= 0) {
@@ -135,10 +134,9 @@ router.get("/profile/:id", async (req, res) => {
     image: safeImage(user.avatarUrl),
     url,
   });
-});
+};
 
-// GET /api/og/talent
-router.get("/talent", async (_req, res) => {
+const talentOg: Handler = async (_req, res) => {
   const [{ total }] = await db
     .select({ total: sql<number>`count(*)::int` })
     .from(usersTable)
@@ -150,6 +148,31 @@ router.get("/talent", async (_req, res) => {
     image: DEFAULT_IMAGE,
     url: `${SITE_ORIGIN}/talent`,
   });
-});
+};
+
+// Reachable directly for testing and for anything that wants the preview HTML.
+router.get("/competition/:id", competitionOg);
+router.get("/profile/:id", profileOg);
+router.get("/talent", talentOg);
+
+/**
+ * The same handlers, mounted at the *public* paths.
+ *
+ * A rewrite destination in vercel.json has to be a real filesystem entry.
+ * `/api/og/competition/:id` is not one — it only becomes the API function via
+ * another rewrite, and Vercel does not chain rewrites — so those rules silently
+ * fell through to index.html and every shared link showed the generic site
+ * preview. Verified live before and after.
+ *
+ * So the crawler rules now rewrite to `/api/[...path]`, which preserves the
+ * original URL, and these routes answer it. This Express app never serves the
+ * SPA, so mounting them at the root cannot shadow a real page; in production
+ * only the user-agent-matched rewrite sends traffic here at all.
+ */
+export const crawlerRouter = Router();
+crawlerRouter.get("/competitions/:id", competitionOg);
+crawlerRouter.get("/e/:id", competitionOg);
+crawlerRouter.get("/profile/:id", profileOg);
+crawlerRouter.get("/talent", talentOg);
 
 export default router;
