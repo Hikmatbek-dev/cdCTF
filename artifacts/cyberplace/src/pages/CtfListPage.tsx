@@ -3,6 +3,8 @@ import { Link } from "wouter";
 import { Search, CheckCircle2, Shield, Zap, Target, ChevronRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ChallengeArt } from "@/components/ChallengeArt";
+import { categoryStyle, difficultyStyle } from "@/lib/category-style";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 import { Pagination } from "@/components/Pagination";
 import { useLang } from "@/lib/LanguageContext";
@@ -197,52 +199,54 @@ export default function CtfListPage() {
           ) : (
             <div className="space-y-16">
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {challenges.map((ch, i) => (
+                {/* Each card leads with generated cover art in its category's
+                    colour — a hundred identical rows are unreadable, and the
+                    colour is what makes the grid scannable without reading. */}
+                {challenges.map((ch, i) => {
+                  const cat = categoryStyle(ch.category);
+                  const diff = difficultyStyle(ch.difficulty);
+                  return (
                   <FadeIn key={ch.id} delay={i * 0.05}>
                     <Link href={`/ctf/${ch.id}`}>
                       <div
-                        className={`glass-card p-6 group cursor-pointer transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden rounded-xl flex flex-col h-full border-foreground/5 hover:border-primary/30 ${
-                          ch.isSolved ? "bg-primary/[0.03] border-primary/20 shadow-primary/5" : ch.isBlocked ? "opacity-30 grayscale pointer-events-none" : ""
-                        }`}
+                        className={`group cursor-pointer transition-all duration-300 hover:-translate-y-1 relative overflow-hidden rounded-xl flex flex-col h-full border bg-card ${
+                          ch.isSolved ? "border-emerald-500/40" : "border-border hover:border-primary/40"
+                        } ${ch.isBlocked ? "opacity-40 grayscale pointer-events-none" : ""}`}
                       >
-                        {/* Status Icon */}
-                        <div className="flex items-start justify-between mb-5">
-                          <DifficultyBadge difficulty={ch.difficulty} className="rounded-lg px-3 py-1 text-[11px] font-medium" />
-                          {ch.isSolved ? (
-                            <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-xl shadow-primary/10">
-                              <CheckCircle2 className="w-5 h-5" />
-                            </div>
-                          ) : (
-                            <div className="w-10 h-10 rounded-xl bg-foreground/5 border border-foreground/10 flex items-center justify-center text-foreground/20 group-hover:text-primary group-hover:border-primary/40 transition-all duration-500">
-                              <Zap className="w-5 h-5" />
-                            </div>
-                          )}
+                        <div className="relative h-[104px] overflow-hidden">
+                          <ChallengeArt name={ch.name} hue={cat.hue} solved={ch.isSolved} className="w-full h-full transition-transform duration-500 group-hover:scale-105" />
+                          <span className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-semibold backdrop-blur-sm bg-black/35 text-white`}>
+                            {ch.category}
+                          </span>
                         </div>
 
-                        {/* Title Section */}
-                        <div className="mb-auto">
-                          <div className="text-xs font-medium uppercase tracking-wider text-primary/80 mb-2">{ch.category}</div>
-                          <h3 className="text-xl font-semibold tracking-tight group-hover:text-primary transition-colors leading-snug mb-4 break-words">{t(ch.name, ch.nameUz ?? undefined, ch.nameRu ?? undefined)}</h3>
-                        </div>
-                        
-                        {/* Stats Section */}
-                        <div className="flex items-center justify-between pt-5 border-t border-foreground/10">
-                          <div>
-                            <div className="text-xs text-muted-foreground mb-1">{t("Points", "Ball", "Очки")}</div>
-                            <div className="text-2xl font-bold tabular-nums leading-none text-primary">{ch.points}</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-xs text-muted-foreground mb-1">{t("Solved by", "Yechganlar", "Решили")}</div>
-                            <div className="text-sm font-medium tabular-nums">{ch.solvedCount}</div>
-                          </div>
-                        </div>
+                        <div className="p-5 flex flex-col flex-1">
+                          <h3 className="text-base font-semibold tracking-tight group-hover:text-primary transition-colors leading-snug mb-3 break-words">
+                            {t(ch.name, ch.nameUz ?? undefined, ch.nameRu ?? undefined)}
+                          </h3>
 
-                        {/* Hover Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                          <div className="mt-auto flex items-center justify-between pt-3 border-t border-border">
+                            <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-[11px] font-medium capitalize ${diff.text} ${diff.tint} ${diff.border}`}>
+                              {/* Dots as well as colour: difficulty must not depend on
+                                  telling red from green. */}
+                              <span className="flex gap-0.5" aria-hidden="true">
+                                {[0, 1, 2, 3].map(d => (
+                                  <span key={d} className={`w-1 h-1 rounded-full ${d < diff.dots ? "bg-current" : "bg-current opacity-25"}`} />
+                                ))}
+                              </span>
+                              {ch.difficulty}
+                            </span>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <span className="tabular-nums font-semibold text-foreground">{ch.points}</span>
+                              <span className="tabular-nums">{ch.solvedCount} {t("solves", "yechim", "решений")}</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </Link>
                   </FadeIn>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="pt-8">
