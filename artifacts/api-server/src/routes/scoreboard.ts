@@ -7,6 +7,74 @@ import { optionalAuth, requireScope } from "../middleware/auth";
 const router = Router();
 
 /**
+ * The weekly league.
+ *
+ * Weekly standing is *derived* — summed from the solves and lesson completions
+ * that carry a timestamp inside the current week — rather than kept in a column
+ * that something has to remember to reset. There is no cron to miss, nothing to
+ * drift, and a recalculation cannot corrupt it. The week starts Monday 00:00 UTC.
+ */
+const LEAGUE_TIERS = [
+  { key: "bronze", min: 0 },
+  { key: "silver", min: 300 },
+  { key: "gold", min: 800 },
+  { key: "platinum", min: 1500 },
+] as const;
+
+export function leagueFor(weeklyPoints: number): string {
+  let tier = LEAGUE_TIERS[0].key as string;
+  for (const t of LEAGUE_TIERS) if (weeklyPoints >= t.min) tier = t.key;
+  return tier;
+}
+
+// GET /api/scoreboard/weekly — this week's standings, and the caller's place.
+router.get("/weekly", optionalAuth, requireScope("scoreboard:read"), async (req, res) => {
+  const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 50);
+
+  const rows = await db.execute(sql`
+    with week as (
+      -- Back to timestamptz explicitly. Without the second conversion the naive
+      -- timestamp is compared against timestamptz columns using the *server's*
+      -- timezone, so the week boundary lands hours off UTC and this week's work
+      -- falls outside it. Caught by the suite on a box set to America/Anchorage.
+      select (date_trunc('week', now() at time zone 'utc') at time zone 'utc') as start
+    ),
+    earned as (
+      select a.user_id, sum(c.points)::int as pts
+        from ctf_attempts a
+        join ctf_tasks c on c.id = a.ctf_id
+       where a.solved = true and a.solved_at >= (select start from week)
+       group by a.user_id
+      union all
+      select l.user_id, sum(le.points)::int as pts
+        from user_lesson_attempts l
+        join lessons le on le.id = l.lesson_id
+       where l.status = 'completed' and l.completed_at >= (select start from week)
+       group by l.user_id
+    ),
+    totals as (select user_id, sum(pts)::int as points from earned group by user_id)
+    select u.id as "userId", u.nickname, u.avatar_url as "avatarUrl", t.points,
+           rank() over (order by t.points desc, u.id asc)::int as rank
+      from totals t
+      join users u on u.id = t.user_id
+     where u.is_blocked = false and u.role = 'user' and u.excluded_from_scoring = false
+     order by t.points desc, u.id asc
+  `);
+
+  const all = (rows as unknown as { rows?: unknown[] }).rows ?? (rows as unknown as unknown[]);
+  const entries = (all as Array<{ userId: number; nickname: string; avatarUrl: string | null; points: number; rank: number }>)
+    .map(e => ({ ...e, points: Number(e.points), rank: Number(e.rank), league: leagueFor(Number(e.points)) }));
+
+  const me = req.user ? entries.find(e => e.userId === req.user!.userId) ?? null : null;
+
+  res.json({
+    entries: entries.slice(0, limit),
+    total: entries.length,
+    me: me ?? (req.user ? { userId: req.user.userId, points: 0, rank: null, league: leagueFor(0) } : null),
+  });
+});
+
+/**
  * `%` and `_` are wildcards inside LIKE. Without escaping them, a search for
  * "100%" matches everything, and a user's search string quietly becomes a
  * pattern.

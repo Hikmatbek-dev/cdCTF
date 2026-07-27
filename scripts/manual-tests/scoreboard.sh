@@ -115,4 +115,21 @@ B=$(board "search=$TAG&limit=100" | nicks)
 check "$A" "$B" "ikki bir xil so'rov bir xil tartib berdi"
 
 echo
+echo "=== ⭐ HAFTALIK LIGA — faqat shu haftadagi ish hisoblanadi ==="
+q() { psql "$DATABASE_URL" -tAqc "$1"; }
+WU=$(q "INSERT INTO users (nickname,email,password_hash,points,role) VALUES ('${TAG}_wk','${TAG}_wk@e.com','x',0,'user') RETURNING id")
+WC1=$(q "INSERT INTO ctf_tasks (name,description,category,difficulty,points,flag,is_published) VALUES ('${TAG}_wc1','d','Web','easy',140,'f',true) RETURNING id")
+WC2=$(q "INSERT INTO ctf_tasks (name,description,category,difficulty,points,flag,is_published) VALUES ('${TAG}_wc2','d','Web','easy',500,'f',true) RETURNING id")
+# Bu hafta yechilgan (hisoblanadi) va 3 hafta oldin yechilgan (hisoblanmaydi).
+q "INSERT INTO ctf_attempts (user_id,ctf_id,solved,solved_at) VALUES ($WU,$WC1,true, now())" > /dev/null
+q "INSERT INTO ctf_attempts (user_id,ctf_id,solved,solved_at) VALUES ($WU,$WC2,true, now() - interval '3 weeks')" > /dev/null
+WK=$(curl -s "$API/scoreboard/weekly?limit=50")
+check "$(echo "$WK" | python3 -c 'import sys,json;d=json.load(sys.stdin);e=[x for x in d["entries"] if x["userId"]=='"$WU"'];print(e[0]["points"] if e else "topilmadi")')" "140" "faqat shu haftalik 140 ball (eski 500 emas)"
+check "$(echo "$WK" | python3 -c 'import sys,json;d=json.load(sys.stdin);e=[x for x in d["entries"] if x["userId"]=='"$WU"'];print(e[0]["league"] if e else "-")')" "bronze" "140 ball = bronza ligasi"
+# Bloklangan foydalanuvchi haftalik reytingda ham chiqmasligi kerak.
+BU=$(q "SELECT id FROM users WHERE nickname='${TAG}_blocked'")
+q "INSERT INTO ctf_attempts (user_id,ctf_id,solved,solved_at) VALUES ($BU,$WC1,true, now())" > /dev/null
+check "$(curl -s "$API/scoreboard/weekly?limit=50" | python3 -c 'import sys,json;print(any(x["userId"]=='"$BU"' for x in json.load(sys.stdin)["entries"]))')" "False" "bloklangan haftalik reytingda yo'q"
+
+echo
 [ -z "$FAILED" ] && echo "🎉 SCOREBOARD TO'G'RI" || echo "⚠️  BA'ZI SINOVLAR YIQILDI"

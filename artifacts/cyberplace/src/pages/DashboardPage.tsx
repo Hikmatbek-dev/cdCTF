@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { normalizeArray } from "@/lib/api-shapes";
 import { levelFromPoints } from "@/lib/level";
+import { WeeklyLeague } from "@/components/WeeklyLeague";
 
 type DashboardResponse = {
   user: { id: number; nickname: string; points: number; rank: number };
@@ -108,6 +109,11 @@ export default function DashboardPage() {
             </div>
           );
         })()}
+
+        {/* This week's league. Weekly standing is what brings someone back on a
+            Tuesday — a lifetime total never moves fast enough to feel like
+            progress. */}
+        <WeeklyLeague />
 
         {/* Onboarding nudge. Almost every account solves challenges and never
             starts a lesson; a returning learner who has completed none gets a
