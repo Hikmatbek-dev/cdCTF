@@ -241,7 +241,9 @@ export function Navbar() {
             <div className="mt-6 pt-6 border-t border-foreground/5 flex items-center justify-between">
               <div className="flex gap-4">
                 {(["en", "uz", "ru"] as Language[]).map(l => (
-                  <button key={l} onClick={() => setLang(l)} className={`min-h-[24px] px-2 py-1 text-sm font-medium uppercase ${lang === l ? "text-primary" : "text-muted-foreground"}`}>
+                  // A ~24px tap target for the control that decides whether the
+                  // site is readable at all. 44px is the accessible minimum.
+                  <button key={l} onClick={() => setLang(l)} aria-pressed={lang === l} className={`min-h-[44px] min-w-[44px] px-3 py-2 rounded-lg text-sm font-medium uppercase ${lang === l ? "text-primary bg-primary/10" : "text-muted-foreground"}`}>
                     {l}
                   </button>
                 ))}

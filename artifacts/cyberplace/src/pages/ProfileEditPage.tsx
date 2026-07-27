@@ -261,9 +261,14 @@ export default function ProfileEditPage() {
                     onClick={() => toggleOpenToWork(!openToWork)}
                     disabled={savingOpenToWork}
                     data-testid="toggle-open-to-work"
-                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${openToWork ? "bg-emerald-500" : "bg-muted-foreground/30"}`}
+                    // The track stays 24px tall; the button around it is 44px so
+                    // it can actually be hit on a phone. This one toggle is what
+                    // the entire talent directory depends on.
+                    className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full disabled:opacity-50"
                   >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${openToWork ? "translate-x-6" : "translate-x-1"}`} />
+                    <span className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${openToWork ? "bg-emerald-500" : "bg-muted-foreground/30"}`}>
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${openToWork ? "translate-x-6" : "translate-x-1"}`} />
+                    </span>
                   </button>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">

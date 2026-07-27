@@ -7,6 +7,7 @@ import { useLang } from "@/lib/LanguageContext";
 import { RoadmapTree } from "@/components/RoadmapTree";
 import { normalizeArray } from "@/lib/api-shapes";
 import { MODULE_ART, LinuxArt } from "@/components/ModuleArt";
+import { LoadFailure } from "@/components/LoadFailure";
 import { useListModules, getListModulesQueryKey } from "@workspace/api-client-react";
 
 type ModuleSummary = {
@@ -33,7 +34,7 @@ function difficultyMeta(difficulty: string, t: (en: string, uz?: string, ru?: st
 
 export default function ModulesPage() {
   const { t } = useLang();
-  const { data, isLoading } = useListModules({ query: { queryKey: getListModulesQueryKey() } });
+  const { data, isLoading, isError, refetch } = useListModules({ query: { queryKey: getListModulesQueryKey() } });
   const modules = normalizeArray<ModuleSummary>(data, ["id", "title"]);
 
   // The "current" module is the first one not yet finished — highlighted so a
@@ -60,7 +61,9 @@ export default function ModulesPage() {
           </p>
         </header>
 
-        {isLoading ? (
+        {isError ? (
+          <LoadFailure onRetry={() => refetch()} />
+        ) : isLoading ? (
           <div className="space-y-4">
             {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)}
           </div>

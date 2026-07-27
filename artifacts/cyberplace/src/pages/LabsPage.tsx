@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { Server, Play, Square, Clock, ExternalLink, Info, Flag } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadFailure } from "@/components/LoadFailure";
 import { useToast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
@@ -39,7 +40,7 @@ export default function LabsPage() {
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["labs"],
     queryFn: async () => {
       const r = await fetch("/api/labs");
@@ -124,7 +125,9 @@ export default function LabsPage() {
           </div>
         )}
 
-        {isLoading ? (
+        {isError ? (
+          <LoadFailure onRetry={() => refetch()} />
+        ) : isLoading ? (
           <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl bg-foreground/5" />)}</div>
         ) : labs.length === 0 ? (
           <div className="glass-card rounded-xl py-16 px-8 text-center border-foreground/5">

@@ -11,6 +11,7 @@ import { useLang } from "@/lib/LanguageContext";
 import { useListCtfChallenges, getListCtfChallengesQueryKey } from "@workspace/api-client-react";
 import { normalizeCtfChallenges } from "@/lib/api-shapes";
 import { FadeIn } from "@/components/PageTransition";
+import { LoadFailure } from "@/components/LoadFailure";
 
 /** Order difficulties by how hard they are, not by how many exist. */
 const DIFFICULTY_ORDER = ["easy", "medium", "hard", "insane"];
@@ -44,7 +45,7 @@ export default function CtfListPage() {
     ...(search ? { search } : {}),
   }), [page, category, difficulty, solved, search]);
 
-  const { data, isLoading } = useListCtfChallenges(
+  const { data, isLoading, isError, refetch } = useListCtfChallenges(
     queryParams,
     { query: { queryKey: getListCtfChallengesQueryKey(queryParams) } }
   ) as any;
@@ -113,7 +114,11 @@ export default function CtfListPage() {
         {/* Filters Panel */}
         <FadeIn delay={0.1}>
           <div className="glass-card p-4 sm:p-6 flex flex-wrap items-center gap-3 sm:gap-6 mb-8 sm:mb-16 rounded-xl border-foreground/10">
-            <div className="relative flex-1 min-w-[300px]">
+            {/* min-w-[300px] was wider than a 360px phone leaves after the page
+                and card padding, and the parent is overflow-hidden — so the
+                search box was clipped, not scrollable. Full width on mobile,
+                the old floor from sm up. */}
+            <div className="relative flex-1 w-full sm:w-auto sm:min-w-[300px]">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" aria-hidden="true" />
               {/* A placeholder is not a label: it vanishes as soon as you type,
                   and screen readers are not required to announce it. */}
@@ -191,7 +196,9 @@ export default function CtfListPage() {
             here could leave the grid stuck on skeletons if a transition stalled,
             hiding challenges that had already loaded. */}
         <div>
-          {isLoading ? (
+          {isError ? (
+            <LoadFailure onRetry={() => refetch()} />
+          ) : isLoading ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {Array.from({ length: 8 }).map((_, i) => (
                 <Skeleton key={i} className="h-72 bg-foreground/5 rounded-xl" />

@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadFailure, isNotFound } from "@/components/LoadFailure";
 import { useLang } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
 import { loginWithNext } from "@/lib/next-path";
@@ -198,7 +199,7 @@ export default function LessonDetailPage() {
   const [, setLocation] = useLocation();
   const [readProgress, setReadProgress] = useState(0);
 
-  const { data: lesson, isLoading } = useGetLesson(id, {
+  const { data: lesson, isLoading, isError, error, refetch } = useGetLesson(id, {
     query: { enabled: !!id, queryKey: getGetLessonQueryKey(id) },
   });
 
@@ -250,10 +251,27 @@ export default function LessonDetailPage() {
     );
   }
 
+  // The most-linked route in the product used to answer a network failure with
+  // one grey line — "Lesson not found" — and no link, button or retry.
+  if (isError && !isNotFound(error)) {
+    return (
+      <div className="min-h-screen bg-background pt-28 pb-24">
+        <div className="max-w-2xl mx-auto px-6">
+          <LoadFailure onRetry={() => refetch()} backHref="/modules" backLabel={t("All modules", "Barcha modullar", "Все модули")} />
+        </div>
+      </div>
+    );
+  }
+
   if (!lesson) {
     return (
-      <div className="min-h-screen bg-background pt-28 flex items-center justify-center">
-        <p className="text-muted-foreground">{t("Lesson not found", "Dars topilmadi", "Урок не найден")}</p>
+      <div className="min-h-screen bg-background pt-28 pb-24">
+        <div className="max-w-2xl mx-auto px-6 text-center py-20">
+          <p className="text-muted-foreground mb-6">{t("Lesson not found", "Dars topilmadi", "Урок не найден")}</p>
+          <Link href="/modules">
+            <Button variant="outline">{t("Browse modules", "Modullarni ko'rish", "Смотреть модули")}</Button>
+          </Link>
+        </div>
       </div>
     );
   }

@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Briefcase, Flag, BookOpen, Trophy, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadFailure } from "@/components/LoadFailure";
 import { useLang } from "@/lib/LanguageContext";
 import { normalizeArray } from "@/lib/api-shapes";
 import { useGetTalentDirectory, getGetTalentDirectoryQueryKey } from "@workspace/api-client-react";
@@ -17,7 +18,7 @@ type TalentEntry = {
 
 export default function TalentPage() {
   const { t } = useLang();
-  const { data, isLoading } = useGetTalentDirectory(undefined, {
+  const { data, isLoading, isError, refetch } = useGetTalentDirectory(undefined, {
     query: { queryKey: getGetTalentDirectoryQueryKey() },
   });
 
@@ -54,7 +55,9 @@ export default function TalentPage() {
           </p>
         </div>
 
-        {isLoading ? (
+        {isError ? (
+          <LoadFailure onRetry={() => refetch()} />
+        ) : isLoading ? (
           <div className="grid sm:grid-cols-2 gap-4">
             {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-xl bg-foreground/5" />)}
           </div>

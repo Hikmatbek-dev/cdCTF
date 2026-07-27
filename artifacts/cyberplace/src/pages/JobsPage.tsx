@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadFailure } from "@/components/LoadFailure";
 import { useToast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
@@ -41,7 +42,7 @@ export default function JobsPage() {
   const qc = useQueryClient();
   const employmentLabel = useEmploymentLabel();
 
-  const { data: jobsData, isLoading } = useListJobs({ query: { queryKey: getListJobsQueryKey() } });
+  const { data: jobsData, isLoading, isError, refetch } = useListJobs({ query: { queryKey: getListJobsQueryKey() } });
   const { data: myJobsData } = useListMyJobs({ query: { enabled: !!user?.isEmployer, queryKey: getListMyJobsQueryKey() } });
   const jobs = normalizeArray<Job>(jobsData, ["jobs", "data", "items"]);
   const myJobs = normalizeArray<Job>(myJobsData, ["jobs", "data", "items"]);
@@ -256,7 +257,9 @@ export default function JobsPage() {
         )}
 
         {/* The board */}
-        {isLoading ? (
+        {isError ? (
+          <LoadFailure onRetry={() => refetch()} />
+        ) : isLoading ? (
           <div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl bg-foreground/5" />)}</div>
         ) : jobs.length === 0 ? (
           /* Both sides of an empty board get a next step: a candidate goes and

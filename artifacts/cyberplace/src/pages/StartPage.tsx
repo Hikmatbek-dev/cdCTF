@@ -5,6 +5,7 @@ import {
   Mail, Map, Rocket, Terminal, Trophy, Wrench,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadFailure } from "@/components/LoadFailure";
 import { useLang } from "@/lib/LanguageContext";
 import { useListModules, getListModulesQueryKey, useGetModule, getGetModuleQueryKey } from "@workspace/api-client-react";
 
@@ -52,7 +53,7 @@ export default function StartPage() {
   // here, instead of blocking the page behind it.
   const justRegistered = new URLSearchParams(window.location.search).get("new") === "1";
 
-  const { data: modulesData, isLoading } = useListModules({ query: { queryKey: getListModulesQueryKey() } });
+  const { data: modulesData, isLoading, isError, refetch } = useListModules({ query: { queryKey: getListModulesQueryKey() } });
   const modules = (Array.isArray(modulesData) ? modulesData : []) as Module[];
 
   // Slug lookup with a positional fallback: if the curriculum is ever renamed,
@@ -226,7 +227,14 @@ export default function StartPage() {
               {t("3 · Your starting point", "3 · Boshlanish nuqtangiz", "3 · Ваша точка старта")}
             </h2>
 
-            {isLoading || !chosen ? (
+            {isError ? (
+              // Without this the first-run page answered a failed request with a
+              // skeleton that never resolved: two questions answered, no answer.
+              <LoadFailure
+                onRetry={() => refetch()}
+                title={t("Could not load the modules", "Modullarni yuklab bo'lmadi", "Не удалось загрузить модули")}
+              />
+            ) : isLoading || !chosen ? (
               <Skeleton className="h-52 w-full rounded-2xl bg-foreground/5" />
             ) : (
               <div className="rounded-2xl border border-primary/30 bg-gradient-to-b from-primary/5 to-transparent p-7">

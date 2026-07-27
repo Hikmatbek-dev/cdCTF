@@ -8,6 +8,7 @@ import { useGetScoreboard, getGetScoreboardQueryKey } from "@workspace/api-clien
 import { useAuth } from "@/lib/AuthContext";
 import { normalizeArray } from "@/lib/api-shapes";
 import { FadeIn } from "@/components/PageTransition";
+import { LoadFailure } from "@/components/LoadFailure";
 
 export default function ScoreboardPage() {
   const { t } = useLang();
@@ -30,7 +31,7 @@ export default function ScoreboardPage() {
     search: debouncedSearch 
   };
 
-  const { data, isLoading } = useGetScoreboard(queryParams, {
+  const { data, isLoading, isError, refetch } = useGetScoreboard(queryParams, {
     query: { queryKey: getGetScoreboardQueryKey(queryParams), refetchInterval: 30000 },
   }) as any;
 
@@ -108,7 +109,9 @@ export default function ScoreboardPage() {
             layer here meant a stalled transition could leave the list stuck on
             skeletons even after the data had arrived. */}
         <div>
-          {isLoading ? (
+          {isError ? (
+            <LoadFailure onRetry={() => refetch()} />
+          ) : isLoading ? (
             <div className="space-y-4">
               {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-14 bg-foreground/5 rounded-lg" />)}
             </div>
@@ -117,7 +120,13 @@ export default function ScoreboardPage() {
                <div className="w-20 h-20 bg-foreground/5 border border-foreground/5 rounded-3xl flex items-center justify-center mx-auto mb-8">
                 <Target className="w-10 h-10 text-muted-foreground/20" />
                </div>
-               <p className="text-muted-foreground">{t("No players match your search", "Qidiruvingizga mos foydalanuvchi yo'q", "Игроки не найдены")}</p>
+               {/* Blaming a search the visitor never made is worse than saying
+                   nothing: it sends them looking for a filter to clear. */}
+               <p className="text-muted-foreground">
+                 {debouncedSearch
+                   ? t("No players match your search", "Qidiruvingizga mos foydalanuvchi yo'q", "Игроки не найдены")
+                   : t("Nobody has scored yet — be the first.", "Hali hech kim ball to'plamagan — birinchi bo'ling.", "Пока никто не набрал очков — станьте первым.")}
+               </p>
             </div>
           ) : (
             <div className="space-y-4">

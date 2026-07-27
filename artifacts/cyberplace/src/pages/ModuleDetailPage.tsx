@@ -3,6 +3,7 @@ import { ArrowLeft, CheckCircle2, Circle, Clock, Award, Lock, FileText, Play, Ar
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadFailure, isNotFound } from "@/components/LoadFailure";
 import { useLang } from "@/lib/LanguageContext";
 import { useGetModule, getGetModuleQueryKey } from "@workspace/api-client-react";
 import { ChallengeArt } from "@/components/ChallengeArt";
@@ -43,7 +44,7 @@ export default function ModuleDetailPage() {
   const id = Number(params?.id);
   const { t } = useLang();
 
-  const { data, isLoading } = useGetModule(id, {
+  const { data, isLoading, isError, error, refetch } = useGetModule(id, {
     query: { queryKey: getGetModuleQueryKey(id), enabled: Number.isInteger(id) && id > 0 },
   });
   const mod = data as ModuleDetail | undefined;
@@ -57,6 +58,18 @@ export default function ModuleDetailPage() {
           <Skeleton className="h-10 w-2/3" />
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-64 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  // A dropped connection is not a missing module. Saying "Module not found."
+  // to someone whose phone lost signal is wrong and leaves them nowhere to go.
+  if (isError && !isNotFound(error)) {
+    return (
+      <div className="min-h-screen bg-background pt-28 pb-24">
+        <div className="max-w-3xl mx-auto px-6">
+          <LoadFailure onRetry={() => refetch()} backHref="/modules" backLabel={t("All modules", "Barcha modullar", "Все модули")} />
         </div>
       </div>
     );

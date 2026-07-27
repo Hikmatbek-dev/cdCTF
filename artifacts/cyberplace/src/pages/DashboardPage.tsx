@@ -5,6 +5,7 @@ import { useLang } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadFailure } from "@/components/LoadFailure";
 import { normalizeArray } from "@/lib/api-shapes";
 import { levelFromPoints } from "@/lib/level";
 import { WeeklyLeague } from "@/components/WeeklyLeague";
@@ -31,7 +32,7 @@ export default function DashboardPage() {
   const { t } = useLang();
   const { isAuthenticated } = useAuth();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["user-dashboard"],
     queryFn: fetchDashboard,
     enabled: isAuthenticated,
@@ -52,7 +53,22 @@ export default function DashboardPage() {
     );
   }
 
-  if (!data) return null;
+  // Was `return null` — a failed dashboard request rendered nothing at all
+  // under the navbar: no message, no retry, no way to tell it from a bug.
+  if (isError || !data) {
+    return (
+      <div className="min-h-screen bg-background pt-32 px-6">
+        <div className="max-w-2xl mx-auto">
+          <LoadFailure
+            onRetry={() => refetch()}
+            title={t("Could not load your dashboard", "Panelni yuklab bo'lmadi", "Не удалось загрузить панель")}
+            backHref="/modules"
+            backLabel={t("Go to the modules", "Modullarga o'tish", "К модулям")}
+          />
+        </div>
+      </div>
+    );
+  }
 
   const solvedCtf = normalizeArray<DashboardResponse["recent"]["solvedCtf"][number]>(data.recent?.solvedCtf, ["solvedCtf", "data", "items"]);
   const completedLessons = normalizeArray<DashboardResponse["recent"]["completedLessons"][number]>(data.recent?.completedLessons, ["completedLessons", "data", "items"]);

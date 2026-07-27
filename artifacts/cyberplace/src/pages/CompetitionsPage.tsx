@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Trophy, Clock, Users, Lock, Gift } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadFailure } from "@/components/LoadFailure";
 import { useLang } from "@/lib/LanguageContext";
 import { normalizeCompetitions } from "@/lib/api-shapes";
 import { useListCompetitions, getListCompetitionsQueryKey } from "@workspace/api-client-react";
@@ -20,7 +21,7 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function CompetitionsPage() {
   const { t } = useLang();
-  const { data: competitions, isLoading } = useListCompetitions({
+  const { data: competitions, isLoading, isError, refetch } = useListCompetitions({
     query: { queryKey: getListCompetitionsQueryKey() },
   });
   const competitionList = normalizeCompetitions(competitions);
@@ -43,7 +44,9 @@ export default function CompetitionsPage() {
           </div>
         </div>
 
-        {isLoading ? (
+        {isError ? (
+          <LoadFailure onRetry={() => refetch()} />
+        ) : isLoading ? (
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-xl bg-foreground/5" />)}
           </div>
