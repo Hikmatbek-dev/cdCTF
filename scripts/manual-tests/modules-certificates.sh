@@ -154,6 +154,16 @@ q "INSERT INTO ctf_tasks (name,description,category,difficulty,points,flag,is_pu
 MB=$(curl -s $API/learn/modules/$WMID)
 AFTER=$(echo "$MB" | python3 -c 'import sys,json;p=json.load(sys.stdin).get("practice");print(p["total"] if p else 0)')
 check "$((AFTER - BEFORE))" "2" "qo'shilgan 2 ta Web topshirig'i modul mashqiga tushdi ($BEFORE → $AFTER)"
+# Modul endi topshiriqlar ro'yxatini ham beradi (faqat sonini emas).
+check "$(echo "$MB" | python3 -c 'import sys,json;p=json.load(sys.stdin)["practice"];print(len(p.get("challenges",[])) > 0)')" "True" "topshiriqlar ro'yxati keladi"
+check "$(echo "$MB" | python3 -c 'import sys,json;p=json.load(sys.stdin)["practice"];print(len(p["challenges"]) <= 6)')" "True" "ro'yxat 6 tadan oshmaydi"
+check "$(echo "$MB" | python3 -c 'import sys,json;p=json.load(sys.stdin)["practice"];print(all(c["category"]=="Web" for c in p["challenges"]))')" "True" "hammasi Web kategoriyasida"
+check "$(echo "$MB" | python3 -c '
+import sys,json
+p=json.load(sys.stdin)["practice"]
+order=["easy","medium","hard","insane"]
+ks=[(c["isSolved"], order.index(c["difficulty"])) for c in p["challenges"]]
+print(ks == sorted(ks))')" "True" "yechilmagan va oson topshiriqlar oldinda"
 check "$(echo "$MB" | python3 -c 'import sys,json;p=json.load(sys.stdin).get("practice");print("Web" in p["categories"] if p else False)')" "True" "kategoriya Web"
 # Topshiriq → modul: qaysi modul buni o'rgatishini bilishi kerak.
 CB=$(curl -s $API/ctf/$WCH)

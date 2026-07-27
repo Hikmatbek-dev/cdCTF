@@ -5,6 +5,8 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
 import { useGetModule, getGetModuleQueryKey } from "@workspace/api-client-react";
+import { ChallengeArt } from "@/components/ChallengeArt";
+import { categoryStyle, difficultyStyle } from "@/lib/category-style";
 
 type ModuleLesson = {
   id: number;
@@ -21,7 +23,13 @@ type ModuleDetail = {
   passScore: number;
   examQuestionCount: number;
   /** The challenges that drill this module, and how many the reader has solved. */
-  practice?: { categories: string[]; total: number; solved: number } | null;
+  practice?: {
+    categories: string[]; total: number; solved: number;
+    challenges?: Array<{
+      id: number; name: string; nameUz?: string | null; nameRu?: string | null;
+      category: string; difficulty: string; points: number; isSolved: boolean;
+    }>;
+  } | null;
   lessons: ModuleLesson[];
   completedCount: number;
   lessonCount: number;
@@ -185,10 +193,43 @@ export default function ModuleDetailPage() {
               />
             </div>
 
+            {/* The challenges themselves, unsolved and easiest first, so the
+                next thing to attempt is the first thing on the list — a count
+                and a link left the reader to go and find them. */}
+            {mod.practice.challenges && mod.practice.challenges.length > 0 && (
+              <div className="grid sm:grid-cols-2 gap-3 mb-5">
+                {mod.practice.challenges.map(c => {
+                  const cat = categoryStyle(c.category);
+                  const diff = difficultyStyle(c.difficulty);
+                  return (
+                    <Link href={`/ctf/${c.id}`} key={c.id}>
+                      <div
+                        className={`group flex items-center gap-3 rounded-lg border overflow-hidden bg-card hover:-translate-y-0.5 transition-all cursor-pointer ${
+                          c.isSolved ? "border-emerald-500/40" : "border-border hover:border-primary/40"
+                        }`}
+                        data-testid={`module-practice-${c.id}`}
+                      >
+                        <ChallengeArt name={c.name} hue={cat.hue} solved={c.isSolved} className="w-16 h-14 shrink-0" />
+                        <div className="min-w-0 flex-1 py-2">
+                          <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                            {t(c.name, c.nameUz ?? undefined, c.nameRu ?? undefined)}
+                          </div>
+                          <div className={`text-[11px] capitalize ${diff.text}`}>{c.difficulty}</div>
+                        </div>
+                        <span className="text-xs tabular-nums text-muted-foreground pr-3 shrink-0">{c.points}</span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+
             <Link href={`/ctf?category=${encodeURIComponent(mod.practice.categories[0])}`}>
               <Button variant="outline" className="w-full sm:w-auto" data-testid="button-module-practice">
                 <Flag className="w-4 h-4 mr-2" />
-                {t("Open the challenges", "Topshiriqlarni ochish", "Открыть задания")}
+                {mod.practice.total > (mod.practice.challenges?.length ?? 0)
+                  ? t(`See all ${mod.practice.total} challenges`, `Barcha ${mod.practice.total} topshiriqni ko'rish`, `Все ${mod.practice.total} заданий`)
+                  : t("Open the challenges", "Topshiriqlarni ochish", "Открыть задания")}
               </Button>
             </Link>
           </section>

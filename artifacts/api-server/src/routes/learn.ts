@@ -374,24 +374,55 @@ router.get("/modules/:id", optionalAuth, async (req, res) => {
   // challenges when you finish it — reading and drilling were two unconnected
   // halves of this platform, which is why the lessons went unused.
   const practiceCategories = practiceCategoriesFor(mod.slug);
-  let practice: { categories: string[]; total: number; solved: number } | null = null;
+  type PracticeChallenge = {
+    id: number; name: string; nameUz: string | null; nameRu: string | null;
+    category: string; difficulty: string; points: number; isSolved: boolean;
+  };
+  let practice: {
+    categories: string[]; total: number; solved: number; challenges: PracticeChallenge[];
+  } | null = null;
+
   if (practiceCategories.length > 0) {
-    const pool = await db.select({ id: ctfTasksTable.id })
+    const pool = await db.select({
+      id: ctfTasksTable.id, name: ctfTasksTable.name,
+      nameUz: ctfTasksTable.nameUz, nameRu: ctfTasksTable.nameRu,
+      category: ctfTasksTable.category, difficulty: ctfTasksTable.difficulty,
+      points: ctfTasksTable.points,
+    })
       .from(ctfTasksTable)
       .where(and(eq(ctfTasksTable.isPublished, true), inArray(ctfTasksTable.category, practiceCategories)));
 
-    let solved = 0;
+    // Which of them this reader has already solved — so the module can show the
+    // unsolved ones first rather than a flat list they have half finished.
+    const solvedIds = new Set<number>();
     if (userId && pool.length > 0) {
-      const [row] = await db.select({ n: sql<number>`count(*)::int` })
+      const rows = await db.select({ ctfId: ctfAttemptsTable.ctfId })
         .from(ctfAttemptsTable)
         .where(and(
           eq(ctfAttemptsTable.userId, userId),
           eq(ctfAttemptsTable.solved, true),
           inArray(ctfAttemptsTable.ctfId, pool.map(p => p.id)),
         ));
-      solved = row?.n ?? 0;
+      for (const r of rows) solvedIds.add(r.ctfId);
     }
-    practice = { categories: practiceCategories, total: pool.length, solved };
+
+    const DIFFICULTY_ORDER = ["easy", "medium", "hard", "insane"];
+    const challenges = pool
+      .map(c => ({ ...c, isSolved: solvedIds.has(c.id) }))
+      // Unsolved first, then easiest first: the next thing to attempt is the
+      // first thing in the list.
+      .sort((a, b) =>
+        Number(a.isSolved) - Number(b.isSolved)
+        || DIFFICULTY_ORDER.indexOf(a.difficulty) - DIFFICULTY_ORDER.indexOf(b.difficulty)
+        || a.points - b.points)
+      .slice(0, 6);
+
+    practice = {
+      categories: practiceCategories,
+      total: pool.length,
+      solved: solvedIds.size,
+      challenges,
+    };
   }
 
   res.json({
