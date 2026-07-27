@@ -2,8 +2,8 @@ import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import multer from "multer";
 import { db } from "@workspace/db";
-import { usersTable, ctfAttemptsTable, ctfTasksTable, userLessonAttemptsTable, lessonsTable, modulesTable, competitionUsersTable, userTitlesTable, titlesTable } from "@workspace/db/schema";
-import { and, asc, eq, or, sql } from "drizzle-orm";
+import { usersTable, ctfAttemptsTable, ctfTasksTable, userLessonAttemptsTable, lessonsTable, modulesTable, competitionsTable, competitionUsersTable, moduleExamAttemptsTable, certificatesTable, userTitlesTable, titlesTable } from "@workspace/db/schema";
+import { and, asc, eq, gt, inArray, or, sql } from "drizzle-orm";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import { UpdateUserProfileBody } from "@workspace/api-zod";
@@ -77,6 +77,147 @@ router.get("/me/dashboard", authenticateToken, async (req, res) => {
     },
     titles: titles.map(item => ({ id: item.id, name: item.name, category: item.category, earnedAt: item.earnedAt })),
   });
+});
+
+/**
+ * What this learner should be nudged about, right now.
+ *
+ * There is no mail cron and no push channel here, so a "reminder" is something
+ * the site says the next time it is opened. That is the honest version: it
+ * cannot chase someone who never comes back, but it does stop a returning
+ * learner from landing on a wall of statistics with no next action — which is
+ * what the dashboard was.
+ *
+ * Every reminder is returned as a *kind plus data*, never a sentence: the
+ * wording has to exist in three languages and the server has no idea which one
+ * the reader has selected.
+ */
+type Reminder = { kind: string; priority: number; data: Record<string, unknown> };
+
+router.get("/me/reminders", authenticateToken, async (req, res) => {
+  const userId = req.user!.userId;
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+  if (!user) return res.status(404).json({ error: "User not found" });
+
+  const reminders: Reminder[] = [];
+  const today = new Date().toISOString().slice(0, 10);
+
+  // 1. The streak. `lastActivityDate` is the same UTC day string the streak
+  //    writer uses, so comparing strings here cannot drift the way a local-time
+  //    Date comparison would.
+  if (user.currentStreak > 0 && user.lastActivityDate !== today) {
+    reminders.push({ kind: "streak_at_risk", priority: 10, data: { currentStreak: user.currentStreak } });
+  } else if (user.currentStreak === 0 && user.longestStreak >= 3) {
+    reminders.push({ kind: "streak_lost", priority: 40, data: { longestStreak: user.longestStreak } });
+  }
+
+  // 2. Curriculum state — one query for the published lessons, one for this
+  //    learner's completions, then everything else is arithmetic.
+  const publishedLessons = await db.select({ id: lessonsTable.id, moduleId: lessonsTable.moduleId })
+    .from(lessonsTable)
+    .innerJoin(modulesTable, eq(lessonsTable.moduleId, modulesTable.id))
+    .where(and(eq(lessonsTable.isPublished, true), eq(modulesTable.isPublished, true)));
+
+  const doneRows = await db.select({ lessonId: userLessonAttemptsTable.lessonId })
+    .from(userLessonAttemptsTable)
+    .where(and(eq(userLessonAttemptsTable.userId, userId), eq(userLessonAttemptsTable.status, "completed")));
+  const done = new Set(doneRows.map(r => r.lessonId));
+
+  const totalByModule = new Map<number, number>();
+  const doneByModule = new Map<number, number>();
+  for (const l of publishedLessons) {
+    if (l.moduleId === null) continue;
+    totalByModule.set(l.moduleId, (totalByModule.get(l.moduleId) ?? 0) + 1);
+    if (done.has(l.id)) doneByModule.set(l.moduleId, (doneByModule.get(l.moduleId) ?? 0) + 1);
+  }
+
+  const startedModuleIds = [...doneByModule.keys()];
+  if (startedModuleIds.length > 0) {
+    const mods = await db.select({
+      id: modulesTable.id, title: modulesTable.title,
+      titleUz: modulesTable.titleUz, titleRu: modulesTable.titleRu,
+      orderIndex: modulesTable.orderIndex,
+    }).from(modulesTable).where(inArray(modulesTable.id, startedModuleIds));
+
+    const exams = await db.select().from(moduleExamAttemptsTable)
+      .where(and(eq(moduleExamAttemptsTable.userId, userId), inArray(moduleExamAttemptsTable.moduleId, startedModuleIds)));
+    const passed = new Map(exams.map(e => [e.moduleId, e.passed]));
+
+    const certs = await db.select({ moduleId: certificatesTable.moduleId }).from(certificatesTable)
+      .where(and(eq(certificatesTable.userId, userId), inArray(certificatesTable.moduleId, startedModuleIds)));
+    const hasCert = new Set(certs.map(c => c.moduleId));
+
+    // Nearest to the finish line first — a module with one lesson left is a far
+    // better thing to point at than one barely begun.
+    const ranked = mods
+      .map(m => ({
+        m,
+        total: totalByModule.get(m.id) ?? 0,
+        finished: doneByModule.get(m.id) ?? 0,
+      }))
+      .sort((a, b) => (a.total - a.finished) - (b.total - b.finished) || a.m.orderIndex - b.m.orderIndex);
+
+    // One curriculum reminder, not five: a to-do list of eight modules is the
+    // same paralysis the dashboard already had.
+    const claimable = ranked.find(({ m, total, finished }) => finished === total && passed.get(m.id) && !hasCert.has(m.id));
+    const target = claimable ?? ranked[0];
+    if (target) {
+      const { m, total, finished } = target;
+      const title = { moduleId: m.id, title: m.title, titleUz: m.titleUz, titleRu: m.titleRu };
+      if (finished < total) {
+        reminders.push({ kind: "module_unfinished", priority: 20, data: { ...title, remaining: total - finished, total } });
+      } else if (!passed.get(m.id)) {
+        reminders.push({ kind: "exam_ready", priority: 15, data: title });
+      } else if (!hasCert.has(m.id)) {
+        // Passed the exam and never claimed the certificate — the most wasteful
+        // state on the platform, because the credential already exists in
+        // everything but name.
+        reminders.push({ kind: "certificate_ready", priority: 5, data: title });
+      }
+    }
+  }
+
+  // 3. Events. A competition nobody hears about might as well not run — which
+  //    matters most for the sponsored ones.
+  const now = new Date();
+  const soon = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  // "Already joined" is excluded in SQL, not after the fact: fetching the next
+  // three and then filtering meant that three events this learner had already
+  // joined hid the one they had not. Found by the test suite once more than one
+  // competition existed at a time.
+  const [next] = await db.select({
+    id: competitionsTable.id, name: competitionsTable.name,
+    startTime: competitionsTable.startTime, endTime: competitionsTable.endTime,
+    sponsorName: competitionsTable.sponsorName,
+  })
+    .from(competitionsTable)
+    .where(and(
+      eq(competitionsTable.type, "public"),
+      gt(competitionsTable.endTime, now),
+      sql`${competitionsTable.startTime} < ${soon}`,
+      sql`not exists (
+        select 1 from ${competitionUsersTable}
+        where ${competitionUsersTable.competitionId} = ${competitionsTable.id}
+          and ${competitionUsersTable.userId} = ${userId}
+      )`,
+    ))
+    .orderBy(asc(competitionsTable.startTime))
+    .limit(1);
+
+  if (next) {
+    const live = next.startTime <= now;
+    reminders.push({
+      kind: live ? "competition_live" : "competition_soon",
+      priority: live ? 1 : 8,
+      data: {
+        competitionId: next.id, name: next.name, sponsorName: next.sponsorName,
+        startTime: next.startTime, endTime: next.endTime,
+      },
+    });
+  }
+
+  reminders.sort((a, b) => a.priority - b.priority);
+  res.json({ reminders: reminders.slice(0, 3) });
 });
 
 /** Counts who is ahead instead of loading and sorting the whole user table. */

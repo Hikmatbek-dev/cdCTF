@@ -10,6 +10,7 @@ import HomePage from "@/pages/HomePage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import VerifyEmailPage from "@/pages/VerifyEmailPage";
+import StartPage from "@/pages/StartPage";
 import CtfListPage from "@/pages/CtfListPage";
 import CtfDetailPage from "@/pages/CtfDetailPage";
 import LearnPage from "@/pages/LearnPage";
@@ -117,6 +118,11 @@ function Router() {
           </Route>
           <Route path="/resend-verification">
             {() => <PageTransition><ResendVerificationPage /></PageTransition>}
+          </Route>
+          {/* Public on purpose: someone who has registered but not yet clicked
+              the verification email still needs somewhere to start. */}
+          <Route path="/start">
+            {() => <PageTransition><StartPage /></PageTransition>}
           </Route>
           <Route path="/ctf">
             {() => <PageTransition><CtfListPage /></PageTransition>}

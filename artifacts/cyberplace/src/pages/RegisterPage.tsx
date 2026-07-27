@@ -79,7 +79,10 @@ export default function RegisterPage() {
           "Проверьте почту и подтвердите аккаунт перед входом."
         ),
       });
-      setLocation("/login");
+      // Not /login: a brand-new account cannot sign in until the email is
+      // verified, and dropping someone on a form they cannot use is where most
+      // of them left. /start explains the verification *and* opens a lesson.
+      setLocation("/start?new=1");
     } catch (error) {
       toast({
         title: t("Error", "Xato", "Ошибка"),

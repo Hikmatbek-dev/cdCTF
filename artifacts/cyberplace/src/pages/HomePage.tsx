@@ -159,7 +159,9 @@ export default function HomePage() {
                 )}
               </p>
               <div className="flex flex-col sm:flex-row items-center lg:justify-start justify-center gap-3">
-                <Link href="/modules" className="w-full sm:w-auto">
+                {/* /start, not /modules: a list of eight modules is a decision
+                    a first-time visitor cannot make. Two questions can. */}
+                <Link href="/start" className="w-full sm:w-auto">
                   <button className="cyber-button h-12 px-8 w-full sm:w-auto" data-testid="button-hero-start">
                     <GraduationCap className="w-4 h-4" />
                     {t("Start learning", "O'rganishni boshlash", "Начать обучение")}

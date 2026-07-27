@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { normalizeArray } from "@/lib/api-shapes";
 import { levelFromPoints } from "@/lib/level";
 import { WeeklyLeague } from "@/components/WeeklyLeague";
+import { Reminders } from "@/components/Reminders";
 
 type DashboardResponse = {
   user: { id: number; nickname: string; points: number; rank: number };
@@ -110,6 +111,11 @@ export default function DashboardPage() {
           );
         })()}
 
+        {/* What to do next, before any statistic. A returning learner who is
+            shown numbers first has to work out their own next move; most did
+            not. */}
+        <Reminders />
+
         {/* This week's league. Weekly standing is what brings someone back on a
             Tuesday — a lifetime total never moves fast enough to feel like
             progress. */}
@@ -119,7 +125,7 @@ export default function DashboardPage() {
             starts a lesson; a returning learner who has completed none gets a
             clear first step toward the curriculum rather than a wall of stats. */}
         {data.progress.completedLessonCount === 0 && (
-          <Link href="/modules" className="block mb-10">
+          <Link href="/start" className="block mb-10">
             <div className="glass-card !p-8 border-primary/30 flex flex-col sm:flex-row sm:items-center justify-between gap-6 group cursor-pointer">
               <div className="flex items-center gap-5">
                 <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shrink-0 neon-glow">
@@ -136,7 +142,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <button className="cyber-button h-11 px-6 shrink-0">
-                {t("Start module 01", "01-moduldan boshlash", "Начать с модуля 01")}
+                {t("Find my first lesson", "Birinchi darsimni topish", "Найти мой первый урок")}
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

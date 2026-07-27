@@ -130,7 +130,9 @@ echo "==> Port: $API_PORT"
 # lesson-test-honest reuses the lesson that lesson-test-exploit seeds, so order matters.
 # Overridable so a single suite can be re-run while debugging it:
 #   SUITES=scoreboard bash scripts/manual-tests/run-all.sh
-SUITES="${SUITES:-lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens oauth passkeys scoring scoreboard competitions profile jobs labs stats streaks writeups validation body-fields modules-certificates diploma csrf captcha captcha-failclosed rate-limit}"
+# uz-content runs last on purpose: it imports a real challenge pack into the
+# shared throwaway database, which would shift the counts other suites assert.
+SUITES="${SUITES:-lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens oauth passkeys scoring scoreboard competitions profile jobs labs stats streaks reminders writeups validation body-fields modules-certificates diploma csrf captcha captcha-failclosed rate-limit uz-content}"
 FAILED=""
 
 for suite in $SUITES; do
