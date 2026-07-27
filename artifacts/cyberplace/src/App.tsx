@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
@@ -8,47 +9,58 @@ import { loginWithNext } from "@/lib/next-path";
 import { Navbar } from "@/components/Navbar";
 
 import HomePage from "@/pages/HomePage";
-import LoginPage from "@/pages/LoginPage";
-import RegisterPage from "@/pages/RegisterPage";
-import VerifyEmailPage from "@/pages/VerifyEmailPage";
-import StartPage from "@/pages/StartPage";
-import CtfListPage from "@/pages/CtfListPage";
-import CtfDetailPage from "@/pages/CtfDetailPage";
-import LearnPage from "@/pages/LearnPage";
-import LessonDetailPage from "@/pages/LessonDetailPage";
-import LessonTestPage from "@/pages/LessonTestPage";
-import ModulesPage from "@/pages/ModulesPage";
-import ModuleDetailPage from "@/pages/ModuleDetailPage";
-import ModuleExamPage from "@/pages/ModuleExamPage";
-import CertificatePage from "@/pages/CertificatePage";
-import DiplomaPage from "@/pages/DiplomaPage";
-import DiplomaVerifyPage from "@/pages/DiplomaVerifyPage";
-import ScoreboardPage from "@/pages/ScoreboardPage";
-import TalentPage from "@/pages/TalentPage";
-import JobsPage from "@/pages/JobsPage";
-import ImpactPage from "@/pages/ImpactPage";
-import VerifyPage from "@/pages/VerifyPage";
-import LabsPage from "@/pages/LabsPage";
-import CompetitionsPage from "@/pages/CompetitionsPage";
-import EventPage from "@/pages/EventPage";
-import CompetitionDetailPage from "@/pages/CompetitionDetailPage";
-import ProfilePage from "@/pages/ProfilePage";
-import ProfileEditPage from "@/pages/ProfileEditPage";
-import SecurityPage from "@/pages/SecurityPage";
-import DashboardPage from "@/pages/DashboardPage";
-import AdminDashboardPage from "@/pages/admin/AdminDashboardPage";
-import AdminUsersPage from "@/pages/admin/AdminUsersPage";
-import AdminCtfPage from "@/pages/admin/AdminCtfPage";
-import AdminCompetitionsPage from "@/pages/admin/AdminCompetitionsPage";
-import AdminLessonsPage from "@/pages/admin/AdminLessonsPage";
-import AdminAnalyticsPage from "@/pages/admin/AdminAnalyticsPage";
-import AdminBlockedPage from "@/pages/admin/AdminBlockedPage";
-import AdminAuditPage from "@/pages/admin/AdminAuditPage";
-import CompetitionCtfPage from "@/pages/CompetitionCtfPage";
-import ResendVerificationPage from "@/pages/ResendVerificationPage";
-import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
-import ResetPasswordPage from "@/pages/ResetPasswordPage";
-import NotFound from "@/pages/not-found";
+const LoginPage = lazy(() => import("@/pages/LoginPage"));
+const RegisterPage = lazy(() => import("@/pages/RegisterPage"));
+const VerifyEmailPage = lazy(() => import("@/pages/VerifyEmailPage"));
+const StartPage = lazy(() => import("@/pages/StartPage"));
+const CtfListPage = lazy(() => import("@/pages/CtfListPage"));
+const CtfDetailPage = lazy(() => import("@/pages/CtfDetailPage"));
+const LearnPage = lazy(() => import("@/pages/LearnPage"));
+const LessonDetailPage = lazy(() => import("@/pages/LessonDetailPage"));
+const LessonTestPage = lazy(() => import("@/pages/LessonTestPage"));
+const ModulesPage = lazy(() => import("@/pages/ModulesPage"));
+const ModuleDetailPage = lazy(() => import("@/pages/ModuleDetailPage"));
+const ModuleExamPage = lazy(() => import("@/pages/ModuleExamPage"));
+const CertificatePage = lazy(() => import("@/pages/CertificatePage"));
+const DiplomaPage = lazy(() => import("@/pages/DiplomaPage"));
+const DiplomaVerifyPage = lazy(() => import("@/pages/DiplomaVerifyPage"));
+const ScoreboardPage = lazy(() => import("@/pages/ScoreboardPage"));
+const TalentPage = lazy(() => import("@/pages/TalentPage"));
+const JobsPage = lazy(() => import("@/pages/JobsPage"));
+const ImpactPage = lazy(() => import("@/pages/ImpactPage"));
+const VerifyPage = lazy(() => import("@/pages/VerifyPage"));
+const LabsPage = lazy(() => import("@/pages/LabsPage"));
+const CompetitionsPage = lazy(() => import("@/pages/CompetitionsPage"));
+const EventPage = lazy(() => import("@/pages/EventPage"));
+const CompetitionDetailPage = lazy(() => import("@/pages/CompetitionDetailPage"));
+const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
+const ProfileEditPage = lazy(() => import("@/pages/ProfileEditPage"));
+const SecurityPage = lazy(() => import("@/pages/SecurityPage"));
+const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
+const AdminDashboardPage = lazy(() => import("@/pages/admin/AdminDashboardPage"));
+const AdminUsersPage = lazy(() => import("@/pages/admin/AdminUsersPage"));
+const AdminCtfPage = lazy(() => import("@/pages/admin/AdminCtfPage"));
+const AdminCompetitionsPage = lazy(() => import("@/pages/admin/AdminCompetitionsPage"));
+const AdminLessonsPage = lazy(() => import("@/pages/admin/AdminLessonsPage"));
+const AdminAnalyticsPage = lazy(() => import("@/pages/admin/AdminAnalyticsPage"));
+const AdminBlockedPage = lazy(() => import("@/pages/admin/AdminBlockedPage"));
+const AdminAuditPage = lazy(() => import("@/pages/admin/AdminAuditPage"));
+const CompetitionCtfPage = lazy(() => import("@/pages/CompetitionCtfPage"));
+const ResendVerificationPage = lazy(() => import("@/pages/ResendVerificationPage"));
+const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
+const NotFound = lazy(() => import("@/pages/not-found"));
+
+/**
+ * Every page except the home page is a lazy chunk.
+ *
+ * The build emitted one 1.47MB script (425KB gzipped) that every visitor had to
+ * download before seeing anything — including recharts, which only the admin
+ * dashboard uses, and the QR encoder, which only a certificate uses. On the
+ * mobile connections these learners are on, that is the difference between
+ * arriving and leaving. HomePage stays a static import: it is the most common
+ * landing, and making it a chunk would only add a round trip.
+ */
 
 /**
  * Shown while the session check is in flight. Without it a guard would decide on
@@ -97,7 +109,6 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   return <Component />;
 }
 
-import { AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/PageTransition";
 
 function Router() {
@@ -107,7 +118,26 @@ function Router() {
     <>
       <SeoManager />
       <Navbar />
-      <AnimatePresence mode="wait">
+      {/*
+        No AnimatePresence here, deliberately.
+
+        It was wrapped in `<AnimatePresence mode="wait">` with `<Switch>` as its
+        direct child. `mode="wait"` holds the outgoing child until its exit
+        animation reports completion — and Switch is not a motion component, so
+        it never reported. The router was wedged on whichever route loaded
+        first: clicking any link changed the URL and the document title while
+        the page stayed exactly as it was. Confirmed on production before this
+        change, by clicking through the nav and reading the DOM — one <h1>, the
+        original page, on every route.
+
+        Nothing in the build catches that, and neither does a screenshot of a
+        directly-loaded URL. Only navigating does.
+
+        PageTransition still runs its enter animation on each route (the Switch
+        is keyed by location, so the subtree remounts). The exit animation is
+        gone, which nobody will miss; a working router is not a trade.
+      */}
+      <Suspense fallback={<AuthPending />}>
         <Switch location={location} key={location}>
           <Route path="/">
             {() => <PageTransition><HomePage /></PageTransition>}
@@ -249,7 +279,7 @@ function Router() {
           </Route>
           <Route component={NotFound} />
         </Switch>
-      </AnimatePresence>
+      </Suspense>
     </>
   );
 }

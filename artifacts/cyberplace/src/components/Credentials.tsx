@@ -1,6 +1,5 @@
-import { useId } from "react";
+import { lazy, Suspense, useId } from "react";
 import { ShieldCheck } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
 
 /**
  * The two credentials this platform issues, in their final form.
@@ -77,16 +76,26 @@ export function printCredential() {
  * on a document that will be photographed off a screen or a printout — the
  * payload is a short URL, so the extra redundancy costs almost no density.
  */
+/**
+ * Loaded on demand. The QR encoder is 20KB that every visitor was downloading
+ * because the home page renders a decorative sample certificate — a marketing
+ * mock, on the one page that must be fast. Suspense falls back to a blank
+ * square of the same size, so nothing shifts when it arrives.
+ */
+const QRCodeSVG = lazy(() => import("qrcode.react").then(m => ({ default: m.QRCodeSVG })));
+
 function QrBlock({ href, dark }: { href: string; dark: string }) {
   return (
-    <QRCodeSVG
-      value={href}
-      level="Q"
-      marginSize={0}
-      bgColor="#ffffff"
-      fgColor={dark}
-      className="w-full h-full"
-    />
+    <Suspense fallback={<div className="w-full h-full bg-white" aria-hidden="true" />}>
+      <QRCodeSVG
+        value={href}
+        level="Q"
+        marginSize={0}
+        bgColor="#ffffff"
+        fgColor={dark}
+        className="w-full h-full"
+      />
+    </Suspense>
   );
 }
 
