@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRoute, useLocation, Link } from "wouter";
 import {
   BookOpen, CheckCircle2, Lock, ChevronRight, ChevronLeft, ChevronDown, Copy, Check,
-  ArrowRight, GraduationCap, ListChecks,
+  ArrowRight, GraduationCap, ListChecks, Flag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -204,7 +204,12 @@ export default function LessonDetailPage() {
     query: { enabled: !!moduleId, queryKey: getGetModuleQueryKey(moduleId as number) },
   });
 
-  const mod = moduleData as { id: number; title: string; titleUz?: string | null; titleRu?: string | null; lessons: SiblingLesson[] } | undefined;
+  const mod = moduleData as {
+    id: number; title: string; titleUz?: string | null; titleRu?: string | null;
+    lessons: SiblingLesson[];
+    /** The challenges that drill this module — the hand-off after the lesson. */
+    practice?: { categories: string[]; total: number; solved: number } | null;
+  } | undefined;
   const siblings = mod?.lessons ?? [];
   const currentIndex = siblings.findIndex(l => l.id === id);
   const prev = currentIndex > 0 ? siblings[currentIndex - 1] : null;
@@ -448,6 +453,33 @@ export default function LessonDetailPage() {
                 </div>
               )}
             </div>
+
+            {/* Practice. Offered once the lesson is finished — the moment the
+                material is fresh is the moment to go and use it, and until now
+                nothing on this page told a reader that challenges on exactly
+                this subject existed. */}
+            {lesson.isCompleted && mod?.practice && mod.practice.total > 0 && (
+              <Link href={`/ctf?category=${encodeURIComponent(mod.practice.categories[0])}`} className="block mt-6">
+                <div className="glass-card !p-5 border-primary/25 flex items-center gap-4 group cursor-pointer" data-testid="lesson-practice">
+                  <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                    <Flag className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-0.5">
+                      {t("Now use it", "Endi qo'llang", "Теперь примените")}
+                    </div>
+                    <div className="font-semibold group-hover:text-primary transition-colors">
+                      {t(
+                        `${mod.practice.total} challenges use this material`,
+                        `${mod.practice.total} ta topshiriq shu materialga tayanadi`,
+                        `${mod.practice.total} заданий опираются на этот материал`,
+                      )}
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
+                </div>
+              </Link>
+            )}
 
             {/* Prev / Next navigation — the momentum that was missing. */}
             {(prev || next || mod) && (

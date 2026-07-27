@@ -18,8 +18,17 @@ const DIFFICULTY_ORDER = ["easy", "medium", "hard", "insane"];
 export default function CtfListPage() {
   const { t } = useLang();
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("All");
-  const [difficulty, setDifficulty] = useState("All");
+  // Seed the filters from the URL, so a link like /ctf?category=Web — the one a
+  // module or a lesson hands you — actually arrives filtered. Without this the
+  // page opened on everything and the hand-off from the teaching half was lost.
+  const [category, setCategory] = useState(() => {
+    const v = new URLSearchParams(window.location.search).get("category");
+    return v && v.trim() ? v : "All";
+  });
+  const [difficulty, setDifficulty] = useState(() => {
+    const v = new URLSearchParams(window.location.search).get("difficulty");
+    return v && ["easy", "medium", "hard", "insane"].includes(v) ? v : "All";
+  });
   const [solved, setSolved] = useState<"all" | "solved" | "unsolved">("all");
   const [page, setPage] = useState(1);
   
