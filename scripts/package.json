@@ -10,7 +10,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "fix-content": "tsx ./src/fix-challenge-content.ts",
     "import-balance": "tsx ./src/import-balance-challenges.ts",
-    "import-uz": "tsx ./src/import-uz-scenarios.ts"
+    "import-uz": "tsx ./src/import-uz-scenarios.ts",
+    "audit": "tsx ./src/audit-content.ts",
+    "smoke": "bash ./smoke.sh"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

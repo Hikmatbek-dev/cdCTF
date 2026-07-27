@@ -132,7 +132,7 @@ echo "==> Port: $API_PORT"
 #   SUITES=scoreboard bash scripts/manual-tests/run-all.sh
 # uz-content runs last on purpose: it imports a real challenge pack into the
 # shared throwaway database, which would shift the counts other suites assert.
-SUITES="${SUITES:-lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens oauth passkeys scoring scoreboard competitions profile jobs labs stats streaks reminders writeups validation body-fields modules-certificates diploma csrf captcha captcha-failclosed rate-limit uz-content}"
+SUITES="${SUITES:-lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens oauth passkeys scoring scoreboard competitions profile jobs labs stats streaks reminders seo writeups validation body-fields modules-certificates diploma csrf captcha captcha-failclosed rate-limit uz-content}"
 FAILED=""
 
 for suite in $SUITES; do

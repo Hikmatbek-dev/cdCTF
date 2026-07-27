@@ -2,7 +2,15 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { Language, useLang } from "@/lib/LanguageContext";
 
-const SITE_URL = "https://cdctf.uz";
+/**
+ * The origin this page is actually being served from.
+ *
+ * This was pinned to https://cdctf.uz, which is not connected yet — so every
+ * canonical link and every structured-data URL the app emitted pointed at a
+ * host that answers nothing. Reading it from the browser is both correct today
+ * and correct the day the domain is connected, with no redeploy.
+ */
+const SITE_URL = typeof window === "undefined" ? "https://cdctf.uz" : window.location.origin;
 const SITE_NAME = "cdCTF";
 const DEFAULT_IMAGE = `${SITE_URL}/logo.png`;
 

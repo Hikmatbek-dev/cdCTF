@@ -129,7 +129,10 @@ echo
 echo "=== ⭐ OG PREVIEW — profil va talent uchun meta teglar ==="
 OGP=$(curl -s $API/og/profile/$UID_)
 check "$(echo "$OGP" | grep -c 'property="og:title" content="'"$U"' ')" "1" "profil og:title taxallus bilan"
-check "$(echo "$OGP" | grep -c 'canonical" href="https://cdctf.uz/profile/'"$UID_"'"')" "1" "canonical to'g'ri URL"
+# The canonical follows the host the request arrived on. It used to be pinned to
+# https://cdctf.uz — a domain that is not connected — so this assertion was
+# locking in a link that resolved nowhere. See scripts/manual-tests/seo.sh.
+check "$(echo "$OGP" | grep -c 'canonical" href="http://localhost:'"${API_PORT:-8099}"'/profile/'"$UID_"'"')" "1" "canonical so'rov hostida"
 check "$(curl -s -o /dev/null -w '%{http_code}' $API/og/profile/999999)" "200" "yo'q profil 200 (umumiy preview)"
 check "$(curl -s $API/og/talent | grep -c 'property="og:title"')" "1" "talent og:title bor"
 
