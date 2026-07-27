@@ -4,6 +4,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
+import { RoadmapTree } from "@/components/RoadmapTree";
 import { normalizeArray } from "@/lib/api-shapes";
 import { MODULE_ART, LinuxArt } from "@/components/ModuleArt";
 import { useListModules, getListModulesQueryKey } from "@workspace/api-client-react";
@@ -70,107 +71,9 @@ export default function ModulesPage() {
             </p>
           </div>
         ) : (
-          <div className="relative">
-            {/* The spine that ties the stops into one journey. */}
-            <div className="absolute left-[19px] top-4 bottom-16 w-px bg-gradient-to-b from-primary/50 via-border to-transparent" aria-hidden="true" />
-
-            <div className="space-y-3">
-              {modules.map((m, i) => {
-                const percent = m.lessonCount > 0 ? Math.round((m.completedCount / m.lessonCount) * 100) : 0;
-                const done = Boolean(m.certificateSerial || m.examPassed);
-                const isCurrent = i === currentIndex;
-                const Art = (m.slug && MODULE_ART[m.slug]) || LinuxArt;
-                const diff = difficultyMeta(m.difficulty, t);
-
-                return (
-                  <div key={m.id} className="relative flex items-stretch gap-4">
-                    {/* Node on the spine. */}
-                    <div className="relative z-10 shrink-0 pt-5">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all ${
-                        done
-                          ? "bg-primary border-primary text-white neon-glow"
-                          : isCurrent
-                            ? "bg-card border-primary text-primary animate-pulse-glow"
-                            : "bg-card border-border text-muted-foreground"
-                      }`}>
-                        {done ? <CheckCircle2 className="w-5 h-5" /> : String(i + 1).padStart(2, "0")}
-                      </div>
-                    </div>
-
-                    {/* The stop's card. */}
-                    <Link href={`/modules/${m.id}`} className="flex-1 min-w-0">
-                      <article
-                        className={`glass-card cursor-pointer group flex items-center gap-4 !p-4 ${isCurrent ? "border-primary/50" : ""}`}
-                        data-testid={`card-module-${m.id}`}
-                      >
-                        <div className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-xl bg-gradient-to-br from-primary/[0.14] to-accent/[0.06] border border-primary/20 overflow-hidden shrink-0 group-hover:border-primary/40 transition-colors">
-                          <Art className="w-full h-full" />
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${diff.cls}`}>{diff.label}</span>
-                            {isCurrent && !done && (
-                              <span className="text-[10px] font-medium text-primary inline-flex items-center gap-1">
-                                <Play className="w-2.5 h-2.5 fill-current" />
-                                {percent > 0 ? t("Continue", "Davom eting", "Продолжить") : t("Start here", "Shu yerdan boshlang", "Начните здесь")}
-                              </span>
-                            )}
-                          </div>
-                          <h2 className="text-base sm:text-lg font-semibold truncate group-hover:text-primary transition-colors" data-testid={`text-module-title-${m.id}`}>
-                            {t(m.title, m.titleUz ?? undefined, m.titleRu ?? undefined)}
-                          </h2>
-                          <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-                            <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{m.estimatedHours}{t("h", "s", "ч")}</span>
-                            <span>{t(`${m.lessonCount} lessons`, `${m.lessonCount} dars`, `${m.lessonCount} уроков`)}</span>
-                            {m.completedCount > 0 && (
-                              <span className="text-primary tabular-nums">{m.completedCount}/{m.lessonCount}</span>
-                            )}
-                          </div>
-                          {/* A slim progress bar only when there is progress, to keep untouched cards clean. */}
-                          {percent > 0 && !done && (
-                            <div className="mt-2 h-1 rounded-full bg-muted overflow-hidden">
-                              <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${percent}%` }} />
-                            </div>
-                          )}
-                        </div>
-
-                        {done
-                          ? <Award className="w-5 h-5 text-primary shrink-0" />
-                          : <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />}
-                      </article>
-                    </Link>
-                  </div>
-                );
-              })}
-
-              {/* The destination: the diploma. */}
-              <div className="relative flex items-stretch gap-4">
-                <div className="relative z-10 shrink-0 pt-5">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-dashed border-primary/50 bg-card text-primary">
-                    <Award className="w-5 h-5" />
-                  </div>
-                </div>
-                <Link href="/diploma" className="flex-1 min-w-0">
-                  <article className="glass-card cursor-pointer group flex items-center gap-4 !p-4 border-primary/30" data-testid="card-diploma-cta">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/25 to-accent/15 border border-primary/30 flex items-center justify-center text-primary shrink-0 neon-glow">
-                      <GraduationCap className="w-6 h-6" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="eyebrow mb-1">{t("Destination", "Manzil", "Финал")}</div>
-                      <h2 className="text-base sm:text-lg font-semibold group-hover:text-primary transition-colors">
-                        {t("The program diploma", "Dastur diplomi", "Диплом программы")}
-                      </h2>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {t("Finish every module to earn it.", "Uni olish uchun barcha modullarni tugating.", "Пройдите все модули, чтобы получить.")}
-                      </p>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-                  </article>
-                </Link>
-              </div>
-            </div>
-          </div>
+          /* The curriculum as a roadmap: three stages on a spine rather than
+             eight interchangeable rows. */
+          <RoadmapTree modules={modules} />
         )}
       </div>
     </div>
