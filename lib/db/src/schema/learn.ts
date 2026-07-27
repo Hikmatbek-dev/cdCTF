@@ -134,6 +134,20 @@ export const moduleExamAttemptsTable = pgTable("module_exam_attempts", {
   attemptCount: integer("attempt_count").notNull().default(0),
   examSessionId: text("exam_session_id"),
   examStartedAt: timestamp("exam_started_at", { withTimezone: true }),
+  /**
+   * A rolling attempt window, not a lifetime cap.
+   *
+   * The exam returns how many answers were right, which turns unlimited retakes
+   * into an answer oracle: three probes per question recovers the whole key, and
+   * the certificate that follows is real and publicly verifiable. A lifetime cap
+   * would stop that but would also lock a struggling learner out of their
+   * certificate forever — the failure mode the lesson test already has.
+   *
+   * So attempts are counted inside a 24-hour window that resets on its own.
+   * Brute force needs sixty-odd attempts; a learner needs three.
+   */
+  windowStartedAt: timestamp("window_started_at", { withTimezone: true }),
+  windowCount: integer("window_count").notNull().default(0),
   // Percentage, 0-100. Kept as the best result so a retake cannot lose a pass.
   bestScore: integer("best_score").notNull().default(0),
   passed: boolean("passed").notNull().default(false),

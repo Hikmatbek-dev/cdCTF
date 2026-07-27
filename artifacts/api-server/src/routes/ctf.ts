@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { db } from "@workspace/db";
 import { ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, titlesTable, usersTable, modulesTable } from "@workspace/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { authenticateToken, optionalAuth, requireScope } from "../middleware/auth";
 import { hashFlag, isHashedFlag, verifyFlag } from "../lib/flags";
 import { awardCategoryTitle, awardPoints } from "../lib/scoring";
@@ -75,12 +75,22 @@ router.get("/", optionalAuth, requireScope("ctf:read"), async (req, res) => {
     }));
   }
 
-  // Compute solvedCount for each
-  const allAttempts = await db.select().from(ctfAttemptsTable).where(eq(ctfAttemptsTable.solved, true));
-  const solveMap = new Map<number, number>();
-  for (const a of allAttempts) {
-    solveMap.set(a.ctfId, (solveMap.get(a.ctfId) ?? 0) + 1);
-  }
+  // Solve counts, aggregated by Postgres.
+  //
+  // This used to `select().from(ctfAttemptsTable)` — every solved attempt in
+  // the database, whole rows, on an unauthenticated page — and count them in a
+  // JavaScript loop to produce one integer per challenge. At a hundred
+  // thousand learners that is millions of rows deserialized per page view. The
+  // GROUP BY is served by ctf_attempts_ctf_id_idx and returns one row per
+  // challenge.
+  const solveRows = await db.select({
+    ctfId: ctfAttemptsTable.ctfId,
+    n: sql<number>`count(*)::int`,
+  })
+    .from(ctfAttemptsTable)
+    .where(eq(ctfAttemptsTable.solved, true))
+    .groupBy(ctfAttemptsTable.ctfId);
+  const solveMap = new Map<number, number>(solveRows.map(r => [r.ctfId, r.n]));
 
   result.forEach(ch => {
     ch.solvedCount = solveMap.get(ch.id) ?? 0;
@@ -183,7 +193,20 @@ router.post("/:id/hint", authenticateToken, async (req, res) => {
       .limit(1).for("update");
 
     // Already paid: hand it back for free rather than charging twice.
-    if (attempt?.hintUsed) return { charged: 0 };
+    if (attempt?.hintUsed) return { charged: 0, affordable: true };
+
+    // The charge used to be `Math.min(points, hintCost)`, which meant an account
+    // with zero points paid nothing and still got the hint — so a fresh
+    // registration could read every hint on the platform for free before solving
+    // anything. It also disagreed with recalculateUserPoints, which subtracts the
+    // *full* cost for every hintUsed row: a later "recalculate points" run
+    // charged people retroactively for hints they were given free.
+    const [user] = await tx.select({ points: usersTable.points }).from(usersTable)
+      .where(eq(usersTable.id, userId)).limit(1).for("update");
+    const points = user?.points ?? 0;
+    if (points < challenge.hintCost) {
+      return { charged: 0, affordable: false, points };
+    }
 
     if (attempt) {
       await tx.update(ctfAttemptsTable).set({ hintUsed: true, updatedAt: new Date() })
@@ -192,16 +215,18 @@ router.post("/:id/hint", authenticateToken, async (req, res) => {
       await tx.insert(ctfAttemptsTable).values({ userId, ctfId, hintUsed: true, updatedAt: new Date() });
     }
 
-    // Charge, never below zero. recalculateUserPoints subtracts the same hint
-    // costs, so a later repair does not refund this.
-    const [user] = await tx.select({ points: usersTable.points }).from(usersTable)
-      .where(eq(usersTable.id, userId)).limit(1).for("update");
-    const charged = Math.min(user?.points ?? 0, challenge.hintCost);
-    if (charged > 0) {
-      await tx.update(usersTable).set({ points: (user!.points) - charged }).where(eq(usersTable.id, userId));
-    }
-    return { charged };
+    await tx.update(usersTable).set({ points: points - challenge.hintCost })
+      .where(eq(usersTable.id, userId));
+    return { charged: challenge.hintCost, affordable: true };
   });
+
+  if (!payload.affordable) {
+    return res.status(402).json({
+      error: "Not enough points for this hint",
+      hintCost: challenge.hintCost,
+      points: payload.points,
+    });
+  }
 
   res.json({
     hint: challenge.hint,

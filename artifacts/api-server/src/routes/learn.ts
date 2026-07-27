@@ -16,29 +16,56 @@ import { touchStreak } from "../lib/streaks";
 import { practiceCategoriesFor } from "../lib/practice-map";
 const router = Router();
 
+/**
+ * How many module-exam attempts fit in one window, and how long the window is.
+ * Five is more than a prepared learner needs and far fewer than the ~60 an
+ * answer-oracle attack requires against a twenty-question exam.
+ */
+const EXAM_ATTEMPTS_PER_WINDOW = 5;
+const EXAM_WINDOW_MS = 24 * 60 * 60 * 1000;
+
 // GET /api/learn/categories
 router.get("/categories", optionalAuth, async (req, res) => {
+  // Counted in Postgres, not in JavaScript.
+  //
+  // This used to `select().from(lessonsTable)` — SELECT *, so all three full
+  // markdown bodies of all 165 published lessons, well over a megabyte from the
+  // database — and then `.filter()` them in memory to produce ten integers. It
+  // also did `allLessons.find(...)` inside a loop over the reader's attempts.
   const categories = await db.select().from(learnCategoriesTable);
-  const allLessons = await db.select().from(lessonsTable).where(eq(lessonsTable.isPublished, true));
   const userId = req.user?.userId;
+
+  const lessonCounts = await db.select({
+    categoryId: lessonsTable.categoryId,
+    n: sql<number>`count(*)::int`,
+  })
+    .from(lessonsTable)
+    .where(eq(lessonsTable.isPublished, true))
+    .groupBy(lessonsTable.categoryId);
+  const countMap = new Map(lessonCounts.map(r => [r.categoryId, r.n]));
 
   const completedMap = new Map<number, number>();
   if (userId) {
-    const attempts = await db.select().from(userLessonAttemptsTable)
-      .where(and(eq(userLessonAttemptsTable.userId, userId), eq(userLessonAttemptsTable.status, "completed")));
-    for (const a of attempts) {
-      const lesson = allLessons.find(l => l.id === a.lessonId);
-      if (lesson) completedMap.set(lesson.categoryId, (completedMap.get(lesson.categoryId) ?? 0) + 1);
-    }
+    const rows = await db.select({
+      categoryId: lessonsTable.categoryId,
+      n: sql<number>`count(*)::int`,
+    })
+      .from(userLessonAttemptsTable)
+      .innerJoin(lessonsTable, eq(lessonsTable.id, userLessonAttemptsTable.lessonId))
+      .where(and(
+        eq(userLessonAttemptsTable.userId, userId),
+        eq(userLessonAttemptsTable.status, "completed"),
+        eq(lessonsTable.isPublished, true),
+      ))
+      .groupBy(lessonsTable.categoryId);
+    for (const r of rows) completedMap.set(r.categoryId, r.n);
   }
 
-  const result = categories.map(cat => ({
+  res.json(categories.map(cat => ({
     id: cat.id, name: cat.name, nameUz: cat.nameUz, nameRu: cat.nameRu,
-    lessonCount: allLessons.filter(l => l.categoryId === cat.id).length,
+    lessonCount: countMap.get(cat.id) ?? 0,
     completedCount: completedMap.get(cat.id) ?? 0,
-  }));
-
-  res.json(result);
+  })));
 });
 
 // GET /api/learn/lessons
@@ -214,16 +241,27 @@ async function submitLessonTestHandler(req: Request, res: Response) {
     // Guard on `completedAt`, not `status`: starting a new attempt rewrites
     // `status` back to "in_progress", which would re-open the points award and
     // let a user bank the lesson's points once per allowed attempt.
+    // Spend the session, always. It used to survive the submit, so one /start
+    // bought unlimited submits: the returned `correctCount` is a per-question
+    // oracle, and the three-attempt cap — which only counts /start — was never
+    // reached. The module exam already did this (examSessionId: null); the
+    // lesson test did not.
     if (passed && !attempt.completedAt) {
       await tx.update(userLessonAttemptsTable)
-        .set({ status: "completed", completedAt: new Date(), updatedAt: new Date() })
+        .set({ status: "completed", completedAt: new Date(), testSessionId: null, updatedAt: new Date() })
         .where(eq(userLessonAttemptsTable.id, attempt.id));
 
       pointsEarned = await awardPoints(tx, userId, lesson?.points ?? 0);
       await touchStreak(tx, userId, new Date());
     } else if (!passed) {
       await tx.update(userLessonAttemptsTable)
-        .set({ status: "failed", updatedAt: new Date() })
+        .set({ status: "failed", testSessionId: null, updatedAt: new Date() })
+        .where(eq(userLessonAttemptsTable.id, attempt.id));
+    } else {
+      // Already completed and passed again: nothing to award, but the session
+      // still has to be burned.
+      await tx.update(userLessonAttemptsTable)
+        .set({ testSessionId: null, updatedAt: new Date() })
         .where(eq(userLessonAttemptsTable.id, attempt.id));
     }
 
@@ -476,13 +514,38 @@ router.post("/modules/:id/exam/start", authenticateToken, async (req, res) => {
   const [existing] = await db.select().from(moduleExamAttemptsTable)
     .where(and(eq(moduleExamAttemptsTable.userId, userId), eq(moduleExamAttemptsTable.moduleId, moduleId))).limit(1);
 
+  const now = new Date();
   if (existing) {
+    // The window. `attemptCount` was being incremented here and read by nobody,
+    // so the exam had no limit at all — and since submitting returns how many
+    // answers were right, unlimited retakes are an answer oracle: three probes
+    // per question recovers the key and mints a real certificate. Counting
+    // inside a window that expires stops that without ever locking a learner
+    // out of their own credential.
+    const windowOpen = existing.windowStartedAt !== null
+      && now.getTime() - existing.windowStartedAt.getTime() < EXAM_WINDOW_MS;
+    const used = windowOpen ? existing.windowCount : 0;
+
+    if (used >= EXAM_ATTEMPTS_PER_WINDOW) {
+      const retryAt = new Date(existing.windowStartedAt!.getTime() + EXAM_WINDOW_MS);
+      return res.status(429).json({
+        error: `Too many exam attempts. Try again after ${retryAt.toISOString()}`,
+        retryAt: retryAt.toISOString(),
+        attemptsPerWindow: EXAM_ATTEMPTS_PER_WINDOW,
+      });
+    }
+
     await db.update(moduleExamAttemptsTable).set({
-      attemptCount: existing.attemptCount + 1, examSessionId: sessionId, examStartedAt: new Date(), updatedAt: new Date(),
+      attemptCount: existing.attemptCount + 1,
+      windowStartedAt: windowOpen ? existing.windowStartedAt : now,
+      windowCount: used + 1,
+      examSessionId: sessionId, examStartedAt: now, updatedAt: now,
     }).where(eq(moduleExamAttemptsTable.id, existing.id));
   } else {
     await db.insert(moduleExamAttemptsTable).values({
-      userId, moduleId, attemptCount: 1, examSessionId: sessionId, examStartedAt: new Date(),
+      userId, moduleId, attemptCount: 1,
+      windowStartedAt: now, windowCount: 1,
+      examSessionId: sessionId, examStartedAt: now,
     });
   }
 

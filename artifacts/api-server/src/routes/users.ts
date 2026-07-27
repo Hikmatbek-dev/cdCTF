@@ -2,9 +2,16 @@ import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import multer from "multer";
 import { db } from "@workspace/db";
-import { usersTable, ctfAttemptsTable, ctfTasksTable, userLessonAttemptsTable, lessonsTable, modulesTable, competitionsTable, competitionUsersTable, moduleExamAttemptsTable, certificatesTable, userTitlesTable, titlesTable } from "@workspace/db/schema";
-import { and, asc, eq, gt, inArray, or, sql } from "drizzle-orm";
-import { authenticateToken, optionalAuth } from "../middleware/auth";
+import {
+  usersTable, ctfAttemptsTable, ctfTasksTable, ctfWriteupsTable,
+  userLessonAttemptsTable, lessonsTable, modulesTable, moduleExamAttemptsTable,
+  certificatesTable, programDiplomasTable,
+  competitionsTable, competitionUsersTable, competitionSolvesTable, competitionTeamsTable,
+  jobsTable, jobApplicationsTable, labInstancesTable,
+  auditLogsTable, userTitlesTable, titlesTable,
+} from "@workspace/db/schema";
+import { and, asc, eq, gt, inArray, ne, or, sql } from "drizzle-orm";
+import { authenticateToken, optionalAuth, requireSession } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import { UpdateUserProfileBody } from "@workspace/api-zod";
 import { uploadBufferToStorage } from "../lib/storage";
@@ -398,7 +405,21 @@ import { revokeAllSessions } from "../lib/sessions";
 import { earnsPoints } from "../lib/scoring";
 
 // PATCH /api/users/:id
-router.patch("/:id", authenticateToken, validateBody(UpdateUserProfileBody), async (req, res) => {
+/**
+ * `requireSession`, not just `authenticateToken`.
+ *
+ * The role here comes from `req.user.role`, and an API token carries the role
+ * of the account that minted it — so an admin's token, however narrowly scoped,
+ * reached a branch of `columnPermissions.users.admin` that can write `role`,
+ * `isBlocked`, `points` and `email`. One leaked token was a full takeover.
+ * requirePermission already refuses API tokens for exactly this reason; this
+ * route sat outside the admin router and never got the same treatment.
+ *
+ * The same gate is on avatar upload and account deletion below: the middleware's
+ * own comment says a leaked token must not be able to take over the account it
+ * came from, and deleting that account is the clearest case of it.
+ */
+router.patch("/:id", authenticateToken, requireSession, validateBody(UpdateUserProfileBody), async (req, res) => {
   const id = Number(req.params.id);
   const userRole = req.user!.role;
 
@@ -455,7 +476,7 @@ router.patch("/:id", authenticateToken, validateBody(UpdateUserProfileBody), asy
 });
 
 // POST /api/users/:id/avatar
-router.post("/:id/avatar", authenticateToken, upload.single("avatar"), async (req, res) => {
+router.post("/:id/avatar", authenticateToken, requireSession, upload.single("avatar"), async (req, res) => {
   const id = Number(req.params.id);
   if (req.user!.userId !== id && req.user!.role !== "admin") {
     return res.status(403).json({ error: "Forbidden" });
@@ -474,20 +495,84 @@ router.post("/:id/avatar", authenticateToken, upload.single("avatar"), async (re
   res.json({ avatarUrl: updated.avatarUrl });
 });
 
-// DELETE /api/users/:id
-router.delete("/:id", authenticateToken, async (req, res) => {
+/**
+ * DELETE /api/users/:id — erase an account.
+ *
+ * This used to clear four tables and then delete the user, outside a
+ * transaction. Thirteen other tables reference `users(id)` without a cascade,
+ * so for anyone who had ever earned a certificate, solved in a competition or
+ * written a writeup, the final delete raised a foreign-key violation — *after*
+ * their attempts, titles and lesson progress had already been committed. The
+ * caller saw "Internal server error", the account survived, and their history
+ * was gone. Verified against every `references(() => usersTable.id)` in
+ * lib/db/src/schema.
+ *
+ * Now: one transaction, every dependant handled, in dependency order. Either
+ * the account is gone or nothing happened.
+ */
+router.delete("/:id", authenticateToken, requireSession, async (req, res) => {
   const id = Number(req.params.id);
   if (req.user!.userId !== id && req.user!.role !== "admin") {
     return res.status(403).json({ error: "Forbidden" });
   }
 
-  // Cleanup
-  await db.delete(ctfAttemptsTable).where(eq(ctfAttemptsTable.userId, id));
-  await db.delete(userLessonAttemptsTable).where(eq(userLessonAttemptsTable.userId, id));
-  await db.delete(userTitlesTable).where(eq(userTitlesTable.userId, id));
-  await db.delete(competitionUsersTable).where(eq(competitionUsersTable.userId, id));
-  
-  await db.delete(usersTable).where(eq(usersTable.id, id));
+  await db.transaction(async tx => {
+    // Competition history, then the membership rows those depend on.
+    await tx.delete(competitionSolvesTable).where(eq(competitionSolvesTable.userId, id));
+
+    // A captain cannot simply vanish: the team row requires one. Hand the team
+    // to another member if there is one, otherwise dissolve it.
+    const captained = await tx.select({ id: competitionTeamsTable.id })
+      .from(competitionTeamsTable).where(eq(competitionTeamsTable.captainId, id));
+    for (const team of captained) {
+      const [heir] = await tx.select({ userId: competitionUsersTable.userId })
+        .from(competitionUsersTable)
+        .where(and(eq(competitionUsersTable.teamId, team.id), ne(competitionUsersTable.userId, id)))
+        .limit(1);
+      if (heir) {
+        await tx.update(competitionTeamsTable).set({ captainId: heir.userId })
+          .where(eq(competitionTeamsTable.id, team.id));
+      } else {
+        await tx.update(competitionUsersTable).set({ teamId: null })
+          .where(eq(competitionUsersTable.teamId, team.id));
+        await tx.delete(competitionTeamsTable).where(eq(competitionTeamsTable.id, team.id));
+      }
+    }
+    await tx.delete(competitionUsersTable).where(eq(competitionUsersTable.userId, id));
+
+    // Anything they authored or applied to as a candidate.
+    await tx.delete(ctfWriteupsTable).where(eq(ctfWriteupsTable.userId, id));
+    await tx.delete(jobApplicationsTable).where(eq(jobApplicationsTable.userId, id));
+
+    // Jobs they posted as an employer, and the applications sitting on them —
+    // those belong to other people, but the listing cannot outlive its owner.
+    const owned = await tx.select({ id: jobsTable.id }).from(jobsTable).where(eq(jobsTable.employerId, id));
+    if (owned.length > 0) {
+      const jobIds = owned.map(j => j.id);
+      await tx.delete(jobApplicationsTable).where(inArray(jobApplicationsTable.jobId, jobIds));
+      await tx.delete(jobsTable).where(inArray(jobsTable.id, jobIds));
+    }
+
+    await tx.delete(labInstancesTable).where(eq(labInstancesTable.userId, id));
+
+    // Learning record. Credentials go too: a certificate naming a deleted
+    // person is exactly the personal data the deletion was asked for.
+    await tx.delete(programDiplomasTable).where(eq(programDiplomasTable.userId, id));
+    await tx.delete(certificatesTable).where(eq(certificatesTable.userId, id));
+    await tx.delete(moduleExamAttemptsTable).where(eq(moduleExamAttemptsTable.userId, id));
+    await tx.delete(userLessonAttemptsTable).where(eq(userLessonAttemptsTable.userId, id));
+
+    await tx.delete(ctfAttemptsTable).where(eq(ctfAttemptsTable.userId, id));
+    await tx.delete(userTitlesTable).where(eq(userTitlesTable.userId, id));
+
+    // The audit trail is kept — it records what staff did, not who this was —
+    // but it stops naming them. The column is nullable for this.
+    await tx.update(auditLogsTable).set({ actorUserId: null }).where(eq(auditLogsTable.actorUserId, id));
+
+    // ctf_tasks.author_id and lessons.author_id are ON DELETE SET NULL, and the
+    // auth tables (sessions, api tokens, passkeys, OAuth links) cascade.
+    await tx.delete(usersTable).where(eq(usersTable.id, id));
+  });
 
   res.json({ success: true, message: "Account deleted" });
 });

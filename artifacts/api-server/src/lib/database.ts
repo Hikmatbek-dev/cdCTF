@@ -101,6 +101,11 @@ export async function ensureDatabaseShape() {
     )
   `);
 
+  // The rolling exam-attempt window. See lib/db/src/schema/learn.ts for why it
+  // is a window and not a lifetime cap.
+  await pool.query("ALTER TABLE module_exam_attempts ADD COLUMN IF NOT EXISTS window_started_at timestamptz");
+  await pool.query("ALTER TABLE module_exam_attempts ADD COLUMN IF NOT EXISTS window_count integer NOT NULL DEFAULT 0");
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS certificates (
       id serial PRIMARY KEY,
