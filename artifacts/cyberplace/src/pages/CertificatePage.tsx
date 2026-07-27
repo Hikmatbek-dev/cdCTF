@@ -1,6 +1,7 @@
 import { useRoute, Link } from "wouter";
 import { ShieldCheck, Download } from "lucide-react";
 import { ModuleCertificate, CredentialFrame, printCredential } from "@/components/Credentials";
+import { ShareCredential } from "@/components/ShareCredential";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
@@ -106,6 +107,16 @@ export default function CertificatePage() {
             "Любой может проверить этот сертификат по этому адресу.",
           )}
         </p>
+
+        <ShareCredential
+          credential={{
+            path: `/certificate/${cert.serial}`,
+            subject: moduleTitle,
+            serial: cert.serial,
+            issuedAt: cert.issuedAt,
+            holder: cert.fullName,
+          }}
+        />
       </div>
     </div>
   );

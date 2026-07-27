@@ -1,6 +1,7 @@
 import { useRoute, Link } from "wouter";
 import { ShieldCheck, Download } from "lucide-react";
 import { ProgrammeDiploma, CredentialFrame, printCredential } from "@/components/Credentials";
+import { ShareCredential } from "@/components/ShareCredential";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
@@ -108,6 +109,16 @@ export default function DiplomaVerifyPage() {
             "Любой может проверить этот диплом по этому адресу.",
           )}
         </p>
+
+        <ShareCredential
+          credential={{
+            path: `/diploma/${diploma.serial}`,
+            subject: t("cdCTF Cybersecurity Programme", "cdCTF kiberxavfsizlik dasturi", "Программа кибербезопасности cdCTF"),
+            serial: diploma.serial,
+            issuedAt: diploma.issuedAt,
+            holder: diploma.fullName,
+          }}
+        />
       </div>
     </div>
   );
