@@ -38,6 +38,10 @@ echo
 
 echo "=== Sayt javob beryapti ==="
 check "$(code "$SITE/")" "200" "bosh sahifa 200"
+# The first API call after an idle period is a cold start: the function boots
+# and runs ensureDatabaseShape() before answering, which took 20s+ and made this
+# check fail for a healthy site. Warm it up on a long timeout, then measure.
+curl -s -o /dev/null --max-time 60 "$SITE/api/stats" 2>/dev/null
 check "$(code "$SITE/api/stats")" "200" "API javob beryapti"
 
 echo
