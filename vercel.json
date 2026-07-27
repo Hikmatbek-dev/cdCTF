@@ -54,6 +54,17 @@
       "destination": "/api/og/competition/:id"
     },
     {
+      "source": "/e/:id(\\d+)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(TelegramBot|facebookexternalhit|Twitterbot|WhatsApp|Slackbot|Discordbot|LinkedInBot|vkShare|Pinterest|redditbot|Applebot|SkypeUriPreview|Googlebot|bingbot).*"
+        }
+      ],
+      "destination": "/api/og/competition/:id?p=e"
+    },
+    {
       "source": "/profile/:id(\\d+)",
       "has": [
         {

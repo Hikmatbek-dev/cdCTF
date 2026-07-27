@@ -29,6 +29,7 @@ import ImpactPage from "@/pages/ImpactPage";
 import VerifyPage from "@/pages/VerifyPage";
 import LabsPage from "@/pages/LabsPage";
 import CompetitionsPage from "@/pages/CompetitionsPage";
+import EventPage from "@/pages/EventPage";
 import CompetitionDetailPage from "@/pages/CompetitionDetailPage";
 import ProfilePage from "@/pages/ProfilePage";
 import ProfileEditPage from "@/pages/ProfileEditPage";
@@ -180,6 +181,10 @@ function Router() {
           </Route>
           <Route path="/verify">
             {() => <PageTransition><VerifyPage /></PageTransition>}
+          </Route>
+          {/* Short, public, poster-shaped: the URL a sponsor posts. */}
+          <Route path="/e/:id">
+            <PageTransition><EventPage /></PageTransition>
           </Route>
           <Route path="/competitions">
             {() => <PageTransition><CompetitionsPage /></PageTransition>}

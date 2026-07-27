@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRoute } from "wouter";
-import { Trophy, Clock, Users, Flag, Lock, Gift, UserPlus, Copy } from "lucide-react";
+import { Trophy, Clock, Users, Flag, Lock, Gift, UserPlus, Copy, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
@@ -156,6 +156,15 @@ export default function CompetitionDetailPage() {
           </div>
           <h1 className="text-2xl font-bold mb-2" data-testid="text-competition-name">{comp.name}</h1>
           {comp.description && <p className="text-muted-foreground text-sm mb-4">{comp.description}</p>}
+
+          {/* This page assumes you already have an account and know what cdCTF
+              is. /e/:id assumes neither — it is the link to hand a sponsor. */}
+          <Link href={`/e/${id}`}>
+            <button className="mb-4 inline-flex items-center gap-2 text-sm text-primary hover:underline" data-testid="link-event-poster">
+              <Share2 className="w-4 h-4" />
+              {t("Open the shareable page for this event", "Bu tadbirning ulashiladigan sahifasini ochish", "Открыть страницу события для репоста")}
+            </button>
+          </Link>
 
           {/* Prize on offer — the reason a sponsored event pulls a crowd. Shown
               prominently so participants see what they are competing for. */}

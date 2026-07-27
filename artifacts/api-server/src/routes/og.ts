@@ -80,7 +80,13 @@ function sendOg(res: import("express").Response, meta: Meta) {
 // GET /api/og/competition/:id
 router.get("/competition/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const url = `${SITE_ORIGIN}/competitions/${Number.isInteger(id) ? id : ""}`;
+  // The same competition is reachable at two paths: the participant console at
+  // /competitions/:id and the shareable poster at /e/:id. The canonical link —
+  // and the redirect a human following the preview gets — has to match the one
+  // that was actually shared, or a sponsor's audience lands on the console.
+  // vercel.json passes ?p=e from the /e/:id rewrite; anything else is the console.
+  const basePath = req.query.p === "e" ? "/e" : "/competitions";
+  const url = `${SITE_ORIGIN}${basePath}/${Number.isInteger(id) ? id : ""}`;
   if (!Number.isInteger(id) || id <= 0) {
     return sendOg(res, { title: "cdCTF", description: "Kiberxavfsizlik musobaqasi", image: DEFAULT_IMAGE, url: `${SITE_ORIGIN}/competitions` });
   }
