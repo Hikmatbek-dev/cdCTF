@@ -48,7 +48,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(TelegramBot|facebookexternalhit|Twitterbot|WhatsApp|Slackbot|Discordbot|LinkedInBot|vkShare|Pinterest|redditbot|Applebot|SkypeUriPreview|Googlebot|bingbot).*"
+          "value": ".*(?:TelegramBot|facebookexternalhit|Twitterbot|WhatsApp|Slackbot|Discordbot|LinkedInBot|vkShare|Pinterest|redditbot|Applebot|SkypeUriPreview|Googlebot|bingbot).*"
         }
       ],
       "destination": "/api/og/competition/:id"
@@ -59,7 +59,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(TelegramBot|facebookexternalhit|Twitterbot|WhatsApp|Slackbot|Discordbot|LinkedInBot|vkShare|Pinterest|redditbot|Applebot|SkypeUriPreview|Googlebot|bingbot).*"
+          "value": ".*(?:TelegramBot|facebookexternalhit|Twitterbot|WhatsApp|Slackbot|Discordbot|LinkedInBot|vkShare|Pinterest|redditbot|Applebot|SkypeUriPreview|Googlebot|bingbot).*"
         }
       ],
       "destination": "/api/og/competition/:id?p=e"
@@ -70,7 +70,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(TelegramBot|facebookexternalhit|Twitterbot|WhatsApp|Slackbot|Discordbot|LinkedInBot|vkShare|Pinterest|redditbot|Applebot|SkypeUriPreview|Googlebot|bingbot).*"
+          "value": ".*(?:TelegramBot|facebookexternalhit|Twitterbot|WhatsApp|Slackbot|Discordbot|LinkedInBot|vkShare|Pinterest|redditbot|Applebot|SkypeUriPreview|Googlebot|bingbot).*"
         }
       ],
       "destination": "/api/og/profile/:id"
@@ -81,7 +81,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(TelegramBot|facebookexternalhit|Twitterbot|WhatsApp|Slackbot|Discordbot|LinkedInBot|vkShare|Pinterest|redditbot|Applebot|SkypeUriPreview|Googlebot|bingbot).*"
+          "value": ".*(?:TelegramBot|facebookexternalhit|Twitterbot|WhatsApp|Slackbot|Discordbot|LinkedInBot|vkShare|Pinterest|redditbot|Applebot|SkypeUriPreview|Googlebot|bingbot).*"
         }
       ],
       "destination": "/api/og/talent"
