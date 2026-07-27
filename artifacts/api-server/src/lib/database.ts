@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { pool } from "@workspace/db";
 import { logger } from "./logger";
 
@@ -21,7 +22,53 @@ async function createIndexSafely(name: string, statement: string) {
   }
 }
 
+/**
+ * Runs the schema statements only when they have actually changed.
+ *
+ * `applySchema` below is roughly a hundred CREATE/ALTER/CREATE INDEX statements,
+ * awaited one after another. They are all idempotent, so running them again is
+ * harmless — but against a remote Postgres it is a second or more of round
+ * trips, and Vercel recycles containers constantly, so that cost is paid over
+ * and over. Measured on production: /api/healthz touches no database at all and
+ * still answered in ~800ms, which is this.
+ *
+ * The version is a hash of the schema function's own source. It cannot drift
+ * from what the statements say, because it *is* what the statements say — edit
+ * any DDL and the hash changes on the next deploy, which is precisely when the
+ * statements should run again. No version constant for anyone to forget.
+ */
 export async function ensureDatabaseShape() {
+  const version = createHash("sha256").update(applySchema.toString(), "utf8").digest("hex").slice(0, 32);
+
+  try {
+    const { rows } = await pool.query<{ version: string }>(
+      "SELECT version FROM schema_state WHERE id = 1",
+    );
+    if (rows[0]?.version === version) return;
+  } catch {
+    // The table does not exist yet — first boot, or an older deployment. Fall
+    // through and apply everything, which creates it.
+  }
+
+  await applySchema();
+
+  // Recorded last, so a failure part-way through leaves the old version (or
+  // none) in place and the next cold start retries rather than skipping.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS schema_state (
+      id integer PRIMARY KEY,
+      version text NOT NULL,
+      applied_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query(
+    `INSERT INTO schema_state (id, version) VALUES (1, $1)
+     ON CONFLICT (id) DO UPDATE SET version = excluded.version, applied_at = now()`,
+    [version],
+  );
+}
+
+async function applySchema() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS audit_logs (
       id serial PRIMARY KEY,
