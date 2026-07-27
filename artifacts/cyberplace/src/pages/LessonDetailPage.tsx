@@ -184,6 +184,8 @@ function renderContent(content: string) {
   });
 }
 
+import { LessonTasks, splitIntoTasks } from "@/components/LessonTasks";
+
 type SiblingLesson = { id: number; title: string; titleUz?: string | null; titleRu?: string | null; isCompleted: boolean };
 
 export default function LessonDetailPage() {
@@ -357,10 +359,15 @@ export default function LessonDetailPage() {
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-8 leading-tight" data-testid="text-lesson-title">{localizedTitle}</h1>
 
-            {/* Content */}
-            <div className="lesson-body">
-              {renderContent(localizedContent)}
-            </div>
+            {/* Content, as numbered tasks. The lesson is split at its own `##`
+                headings so its shape is visible before you start and your
+                position in it is visible throughout — a single 2,700-character
+                column gave a reader neither. */}
+            <LessonTasks
+              lessonId={lesson.id}
+              tasks={splitIntoTasks(localizedContent)}
+              renderBody={(body, key) => <div key={key}>{renderContent(body)}</div>}
+            />
 
             {/* Test CTA */}
             <div className="mt-10">
