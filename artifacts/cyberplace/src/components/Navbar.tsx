@@ -27,6 +27,7 @@ import {
 const NAV_LINKS = [
   { href: "/modules", label: { en: "Learn", uz: "O'rganish", ru: "Обучение" } },
   { href: "/ctf", label: { en: "Practice", uz: "Mashq", ru: "Практика" } },
+  { href: "/labs", label: { en: "Labs", uz: "Laboratoriya", ru: "Лаборатории" } },
   { href: "/scoreboard", label: { en: "Ranking", uz: "Reyting", ru: "Рейтинг" } },
   { href: "/competitions", label: { en: "Events", uz: "Tadbirlar", ru: "События" } },
   { href: "/jobs", label: { en: "Careers", uz: "Karyera", ru: "Карьера" } },

@@ -281,6 +281,48 @@ export async function ensureDatabaseShape() {
       created_at timestamptz NOT NULL DEFAULT now()
     )
   `);
+  // Hands-on labs. The container itself is started by the runner service; these
+  // tables are the definition and the bookkeeping.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS labs (
+      id serial PRIMARY KEY,
+      slug text NOT NULL UNIQUE,
+      name text NOT NULL,
+      name_uz text,
+      name_ru text,
+      description text NOT NULL,
+      description_uz text,
+      description_ru text,
+      image text NOT NULL,
+      container_port integer NOT NULL DEFAULT 80,
+      ttl_minutes integer NOT NULL DEFAULT 60,
+      difficulty text NOT NULL DEFAULT 'easy',
+      ctf_id integer REFERENCES ctf_tasks(id) ON DELETE SET NULL,
+      is_published boolean NOT NULL DEFAULT true,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query("CREATE INDEX IF NOT EXISTS labs_published_idx ON labs(is_published)");
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS lab_instances (
+      id serial PRIMARY KEY,
+      lab_id integer NOT NULL REFERENCES labs(id),
+      user_id integer NOT NULL REFERENCES users(id),
+      container_id text NOT NULL,
+      host text NOT NULL,
+      port integer NOT NULL,
+      status text NOT NULL DEFAULT 'running',
+      started_at timestamptz NOT NULL DEFAULT now(),
+      expires_at timestamptz NOT NULL,
+      stopped_at timestamptz
+    )
+  `);
+  await pool.query("CREATE INDEX IF NOT EXISTS lab_instances_user_idx ON lab_instances(user_id)");
+  await pool.query("CREATE INDEX IF NOT EXISTS lab_instances_status_idx ON lab_instances(status)");
+  // One running machine per learner: two concurrent "Start" clicks must not both
+  // win and strand a container nobody is tracking.
+  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS lab_instances_one_running_idx ON lab_instances(user_id) WHERE status = 'running'");
+
   await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS job_applications_job_user_idx ON job_applications(job_id, user_id)");
   await pool.query("CREATE INDEX IF NOT EXISTS job_applications_job_id_idx ON job_applications(job_id)");
   await pool.query("CREATE INDEX IF NOT EXISTS job_applications_user_id_idx ON job_applications(user_id)");
