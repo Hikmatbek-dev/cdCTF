@@ -31,12 +31,19 @@ function publicLab(lab: typeof labsTable.$inferSelect) {
 async function reapExpired(): Promise<void> {
   const stale = await db.select().from(labInstancesTable)
     .where(and(eq(labInstancesTable.status, "running"), lt(labInstancesTable.expiresAt, new Date())));
-  for (const instance of stale) {
+  // In parallel, and tolerant of one runner call failing.
+  //
+  // This was a serial loop with a network call in it, on GET /api/labs — so if
+  // twenty machines had expired since the last request, the next learner to open
+  // the catalogue waited for twenty sequential HTTP calls to the runner before
+  // seeing anything. allSettled because a container that is already gone must
+  // not stop the rest from being marked stopped.
+  await Promise.allSettled(stale.map(async instance => {
     await stopContainer(instance.containerId);
     await db.update(labInstancesTable)
       .set({ status: "stopped", stoppedAt: new Date() })
       .where(eq(labInstancesTable.id, instance.id));
-  }
+  }));
   if (stale.length > 0) logger.info({ count: stale.length }, "reaped expired lab instances");
 }
 

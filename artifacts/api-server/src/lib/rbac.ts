@@ -15,9 +15,18 @@ export type ColumnPermissions = {
  */
 export const columnPermissions: ColumnPermissions = {
   users: {
-    user: ["nickname", "avatarUrl", "openToWork"],
-    author: ["nickname", "avatarUrl", "openToWork"],
-    moderator: ["nickname", "avatarUrl", "openToWork"],
+    // `avatarUrl` is deliberately absent for everyone below admin.
+    //
+    // It accepted any https URL and was then rendered as <img src> on the public
+    // scoreboard, the talent directory and every profile — so one account could
+    // point it at a host they control and collect the IP and user-agent of every
+    // visitor to those pages. Nobody needs to write it directly: POST
+    // /users/:id/avatar uploads a file and sets the URL server-side, which is
+    // what the profile page has always used. Admins keep it so a bad avatar can
+    // be cleared.
+    user: ["nickname", "openToWork"],
+    author: ["nickname", "openToWork"],
+    moderator: ["nickname", "openToWork"],
     admin: ["nickname", "avatarUrl", "openToWork", "points", "role", "isBlocked", "email", "emailVerified"],
   },
   ctf_tasks: {

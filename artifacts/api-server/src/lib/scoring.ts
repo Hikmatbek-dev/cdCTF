@@ -144,9 +144,26 @@ export async function recalculateUserPoints(tx: Executor, userId: number): Promi
   return total;
 }
 
+/**
+ * How many recalculations run at once.
+ *
+ * Each one is its own transaction — they have to be, because recalculating also
+ * *inserts* earned titles, so a shared transaction would make one bad row roll
+ * back everyone. But running them strictly one after another meant
+ * `POST /admin/users/recalculate-points` was one transaction per account, each
+ * about seven queries: at a hundred thousand users that is far past any function
+ * timeout, and `DELETE /admin/ctf/:id` runs the same loop inline over everyone
+ * who solved that challenge.
+ *
+ * Five keeps well inside the connection pool while cutting the wall clock by
+ * most of an order of magnitude.
+ */
+const RECALC_CONCURRENCY = 5;
+
 export async function recalculateUsers(userIds: number[]): Promise<number> {
-  for (const userId of userIds) {
-    await db.transaction(tx => recalculateUserPoints(tx, userId));
+  for (let i = 0; i < userIds.length; i += RECALC_CONCURRENCY) {
+    const batch = userIds.slice(i, i + RECALC_CONCURRENCY);
+    await Promise.all(batch.map(userId => db.transaction(tx => recalculateUserPoints(tx, userId))));
   }
   return userIds.length;
 }

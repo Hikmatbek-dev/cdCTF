@@ -107,6 +107,14 @@ check "$(curl -s -o /dev/null -w '%{http_code}' -X PATCH $API/users/$UID_ \
   -H 'Content-Type: application/json' -H "Authorization: Bearer $TOK" -d '{"nickname":"'${TAG}'ok"}')" "200" "sessiya bilan PATCH ishlaydi"
 
 echo
+echo "=== ⭐ 3b. Avatar URL'ini o'zi yoza olmaydi ==="
+# An arbitrary https avatar is rendered on the public scoreboard and every
+# profile, so writing one directly is an IP-collection primitive.
+curl -s -o /dev/null -X PATCH $API/users/$UID_ -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOK" -d '{"avatarUrl":"https://tracker.example/px.gif"}'
+check "$(q "SELECT coalesce(avatar_url,'') FROM users WHERE id=$UID_")" "" "avatarUrl o'zgarmadi"
+
+echo
 echo "=== ⭐ 4. Maslahat bepul emas ==="
 HC=$(q "INSERT INTO ctf_tasks (name, description, category, difficulty, points, flag, hint, hint_cost, is_published)
         VALUES ('${TAG}_hint','d','Web','easy',100,'sha256\$deadbeef','Bu maslahat',30,true) RETURNING id")

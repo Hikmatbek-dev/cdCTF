@@ -11,6 +11,15 @@ import { logger } from "./logger";
  * wrong and carries on without the index. The invariant stays unenforced until
  * someone looks, which is the honest outcome.
  */
+/*
+ * Every unique index must go through here.
+ *
+ * Eight of them called pool.query directly. A unique index throws when the
+ * table already holds a duplicate — the exact case this wrapper exists for —
+ * and a throw from applySchema takes the whole cold start with it. The point of
+ * the wrapper is that one bad pair leaves one invariant unenforced and loudly
+ * logged, rather than a server that will not answer.
+ */
 async function createIndexSafely(name: string, statement: string) {
   try {
     await pool.query(statement);
@@ -189,6 +198,7 @@ async function applySchema() {
     ["module_exam_attempts_module_id_idx", "CREATE INDEX IF NOT EXISTS module_exam_attempts_module_id_idx ON module_exam_attempts(module_id)"],
     ["certificates_user_module_idx", "CREATE UNIQUE INDEX IF NOT EXISTS certificates_user_module_idx ON certificates(user_id, module_id)"],
     ["certificates_module_id_idx", "CREATE INDEX IF NOT EXISTS certificates_module_id_idx ON certificates(module_id)"],
+    ["ctf_files_filename_idx", "CREATE INDEX IF NOT EXISTS ctf_files_filename_idx ON ctf_files(filename)"],
   ] as const) {
     await createIndexSafely(name, statement);
   }
@@ -212,7 +222,7 @@ async function applySchema() {
   await pool.query("ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS hint_uz text");
   await pool.query("ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS hint_ru text");
   await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS invite_code text");
-  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS competitions_invite_code_idx ON competitions(invite_code) WHERE invite_code IS NOT NULL");
+  await createIndexSafely("competitions_invite_code_idx", "CREATE UNIQUE INDEX IF NOT EXISTS competitions_invite_code_idx ON competitions(invite_code) WHERE invite_code IS NOT NULL");
   await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS sponsor_name text");
   await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS sponsor_logo_url text");
   await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS sponsor_url text");
@@ -229,16 +239,28 @@ async function applySchema() {
       created_at timestamptz NOT NULL DEFAULT now()
     )
   `);
-  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS competition_teams_competition_name_idx ON competition_teams(competition_id, name)");
-  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS competition_teams_invite_code_idx ON competition_teams(invite_code)");
+  await createIndexSafely("competition_teams_competition_name_idx", "CREATE UNIQUE INDEX IF NOT EXISTS competition_teams_competition_name_idx ON competition_teams(competition_id, name)");
+  await createIndexSafely("competition_teams_invite_code_idx", "CREATE UNIQUE INDEX IF NOT EXISTS competition_teams_invite_code_idx ON competition_teams(invite_code)");
   await pool.query("ALTER TABLE competition_users ADD COLUMN IF NOT EXISTS team_id integer REFERENCES competition_teams(id)");
   await pool.query("ALTER TABLE competition_solves ADD COLUMN IF NOT EXISTS team_id integer REFERENCES competition_teams(id)");
   // One solve per team per challenge — the concurrent-submit backstop for the
   // shared-solve model.
-  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS competition_solves_competition_ctf_team_idx ON competition_solves(competition_id, ctf_id, team_id) WHERE team_id IS NOT NULL");
+  await createIndexSafely("competition_solves_competition_ctf_team_idx", "CREATE UNIQUE INDEX IF NOT EXISTS competition_solves_competition_ctf_team_idx ON competition_solves(competition_id, ctf_id, team_id) WHERE team_id IS NOT NULL");
 
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token text");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires timestamptz");
+
+  // Mirrors lib/db/src/schema/users.ts. Both of these are looked up by
+  // unauthenticated endpoints — verifying an email, redeeming a reset link —
+  // and `users` had exactly one index, so both were sequential scans of the
+  // whole table. Partial, because the columns are null for nearly every row.
+  //
+  // Created here rather than with the other indexes further up: password_reset_token
+  // is added by the ALTER immediately above, so an index declared earlier fails
+  // on a database that has not seen that column yet. createIndexSafely logged
+  // it and carried on, which is how schema-parity.sh caught it.
+  await createIndexSafely("users_email_verification_token_idx", "CREATE INDEX IF NOT EXISTS users_email_verification_token_idx ON users(email_verification_token) WHERE email_verification_token IS NOT NULL");
+  await createIndexSafely("users_password_reset_token_idx", "CREATE INDEX IF NOT EXISTS users_password_reset_token_idx ON users(password_reset_token) WHERE password_reset_token IS NOT NULL");
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS user_sessions (
@@ -373,9 +395,9 @@ async function applySchema() {
   await pool.query("CREATE INDEX IF NOT EXISTS lab_instances_status_idx ON lab_instances(status)");
   // One running machine per learner: two concurrent "Start" clicks must not both
   // win and strand a container nobody is tracking.
-  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS lab_instances_one_running_idx ON lab_instances(user_id) WHERE status = 'running'");
+  await createIndexSafely("lab_instances_one_running_idx", "CREATE UNIQUE INDEX IF NOT EXISTS lab_instances_one_running_idx ON lab_instances(user_id) WHERE status = 'running'");
 
-  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS job_applications_job_user_idx ON job_applications(job_id, user_id)");
+  await createIndexSafely("job_applications_job_user_idx", "CREATE UNIQUE INDEX IF NOT EXISTS job_applications_job_user_idx ON job_applications(job_id, user_id)");
   await pool.query("CREATE INDEX IF NOT EXISTS job_applications_job_id_idx ON job_applications(job_id)");
   await pool.query("CREATE INDEX IF NOT EXISTS job_applications_user_id_idx ON job_applications(user_id)");
 
@@ -391,7 +413,7 @@ async function applySchema() {
       updated_at timestamptz NOT NULL DEFAULT now()
     )
   `);
-  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS ctf_writeups_ctf_user_idx ON ctf_writeups(ctf_id, user_id)");
+  await createIndexSafely("ctf_writeups_ctf_user_idx", "CREATE UNIQUE INDEX IF NOT EXISTS ctf_writeups_ctf_user_idx ON ctf_writeups(ctf_id, user_id)");
   await pool.query("CREATE INDEX IF NOT EXISTS ctf_writeups_ctf_id_idx ON ctf_writeups(ctf_id)");
 
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret text");
@@ -437,7 +459,7 @@ async function applySchema() {
   `);
   // The unique index is load-bearing: it is what stops one provider identity
   // being linked to two accounts.
-  await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS oauth_accounts_provider_account_idx ON oauth_accounts(provider, provider_account_id)");
+  await createIndexSafely("oauth_accounts_provider_account_idx", "CREATE UNIQUE INDEX IF NOT EXISTS oauth_accounts_provider_account_idx ON oauth_accounts(provider, provider_account_id)");
   await pool.query("CREATE INDEX IF NOT EXISTS oauth_accounts_user_id_idx ON oauth_accounts(user_id)");
 
   await pool.query(`

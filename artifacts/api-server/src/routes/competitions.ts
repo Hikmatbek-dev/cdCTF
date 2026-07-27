@@ -75,17 +75,20 @@ router.get("/:id", optionalAuth, async (req, res) => {
     }
   }
 
+  // One query for every challenge in the event.
+  //
+  // This was a loop issuing one round trip per challenge — a forty-challenge
+  // event opened with forty sequential queries — plus, just above it, a full-row
+  // fetch of `challengeIds[0]` assigned to a variable nothing ever read. The
+  // analytics endpoint in this same file already used inArray correctly.
   const challengeIds = tasks.map(t => t.ctfId);
-  const challenges = challengeIds.length > 0
-    ? await db.select().from(ctfTasksTable).where(eq(ctfTasksTable.id, challengeIds[0]))
-    : [];
-
-  // Get all challenges for this competition
-  const allChallenges = [];
-  for (const t of tasks) {
-    const [ch] = await db.select().from(ctfTasksTable).where(eq(ctfTasksTable.id, t.ctfId)).limit(1);
-    if (ch) allChallenges.push({ id: ch.id, name: ch.name, category: ch.category, difficulty: ch.difficulty, points: ch.points });
-  }
+  const allChallenges = challengeIds.length === 0 ? [] : await db.select({
+    id: ctfTasksTable.id,
+    name: ctfTasksTable.name,
+    category: ctfTasksTable.category,
+    difficulty: ctfTasksTable.difficulty,
+    points: ctfTasksTable.points,
+  }).from(ctfTasksTable).where(inArray(ctfTasksTable.id, challengeIds));
 
   res.json({
     id: comp.id,

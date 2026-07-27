@@ -40,7 +40,11 @@ export const ctfFilesTable = pgTable("ctf_files", {
   contentType: text("content_type").notNull(),
   content: text("content").notNull(), // Base64 encoded
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, table => [
+  // app.ts looks a file up by name on the /uploads/ctf/:filename fallback — a
+  // sequential scan on a route anyone can hit.
+  index("ctf_files_filename_idx").on(table.filename),
+]);
 
 // Postgres does not index a foreign key for you. Every column indexed below is
 // one the server actually filters on — see the counts in the commit message.

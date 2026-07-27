@@ -1,4 +1,5 @@
 import { pgTable, serial, text, integer, boolean, timestamp, index } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -56,6 +57,15 @@ export const usersTable = pgTable("users", {
   // The scoreboard's exact filter and sort: non-blocked users, role 'user',
   // ordered by points. One index serves all three.
   index("users_leaderboard_idx").on(table.role, table.isBlocked, table.points),
+  // The two unauthenticated lookups. `users` had exactly one index, so
+  // verifying an email or redeeming a reset link was a sequential scan of the
+  // whole table — on endpoints anyone can call, behind a limiter that fails
+  // open. Partial, because both columns are null for nearly every row: the
+  // index only holds the handful of tokens actually outstanding.
+  index("users_email_verification_token_idx").on(table.emailVerificationToken)
+    .where(sql`email_verification_token IS NOT NULL`),
+  index("users_password_reset_token_idx").on(table.passwordResetToken)
+    .where(sql`password_reset_token IS NOT NULL`),
 ]);
 
 export const insertUserSchema = createInsertSchema(usersTable).omit({
