@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 120" width="460" height="120" role="img" aria-label="cdCTF">
+  <title>cdCTF</title>
+  <!--
+    The brand mark, rebuilt as vector.
+
+    Only a 600x342 PNG existed, which is not enough for print, a banner, or the
+    "SVG, PNG" the award form asks for. Colours are the app's own tokens:
+    #662EC6 is the app's primary in light mode, #895AF6 in dark. The glyph is the shield
+    the navbar uses, drawn rather than imported so it scales cleanly.
+  -->
+  <defs>
+    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#895AF6"/>
+      <stop offset="100%" stop-color="#662EC6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded-square badge -->
+  <rect x="8" y="18" width="84" height="84" rx="26" fill="url(#mark)"/>
+
+  <!-- Shield, centred in the badge -->
+  <path d="M50 38 L70 46 v14 c0 12-8 22-20 26-12-4-20-14-20-26V46z"
+        fill="none" stroke="#fff" stroke-width="5.5"
+        stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- Wordmark: "cd" in brand purple, "CTF" in a muted slate, as in the app -->
+  <text x="112" y="80" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif"
+        font-size="62" font-weight="800" letter-spacing="-3">
+    <tspan fill="#662EC6">cd</tspan><tspan fill="#5B6478" dx="6">CTF</tspan>
+  </text>
+</svg>

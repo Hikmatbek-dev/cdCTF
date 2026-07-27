@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>cdCTF — President Tech Award</title>
+<style>
+/*
+  A4 landscape, one <section> per slide, printed to PDF with headless Chrome.
+
+  Written to the founder's own brief after the first attempt scored 3/10:
+  "hamma narsa real bolishi kerak — real screenshotlar, real statistika,
+  hamma yerda rasm qilma". So every image here is a screenshot of
+  cdctf.vercel.app taken the day this was built, every number is either read
+  from the live API or counted from the repository, and there is no decorative
+  photography anywhere. Where a number is weak, it is shown weak.
+*/
+@page { size: A4 landscape; margin: 0; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+body {
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  color: #E8EAF0;
+  background: #0B0B12;
+}
+
+section {
+  position: relative;
+  width: 297mm; height: 210mm;
+  padding: 16mm 18mm;
+  page-break-after: always;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  background: #0B0B12;
+}
+section:last-child { page-break-after: auto; }
+
+/* Typography scale — deliberately few sizes. */
+h1 { font-size: 40pt; font-weight: 800; letter-spacing: -1.4pt; line-height: 1.03; }
+h2 { font-size: 25pt; font-weight: 800; letter-spacing: -0.7pt; line-height: 1.1; margin-bottom: 3mm; }
+h3 { font-size: 12pt; font-weight: 700; margin-bottom: 1.5mm; }
+p  { font-size: 11pt; line-height: 1.5; color: #A9B0C0; }
+.lead { font-size: 13.5pt; line-height: 1.45; color: #C6CBD8; }
+
+.eyebrow {
+  font-size: 8.5pt; font-weight: 700; letter-spacing: 2.2pt;
+  text-transform: uppercase; color: #895AF6; margin-bottom: 4mm;
+}
+
+.slide-no {
+  position: absolute; right: 12mm; bottom: 9mm;
+  font-size: 8pt; color: #4A5163; letter-spacing: 1pt;
+}
+.brandline {
+  position: absolute; left: 18mm; bottom: 9mm;
+  font-size: 8pt; color: #4A5163; letter-spacing: 0.6pt;
+}
+
+.grid  { display: grid; gap: 7mm; }
+/* The last grid on a slide takes the slack, so nothing floats mid-page. */
+section > .grid:last-of-type { margin-bottom: 2mm; }
+.g2 { grid-template-columns: 1fr 1fr; }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+.g4 { grid-template-columns: repeat(4, 1fr); }
+/* start, not center: centring inside the flexible area left a symmetric band
+   of dead space above and below every split slide. */
+.split { display: grid; grid-template-columns: 1.05fr 1fr; gap: 11mm; align-items: start; flex: 1; padding-top: 5mm; }
+.split-wide { display: grid; grid-template-columns: 1fr 1.3fr; gap: 11mm; align-items: start; flex: 1; padding-top: 5mm; }
+
+.card {
+  border: 0.4mm solid #23253A; border-radius: 4mm;
+  padding: 7mm; background: #101120;
+}
+.grid.g3 > .card { min-height: 78mm; }
+.card.accent { border-color: rgba(137,90,246,.42); background: rgba(137,90,246,.07); }
+.card.warn   { border-color: rgba(244,114,94,.40);  background: rgba(244,114,94,.06); }
+.card.good   { border-color: rgba(52,199,123,.38);  background: rgba(52,199,123,.06); }
+
+.stat  { font-size: 30pt; font-weight: 800; letter-spacing: -1pt; line-height: 1; color: #fff; }
+.stat.sm { font-size: 21pt; }
+.stat-label { font-size: 9pt; color: #8B93A6; margin-top: 2mm; }
+.stat.purple { color: #A98CF9; }
+.stat.green  { color: #4ED89A; }
+.stat.red    { color: #F4725E; }
+
+/* Screenshots. A hairline and a radius so the dark UI does not bleed into the
+   dark slide; no drop shadows, no device frames. */
+.shot {
+  width: 100%; display: block;
+  border: 0.35mm solid #262940; border-radius: 3mm;
+}
+/* A fixed-height window onto a tall screenshot, anchored to the top so the
+   header and the first screenful are what shows. Cropping beats scaling a
+   1440px-wide capture down until its text is unreadable. */
+.shot-crop { border: 0.35mm solid #262940; border-radius: 3mm; overflow: hidden; }
+.shot-crop img { width: 100%; display: block; object-fit: cover; object-position: top; }
+.caption { font-size: 8pt; color: #6B7288; margin-top: 2mm; letter-spacing: .3pt; }
+
+table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+th, td { text-align: left; padding: 5.4mm 3mm; border-bottom: 0.3mm solid #23253A; vertical-align: top; }
+th { color: #8B93A6; font-size: 8.5pt; text-transform: uppercase; letter-spacing: 1.2pt; font-weight: 700; }
+td strong { color: #fff; font-weight: 700; }
+.yes { color: #4ED89A; font-weight: 700; }
+.no  { color: #F4725E; font-weight: 700; }
+
+ul { list-style: none; }
+li { font-size: 11pt; line-height: 1.5; color: #A9B0C0; padding-left: 6mm; position: relative; margin-bottom: 2.6mm; }
+/* Slide 10 carries two long lists and a phone screenshot; at the shared size it
+   ran past the footer. */
+.tight li { font-size: 9.5pt; line-height: 1.4; margin-bottom: 1.8mm; }
+li::before { content: "—"; position: absolute; left: 0; color: #895AF6; }
+li strong { color: #E8EAF0; font-weight: 700; }
+
+.tag {
+  display: inline-block; font-size: 8pt; font-weight: 700; letter-spacing: 1pt;
+  text-transform: uppercase; padding: 1.6mm 3mm; border-radius: 2mm;
+  border: 0.3mm solid rgba(137,90,246,.45); color: #A98CF9;
+  background: rgba(137,90,246,.10);
+}
+.footnote { font-size: 8pt; color: #5C6377; margin-top: 4mm; line-height: 1.45; }
+</style>
+</head>
+<body>
+
+<!-- 1 ─ Title -->
+<section>
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+    <img src="assets/cdctf-logo.svg" alt="cdCTF" style="width:78mm; margin-bottom:12mm;">
+    <h1>O'zbekiston uchun<br>kiberxavfsizlik akademiyasi<br>va CTF platformasi</h1>
+    <p class="lead" style="margin-top:8mm; max-width:180mm;">
+      O'zbek, rus va ingliz tillarida — bepul. Darsdan amaliyotga, amaliyotdan
+      tekshiriladigan sertifikatgacha bitta yo'lda.
+    </p>
+    <div style="margin-top:12mm; display:flex; gap:6mm; align-items:center;">
+      <span class="tag">cdctf.uz</span>
+      <span style="font-size:10.5pt; color:#8B93A6;">MVP jonli ishlayapti · cdctf.vercel.app</span>
+    </div>
+  </div>
+  <div class="brandline">Hikmatbek Xudoyberganov Jur'at o'g'li · asoschi</div>
+  <div class="slide-no">01</div>
+</section>
+
+<!-- 2 ─ The problem -->
+<section>
+  <div class="eyebrow">Muammo</div>
+  <h2>Kiberxavfsizlikni o'rganmoqchi bo'lgan o'zbek yoshi<br>uchta devorga uriladi</h2>
+  <div class="grid g3" style="margin-top:9mm;">
+    <div class="card warn">
+      <h3>1 · Til</h3>
+      <p>TryHackMe va HackTheBox — dunyodagi ikki yetakchi platforma — faqat
+      ingliz tilida. O'rganish materiali ham, topshiriq matni ham, jamiyat ham.</p>
+    </div>
+    <div class="card warn">
+      <h3>2 · Narx va to'lov</h3>
+      <p>TryHackMe Premium $14/oy, HackTheBox VIP+ $25/oy. Muammo faqat pul emas:
+      UzCard va Humo bilan chet el obunasini <strong>to'lab bo'lmaydi</strong>.</p>
+    </div>
+    <div class="card warn">
+      <h3>3 · Kontekst</h3>
+      <p>Topshiriqlar xayoliy Amerika banklari haqida. O'quvchi o'z mamlakatidagi
+      tizimlarni — <code>.uz</code> domenlar, mahalliy operatorlar — hech qachon ko'rmaydi.</p>
+    </div>
+  </div>
+
+  <div class="grid g3" style="margin-top:9mm;">
+    <div class="card">
+      <div class="stat purple">4,8 mln</div>
+      <div class="stat-label">Dunyoda yetishmayotgan kiberxavfsizlik mutaxassisi (ISC2)</div>
+    </div>
+    <div class="card">
+      <div class="stat purple">3,4 mln</div>
+      <div class="stat-label">Osiyo-Tinch okeani mintaqasidagi bo'shliq — dunyodagi eng kattasi</div>
+    </div>
+    <div class="card">
+      <div class="stat purple">+18,4%</div>
+      <div class="stat-label">O'zbekistonda ish haqi o'sishi (2026, stat.uz). O'rtacha 7,09 mln so'm</div>
+    </div>
+  </div>
+  <p class="footnote">Manbalar: ISC2 Cybersecurity Workforce Study · stat.uz, 2026-yil yanvar–iyun · tryhackme.com va hackthebox.com ochiq narxlari, 2026-yil iyul.</p>
+  <div class="brandline">cdCTF</div><div class="slide-no">02</div>
+</section>
+
+<!-- 3 ─ Solution -->
+<section>
+  <div class="eyebrow">Yechim</div>
+  <h2>O'rganish va amaliyot — bitta platformada,<br>uch tilda, bepul</h2>
+  <div class="split" style="margin-top:8mm;">
+    <div>
+      <ul>
+        <li><strong>8 modul, 165 dars.</strong> Birinchi shell buyrug'idan to'liq hujum zanjirigacha, tartib bilan.</li>
+        <li><strong>97 CTF topshiriq.</strong> O'qigan narsangizni darhol sinash uchun.</li>
+        <li><strong>Har bir dars amaliyotga ulangan.</strong> Modul o'zi mashq qiladigan topshiriqlarni ko'rsatadi, topshiriq esa o'zini o'rgatadigan modulni.</li>
+        <li><strong>Tekshiriladigan sertifikat.</strong> Seriya raqami, barmoq izi va ommaviy tekshiruv sahifasi — ish beruvchi o'zi tasdiqlay oladi.</li>
+        <li><strong>Uch til.</strong> Interfeys ham, kontent ham: o'zbek (asosiy), rus, ingliz.</li>
+      </ul>
+    </div>
+    <div>
+      <div class="shot-crop" style="height:112mm;"><img src="assets/shot-home.png" alt="cdCTF bosh sahifasi"></div>
+      <div class="caption">cdctf.vercel.app — jonli saytdan olingan skrinshot</div>
+    </div>
+  </div>
+  <div class="brandline">cdCTF</div><div class="slide-no">03</div>
+</section>
+
+<!-- 4 ─ The bridge (the actual differentiator) -->
+<section>
+  <div class="eyebrow">Asosiy farq</div>
+  <h2>Ko'prik: o'qish va yechish bir-birini ko'radi</h2>
+  <div class="split-wide" style="margin-top:6mm;">
+    <div>
+      <p class="lead" style="margin-bottom:6mm;">
+        Boshqa platformalarda o'quv kursi va CTF ro'yxati ikki alohida dunyo.
+        Bizda modul o'zi o'rgatgan mavzu bo'yicha topshiriqlarni ochib beradi —
+        yechilmagani birinchi, osoni oldinda.
+      </p>
+      <div class="card accent">
+        <h3>Nega bu muhim</h3>
+        <p>Bizning o'z ma'lumotimiz shuni ko'rsatdi: odamlar amaliyot uchun keladi
+        va kurs borligini bilmay ketadi. Ko'prik aynan shu teshikni yopadi —
+        va uni raqobatchilar arxitekturasi takrorlay olmaydi, chunki ularda
+        kurs va laboratoriya alohida mahsulot.</p>
+      </div>
+    </div>
+    <div>
+      <div class="shot-crop" style="height:132mm;">
+        <img src="assets/shot-module.png" alt="Modul sahifasi va unga bog'langan amaliyot">
+      </div>
+      <div class="caption">Modul sahifasi: 8 dars, so'ng «O'rganganingizni mashq qiling» — shu moduldagi 6 topshiriq</div>
+    </div>
+  </div>
+  <div class="brandline">cdCTF</div><div class="slide-no">04</div>
+</section>
+
+<!-- 5 ─ Product: lesson + challenge -->
+<section>
+  <div class="eyebrow">Mahsulot</div>
+  <h2>Dars — o'qiladi, ishlatiladi, tekshiriladi</h2>
+  <div class="grid g2" style="margin-top:6mm; flex:1; align-content:start;">
+    <div>
+      <div class="shot-crop" style="height:126mm;"><img src="assets/shot-lesson.png" alt="Dars sahifasi"></div>
+      <div class="caption">Dars: bo'limlarga bo'lingan matn, ko'chiriladigan buyruqlar, oxirida test</div>
+    </div>
+    <div>
+      <div class="shot-crop" style="height:126mm;"><img src="assets/shot-ctf.png" alt="CTF topshiriqlar ro'yxati"></div>
+      <div class="caption">97 topshiriq: kategoriya bo'yicha rang, qiyinlik nuqtalar bilan, filtrlar</div>
+    </div>
+  </div>
+  <div class="brandline">cdCTF</div><div class="slide-no">05</div>
+</section>
+
+<!-- 6 ─ Certificate -->
+<section>
+  <div class="eyebrow">Natija</div>
+  <h2>Ish beruvchi o'zi tekshira oladigan sertifikat</h2>
+  <div class="split" style="margin-top:6mm;">
+    <div>
+      <ul>
+        <li><strong>Seriya raqami</strong> — <code>CDCTF-XXXXXXXXXX</code>, har bir sertifikat uchun yagona.</li>
+        <li><strong>Barmoq izi</strong> — hujjat mazmunidan olingan kriptografik xesh.</li>
+        <li><strong>Ommaviy tekshiruv</strong> — hisobsiz, bir sahifada, uch tilda.</li>
+        <li><strong>QR kod</strong> — bosma nusxadan telefon bilan skanerlanadi.</li>
+        <li><strong>LinkedIn'ga qo'shish</strong> — sertifikat bo'limiga tekshiruv havolasi bilan tushadi.</li>
+      </ul>
+      <div class="card good" style="margin-top:6mm;">
+        <p style="color:#C6CBD8;">Modul imtihoni 80% dan o'tilganda beriladi. Barcha
+        modullar tugallanganda — dastur diplomi.</p>
+      </div>
+    </div>
+    <div>
+      <div class="shot-crop" style="height:112mm;"><img src="assets/shot-verify.png" alt="Sertifikatni tekshirish sahifasi"></div>
+      <div class="caption">/verify — istalgan kishi seriya raqami bo'yicha tekshiradi</div>
+    </div>
+  </div>
+  <div class="brandline">cdCTF</div><div class="slide-no">06</div>
+</section>
+
+<!-- 7 ─ Honest numbers -->
+<section>
+  <div class="eyebrow">Raqamlar · jonli API'dan o'qilgan</div>
+  <h2>Nima qurilgan, va nima hali kuchsiz</h2>
+
+  <div class="grid g4" style="margin-top:7mm;">
+    <div class="card"><div class="stat">8</div><div class="stat-label">modul</div></div>
+    <div class="card"><div class="stat">165</div><div class="stat-label">dars</div></div>
+    <div class="card"><div class="stat">97</div><div class="stat-label">CTF topshiriq</div></div>
+    <div class="card"><div class="stat">3</div><div class="stat-label">til, to'liq</div></div>
+  </div>
+
+  <div class="grid g4" style="margin-top:6mm;">
+    <div class="card"><div class="stat sm green">221</div><div class="stat-label">yechilgan topshiriq</div></div>
+    <div class="card"><div class="stat sm">34</div><div class="stat-label">ro'yxatdan o'tgan o'quvchi</div></div>
+    <div class="card warn"><div class="stat sm red">0</div><div class="stat-label">berilgan sertifikat</div></div>
+    <div class="card warn"><div class="stat sm red">63/97</div><div class="stat-label">hech kim yechmagan topshiriq</div></div>
+  </div>
+
+  <div class="card warn" style="margin-top:7mm;">
+    <h3>Bu raqamlarni yashirmaymiz — sabab aniqlangan va tuzatilgan</h3>
+    <p>Auditda ikkita jiddiy xato topildi: darsni tugatgan foydalanuvchi tizimga
+    kirgach CTF ro'yxatiga tashlanardi, va besh savolli dars testi majburiy
+    to'liq ekran hamda umrbod uch urinish bilan yopiq edi. Ikkalasi ham
+    tuzatildi. Katalog balansi (topshiriqlarning 30% i faqat kriptografiya)
+    kontent skriptlari bilan tenglashtiriladi.</p>
+  </div>
+  <p class="footnote">Barcha raqamlar <code>GET /api/stats</code> va <code>GET /api/ctf</code> dan taqdimot tayyorlangan kuni o'qilgan.</p>
+  <div class="brandline">cdCTF</div><div class="slide-no">07</div>
+</section>
+
+<!-- 8 ─ Competition -->
+<section>
+  <div class="eyebrow">Bozor</div>
+  <h2>Nima uchun mahalliy o'yinchi kerak</h2>
+  <table style="margin-top:6mm;">
+    <tr>
+      <th style="width:30%">&nbsp;</th>
+      <th style="width:23%">TryHackMe</th>
+      <th style="width:23%">HackTheBox</th>
+      <th style="width:24%; color:#A98CF9;">cdCTF</th>
+    </tr>
+    <tr>
+      <td><strong>Til</strong></td>
+      <td>Faqat ingliz</td>
+      <td>Faqat ingliz</td>
+      <td class="yes">O'zbek · rus · ingliz</td>
+    </tr>
+    <tr>
+      <td><strong>Narx</strong></td>
+      <td>$14 / oy</td>
+      <td>$25 / oy (VIP+)</td>
+      <td class="yes">Bepul</td>
+    </tr>
+    <tr>
+      <td><strong>UzCard / Humo bilan to'lash</strong></td>
+      <td class="no">Yo'q</td>
+      <td class="no">Yo'q</td>
+      <td class="yes">To'lov kerak emas</td>
+    </tr>
+    <tr>
+      <td><strong>Mahalliy stsenariylar</strong></td>
+      <td class="no">Yo'q</td>
+      <td class="no">Yo'q</td>
+      <td class="yes"><code>.uz</code> domen, mahalliy operator, Toshkent serveri</td>
+    </tr>
+    <tr>
+      <td><strong>Kurs ↔ amaliyot bog'lanishi</strong></td>
+      <td>Alohida mahsulot</td>
+      <td>Alohida mahsulot</td>
+      <td class="yes">Ikki tomonlama ko'prik</td>
+    </tr>
+    <tr>
+      <td><strong>Ish beruvchi kanali</strong></td>
+      <td>Korporativ tarif</td>
+      <td>Korporativ tarif</td>
+      <td class="yes">Talant katalogi + vakansiya taxtasi</td>
+    </tr>
+  </table>
+  <p class="footnote">Narxlar 2026-yil iyul holatiga, platformalarning ochiq sahifalaridan. Bepul rejalar mavjud, lekin ular kontentning kichik qismini ochadi.</p>
+  <div class="brandline">cdCTF</div><div class="slide-no">08</div>
+</section>
+
+<!-- 9 ─ Business model -->
+<section>
+  <div class="eyebrow">Daromad modeli</div>
+  <h2>O'quvchi hech qachon to'lamaydi. To'lov yon tomondan keladi.</h2>
+  <div class="grid g3" style="margin-top:8mm;">
+    <div class="card accent">
+      <span class="tag">A · Tayyor</span>
+      <h3 style="margin-top:4mm;">Homiyli musobaqa</h3>
+      <p>Kompaniya CTF tadbirini o'z brendi ostida o'tkazadi: logotip, sovrin,
+      ulashiladigan tadbir sahifasi va yakunda agregat hisobot — qamrov,
+      faollik, kunlik yechimlar.</p>
+      <p style="margin-top:3mm; color:#8B93A6;">Infratuzilma to'liq qurilgan va ishlaydi.</p>
+    </div>
+    <div class="card accent">
+      <span class="tag">B · Tayyor</span>
+      <h3 style="margin-top:4mm;">Talant kanali</h3>
+      <p>Ish beruvchi «ishga tayyorman» degan o'quvchilarni ko'radi — CV bo'yicha
+      emas, <strong>haqiqatan yechgani</strong> bo'yicha saralangan. Vakansiya
+      taxtasi va ariza oqimi ishlaydi.</p>
+      <p style="margin-top:3mm; color:#8B93A6;">Hozircha bepul; keyinchalik ish beruvchi uchun pullik.</p>
+    </div>
+    <div class="card">
+      <span class="tag">C · Keyingi</span>
+      <h3 style="margin-top:4mm;">Institutsional</h3>
+      <p>Universitet va IT Park uchun guruh hisoblari, o'qituvchi paneli va
+      guruh hisoboti. Talab tasdiqlangach quriladi.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:8mm;">
+    <p style="color:#C6CBD8;"><strong style="color:#fff;">Nega bepul.</strong>
+    O'zbekistonda to'lov devori auditoriyaning katta qismini kesib tashlaydi —
+    va bizning maqsadimiz jamiyatni o'stirish. Bepul auditoriya esa aynan
+    homiy va ish beruvchi to'laydigan narsa.</p>
+  </div>
+  <div class="brandline">cdCTF</div><div class="slide-no">09</div>
+</section>
+
+<!-- 10 ─ Engineering quality -->
+<section>
+  <div class="eyebrow">Texnik holat</div>
+  <h2>Prototip emas — ishlab turgan mahsulot</h2>
+  <div class="grid g4" style="margin-top:6mm;">
+    <div class="card" style="padding:5mm;"><div class="stat sm">31</div><div class="stat-label">avtomatik test to'plami</div></div>
+    <div class="card" style="padding:5mm;"><div class="stat sm">3 500+</div><div class="stat-label">satr test kodi</div></div>
+    <div class="card" style="padding:5mm;"><div class="stat sm">58 000+</div><div class="stat-label">satr mahsulot kodi</div></div>
+    <div class="card" style="padding:5mm;"><div class="stat sm">218</div><div class="stat-label">commit, 2026-yil may'dan</div></div>
+  </div>
+  <div class="grid g2" style="margin-top:6mm; font-size:10pt;">
+    <div class="card good" style="padding:6mm;">
+      <h3>Xavfsizlik — tekshirilgan, aytilgan emas</h3>
+      <ul class="tight" style="margin-top:3mm;">
+        <li>Ikki bosqichli tasdiq, passkey, OAuth, API tokenlar</li>
+        <li>CSRF, captcha, taqsimlangan rate-limit — har biri o'z testi bilan</li>
+        <li>Flag'lar xeshlangan, javob kalitlari mijozga hech qachon yuborilmaydi</li>
+        <li>To'liq Content-Security-Policy, xavfsizlik sarlavhalari</li>
+        <li>Mustaqil audit o'tkazildi; topilgan 5 ta yo'l yopildi va har biriga regressiya testi yozildi</li>
+      </ul>
+    </div>
+    <div class="card" style="padding:6mm;">
+      <h3>Ishlash</h3>
+      <ul class="tight" style="margin-top:3mm;">
+        <li>Birinchi yuklash <strong>250 KB</strong> (gzip) — arzon telefon uchun</li>
+        <li>Har sahifa alohida yuklanadi</li>
+        <li>Sekin internetda ham uzilish «xato» deb aytiladi, «bo'sh» deb emas</li>
+        <li>Klaviatura bilan to'liq boshqariladi</li>
+      </ul>
+      <div class="shot-crop" style="margin-top:4mm; width:32mm; height:40mm;">
+        <img src="assets/shot-mobile.png" alt="Mobil ko'rinish">
+      </div>
+      <div class="caption">390px telefon</div>
+    </div>
+  </div>
+  <div class="brandline">cdCTF</div><div class="slide-no">10</div>
+</section>
+
+<!-- 11 ─ Roadmap -->
+<section>
+  <div class="eyebrow">Keyingi 12 oy</div>
+  <h2>Nima qilinadi va nima kerak</h2>
+  <div class="grid g3" style="margin-top:8mm;">
+    <div class="card">
+      <span class="tag">1–3 oy</span>
+      <ul style="margin-top:4mm;">
+        <li>Birinchi 1 000 o'quvchi — Telegram va universitetlar orqali</li>
+        <li>Katalog balansini tenglashtirish, mahalliy stsenariylarni kengaytirish</li>
+        <li>Birinchi homiyli musobaqa</li>
+        <li>Izolyatsiyalangan laboratoriyalar (kod tayyor, server kerak)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="tag">4–8 oy</span>
+      <ul style="margin-top:4mm;">
+        <li>Birinchi 100 sertifikat</li>
+        <li>Ish beruvchilar bilan talant kanalini ishga tushirish</li>
+        <li>Universitet va IT Park bilan hamkorlik</li>
+        <li>Rus tilida Markaziy Osiyoga chiqish</li>
+      </ul>
+    </div>
+    <div class="card accent">
+      <span class="tag">Nima kerak</span>
+      <ul style="margin-top:4mm;">
+        <li><strong>Server</strong> — laboratoriya mashinalari uchun</li>
+        <li><strong>Kontent</strong> — mahalliy stsenariylar va tarjima</li>
+        <li><strong>Kirish</strong> — universitet va IT Park bilan tanishtirish</li>
+        <li><strong>Huquqiy</strong> — yuridik shaxs, homiylik shartnomalari</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="margin-top:8mm;">
+    <p style="color:#C6CBD8;">Mahsulot muammosi hal qilingan. Qolgani —
+    <strong style="color:#fff;">odamlarni olib kelish</strong>. Grant va inkubatsiya
+    aynan shu bosqichda eng katta ta'sir beradi.</p>
+  </div>
+  <div class="brandline">cdCTF</div><div class="slide-no">11</div>
+</section>
+
+<!-- 12 ─ Close -->
+<section>
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+    <img src="assets/cdctf-mark.svg" alt="" style="width:22mm; margin-bottom:10mm;">
+    <h2 style="font-size:30pt;">O'zbekistonda kiberxavfsizlikni<br>o'rganish uchun to'siq qolmasin</h2>
+    <p class="lead" style="margin-top:7mm; max-width:170mm;">
+      Til to'sig'i yo'q. To'lov to'sig'i yo'q. Kontekst begona emas.
+      Va oxirida — ish beruvchi tekshira oladigan hujjat.
+    </p>
+    <div class="grid g2" style="margin-top:14mm; max-width:200mm;">
+      <div class="card">
+        <h3>Mahsulot</h3>
+        <p>cdctf.uz · cdctf.vercel.app<br>github.com/Hikmatbek-dev/cdCTF</p>
+      </div>
+      <div class="card">
+        <h3>Aloqa</h3>
+        <p>Hikmatbek Xudoyberganov Jur'at o'g'li<br>Telegram: @cdctf · Instagram: cdctf.uz</p>
+      </div>
+    </div>
+  </div>
+  <div class="brandline">cdCTF</div><div class="slide-no">12</div>
+</section>
+
+</body>
+</html>
