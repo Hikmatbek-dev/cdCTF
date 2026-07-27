@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "@/lib/AuthContext";
 import { LanguageProvider } from "@/lib/LanguageContext";
 import { ThemeProvider } from "@/lib/ThemeContext";
 import { SeoManager } from "@/lib/seo";
+import { loginWithNext } from "@/lib/next-path";
 import { Navbar } from "@/components/Navbar";
 
 import HomePage from "@/pages/HomePage";
@@ -65,8 +66,9 @@ function AuthPending() {
 /** Any staff role — the panel itself decides what each of them may touch. */
 function AdminRoute({ component: Component }: { component: React.ComponentType }) {
   const { isAuthenticated, isStaff, isLoading } = useAuth();
+  const [location] = useLocation();
   if (isLoading) return <AuthPending />;
-  if (!isAuthenticated) return <Redirect to="/login" />;
+  if (!isAuthenticated) return <Redirect to={loginWithNext(location)} />;
   if (!isStaff) return <Redirect to="/" />;
   return <Component />;
 }
@@ -74,16 +76,24 @@ function AdminRoute({ component: Component }: { component: React.ComponentType }
 /** For pages only one specific permission should reach. */
 function PermissionRoute({ component: Component, permission }: { component: React.ComponentType; permission: string }) {
   const { isAuthenticated, can, isLoading } = useAuth();
+  const [location] = useLocation();
   if (isLoading) return <AuthPending />;
-  if (!isAuthenticated) return <Redirect to="/login" />;
+  if (!isAuthenticated) return <Redirect to={loginWithNext(location)} />;
   if (!can(permission)) return <Redirect to="/admin/dashboard" />;
   return <Component />;
 }
 
+/**
+ * Sends an unauthenticated visitor to sign in — and remembers where they were
+ * going. Redirecting to a bare "/login" threw the destination away, so anyone
+ * who hit a sign-in wall was deposited on /ctf afterwards regardless of what
+ * they had been trying to do.
+ */
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const [location] = useLocation();
   if (isLoading) return <AuthPending />;
-  if (!isAuthenticated) return <Redirect to="/login" />;
+  if (!isAuthenticated) return <Redirect to={loginWithNext(location)} />;
   return <Component />;
 }
 

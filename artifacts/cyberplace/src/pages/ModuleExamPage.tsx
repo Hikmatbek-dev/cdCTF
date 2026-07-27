@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
+import { loginWithNext } from "@/lib/next-path";
 import {
   useGetModule, getGetModuleQueryKey,
   useStartModuleExam, useSubmitModuleExam, useIssueCertificate,
@@ -82,7 +83,7 @@ export default function ModuleExamPage() {
         const status = (err as { status?: number })?.status;
         if (status === 401) {
           toast({ title: t("Sign in to take the exam", "Imtihon uchun tizimga kiring", "Войдите, чтобы сдать экзамен") });
-          setLocation("/login");
+          setLocation(loginWithNext(`/modules/${id}/exam`));
           return;
         }
         toast({

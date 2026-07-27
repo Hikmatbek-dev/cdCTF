@@ -7,6 +7,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
+import { useAuth } from "@/lib/AuthContext";
+import { loginWithNext } from "@/lib/next-path";
 import {
   useGetLesson, getGetLessonQueryKey,
   useGetModule, getGetModuleQueryKey,
@@ -192,6 +194,7 @@ export default function LessonDetailPage() {
   const [, params] = useRoute("/learn/:id");
   const id = Number(params?.id);
   const { t } = useLang();
+  const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [readProgress, setReadProgress] = useState(0);
 
@@ -440,14 +443,30 @@ export default function LessonDetailPage() {
                 </div>
               ) : (
                 <div className="glass-card flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-primary/25">
+                  {/* Lessons are readable without an account, so this card is
+                      shown to people who cannot actually take the test. Saying
+                      "3 attempts remaining" to a signed-out reader was a
+                      promise the next screen broke. */}
                   <div>
-                    <p className="font-semibold text-sm">{t("Ready to test your knowledge?", "Bilimingizni tekshirishga tayyormisiz?", "Готовы проверить знания?")}</p>
+                    <p className="font-semibold text-sm">
+                      {isAuthenticated
+                        ? t("Ready to test your knowledge?", "Bilimingizni tekshirishga tayyormisiz?", "Готовы проверить знания?")
+                        : t("Sign in to record this lesson", "Bu darsni hisobga olish uchun kiring", "Войдите, чтобы урок засчитался")}
+                    </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {t(`${3 - lesson.attemptCount} attempts remaining`, `${3 - lesson.attemptCount} urinish qoldi`, `Осталось попыток: ${3 - lesson.attemptCount}`)}
+                      {isAuthenticated
+                        ? t(`${3 - lesson.attemptCount} attempts remaining`, `${3 - lesson.attemptCount} urinish qoldi`, `Осталось попыток: ${3 - lesson.attemptCount}`)
+                        : t("It takes half a minute, and you come straight back here.", "Yarim daqiqa vaqt oladi va shu yerga qaytasiz.", "Это полминуты, и вы вернётесь сюда же.")}
                     </p>
                   </div>
-                  <button onClick={() => setLocation(`/learn/${id}/test`)} className="cyber-button h-11 px-6 shrink-0" data-testid="button-start-test">
-                    {t("I'm done — take the test", "Tugatdim — testni topshirish", "Я закончил — пройти тест")}
+                  <button
+                    onClick={() => setLocation(isAuthenticated ? `/learn/${id}/test` : loginWithNext(`/learn/${id}/test`))}
+                    className="cyber-button h-11 px-6 shrink-0"
+                    data-testid="button-start-test"
+                  >
+                    {isAuthenticated
+                      ? t("I'm done — take the test", "Tugatdim — testni topshirish", "Я закончил — пройти тест")
+                      : t("Sign in and take the test", "Kirib, testni topshirish", "Войти и пройти тест")}
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>

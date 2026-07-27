@@ -12,6 +12,7 @@ import { FadeIn, ScaleIn } from "@/components/PageTransition";
 import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import * as api from "@/lib/security-api";
+import { nextFromLocation } from "@/lib/next-path";
 
 const PROVIDER_LABELS: Record<string, string> = {
   google: "Google",
@@ -63,6 +64,10 @@ export default function LoginPage() {
   // Rendering the failure inline is both reliable and clearer for a sign-in error.
   const [oauthError] = useState(() => new URLSearchParams(window.location.search).get("oauth_error"));
 
+  // Captured on the first render, like oauthError above: the MFA/OAuth effect
+  // below rewrites the URL to a bare "/login", which would drop it.
+  const [next] = useState(nextFromLocation);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     // An account with 2FA comes back from the callback still owing a code.
@@ -84,6 +89,13 @@ export default function LoginPage() {
           "Этот вход выглядел необычно. Проверьте историю входов, если это были не вы.",
         ),
       });
+    }
+    // Where they were headed before the sign-in wall, when there is one.
+    // Staff still land on the panel; without a destination a learner goes to
+    // /ctf as before.
+    if (next && result.user.role === "user") {
+      setLocation(next);
+      return;
     }
     setLocation(result.user.role === "user" ? "/ctf" : "/admin/dashboard");
   }

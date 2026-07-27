@@ -7,6 +7,7 @@ import { useLang } from "@/lib/LanguageContext";
 import { useStartLessonTest, useSubmitLessonTest, useReportTestEscape } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { normalizeArray } from "@/lib/api-shapes";
+import { loginWithNext } from "@/lib/next-path";
 
 type TestQuestion = {
   id: number;
@@ -176,7 +177,9 @@ export default function LessonTestPage() {
               title: t("Sign in to take the test", "Testni topshirish uchun tizimga kiring", "Войдите, чтобы пройти тест"),
               variant: "destructive",
             });
-            setLocation("/login");
+            // With the destination attached: without it, sign-in dropped a
+            // learner who had just finished a lesson onto the challenge list.
+            setLocation(loginWithNext(`/learn/${id}/test`));
             return;
           }
           const msg = (err as Error)?.message
