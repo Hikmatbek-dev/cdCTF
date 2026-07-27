@@ -182,6 +182,23 @@ check "$(echo "$SPBODY" | python3 -c 'import sys,json;print(json.load(sys.stdin)
 check "$(curl -s $API/competitions | python3 -c 'import sys,json;print([c["sponsorName"] for c in json.load(sys.stdin) if c["id"]=='"$SPCOMP"'][0])')" "IT Park Uzbekistan" "ro'yxatda ham homiy nomi bor"
 
 echo
+echo "=== ⭐ HOMIY HISOBOTI — qamrov va faollik ==="
+# Homiyli musobaqaga topshiriq va yechim qo'shamiz, so'ng hisobotni tekshiramiz.
+q "INSERT INTO competition_tasks (competition_id, ctf_id) VALUES ($SPCOMP,$CTF),($SPCOMP,$CTF2)" > /dev/null
+q "INSERT INTO competition_users (competition_id, user_id) VALUES ($SPCOMP,$U1_ID),($SPCOMP,$U2_ID)" > /dev/null
+# Faqat bitta qatnashchi yechadi — faollik 50% bo'lishi kerak.
+q "INSERT INTO competition_solves (competition_id, user_id, ctf_id, points_earned) VALUES ($SPCOMP,$U1_ID,$CTF,250)" > /dev/null
+AN=$(curl -s $API/competitions/$SPCOMP/analytics)
+check "$(echo "$AN" | python3 -c 'import sys,json;print(json.load(sys.stdin)["participants"])')" "2" "2 qatnashchi"
+check "$(echo "$AN" | python3 -c 'import sys,json;print(json.load(sys.stdin)["activeParticipants"])')" "1" "1 tasi haqiqatan yechgan"
+check "$(echo "$AN" | python3 -c 'import sys,json;print(json.load(sys.stdin)["totalSolves"])')" "1" "jami 1 yechim"
+check "$(echo "$AN" | python3 -c 'import sys,json;print(json.load(sys.stdin)["challengeCount"])')" "2" "2 topshiriq biriktirilgan"
+check "$(echo "$AN" | python3 -c 'import sys,json;print(json.load(sys.stdin)["challengesWithSolves"])')" "1" "shundan 1 tasi yechilgan"
+check "$(echo "$AN" | python3 -c 'import sys,json;print(json.load(sys.stdin)["pointsAwarded"])')" "250" "berilgan ball 250"
+# Hisobot ochiq — homiyga yuborish uchun, lekin shaxsiy ma'lumot bermaydi.
+check "$(echo "$AN" | python3 -c 'import sys,json;d=json.load(sys.stdin);print("userId" in json.dumps(d))')" "False" "hisobotda shaxs identifikatori yo'q"
+
+echo
 echo "=== ⭐ OG PREVIEW — Telegram uchun meta teglar ==="
 # Crawlers get server-rendered OG tags (humans get the SPA). The route is
 # reachable directly; Vercel only maps crawler user-agents onto it.

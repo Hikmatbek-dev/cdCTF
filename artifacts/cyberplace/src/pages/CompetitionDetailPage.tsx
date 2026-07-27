@@ -11,6 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
 import { Link } from "wouter";
 import { normalizeArray } from "@/lib/api-shapes";
+import { SponsorReport } from "@/components/SponsorReport";
 
 export default function CompetitionDetailPage() {
   const [, params] = useRoute("/competitions/:id");
@@ -313,6 +314,13 @@ export default function CompetitionDetailPage() {
               })}
             </div>
           </div>
+        )}
+
+        {/* The sponsor's report. Shown once the event has ended and only when
+            it carried a sponsor — before that the numbers are still moving and
+            mean nothing. */}
+        {comp.status === "ended" && comp.sponsorName && (
+          <SponsorReport competitionId={id} sponsorName={comp.sponsorName} />
         )}
 
         {/* Team leaderboard — only when teams have registered. Ranks teams by

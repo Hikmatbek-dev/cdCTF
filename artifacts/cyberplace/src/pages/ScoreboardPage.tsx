@@ -44,7 +44,7 @@ export default function ScoreboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-32 pb-32 relative overflow-hidden">
+    <div className="min-h-screen bg-background text-foreground pt-24 sm:pt-28 pb-24 relative overflow-hidden">
       {/* Background Effects */}
       <div className="fixed inset-0 mono-grid opacity-20 pointer-events-none" />
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -54,16 +54,16 @@ export default function ScoreboardPage() {
 
       <div className="max-w-5xl mx-auto px-6 relative z-10">
         {/* Header Section */}
-        <div className="mb-20">
+        <div className="mb-8">
           <FadeIn>
-            <div className="flex items-center gap-8 mb-12">
-              <div className="w-20 h-20 bg-primary/10 border border-foreground/10 rounded-xl flex items-center justify-center shadow-2xl shadow-primary/10 animate-float">
-                <Trophy className="w-10 h-10 text-primary" />
+            <div className="flex items-center gap-5 mb-6">
+              <div className="w-14 h-14 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-center shrink-0">
+                <Trophy className="w-7 h-7 text-primary" />
               </div>
               <div>
-                <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-none mb-4">{t("Leaderboard", "Reyting", "Рейтинг")}</h1>
-                <div className="flex items-center gap-4">
-                  <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-none mb-2">{t("Leaderboard", "Reyting", "Рейтинг")}</h1>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-primary" />
                   <p className="text-sm text-muted-foreground">
                     {isLoading ? t("Loading…", "Yuklanmoqda…", "Загрузка…") : t(`${total} players`, `${total} foydalanuvchi`, `${total} игроков`)}
                   </p>
@@ -72,7 +72,7 @@ export default function ScoreboardPage() {
             </div>
 
             <div className="relative group">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/40 group-focus-within:text-primary transition-colors" aria-hidden="true" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" aria-hidden="true" />
               {/* A placeholder is not a label: it vanishes as soon as you type,
                   and screen readers are not required to announce it. */}
               <input
@@ -81,7 +81,7 @@ export default function ScoreboardPage() {
                 placeholder={t("Search players…", "Foydalanuvchilarni qidirish…", "Поиск игроков…")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full h-20 pl-16 pr-8 bg-foreground/5 border border-foreground/5 rounded-xl font-bold uppercase tracking-[0.2em] focus:border-primary focus:ring-8 focus:ring-primary/5 transition-all text-sm placeholder:text-muted-foreground/20"
+                className="w-full h-12 pl-11 pr-4 bg-foreground/5 border border-border rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-sm placeholder:text-muted-foreground/60"
               />
             </div>
           </FadeIn>
@@ -90,17 +90,14 @@ export default function ScoreboardPage() {
         {/* User Stats Card */}
         {data?.currentUserRank && !debouncedSearch && page === 1 && (
           <FadeIn delay={0.2}>
-            <div className="mb-20 glass-card bg-primary/10 p-12 rounded-xl flex flex-col md:flex-row items-center justify-between border-primary/20 shadow-2xl shadow-primary/5 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-12 opacity-[0.03] group-hover:scale-125 transition-transform duration-700 pointer-events-none">
-                <Shield className="w-80 h-80 text-primary" />
+            <div className="mb-6 glass-card bg-primary/[0.06] !p-6 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 border-primary/20 relative overflow-hidden">
+                            <div className="relative z-10 text-center sm:text-left">
+                <p className="text-xs font-medium text-muted-foreground mb-1">{t("Your position", "Sizning joyingiz", "Ваша позиция")}</p>
+                <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-primary">#{data.currentUserRank}</h2>
               </div>
-              <div className="relative z-10 text-center md:text-left mb-8 md:mb-0">
-                <p className="text-xs font-medium uppercase tracking-wider text-primary mb-3">{t("Your position", "Sizning joyingiz", "Ваша позиция")}</p>
-                <h2 className="text-6xl md:text-8xl font-black tracking-tighter gradient-text">#{data.currentUserRank}</h2>
-              </div>
-              <div className="text-center md:text-right relative z-10">
-                <p className="text-xs font-medium uppercase tracking-wider text-primary mb-3">{t("Your points", "Sizning ballaringiz", "Ваши очки")}</p>
-                <div className="text-5xl md:text-7xl font-black tracking-tighter tabular-nums">{user?.points ?? 0}</div>
+              <div className="text-center sm:text-right relative z-10">
+                <p className="text-xs font-medium text-muted-foreground mb-1">{t("Your points", "Sizning ballaringiz", "Ваши очки")}</p>
+                <div className="text-3xl md:text-4xl font-bold tabular-nums">{user?.points ?? 0}</div>
               </div>
             </div>
           </FadeIn>
@@ -113,10 +110,10 @@ export default function ScoreboardPage() {
         <div>
           {isLoading ? (
             <div className="space-y-4">
-              {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-24 bg-foreground/5 rounded-xl" />)}
+              {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-14 bg-foreground/5 rounded-lg" />)}
             </div>
           ) : entries.length === 0 ? (
-            <div className="glass-card py-40 text-center rounded-xl border-foreground/5">
+            <div className="glass-card py-20 text-center rounded-xl border-foreground/5">
                <div className="w-20 h-20 bg-foreground/5 border border-foreground/5 rounded-3xl flex items-center justify-center mx-auto mb-8">
                 <Target className="w-10 h-10 text-muted-foreground/20" />
                </div>
@@ -124,7 +121,7 @@ export default function ScoreboardPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="glass-card p-2 rounded-xl border-foreground/5 bg-foreground/[0.01] mb-16 shadow-2xl">
+              <div className="glass-card !p-2 rounded-xl border-foreground/5 mb-8">
                 {entries.map((entry, i) => {
                   const isMe = user?.id === entry.userId;
                   const rank = entry.rank;
@@ -138,17 +135,17 @@ export default function ScoreboardPage() {
                     <div key={entry.userId}>
                       <Link href={`/profile/${entry.userId}`}>
                         <div
-                          className={`group flex items-center gap-8 p-6 md:p-8 transition-all duration-500 cursor-pointer rounded-xl mb-2 last:mb-0 hover:bg-foreground/5 hover:scale-[1.01] active:scale-[0.99] border border-transparent ${
+                          className={`group flex items-center gap-4 md:gap-5 px-4 py-3 transition-colors cursor-pointer rounded-lg mb-1 last:mb-0 hover:bg-foreground/5 border border-transparent ${
                             isMe ? "bg-primary/[0.08] border-primary/20 shadow-xl shadow-primary/5" : ""
                           }`}
                         >
                           {/* Rank */}
-                          <div className={`w-16 md:w-20 text-center text-4xl md:text-5xl font-black tabular-nums tracking-tighter ${rankColor} ${isTop3 ? "animate-pulse" : ""}`}>
+                          <div className={`w-8 md:w-10 text-center text-xl md:text-2xl font-bold tabular-nums ${rankColor}`}>
                             {rank}
                           </div>
                           
                           {/* Avatar */}
-                          <div className={`w-16 h-16 md:w-20 md:h-20 bg-foreground/5 border-2 border-foreground/5 rounded-3xl flex items-center justify-center text-2xl font-black text-primary shrink-0 transition-all duration-500 overflow-hidden shadow-2xl ${isMe ? "border-primary/40 shadow-primary/20" : "group-hover:border-primary/40 group-hover:shadow-primary/20"}`}>
+                          <div className={`w-11 h-11 bg-foreground/5 border rounded-xl flex items-center justify-center text-base font-bold text-primary shrink-0 overflow-hidden ${isMe ? "border-primary/40" : "border-foreground/10 group-hover:border-primary/30"}`}>
                             {entry.avatarUrl ? (
                               <img src={entry.avatarUrl} alt={entry.nickname} className="w-full h-full object-cover" />
                             ) : <span>{entry.nickname[0].toUpperCase()}</span>}
@@ -156,8 +153,8 @@ export default function ScoreboardPage() {
 
                           {/* Info */}
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-4 mb-3">
-                              <span className="font-black text-xl md:text-3xl tracking-tighter uppercase group-hover:text-primary transition-colors truncate">
+                            <div className="flex items-center gap-2.5 mb-1">
+                              <span className="font-semibold text-base md:text-lg group-hover:text-primary transition-colors truncate">
                                 {entry.nickname}
                               </span>
                               {isMe && (
@@ -183,9 +180,9 @@ export default function ScoreboardPage() {
 
                           {/* Stats */}
                           <div className="text-right shrink-0">
-                            <div className="flex items-center justify-end gap-2 text-primary mb-2">
+                            <div className="flex items-center justify-end gap-1.5 text-primary mb-0.5">
                               <Zap className="w-4 h-4 fill-current" />
-                              <div className="text-3xl md:text-5xl font-black tabular-nums leading-none tracking-tighter text-foreground">{entry.points}</div>
+                              <div className="text-xl md:text-2xl font-bold tabular-nums leading-none text-foreground">{entry.points}</div>
                             </div>
                             <div className="text-xs text-muted-foreground/50">
                               {entry.solvedCtfCount} {t("solved", "yechildi", "решено")}

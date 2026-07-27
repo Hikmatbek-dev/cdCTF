@@ -4,7 +4,7 @@ import {
   competitionsTable, competitionTasksTable, competitionUsersTable,
   competitionSolvesTable, competitionTeamsTable, ctfTasksTable, ctfAttemptsTable, usersTable,
 } from "@workspace/db/schema";
-import { eq, and, or } from "drizzle-orm";
+import { eq, and, or, sql, inArray } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/security";
@@ -351,6 +351,75 @@ router.post("/:id/ctf/:ctfId/submit", authenticateToken, flagRateLimit, validate
   });
 
   res.status(outcome.status).json(outcome.data);
+});
+
+/**
+ * GET /api/competitions/:id/analytics — the sponsor's report.
+ *
+ * A company that pays to brand an event wants to know what it bought: how many
+ * people showed up, how much work they did, and which challenges landed. This
+ * is the number the invoice is justified with, so it is a first-class endpoint
+ * rather than something assembled by hand afterwards.
+ *
+ * Aggregate only — counts, not people — so the report can be sent to a sponsor
+ * without handing over anyone's data. The names it does return (the top of the
+ * board) are already public on the competition page.
+ */
+router.get("/:id/analytics", async (req, res) => {
+  const compId = Number(req.params.id);
+  if (!Number.isInteger(compId) || compId <= 0) return res.status(400).json({ error: "Invalid id" });
+
+  const [comp] = await db.select().from(competitionsTable).where(eq(competitionsTable.id, compId)).limit(1);
+  if (!comp) return res.status(404).json({ error: "Not found" });
+
+  const [participants, teams, solves, tasks] = await Promise.all([
+    db.select({ n: sql<number>`count(*)::int` }).from(competitionUsersTable).where(eq(competitionUsersTable.competitionId, compId)),
+    db.select({ n: sql<number>`count(*)::int` }).from(competitionTeamsTable).where(eq(competitionTeamsTable.competitionId, compId)),
+    db.select({
+      ctfId: competitionSolvesTable.ctfId,
+      solvedAt: competitionSolvesTable.solvedAt,
+      points: competitionSolvesTable.pointsEarned,
+      userId: competitionSolvesTable.userId,
+    }).from(competitionSolvesTable).where(eq(competitionSolvesTable.competitionId, compId)),
+    db.select({ ctfId: competitionTasksTable.ctfId }).from(competitionTasksTable).where(eq(competitionTasksTable.competitionId, compId)),
+  ]);
+
+  // Which challenges actually landed, and which nobody touched — the part a
+  // sponsor reads to decide whether to run another one.
+  const byChallenge = new Map<number, number>();
+  for (const s of solves) byChallenge.set(s.ctfId, (byChallenge.get(s.ctfId) ?? 0) + 1);
+
+  const challengeIds = tasks.map(t => t.ctfId);
+  const names = challengeIds.length > 0
+    ? await db.select({ id: ctfTasksTable.id, name: ctfTasksTable.name, category: ctfTasksTable.category })
+        .from(ctfTasksTable).where(inArray(ctfTasksTable.id, challengeIds))
+    : [];
+
+  const challenges = names
+    .map(c => ({ id: c.id, name: c.name, category: c.category, solves: byChallenge.get(c.id) ?? 0 }))
+    .sort((a, b) => b.solves - a.solves);
+
+  // Solves per day, so the sponsor can see whether the event held attention or
+  // spiked once and died.
+  const byDay = new Map<string, number>();
+  for (const s of solves) {
+    const day = new Date(s.solvedAt).toISOString().slice(0, 10);
+    byDay.set(day, (byDay.get(day) ?? 0) + 1);
+  }
+  const activity = [...byDay.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, count]) => ({ date, count }));
+
+  res.json({
+    competition: { id: comp.id, name: comp.name, sponsorName: comp.sponsorName, prize: comp.prize },
+    participants: participants[0]?.n ?? 0,
+    teams: teams[0]?.n ?? 0,
+    totalSolves: solves.length,
+    activeParticipants: new Set(solves.map(s => s.userId)).size,
+    pointsAwarded: solves.reduce((sum, s) => sum + s.points, 0),
+    challengeCount: challengeIds.length,
+    challengesWithSolves: challenges.filter(c => c.solves > 0).length,
+    challenges,
+    activity,
+  });
 });
 
 // GET /api/competitions/:id/scoreboard
