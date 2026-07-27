@@ -29,8 +29,14 @@ export default function HomePage() {
   const { data: scoreboard } = useGetScoreboard({ limit: 5 });
   const scoreboardEntries = normalizeArray<ScoreEntry>(scoreboard?.entries, ["entries", "data", "items"]);
   const { data: modulesData } = useListModules({ query: { queryKey: getListModulesQueryKey() } });
-  const modules = normalizeArray<{ id: number; lessonCount?: number }>(modulesData, ["id"]);
+  const modules = normalizeArray<{ id: number; slug?: string; lessonCount?: number }>(modulesData, ["id"]);
   const moduleCount = modules.length;
+  // Slug -> id, so a curriculum card can open the module it names. Every card
+  // linked to /modules, so clicking "Cryptography" landed on the generic list
+  // and the card was a promise the link did not keep. Falls back to /modules
+  // while the list is still loading, or if a slug is ever renamed.
+  const moduleIdBySlug = new Map(modules.filter(m => m.slug).map(m => [m.slug as string, m.id]));
+  const moduleLessonsBySlug = new Map(modules.filter(m => m.slug).map(m => [m.slug as string, m.lessonCount ?? 0]));
   const lessonCount = modules.reduce((n, m) => n + (m.lessonCount ?? 0), 0);
 
   // The real published count rather than a hardcoded "40+". It was 79, so the
@@ -269,25 +275,33 @@ export default function HomePage() {
               const Art = MODULE_ART[c.slug];
               const lvl = levels[c.lvl];
               return (
-                <Link key={c.slug} href="/modules">
+                <Link key={c.slug} href={moduleIdBySlug.has(c.slug) ? `/modules/${moduleIdBySlug.get(c.slug)}` : "/modules"}>
                   <article className="glass-card !p-0 group cursor-pointer h-full overflow-hidden flex flex-col">
                     {/* The cover is the hero of the card, not a small icon. */}
                     <div className="relative aspect-[16/10] bg-gradient-to-br from-primary/[0.12] to-accent/[0.05] border-b border-border overflow-hidden">
                       <Art className="absolute inset-0 w-full h-full p-3" />
-                      <span className="absolute top-3 left-3 font-mono text-[10px] text-muted-foreground bg-background/70 rounded px-1.5 py-0.5">
+                      <span className="absolute top-3 left-3 font-mono text-[11px] text-muted-foreground bg-background/70 rounded px-1.5 py-0.5">
                         {String(i + 1).padStart(2, "0")}
                       </span>
                     </div>
                     <div className="p-4 flex flex-col flex-1">
-                      <span className={`self-start text-[10px] font-medium px-2 py-0.5 rounded-full border mb-2 ${lvl.cls}`}>
+                      <span className={`self-start text-[11px] font-medium px-2 py-0.5 rounded-full border mb-2 ${lvl.cls}`}>
                         {lvl.label}
                       </span>
                       <h3 className="font-semibold leading-snug group-hover:text-primary transition-colors">
                         {t(c.en, c.uz, c.ru)}
                       </h3>
-                      <p className="text-xs text-muted-foreground mt-1.5">
-                        {t(`8 lessons · ${c.h}h`, `8 dars · ${c.h} soat`, `8 уроков · ${c.h} ч`)}
-                      </p>
+                      {/* The real count, not a hardcoded 8 — the stats band two
+                          screens up reads from the same source, and the two
+                          used to disagree on the same page. */}
+                      {(() => {
+                        const n = moduleLessonsBySlug.get(c.slug) ?? 8;
+                        return (
+                          <p className="text-xs text-muted-foreground mt-1.5">
+                            {t(`${n} lessons · ${c.h}h`, `${n} dars · ${c.h} soat`, `${n} уроков · ${c.h} ч`)}
+                          </p>
+                        );
+                      })()}
                     </div>
                   </article>
                 </Link>
@@ -351,8 +365,8 @@ export default function HomePage() {
                   <div className="h-2 rounded-full bg-muted w-4/5 mb-4" />
                   <div className="rounded-lg border border-border overflow-hidden">
                     <div className="flex items-center justify-between px-3 py-1.5 bg-primary/[0.06] border-b border-border">
-                      <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">shell</span>
-                      <span className="font-mono text-[10px] text-primary">{t("Copy", "Nusxa", "Копия")}</span>
+                      <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">shell</span>
+                      <span className="font-mono text-[11px] text-primary">{t("Copy", "Nusxa", "Копия")}</span>
                     </div>
                     <pre className="p-3 font-mono text-[11px] leading-5 overflow-x-auto">
 <span className="text-primary">$ nmap -sn 10.10.12.0/24</span>{"\n"}
@@ -376,7 +390,7 @@ export default function HomePage() {
                 { n: "Root Me", pts: 450, cat: "pwn" },
               ].map((c, i) => (
                 <div key={c.n} className={`glass-card !p-4 ${i % 2 ? "translate-y-4" : ""}`}>
-                  <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mb-2">{c.cat}</div>
+                  <div className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground mb-2">{c.cat}</div>
                   <div className="font-semibold text-sm mb-3">{c.n}</div>
                   <div className="flex items-center justify-between">
                     <span className="text-primary font-semibold text-sm tabular-nums">{c.pts}</span>

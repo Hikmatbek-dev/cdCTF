@@ -227,7 +227,7 @@ export default function AdminLessonsPage() {
         {isLoading ? (
           <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-lg" />)}</div>
         ) : (
-          <div className="rounded-xl border border-border overflow-hidden">
+          <div className="rounded-xl border border-border overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b border-border">
                 <tr>

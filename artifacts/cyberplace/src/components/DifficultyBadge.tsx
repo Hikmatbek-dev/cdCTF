@@ -1,20 +1,47 @@
+import { difficultyStyle } from "@/lib/category-style";
+import { useLang } from "@/lib/LanguageContext";
+
 interface DifficultyBadgeProps {
   difficulty: string;
   className?: string;
 }
 
-const DIFFICULTY_STYLES: Record<string, string> = {
-  easy: "bg-green-500/10 text-green-500 border-green-500/20",
-  medium: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-  hard: "bg-orange-500/10 text-orange-500 border-orange-500/20",
-  insane: "bg-red-500/10 text-red-500 border-red-500/20",
-};
-
+/**
+ * Difficulty as a translated word, a colour, and a count of filled dots.
+ *
+ * It used to be colour alone, and the raw English enum — so `hard` read as
+ * "hard" in every language, and green/yellow/orange/red was the only signal for
+ * how hard a challenge is. `difficultyStyle` has carried a `dots` count for
+ * exactly this reason since the colour system was built; the challenge grid
+ * used it and this badge, used in four other places, did not.
+ */
 export function DifficultyBadge({ difficulty, className = "" }: DifficultyBadgeProps) {
-  const style = DIFFICULTY_STYLES[difficulty] || DIFFICULTY_STYLES.easy;
+  const { t } = useLang();
+  const key = (difficulty || "").toLowerCase();
+  const s = difficultyStyle(key);
+
+  const label = key === "insane"
+    ? t("Insane", "Juda og'ir", "Безумно")
+    : key === "hard"
+    ? t("Hard", "Qiyin", "Сложно")
+    : key === "medium"
+    ? t("Medium", "O'rta", "Средне")
+    : t("Easy", "Oson", "Легко");
+
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded border text-xs font-mono uppercase font-medium ${style} ${className}`}>
-      {difficulty}
+    <span
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-xs font-medium ${s.text} ${s.tint} ${s.border} ${className}`}
+      title={label}
+    >
+      <span className="inline-flex gap-0.5" aria-hidden="true">
+        {[0, 1, 2, 3].map(i => (
+          <span
+            key={i}
+            className={`w-1 h-1 rounded-full ${i < s.dots ? "bg-current" : "bg-current opacity-25"}`}
+          />
+        ))}
+      </span>
+      {label}
     </span>
   );
 }

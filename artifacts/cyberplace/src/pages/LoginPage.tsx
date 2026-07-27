@@ -200,7 +200,7 @@ export default function LoginPage() {
                       className="w-full pl-12 pr-6 h-14 bg-foreground/5 border border-foreground/5 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold text-sm tracking-wide placeholder:text-muted-foreground/20"
                     />
                   </div>
-                  <p className="text-[10px] text-muted-foreground/60 mt-3 ml-1 leading-relaxed">
+                  <p className="text-[11px] text-muted-foreground/60 mt-3 ml-1 leading-relaxed">
                     {t(
                       "Enter the 6-digit code from your authenticator app, or one of your backup codes.",
                       "Authenticator ilovangizdagi 6 xonali kodni yoki backup kodlaringizdan birini kiriting.",
@@ -247,7 +247,7 @@ export default function LoginPage() {
                         />
                       </FormControl>
                     </div>
-                    <FormMessage className="text-[10px] font-bold uppercase mt-2 ml-1" />
+                    <FormMessage className="text-[11px] font-bold uppercase mt-2 ml-1" />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="password" render={({ field }) => (
@@ -271,7 +271,7 @@ export default function LoginPage() {
                         />
                       </FormControl>
                     </div>
-                    <FormMessage className="text-[10px] font-bold uppercase mt-2 ml-1" />
+                    <FormMessage className="text-[11px] font-bold uppercase mt-2 ml-1" />
                   </FormItem>
                 )} />
                 

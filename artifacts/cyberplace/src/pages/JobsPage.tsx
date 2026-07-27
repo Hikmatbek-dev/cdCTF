@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { normalizeArray } from "@/lib/api-shapes";
 import { useQueryClient } from "@tanstack/react-query";
 import { useListJobs, getListJobsQueryKey, useListMyJobs, getListMyJobsQueryKey } from "@workspace/api-client-react";
+import { errorToast } from "@/lib/error-toast";
 
 type Job = {
   id: number; title: string; company: string; description: string;
@@ -81,7 +82,7 @@ export default function JobsPage() {
       if (user) updateUser({ ...user, isEmployer: true, companyName: data.companyName });
       toast({ title: t("You're now an employer", "Endi ish beruvchisiz", "Вы теперь работодатель") });
     } catch (e) {
-      toast({ title: e instanceof Error ? e.message : "Failed", variant: "destructive" });
+      toast(errorToast(t, e));
     } finally { setBusy(false); }
   };
 
@@ -94,7 +95,7 @@ export default function JobsPage() {
       setApplyFor(null); setApplyMsg("");
       refresh();
     } catch (e) {
-      toast({ title: e instanceof Error ? e.message : "Failed", variant: "destructive" });
+      toast(errorToast(t, e));
     } finally { setBusy(false); }
   };
 
@@ -107,7 +108,7 @@ export default function JobsPage() {
       setApplicants(normalizeArray<Applicant>(d?.applications, ["applications", "data", "items"]));
       setViewApplicants(jobId);
     } catch (e) {
-      toast({ title: e instanceof Error ? e.message : "Failed", variant: "destructive" });
+      toast(errorToast(t, e));
     }
   };
 
@@ -121,19 +122,19 @@ export default function JobsPage() {
       setShowPost(false);
       refresh();
     } catch (e) {
-      toast({ title: e instanceof Error ? e.message : "Failed", variant: "destructive" });
+      toast(errorToast(t, e));
     } finally { setBusy(false); }
   };
 
   const toggleActive = async (job: Job) => {
     try { await post(`/api/jobs/${job.id}`, "PATCH", { isActive: !job.isActive }); refresh(); }
-    catch (e) { toast({ title: e instanceof Error ? e.message : "Failed", variant: "destructive" }); }
+    catch (e) { toast(errorToast(t, e)); }
   };
 
   const removeJob = async (job: Job) => {
     if (!confirm(t("Delete this posting?", "E'lonni o'chirasizmi?", "Удалить эту вакансию?"))) return;
     try { await post(`/api/jobs/${job.id}`, "DELETE"); refresh(); }
-    catch (e) { toast({ title: e instanceof Error ? e.message : "Failed", variant: "destructive" }); }
+    catch (e) { toast(errorToast(t, e)); }
   };
 
   return (
@@ -227,7 +228,7 @@ export default function JobsPage() {
                                 <Link href={`/profile/${a.userId}`} className="font-medium hover:text-primary">{a.nickname}</Link>
                                 <span className="text-xs text-muted-foreground tabular-nums">{a.points} {t("pts", "ball", "очк")}</span>
                                 <span className="text-xs text-muted-foreground tabular-nums">· {a.solvedCtfCount} {t("solved", "yechim", "решено")}</span>
-                                {a.openToWork && <span className="text-[10px] text-emerald-500 border border-emerald-500/30 rounded-full px-2">{t("Open to work", "Ishga tayyor", "Открыт")}</span>}
+                                {a.openToWork && <span className="text-[11px] text-emerald-500 border border-emerald-500/30 rounded-full px-2">{t("Open to work", "Ishga tayyor", "Открыт")}</span>}
                               </div>
                               {a.message && <p className="text-xs text-muted-foreground mt-1.5 whitespace-pre-line">{a.message}</p>}
                             </div>

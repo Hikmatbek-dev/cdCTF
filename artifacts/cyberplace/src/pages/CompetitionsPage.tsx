@@ -5,6 +5,7 @@ import { LoadFailure } from "@/components/LoadFailure";
 import { useLang } from "@/lib/LanguageContext";
 import { normalizeCompetitions } from "@/lib/api-shapes";
 import { useListCompetitions, getListCompetitionsQueryKey } from "@workspace/api-client-react";
+import { statusLabel } from "@/lib/status-label";
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
@@ -13,7 +14,7 @@ function StatusBadge({ status }: { status: string }) {
     ended: "bg-muted text-muted-foreground border-border",
   };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium capitalize ${styles[status] ?? styles.ended}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium ${styles[status] ?? styles.ended}`}>
       {status}
     </span>
   );
@@ -92,7 +93,7 @@ export default function CompetitionsPage() {
                     <span className={`inline-flex items-center px-3 py-1 rounded-lg border text-xs font-medium transition-all ${
                       comp.status === "active" ? "bg-primary/20 text-primary border-primary/30 neon-text" : "bg-foreground/5 text-muted-foreground border-foreground/10"
                     }`}>
-                      {comp.status}
+                      {statusLabel(t, comp.status)}
                     </span>
                     <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg border text-xs font-medium ${
                       comp.type === "private" ? "bg-orange-500/10 text-orange-500 border-orange-500/20" : "bg-foreground/5 text-muted-foreground border-foreground/10"

@@ -12,6 +12,8 @@ import { useAuth } from "@/lib/AuthContext";
 import { Link } from "wouter";
 import { normalizeArray } from "@/lib/api-shapes";
 import { SponsorReport } from "@/components/SponsorReport";
+import { errorToast } from "@/lib/error-toast";
+import { statusLabel } from "@/lib/status-label";
 
 export default function CompetitionDetailPage() {
   const [, params] = useRoute("/competitions/:id");
@@ -52,7 +54,7 @@ export default function CompetitionDetailPage() {
       toast({ title: t("Joined competition!", "Musobaqaga qo'shildingiz!", "Вы присоединились к соревнованию!") });
       void qc.invalidateQueries({ queryKey: getGetCompetitionQueryKey(id) });
     } catch (error) {
-      toast({ title: error instanceof Error ? error.message : "Join failed", variant: "destructive" });
+      toast(errorToast(t, error, t("Could not join", "Qo'shilib bo'lmadi", "Не удалось присоединиться")));
     } finally {
       setIsJoining(false);
     }
@@ -80,7 +82,7 @@ export default function CompetitionDetailPage() {
       setTeamName("");
       refreshTeamState();
     } catch (error) {
-      toast({ title: error instanceof Error ? error.message : "Failed", variant: "destructive" });
+      toast(errorToast(t, error));
     } finally {
       setTeamBusy(false);
     }
@@ -101,7 +103,7 @@ export default function CompetitionDetailPage() {
       setTeamCode("");
       refreshTeamState();
     } catch (error) {
-      toast({ title: error instanceof Error ? error.message : "Failed", variant: "destructive" });
+      toast(errorToast(t, error));
     } finally {
       setTeamBusy(false);
     }
@@ -147,8 +149,8 @@ export default function CompetitionDetailPage() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-3">
-            <span className={`px-2 py-0.5 rounded border text-xs font-medium capitalize ${comp.status === "active" ? "bg-green-500/10 text-green-500 border-green-500/20" : comp.status === "upcoming" ? "bg-blue-500/10 text-blue-500 border-blue-500/20" : "bg-muted text-muted-foreground border-border"}`}>
-              {comp.status}
+            <span className={`px-2 py-0.5 rounded border text-xs font-medium ${comp.status === "active" ? "bg-green-500/10 text-green-500 border-green-500/20" : comp.status === "upcoming" ? "bg-blue-500/10 text-blue-500 border-blue-500/20" : "bg-muted text-muted-foreground border-border"}`}>
+              {statusLabel(t, comp.status)}
             </span>
             {comp.type === "private" && (
               <span className="flex items-center gap-1 text-xs text-orange-500"><Lock className="w-3 h-3" /> {t("Private", "Yopiq", "Приватный")}</span>

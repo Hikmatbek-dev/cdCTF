@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useLang } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { errorToast } from "@/lib/error-toast";
 
 type Writeup = {
   id: number; content: string; createdAt: string; updatedAt: string;
@@ -54,7 +55,7 @@ export function Writeups({ ctfId }: { ctfId: number }) {
       setEditing(false); setDraft("");
       void qc.invalidateQueries({ queryKey: key });
     } catch (e) {
-      toast({ title: e instanceof Error ? e.message : "Failed", variant: "destructive" });
+      toast(errorToast(t, e));
     } finally { setBusy(false); }
   };
 

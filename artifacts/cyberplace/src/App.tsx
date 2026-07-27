@@ -2,7 +2,7 @@ import { lazy, Suspense } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
-import { LanguageProvider } from "@/lib/LanguageContext";
+import { LanguageProvider, useLang } from "@/lib/LanguageContext";
 import { ThemeProvider } from "@/lib/ThemeContext";
 import { SeoManager } from "@/lib/seo";
 import { loginWithNext } from "@/lib/next-path";
@@ -67,9 +67,12 @@ const NotFound = lazy(() => import("@/pages/not-found"));
  * a half-known state and bounce a signed-in user to /login on every refresh.
  */
 function AuthPending() {
+  const { t } = useLang();
   return (
     <div className="min-h-screen flex items-center justify-center" role="status" aria-live="polite">
-      <span className="sr-only">Loading</span>
+      {/* Announced to screen readers, so it has to be a language the
+          reader chose. */}
+      <span className="sr-only">{t("Loading", "Yuklanmoqda", "Загрузка")}</span>
       <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
     </div>
   );

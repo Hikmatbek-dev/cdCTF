@@ -51,7 +51,7 @@ export default function AdminBlockedPage() {
               {blockedCtf.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">{t("No blocked CTF users", "Bloklangan foydalanuvchilar yo'q", "Нет заблокированных")}</p>
               ) : (
-                <div className="rounded-xl border border-border overflow-hidden">
+                <div className="rounded-xl border border-border overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50 border-b border-border">
                       <tr>
@@ -90,7 +90,7 @@ export default function AdminBlockedPage() {
               {blockedLessons.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">{t("No blocked lesson users", "Bloklangan foydalanuvchilar yo'q", "Нет заблокированных")}</p>
               ) : (
-                <div className="rounded-xl border border-border overflow-hidden">
+                <div className="rounded-xl border border-border overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50 border-b border-border">
                       <tr>

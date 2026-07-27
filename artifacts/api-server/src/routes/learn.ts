@@ -24,6 +24,21 @@ const router = Router();
 const EXAM_ATTEMPTS_PER_WINDOW = 5;
 const EXAM_WINDOW_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * The same shape for the lesson test, and for the same reason.
+ *
+ * Three attempts used to be a lifetime cap: fail a five-question quiz three
+ * times and that lesson could never be completed — and since the module exam
+ * requires *every* lesson complete, one bad quiz locked that module's
+ * certificate away for good. Nothing in the UI said so. A window resets on its
+ * own, so a learner who comes back tomorrow can try again.
+ *
+ * No new column: `testStartedAt` is already written on every start, so it is
+ * the window's beginning and `attemptCount` counts within it.
+ */
+const LESSON_ATTEMPTS_PER_WINDOW = 3;
+const LESSON_WINDOW_MS = 24 * 60 * 60 * 1000;
+
 // GET /api/learn/categories
 router.get("/categories", optionalAuth, async (req, res) => {
   // Counted in Postgres, not in JavaScript.
@@ -149,7 +164,20 @@ async function startLessonTestHandler(req: Request, res: Response) {
 
   if (attempt?.blocked) return res.status(403).json({ error: "Lesson is blocked" });
   if (attempt?.completedAt) return res.status(400).json({ error: "Lesson already completed" });
-  if (attempt?.attemptCount >= 3) return res.status(400).json({ error: "Maximum attempts reached" });
+
+  const now = new Date();
+  const windowOpen = Boolean(attempt?.testStartedAt)
+    && now.getTime() - attempt!.testStartedAt!.getTime() < LESSON_WINDOW_MS;
+  const used = windowOpen ? attempt!.attemptCount : 0;
+
+  if (used >= LESSON_ATTEMPTS_PER_WINDOW) {
+    const retryAt = new Date(attempt!.testStartedAt!.getTime() + LESSON_WINDOW_MS);
+    return res.status(429).json({
+      error: `Too many attempts. Try again after ${retryAt.toISOString()}`,
+      retryAt: retryAt.toISOString(),
+      attemptsPerWindow: LESSON_ATTEMPTS_PER_WINDOW,
+    });
+  }
 
   const questions = await db.select().from(lessonQuestionsTable).where(eq(lessonQuestionsTable.lessonId, lessonId));
   if (questions.length === 0) return res.status(400).json({ error: "No questions for this lesson" });
@@ -158,15 +186,19 @@ async function startLessonTestHandler(req: Request, res: Response) {
 
   if (!attempt) {
     await db.insert(userLessonAttemptsTable).values({
-      userId, lessonId, status: "in_progress", attemptCount: 1, testSessionId: sessionId, testStartedAt: new Date(), updatedAt: new Date(),
+      userId, lessonId, status: "in_progress", attemptCount: 1, testSessionId: sessionId, testStartedAt: now, updatedAt: now,
     });
   } else {
     await db.update(userLessonAttemptsTable).set({
-      status: "in_progress", attemptCount: attempt.attemptCount + 1, testSessionId: sessionId, testStartedAt: new Date(), updatedAt: new Date(),
+      // `testStartedAt` restarts the window only when the previous one has
+      // expired; inside a window it keeps marking the latest attempt, which is
+      // what the retry time above is measured from.
+      status: "in_progress", attemptCount: used + 1, testSessionId: sessionId, testStartedAt: windowOpen ? attempt!.testStartedAt! : now, updatedAt: now,
     }).where(eq(userLessonAttemptsTable.id, attempt.id));
   }
 
-  const attemptsLeft = 3 - ((attempt?.attemptCount ?? 0) + 1);
+  // Left in this window, not left for ever — see LESSON_ATTEMPTS_PER_WINDOW.
+  const attemptsLeft = LESSON_ATTEMPTS_PER_WINDOW - (used + 1);
 
   res.json({
     sessionId,

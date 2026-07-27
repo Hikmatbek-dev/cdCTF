@@ -35,7 +35,7 @@ export default function AdminAuditPage() {
           <h1 className="text-xl font-bold">{t("Audit Logs", "Audit jurnali", "Журнал аудита")}</h1>
         </div>
 
-        <div className="rounded-xl border border-border overflow-hidden">
+        <div className="rounded-xl border border-border overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 border-b border-border">
               <tr>

@@ -87,7 +87,7 @@ export function HeroTerminal({ challengeCount }: { challengeCount?: number } = {
         </div>
         <div className="leading-tight">
           <div className="text-[11px] font-semibold">{t("Certificate", "Sertifikat", "Сертификат")}</div>
-          <div className="text-[10px] text-muted-foreground">{t("per module", "har modulga", "за модуль")}</div>
+          <div className="text-[11px] text-muted-foreground">{t("per module", "har modulga", "за модуль")}</div>
         </div>
       </div>
 
@@ -102,7 +102,7 @@ export function HeroTerminal({ challengeCount }: { challengeCount?: number } = {
           <div className="text-[11px] font-semibold font-mono">flag&#123;...&#125;</div>
           {/* The live count. This badge said "40+" while the stat row beside it
               read the real number — two different answers on one screen. */}
-          <div className="text-[10px] text-muted-foreground">
+          <div className="text-[11px] text-muted-foreground">
             {challengeCount && challengeCount > 0
               ? t(`${challengeCount} challenges`, `${challengeCount} topshiriq`, `${challengeCount} заданий`)
               : t("Practice challenges", "Mashq topshiriqlari", "Практические задания")}

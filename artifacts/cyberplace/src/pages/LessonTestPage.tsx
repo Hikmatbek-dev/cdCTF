@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { AlertTriangle, Timer, CheckCircle2, XCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useLang } from "@/lib/LanguageContext";
-import { useStartLessonTest, useSubmitLessonTest, useReportTestEscape } from "@workspace/api-client-react";
+import { useStartLessonTest, useSubmitLessonTest } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { normalizeArray } from "@/lib/api-shapes";
 import { loginWithNext } from "@/lib/next-path";
@@ -27,131 +27,28 @@ export default function LessonTestPage() {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [result, setResult] = useState<{ passed: boolean; score: number; correctCount: number; totalCount: number; pointsEarned: number } | null>(null);
-  const [escapeWarning, setEscapeWarning] = useState(false);
-  const [countdown, setCountdown] = useState(0);
-  const [blocked, setBlocked] = useState(false);
+  const [blocked] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [fullscreenActive, setFullscreenActive] = useState(Boolean(document.fullscreenElement));
-  const [fullscreenStarted, setFullscreenStarted] = useState(false);
-  /** False once we learn this browser has no Fullscreen API — then the test
-      runs without it rather than locking the reader out. */
-  const [fullscreenSupported, setFullscreenSupported] = useState(true);
-  /** The API exists but the request was refused; recoverable, so we say how. */
-  const [fullscreenRefused, setFullscreenRefused] = useState(false);
 
-  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTest = useStartLessonTest();
   const submitTest = useSubmitLessonTest();
-  const reportEscape = useReportTestEscape();
 
-  /**
-   * Puts the candidate back in fullscreen, and only stands down the warning if
-   * that actually happened. The browser can refuse — permission, no user
-   * gesture — and clearing the warning regardless would end the enforcement
-   * while leaving the test out of fullscreen, which is the thing it exists to
-   * prevent.
+  /*
+   * No fullscreen proctoring here, deliberately.
+   *
+   * A five-question lesson quiz was gated behind a fullscreen request, policed
+   * for exits, and locked for good after three escapes or three failures — and
+   * since the module exam needs every lesson complete, that lock took the
+   * module's certificate with it. On a cheap Android inside Telegram's browser
+   * this screen was where a lot of people stopped. Four completions across 165
+   * lessons is not a content problem; it is a toll gate.
+   *
+   * The lesson test is formative: it awards its points once (guarded by
+   * completedAt) and proves nothing to anyone else. The credential is issued by
+   * the module exam, and that is where an attempt limit belongs — it has one.
+   * Attempts here are limited per rolling 24-hour window, so a bad day costs a
+   * day and not the certificate.
    */
-  const returnToFullscreen = async () => {
-    try {
-      await document.documentElement.requestFullscreen?.();
-    } catch {
-      toast({
-        title: t("Could not return to fullscreen", "To'liq ekranga qaytib bo'lmadi", "Не удалось вернуться в полноэкранный режим"),
-        description: t(
-          "Allow fullscreen for this site, then try again.",
-          "Ushbu saytga to'liq ekranga ruxsat bering va qayta urinib ko'ring.",
-          "Разрешите полноэкранный режим для сайта и попробуйте снова.",
-        ),
-        variant: "destructive",
-      });
-      return;
-    }
-    setEscapeWarning(false);
-    if (countdownRef.current) clearInterval(countdownRef.current);
-  };
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      const isFullscreen = Boolean(document.fullscreenElement);
-      setFullscreenActive(isFullscreen);
-      // Only police an exit where fullscreen was genuinely entered. Without the
-      // support guard a browser that never had the API could still be reported
-      // as having "escaped" and get the lesson blocked.
-      if (fullscreenSupported && !isFullscreen && fullscreenStarted && sessionId && !result) {
-        handleEscape();
-      }
-    };
-
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    // Cleanup here removes ONLY the listener. It must not exit fullscreen: this
-    // effect re-runs whenever fullscreenStarted flips, and entering fullscreen
-    // is exactly what flips it — so exiting in the cleanup turned right around
-    // and left the fullscreen the reader had just entered, firing a false
-    // "you exited". Leaving fullscreen on unmount is a separate effect below.
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, result, fullscreenStarted, fullscreenSupported]);
-
-  // Leave fullscreen when the test page itself unmounts — once, on a real
-  // unmount, so it never fights the fullscreen the reader just entered.
-  useEffect(() => {
-    return () => { if (document.fullscreenElement) void document.exitFullscreen?.(); };
-  }, []);
-
-  const enterFullscreen = () => {
-    // A browser with no Fullscreen API at all — iOS Safari, and most in-app
-    // browsers. Blocking here made the test impossible to take rather than
-    // harder to cheat at, and the button appeared to do nothing: it set
-    // `started` while `active` stayed false, so the gate below never opened.
-    // Proctoring that excludes whole platforms is worse than proctoring that
-    // degrades, so the test runs without it and says so.
-    if (!document.documentElement.requestFullscreen) {
-      setFullscreenSupported(false);
-      setFullscreenStarted(true);
-      return;
-    }
-    document.documentElement.requestFullscreen()
-      .then(() => {
-        setFullscreenStarted(true);
-        setFullscreenActive(true);
-        setFullscreenRefused(false);
-      })
-      .catch(() => {
-        // The API exists but the request was refused — a denied permission, or
-        // no user gesture. Unlike the case above this is fixable by the reader,
-        // so keep the gate closed and tell them precisely what to do.
-        setFullscreenRefused(true);
-      });
-  };
-
-  const handleEscape = useCallback(() => {
-    if (!sessionId) return;
-    reportEscape.mutate(
-      { id },
-      {
-        onSuccess: (res) => {
-          if (res.blocked) {
-            setBlocked(true);
-            setEscapeWarning(false);
-          } else {
-            setEscapeWarning(true);
-            const secs = res.timeoutSeconds ?? 60;
-            setCountdown(secs);
-            countdownRef.current = setInterval(() => {
-              setCountdown(c => {
-                if (c <= 1) {
-                  clearInterval(countdownRef.current!);
-                  setEscapeWarning(false);
-                  return 0;
-                }
-                return c - 1;
-              });
-            }, 1000);
-          }
-        },
-      }
-    );
-  }, [sessionId, id, reportEscape]);
 
   // Start test on mount
   useEffect(() => {
@@ -182,6 +79,19 @@ export default function LessonTestPage() {
             setLocation(loginWithNext(`/learn/${id}/test`));
             return;
           }
+          if (status === 429) {
+            // Attempts are per rolling day now, so this is a wait, not a wall.
+            toast({
+              title: t("You have used today's attempts", "Bugungi urinishlar tugadi", "Сегодняшние попытки исчерпаны"),
+              description: t(
+                "Three tries per day. Re-read the lesson and come back tomorrow — nothing is lost.",
+                "Kuniga uchta urinish. Darsni qayta o'qing va ertaga qayting — hech nima yo'qolmaydi.",
+                "Три попытки в день. Перечитайте урок и возвращайтесь завтра — ничего не потеряно.",
+              ),
+            });
+            setLocation(`/learn/${id}`);
+            return;
+          }
           const msg = (err as Error)?.message
             || t("Could not start the test", "Testni boshlab bo'lmadi", "Не удалось начать тест");
           toast({ title: msg, variant: "destructive" });
@@ -204,7 +114,6 @@ export default function LessonTestPage() {
       {
         onSuccess: (res) => {
           setResult(res);
-          if (document.fullscreenElement) void document.exitFullscreen?.();
         },
         onError: () => toast({ title: t("Error submitting test", "Testni yuborishda xatolik", "Ошибка при отправке теста"), variant: "destructive" }),
       }
@@ -222,9 +131,9 @@ export default function LessonTestPage() {
           <h2 className="text-xl font-bold mb-2">{t("This test is locked", "Bu test qulflandi", "Тест заблокирован")}</h2>
           <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
             {t(
-              "You left fullscreen three times, so the test closed. The lesson itself stays open, the rest of the module is unaffected, and the final exam still counts this material.",
-              "To'liq ekrandan uch marta chiqdingiz, shuning uchun test yopildi. Darsning o'zi ochiq qoladi, modulning qolgani ta'sirlanmaydi, va yakuniy imtihon bu mavzuni baribir hisobga oladi.",
-              "Вы трижды вышли из полноэкранного режима, и тест закрылся. Сам урок остаётся открытым, остальная часть модуля не затронута, а итоговый экзамен всё равно охватывает этот материал.",
+              "This test was closed by a moderator. The lesson itself stays open, the rest of the module is unaffected, and the final exam still covers this material.",
+              "Bu testni moderator yopgan. Darsning o'zi ochiq qoladi, modulning qolgani ta'sirlanmaydi, va yakuniy imtihon bu mavzuni baribir qamrab oladi.",
+              "Этот тест закрыт модератором. Сам урок остаётся открытым, остальная часть модуля не затронута, а итоговый экзамен всё равно охватывает материал.",
             )}
           </p>
           <p className="text-sm text-muted-foreground mb-6">
@@ -261,8 +170,14 @@ export default function LessonTestPage() {
           {result.passed && result.pointsEarned > 0 && (
             <p className="text-sm font-semibold text-primary mb-4">+{result.pointsEarned} {t("pts", "ball", "очков")}</p>
           )}
-          {!result.passed && attemptsLeft > 0 && (
-            <p className="text-xs text-muted-foreground mb-4">{attemptsLeft} {t("attempts remaining", "urinish qoldi", "попыток осталось")}</p>
+          {!result.passed && (
+            <p className="text-xs text-muted-foreground mb-4">
+              {attemptsLeft > 0
+                ? t(`${attemptsLeft} more tries today`, `bugun yana ${attemptsLeft} urinish`, `сегодня ещё ${attemptsLeft} попыток`)
+                : t("That is today's attempts. Come back tomorrow — the lesson stays open.",
+                    "Bugungi urinishlar shu. Ertaga qayting — dars ochiq qoladi.",
+                    "На сегодня попытки закончились. Возвращайтесь завтра — урок остаётся открытым.")}
+            </p>
           )}
           <div className="flex gap-2 justify-center mt-5">
             {result.passed ? (
@@ -299,71 +214,24 @@ export default function LessonTestPage() {
   const answered = Object.keys(answers).length;
   const progress = questionList.length > 0 ? (answered / questionList.length) * 100 : 0;
 
-  // The gate only applies where fullscreen is actually available. Where it is
-  // not, `fullscreenActive` can never become true and this screen would be a
-  // dead end.
-  if (!fullscreenStarted || (fullscreenSupported && !fullscreenActive)) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="glass-card text-center max-w-sm w-full">
-          <AlertTriangle className={`w-12 h-12 mx-auto mb-4 ${fullscreenRefused ? "text-destructive" : "text-primary"}`} />
-          <h2 className="text-xl font-bold mb-2">
-            {fullscreenRefused
-              ? t("Fullscreen was blocked", "To'liq ekran bloklandi", "Полноэкранный режим заблокирован")
-              : t("Fullscreen required", "To'liq ekran kerak", "Нужен полноэкранный режим")}
-          </h2>
-          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-            {fullscreenRefused
-              ? t(
-                  "Your browser refused the request. Allow fullscreen for this site in the address-bar permissions, then try again.",
-                  "Brauzeringiz so'rovni rad etdi. Manzil qatoridagi ruxsatlardan bu saytga to'liq ekranga ruxsat bering va qayta urining.",
-                  "Браузер отклонил запрос. Разрешите полноэкранный режим для сайта в настройках адресной строки и попробуйте снова.",
-                )
-              : t(
-                  "The test runs in fullscreen so the questions stay on screen. Leaving it during the test is recorded.",
-                  "Test to'liq ekranda o'tadi, shunda savollar ekrandan chiqmaydi. Test davomida undan chiqish qayd etiladi.",
-                  "Тест проходит в полноэкранном режиме. Выход из него во время теста фиксируется.",
-                )}
-          </p>
-          <Button onClick={enterFullscreen} className="w-full">
-            {fullscreenRefused
-              ? t("Try again", "Qayta urinish", "Попробовать снова")
-              : t("Start the test", "Testni boshlash", "Начать тест")}
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Escape Warning */}
-      {escapeWarning && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-destructive text-destructive-foreground px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4" />
-            <span className="text-sm font-medium">{t("You exited fullscreen!", "To'liq ekrandan chiqdingiz!", "Вы вышли из полноэкранного режима!")}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="font-mono text-sm flex items-center gap-1"><Timer className="w-3.5 h-3.5" /> {countdown}s</span>
-            {/* Only clear the warning if fullscreen actually came back.
-                requestFullscreen rejects — denied permission, no user gesture —
-                and this used to ignore that: the warning cleared and the
-                countdown stopped either way, so a refused request left the
-                candidate out of fullscreen with the enforcement switched off. */}
-            <Button size="sm" variant="secondary" onClick={() => { void returnToFullscreen(); }}>
-              {t("Return to Fullscreen", "Qaytish", "Вернуться")}
-            </Button>
-          </div>
-        </div>
-      )}
+
 
       <div className="max-w-2xl mx-auto px-4 py-10 pt-16">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-2">
           <h1 className="text-xl font-bold">{t("Lesson Test", "Dars Testi", "Тест урока")}</h1>
           <span className="text-sm text-muted-foreground">{answered}/{questionList.length} {t("answered", "javob berildi", "отвечено")}</span>
         </div>
+        {/* The rules, before the first question rather than under the submit
+            button: a learner should know the bar and the budget before they
+            commit to answering. */}
+        <p className="text-xs text-muted-foreground mb-5">
+          {t(`${questionList.length} questions · pass at 80% · ${attemptsLeft} more tries today`,
+             `${questionList.length} ta savol · 80% dan o'tiladi · bugun yana ${attemptsLeft} urinish`,
+             `${questionList.length} вопросов · порог 80% · сегодня ещё ${attemptsLeft} попыток`)}
+        </p>
         <Progress value={progress} className="mb-8 h-1.5" />
 
         {/* Questions */}

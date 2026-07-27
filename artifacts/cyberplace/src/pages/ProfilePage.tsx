@@ -281,7 +281,7 @@ export default function ProfilePage() {
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${b.earned ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-muted/30 text-muted-foreground/40"}`}>
                       <b.icon className="w-5 h-5" />
                     </div>
-                    <span className={`text-[10px] leading-tight ${b.earned ? "text-foreground" : "text-muted-foreground/40"}`}>{b.label}</span>
+                    <span className={`text-[11px] leading-tight ${b.earned ? "text-foreground" : "text-muted-foreground/40"}`}>{b.label}</span>
                   </div>
                 ))}
               </div>

@@ -51,12 +51,26 @@ export type CredentialLabels = {
   signatoryRole: string;
 };
 
-/** Keeps a document readable on small screens without the page scrolling. */
+/**
+ * Keeps a document readable on small screens without the page scrolling.
+ *
+ * The sheet has a fixed 680px layout — a certificate is a document, not a
+ * responsive page — so on a phone it scrolls sideways inside this frame rather
+ * than breaking. Says so, once, because a person who cannot see the right-hand
+ * edge otherwise assumes it is cut off.
+ */
 export function CredentialFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div className="credential-print-wrap overflow-x-auto -mx-6 px-6 pb-2">
-      <div className="credential-print min-w-[680px]">{children}</div>
-    </div>
+    <>
+      <div className="credential-print-wrap overflow-x-auto -mx-6 px-6 pb-2">
+        <div className="credential-print min-w-[680px]">{children}</div>
+      </div>
+      {/* No print class needed: the @media print rules hide everything that is
+          not .credential-print. */}
+      <p className="sm:hidden mt-3 text-center text-xs text-muted-foreground">
+        Kattalashtirish uchun yon tomonga suring · Свайпните вбок · Swipe sideways to see it all
+      </p>
+    </>
   );
 }
 

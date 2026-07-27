@@ -119,7 +119,7 @@ export default function RegisterPage() {
               )} />
               <FormField control={form.control} name="email" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t("Email", "Email", "Эл. почта")}</FormLabel>
                   <FormControl>
                     <Input {...field} type="email" placeholder="you@example.com" data-testid="input-email" />
                   </FormControl>

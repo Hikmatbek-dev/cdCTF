@@ -238,7 +238,7 @@ function SessionsSection() {
               <div className="font-bold text-sm flex items-center gap-2">
                 <span className="truncate">{session.deviceLabel ?? t("Unknown device", "Noma'lum qurilma", "Неизвестное устройство")}</span>
                 {session.isCurrent && (
-                  <span className="text-[10px] font-black uppercase bg-primary/15 text-primary px-2 py-0.5 rounded-full shrink-0">
+                  <span className="text-[11px] font-black uppercase bg-primary/15 text-primary px-2 py-0.5 rounded-full shrink-0">
                     {t("This device", "Shu qurilma", "Это устройство")}
                   </span>
                 )}
@@ -311,7 +311,7 @@ function LoginHistorySection() {
                     : FAILURE_LABELS[entry.failureReason ?? ""]?.[lang] ?? t("Failed", "Muvaffaqiyatsiz", "Неудача")}
                 </span>
                 {entry.suspicious && (
-                  <span className="text-[10px] font-black uppercase bg-amber-500/15 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full">
+                  <span className="text-[11px] font-black uppercase bg-amber-500/15 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full">
                     {entry.suspiciousReasons.map(reason => SUSPICIOUS_LABELS[reason]?.[lang] ?? reason).join(", ")}
                   </span>
                 )}

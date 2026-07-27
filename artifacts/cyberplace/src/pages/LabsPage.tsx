@@ -8,6 +8,7 @@ import { useLang } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { normalizeArray } from "@/lib/api-shapes";
+import { errorToast } from "@/lib/error-toast";
 
 type Lab = {
   id: number; slug: string;
@@ -66,7 +67,7 @@ export default function LabsPage() {
       void qc.invalidateQueries({ queryKey: ["labs"] });
       return d;
     } catch (e) {
-      toast({ title: e instanceof Error ? e.message : "Failed", variant: "destructive" });
+      toast(errorToast(t, e));
     } finally { setBusy(false); }
   };
 

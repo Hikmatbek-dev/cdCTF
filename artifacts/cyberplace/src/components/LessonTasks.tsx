@@ -100,11 +100,18 @@ export function LessonTasks({ lessonId, tasks, renderBody }: Props) {
   return (
     <div>
       {/* Progress. Shown above the tasks so the size of the lesson is known
-          before the first one is opened. */}
+          before the first one is opened.
+
+          Labelled "reading progress", not "lesson progress": these ticks live
+          in localStorage and count for nothing on the server. Someone who
+          ticked all five sections saw 100% and reasonably concluded the lesson
+          was finished — it is not; only the test completes it. Two progress
+          bars on one page saying different things is worse than one honest
+          one. */}
       <div className="mb-6">
         <div className="flex items-center justify-between text-xs mb-2">
           <span className="font-medium text-muted-foreground">
-            {t("Lesson progress", "Dars jarayoni", "Прогресс урока")}
+            {t("Reading progress (on this device)", "O'qish jarayoni (shu qurilmada)", "Прогресс чтения (на этом устройстве)")}
           </span>
           <span className="tabular-nums text-muted-foreground">
             {done.size}/{tasks.length} · {pct}%
@@ -113,6 +120,13 @@ export function LessonTasks({ lessonId, tasks, renderBody }: Props) {
         <div className="h-2 rounded-full bg-muted/40 overflow-hidden">
           <div className="h-full rounded-full bg-primary transition-all duration-300" style={{ width: `${pct}%` }} />
         </div>
+        {pct === 100 && (
+          <p className="text-xs text-muted-foreground mt-2">
+            {t("You have read it all. The lesson counts once you pass its test — the button is at the bottom.",
+               "Hammasini o'qidingiz. Dars testdan o'tganingizda hisobga olinadi — tugma pastda.",
+               "Вы всё прочли. Урок засчитывается после теста — кнопка внизу.")}
+          </p>
+        )}
       </div>
 
       <div className="space-y-3">

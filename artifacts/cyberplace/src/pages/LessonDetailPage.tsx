@@ -313,7 +313,7 @@ export default function LessonDetailPage() {
                       }`}>
                       {l.isCompleted
                         ? <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                        : <span className={`w-4 h-4 shrink-0 flex items-center justify-center text-[10px] tabular-nums rounded-full border ${active ? "border-primary text-primary" : "border-muted-foreground/30"}`}>{i + 1}</span>}
+                        : <span className={`w-4 h-4 shrink-0 flex items-center justify-center text-[11px] tabular-nums rounded-full border ${active ? "border-primary text-primary" : "border-muted-foreground/30"}`}>{i + 1}</span>}
                       <span className="truncate">{t(l.title, l.titleUz ?? undefined, l.titleRu ?? undefined)}</span>
                     </Link>
                   );
@@ -346,7 +346,7 @@ export default function LessonDetailPage() {
                     }`}>
                     {l.isCompleted
                       ? <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                      : <span className="w-4 h-4 shrink-0 flex items-center justify-center text-[10px] tabular-nums rounded-full border border-muted-foreground/30">{i + 1}</span>}
+                      : <span className="w-4 h-4 shrink-0 flex items-center justify-center text-[11px] tabular-nums rounded-full border border-muted-foreground/30">{i + 1}</span>}
                     <span className="truncate">{t(l.title, l.titleUz ?? undefined, l.titleRu ?? undefined)}</span>
                   </Link>
                 ))}

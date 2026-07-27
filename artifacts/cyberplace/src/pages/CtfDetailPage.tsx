@@ -12,6 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Writeups } from "@/components/Writeups";
 import { motion } from "framer-motion";
 import { FadeIn, ScaleIn } from "@/components/PageTransition";
+import { errorToast } from "@/lib/error-toast";
 
 /**
  * Which module teaches the skill a challenge category needs.
@@ -65,7 +66,7 @@ export default function CtfDetailPage() {
       }
       void qc.invalidateQueries({ queryKey: getGetCtfChallengeQueryKey(id) });
     } catch (e) {
-      toast({ title: e instanceof Error ? e.message : "Failed", variant: "destructive" });
+      toast(errorToast(t, e));
     } finally {
       setHintLoading(false);
     }
@@ -327,18 +328,36 @@ export default function CtfDetailPage() {
                       animate={{ opacity: 1, x: 0 }}
                       className="mb-8 p-4 bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-3 rounded-2xl"
                     >
-                      <AlertTriangle className="w-5 h-5" />
-                      IDS_WARN: {challenge.wrongAttempts}/3 REJECTED_TOKENS. TERMINAL_LOCKOUT IMMINENT.
+                      <AlertTriangle className="w-5 h-5 shrink-0" />
+                      {/* Was: "IDS_WARN: 2/3 REJECTED_TOKENS. TERMINAL_LOCKOUT
+                          IMMINENT." — hardcoded pseudo-jargon, in no language,
+                          at the exact moment a learner most needs to understand
+                          what is about to happen to them. */}
+                      <span>
+                        {t(`${challenge.wrongAttempts} of 3 wrong answers. After the third, this challenge locks.`,
+                           `3 tadan ${challenge.wrongAttempts} ta javob noto'g'ri. Uchinchisidan keyin bu topshiriq qulflanadi.`,
+                           `${challenge.wrongAttempts} из 3 ответов неверны. После третьего задание блокируется.`)}
+                      </span>
                     </motion.div>
                   )}
 
                   <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-6">
                     <div className="relative flex-1">
+                      {/* No `uppercase`: the CSS was uppercasing the display
+                          while the submitted value kept its case, so a learner
+                          checking a case-sensitive flag against the screen was
+                          reading something that did not match what they would
+                          send. The placeholder now shows the real shape, and
+                          the field has a name for screen readers. */}
                       <input
                         value={flag}
                         onChange={e => setFlag(e.target.value)}
-                        placeholder="ENTER_TOKEN{...}"
-                        className="w-full h-18 px-8 bg-foreground/5 border border-foreground/5 rounded-2xl font-mono text-sm uppercase tracking-[0.3em] focus:border-primary focus:ring-8 focus:ring-primary/5 transition-all placeholder:text-muted-foreground/20"
+                        aria-label={t("Flag", "Flag", "Флаг")}
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        placeholder="flag{...}"
+                        className="w-full h-18 px-8 bg-foreground/5 border border-foreground/5 rounded-2xl font-mono text-sm tracking-wide focus:border-primary focus:ring-8 focus:ring-primary/5 transition-all placeholder:text-muted-foreground/30"
                         data-testid="input-flag"
                       />
                     </div>

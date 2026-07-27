@@ -168,7 +168,7 @@ export default function LearnPage() {
                           <div className="eyebrow mb-1 flex items-center gap-2">
                             <span className="truncate">{lesson.categoryName}</span>
                             {lesson.isCompleted && (
-                              <span className="normal-case tracking-normal text-[10px] bg-primary/15 text-primary px-2 py-0.5 rounded-full">
+                              <span className="normal-case tracking-normal text-[11px] bg-primary/15 text-primary px-2 py-0.5 rounded-full">
                                 {t("Done", "Tugatilgan", "Пройден")}
                               </span>
                             )}
