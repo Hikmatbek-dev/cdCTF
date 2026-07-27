@@ -4,15 +4,16 @@ import { db } from "@workspace/db";
 import {
   learnCategoriesTable, lessonsTable, lessonQuestionsTable, userLessonAttemptsTable,
   modulesTable, moduleQuestionsTable, moduleExamAttemptsTable, certificatesTable,
-  programDiplomasTable,
+  programDiplomasTable, ctfTasksTable, ctfAttemptsTable,
 } from "@workspace/db/schema";
-import { eq, and, inArray, asc } from "drizzle-orm";
+import { eq, and, inArray, asc, sql } from "drizzle-orm";
 import { randomBytes, createHash } from "node:crypto";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import { SubmitLessonTestBody } from "@workspace/api-zod";
 import { awardPoints } from "../lib/scoring";
 import { touchStreak } from "../lib/streaks";
+import { practiceCategoriesFor } from "../lib/practice-map";
 const router = Router();
 
 // GET /api/learn/categories
@@ -369,12 +370,37 @@ router.get("/modules/:id", optionalAuth, async (req, res) => {
   const examQuestionCount = (await db.select({ id: moduleQuestionsTable.id }).from(moduleQuestionsTable)
     .where(eq(moduleQuestionsTable.moduleId, moduleId))).length;
 
+  // The practice half. A module that teaches Crypto should hand you the Crypto
+  // challenges when you finish it — reading and drilling were two unconnected
+  // halves of this platform, which is why the lessons went unused.
+  const practiceCategories = practiceCategoriesFor(mod.slug);
+  let practice: { categories: string[]; total: number; solved: number } | null = null;
+  if (practiceCategories.length > 0) {
+    const pool = await db.select({ id: ctfTasksTable.id })
+      .from(ctfTasksTable)
+      .where(and(eq(ctfTasksTable.isPublished, true), inArray(ctfTasksTable.category, practiceCategories)));
+
+    let solved = 0;
+    if (userId && pool.length > 0) {
+      const [row] = await db.select({ n: sql<number>`count(*)::int` })
+        .from(ctfAttemptsTable)
+        .where(and(
+          eq(ctfAttemptsTable.userId, userId),
+          eq(ctfAttemptsTable.solved, true),
+          inArray(ctfAttemptsTable.ctfId, pool.map(p => p.id)),
+        ));
+      solved = row?.n ?? 0;
+    }
+    practice = { categories: practiceCategories, total: pool.length, solved };
+  }
+
   res.json({
     id: mod.id, slug: mod.slug,
     title: mod.title, titleUz: mod.titleUz, titleRu: mod.titleRu,
     description: mod.description, descriptionUz: mod.descriptionUz, descriptionRu: mod.descriptionRu,
     difficulty: mod.difficulty, estimatedHours: mod.estimatedHours, passScore: mod.passScore,
     examQuestionCount,
+    practice,
     lessons: lessons.map(l => ({
       id: l.id, title: l.title, titleUz: l.titleUz, titleRu: l.titleRu,
       points: l.points, orderIndex: l.orderIndex, isCompleted: completed.has(l.id),

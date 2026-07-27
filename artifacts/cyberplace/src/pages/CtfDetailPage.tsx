@@ -240,6 +240,35 @@ export default function CtfDetailPage() {
               </FadeIn>
             )}
 
+            {/* The module that teaches this. Someone stuck here was never told
+                that the platform has eight lessons on exactly this subject —
+                the practice half and the teaching half did not point at each
+                other, which is why the lessons went unread. */}
+            {(challenge as any).learnModule && (
+              <FadeIn delay={0.3}>
+                <Link href={`/modules/${(challenge as any).learnModule.id}`}>
+                  <div className="glass-card p-5 rounded-xl border-primary/25 flex items-center gap-4 group cursor-pointer" data-testid="ctf-learn-module">
+                    <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                      <GraduationCap className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-0.5">
+                        {t("Learn this", "Buni o'rganing", "Изучите это")}
+                      </div>
+                      <div className="font-semibold truncate group-hover:text-primary transition-colors">
+                        {t(
+                          (challenge as any).learnModule.title,
+                          (challenge as any).learnModule.titleUz ?? undefined,
+                          (challenge as any).learnModule.titleRu ?? undefined,
+                        )}
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
+                  </div>
+                </Link>
+              </FadeIn>
+            )}
+
             {/* Hint. Costs points the first time; free to re-read afterwards.
                 The text never arrives until it is paid for. */}
             {(challenge as any).hasHint && !challenge.isSolved && (

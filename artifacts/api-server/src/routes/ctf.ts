@@ -1,11 +1,12 @@
 import { Router, type Request, type Response } from "express";
 import { db } from "@workspace/db";
-import { ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, titlesTable, usersTable } from "@workspace/db/schema";
+import { ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, titlesTable, usersTable, modulesTable } from "@workspace/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { authenticateToken, optionalAuth, requireScope } from "../middleware/auth";
 import { hashFlag, isHashedFlag, verifyFlag } from "../lib/flags";
 import { awardCategoryTitle, awardPoints } from "../lib/scoring";
 import { touchStreak } from "../lib/streaks";
+import { moduleSlugForCategory } from "../lib/practice-map";
 import { createRateLimiter } from "../middleware/security";
 import { validateBody } from "../middleware/validate";
 import { SubmitCtfFlagBody } from "@workspace/api-zod";
@@ -118,11 +119,27 @@ router.get("/:id", optionalAuth, requireScope("ctf:read"), async (req, res) => {
     [userAttempt] = await db.select().from(ctfAttemptsTable).where(and(eq(ctfAttemptsTable.userId, userId), eq(ctfAttemptsTable.ctfId, ctfId))).limit(1);
   }
 
+  // The module that teaches this. Somebody stuck on a Crypto challenge was
+  // never shown that there are eight lessons here about exactly that — the two
+  // halves of the platform did not point at each other.
+  let teaches: { id: number; slug: string; title: string; titleUz: string | null; titleRu: string | null } | null = null;
+  const teachingSlug = moduleSlugForCategory(challenge.category);
+  if (teachingSlug) {
+    const [mod] = await db.select({
+      id: modulesTable.id, slug: modulesTable.slug,
+      title: modulesTable.title, titleUz: modulesTable.titleUz, titleRu: modulesTable.titleRu,
+    }).from(modulesTable)
+      .where(and(eq(modulesTable.slug, teachingSlug), eq(modulesTable.isPublished, true)))
+      .limit(1);
+    teaches = mod ?? null;
+  }
+
   res.json({
     id: challenge.id,
     name: challenge.name,
     nameUz: challenge.nameUz,
     nameRu: challenge.nameRu,
+    learnModule: teaches,
     description: challenge.description,
     descriptionUz: challenge.descriptionUz,
     descriptionRu: challenge.descriptionRu,

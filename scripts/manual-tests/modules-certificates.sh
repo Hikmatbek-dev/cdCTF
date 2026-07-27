@@ -137,4 +137,31 @@ check "$LEAK2" "YOQ" "shaxsiy ma'lumot oshkor qilinmadi"
 check "$(curl -s -o /dev/null -w '%{http_code}' $API/learn/certificates/CDCTF-0000000000)" "404" "mavjud bo'lmagan seriya 404"
 
 echo
+echo
+echo "=== ⭐ O'RGANISH ↔ AMALIYOT KO'PRIGI ==="
+# Haqiqiy slug bilan modul: 'web-application-security' Web topshiriqlarini mashq
+# qildiradi. Ikkala yo'nalish ham bitta xaritadan kelib chiqadi.
+WMID=$(q "INSERT INTO modules (slug, title, description, category_id, pass_score, estimated_hours)
+          VALUES ('web-application-security','Web Module','desc',$CAT,80,10) RETURNING id")
+# Farqni o'lchaymiz: boshqa to'plamlar ham Web topshiriqlari qoldiradi, shuning
+# uchun mutlaq son emas, o'zimiz qo'shgan ikkitasi qo'shilgani tekshiriladi.
+BEFORE=$(curl -s $API/learn/modules/$WMID | python3 -c 'import sys,json;p=json.load(sys.stdin).get("practice");print(p["total"] if p else 0)')
+WCH=$(q "INSERT INTO ctf_tasks (name,description,category,difficulty,points,flag,is_published)
+         VALUES ('${TAG}_web1','d','Web','easy',100,'f',true) RETURNING id")
+q "INSERT INTO ctf_tasks (name,description,category,difficulty,points,flag,is_published)
+   VALUES ('${TAG}_web2','d','Web','easy',100,'f',true)" > /dev/null
+# Modul → amaliyot: shu mavzudagi topshiriqlar sonini bilishi kerak.
+MB=$(curl -s $API/learn/modules/$WMID)
+AFTER=$(echo "$MB" | python3 -c 'import sys,json;p=json.load(sys.stdin).get("practice");print(p["total"] if p else 0)')
+check "$((AFTER - BEFORE))" "2" "qo'shilgan 2 ta Web topshirig'i modul mashqiga tushdi ($BEFORE → $AFTER)"
+check "$(echo "$MB" | python3 -c 'import sys,json;p=json.load(sys.stdin).get("practice");print("Web" in p["categories"] if p else False)')" "True" "kategoriya Web"
+# Topshiriq → modul: qaysi modul buni o'rgatishini bilishi kerak.
+CB=$(curl -s $API/ctf/$WCH)
+check "$(echo "$CB" | python3 -c 'import sys,json;m=json.load(sys.stdin).get("learnModule");print(m["id"] if m else "yo_q")')" "$WMID" "topshiriq o'rgatuvchi modulga ishora qildi"
+# Mos moduli yo'q kategoriya ko'prik bermasligi kerak (soxta bog'lanish emas).
+OCH=$(q "INSERT INTO ctf_tasks (name,description,category,difficulty,points,flag,is_published)
+         VALUES ('${TAG}_odd','d','Steganography','easy',100,'f',true) RETURNING id")
+check "$(curl -s $API/ctf/$OCH | python3 -c 'import sys,json;print(json.load(sys.stdin).get("learnModule") is None)')" "True" "moduli yo'q kategoriya bo'sh qaytaradi"
+
+echo
 [ -z "${FAILED:-}" ] && echo "🎉 MODUL, IMTIHON VA SERTIFIKAT DARVOZALARI USHLAYDI" || echo "⚠️  BA'ZI SINOVLAR YIQILDI"

@@ -1,5 +1,5 @@
 import { Link, useRoute } from "wouter";
-import { ArrowLeft, CheckCircle2, Circle, Clock, Award, Lock, FileText, Play, ArrowRight } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Clock, Award, Lock, FileText, Play, ArrowRight, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +20,8 @@ type ModuleDetail = {
   estimatedHours: number;
   passScore: number;
   examQuestionCount: number;
+  /** The challenges that drill this module, and how many the reader has solved. */
+  practice?: { categories: string[]; total: number; solved: number } | null;
   lessons: ModuleLesson[];
   completedCount: number;
   lessonCount: number;
@@ -155,6 +157,42 @@ export default function ModuleDetailPage() {
             ))}
           </div>
         </section>
+
+        {/* Practice. Reading the module and drilling it were two unconnected
+            halves of this platform; this is the hand-off from one to the other. */}
+        {mod.practice && mod.practice.total > 0 && (
+          <section className="border border-primary/25 rounded-xl p-6 bg-card mb-6" data-testid="module-practice">
+            <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+              <Flag className="w-4 h-4 text-primary" />
+              {t("Practise what you learned", "O'rganganingizni mashq qiling", "Практика по модулю")}
+            </h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              {t(
+                `${mod.practice.total} challenges use this module's material. Reading it is half the work — breaking something with it is the other half.`,
+                `${mod.practice.total} ta topshiriq shu modul materialiga tayanadi. O'qish — ishning yarmi, uni qo'llab biror narsani buzish — ikkinchi yarmi.`,
+                `${mod.practice.total} заданий опираются на материал этого модуля. Прочитать — половина дела, применить — вторая.`,
+              )}
+            </p>
+
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+              <span>{t("Solved", "Yechilgan", "Решено")}</span>
+              <span className="tabular-nums">{mod.practice.solved}/{mod.practice.total}</span>
+            </div>
+            <div className="h-2 rounded-full bg-muted/40 overflow-hidden mb-5">
+              <div
+                className="h-full rounded-full bg-primary transition-all"
+                style={{ width: `${Math.round((mod.practice.solved / mod.practice.total) * 100)}%` }}
+              />
+            </div>
+
+            <Link href={`/ctf?category=${encodeURIComponent(mod.practice.categories[0])}`}>
+              <Button variant="outline" className="w-full sm:w-auto" data-testid="button-module-practice">
+                <Flag className="w-4 h-4 mr-2" />
+                {t("Open the challenges", "Topshiriqlarni ochish", "Открыть задания")}
+              </Button>
+            </Link>
+          </section>
+        )}
 
         <section className="border border-border rounded-xl p-6 bg-card">
           <h2 className="text-lg font-semibold mb-2">
