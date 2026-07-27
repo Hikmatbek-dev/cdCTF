@@ -130,9 +130,17 @@ echo "==> Port: $API_PORT"
 # lesson-test-honest reuses the lesson that lesson-test-exploit seeds, so order matters.
 # Overridable so a single suite can be re-run while debugging it:
 #   SUITES=scoreboard bash scripts/manual-tests/run-all.sh
-# uz-content runs last on purpose: it imports a real challenge pack into the
-# shared throwaway database, which would shift the counts other suites assert.
-SUITES="${SUITES:-lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens oauth passkeys scoring scoreboard competitions profile jobs labs stats streaks reminders seo writeups validation body-fields modules-certificates diploma csrf captcha captcha-failclosed rate-limit uz-content}"
+# schema-parity is NOT in this list on purpose — it builds and drops its own two
+# databases and is run as a separate CI step. It was left out of the default run
+# for so long that a real drift (lab_instances_one_running_idx, present in
+# ensureDatabaseShape and missing from the Drizzle schema) sat unnoticed while
+# every other suite reported green. run-all.sh now invokes it explicitly at the
+# end instead, so a local run and CI check the same things.
+#
+# uz-content runs last of the server suites on purpose: it imports a real
+# challenge pack into the shared throwaway database, which would shift the
+# counts other suites assert.
+SUITES="${SUITES:-lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens oauth passkeys scoring scoreboard competitions profile jobs labs stats streaks reminders seo abuse writeups validation body-fields modules-certificates diploma csrf captcha captcha-failclosed rate-limit uz-content}"
 FAILED=""
 
 for suite in $SUITES; do
@@ -156,6 +164,21 @@ for suite in $SUITES; do
     FAILED="$FAILED $suite"
   fi
 done
+
+# Schema parity, last. It manages its own databases and its own server, so it
+# runs outside the loop above — but it runs, which it previously did not unless
+# somebody remembered to invoke it by hand. Skippable for a fast inner loop:
+#   SKIP_SCHEMA_PARITY=1 bash scripts/manual-tests/run-all.sh
+if [ -z "${SKIP_SCHEMA_PARITY:-}" ]; then
+  echo
+  echo "############ schema-parity ############"
+  # Captured, not piped: a pipeline would report grep's exit code, and grep
+  # succeeds whether the suite passed or failed.
+  parity_output=$(bash "$ROOT/scripts/manual-tests/schema-parity.sh" 2>&1)
+  parity_status=$?
+  echo "$parity_output" | grep -E "❌|🎉|⚠️"
+  [ "$parity_status" -eq 0 ] || FAILED="$FAILED schema-parity"
+fi
 
 echo
 if [ -n "$FAILED" ]; then

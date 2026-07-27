@@ -169,6 +169,22 @@
   * {
     @apply border-border outline-none;
   }
+
+  /*
+   * The rule above removes the browser's focus ring from every element, and for
+   * a long time nothing put one back: the shadcn primitives ship their own, but
+   * every .cyber-button, every plain <button> in pages/, and every link had no
+   * visible focus state at all. Someone navigating by keyboard could not tell
+   * where they were on any page of the site.
+   *
+   * :focus-visible only fires for keyboard and assistive navigation, so this
+   * costs a mouse user nothing.
+   */
+  :focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+    border-radius: 0.35rem;
+  }
   body {
     @apply font-sans antialiased bg-background text-foreground selection:bg-primary/25 selection:text-foreground;
   }

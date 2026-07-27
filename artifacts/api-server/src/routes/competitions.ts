@@ -427,8 +427,20 @@ router.get("/:id/scoreboard", async (req, res) => {
   const compId = Number(req.params.id);
 
   const solves = await db.select().from(competitionSolvesTable).where(eq(competitionSolvesTable.competitionId, compId));
-  const participants = await db.select().from(competitionUsersTable).where(eq(competitionUsersTable.competitionId, compId));
-  const users = await db.select().from(usersTable);
+
+  // Participants joined to their nicknames.
+  //
+  // This used to load the *entire* users table and then `users.find(...)` once
+  // per participant — every account on the platform transferred, and a
+  // quadratic scan in JavaScript, to print a few hundred names. The sibling
+  // /teams endpoint already did the join correctly.
+  const participants = await db.select({
+    userId: competitionUsersTable.userId,
+    nickname: usersTable.nickname,
+  })
+    .from(competitionUsersTable)
+    .innerJoin(usersTable, eq(usersTable.id, competitionUsersTable.userId))
+    .where(eq(competitionUsersTable.competitionId, compId));
 
   const pointsMap = new Map<number, number>();
   for (const s of solves) {
@@ -436,10 +448,7 @@ router.get("/:id/scoreboard", async (req, res) => {
   }
 
   const board = participants
-    .map(p => {
-      const user = users.find(u => u.id === p.userId);
-      return { userId: p.userId, nickname: user?.nickname ?? "Unknown", points: pointsMap.get(p.userId) ?? 0 };
-    })
+    .map(p => ({ userId: p.userId, nickname: p.nickname, points: pointsMap.get(p.userId) ?? 0 }))
     .sort((a, b) => b.points - a.points)
     .map((e, i) => ({ ...e, rank: i + 1 }));
 

@@ -1,4 +1,5 @@
 import { pgTable, serial, text, integer, boolean, timestamp, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { usersTable } from "./users";
 import { ctfTasksTable } from "./ctf";
 
@@ -59,6 +60,12 @@ export const labInstancesTable = pgTable("lab_instances", {
 }, table => [
   index("lab_instances_user_idx").on(table.userId),
   index("lab_instances_status_idx").on(table.status),
+  // One running machine per learner, enforced by the database rather than by a
+  // check in the handler. ensureDatabaseShape() has created this in production
+  // since it was introduced, but it was never declared here — so the test
+  // database, built by `drizzle-kit push`, did not have it, and the concurrency
+  // invariant was unenforced in the only environment that tests it.
+  uniqueIndex("lab_instances_one_running_idx").on(table.userId).where(sql`status = 'running'`),
 ]);
 
 export type Lab = typeof labsTable.$inferSelect;
