@@ -248,11 +248,14 @@ export default function CtfListPage() {
                           {/* Darken toward the title so the type below always
                               has something to sit on. */}
                           <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-card via-card/25 to-transparent" />
-                          <span className="absolute left-3 top-3 chip chip-primary backdrop-blur-sm">
+                          {/* Dark backing, white text: the chip sits over cover
+                              art in one of twelve category hues, so it cannot
+                              borrow the page's colours and stay readable. */}
+                          <span className="absolute left-3 top-3 chip !bg-black/55 !border-white/25 !text-white backdrop-blur-sm">
                             {ch.category}
                           </span>
                           {ch.isSolved && (
-                            <span className="absolute right-3 top-3 chip chip-neon backdrop-blur-sm">
+                            <span className="absolute right-3 top-3 chip !bg-black/55 !border-[hsl(var(--neon)/.6)] !text-[hsl(var(--neon))] backdrop-blur-sm">
                               <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
                               {t("Solved", "Yechilgan", "Решено")}
                             </span>

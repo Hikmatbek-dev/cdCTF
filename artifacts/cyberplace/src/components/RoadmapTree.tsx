@@ -112,26 +112,39 @@ export function RoadmapTree({ modules }: { modules: RoadmapModule[] }) {
                   return (
                     <Link href={`/modules/${m.id}`} key={m.id}>
                       <div
-                        className={`group relative rounded-xl border bg-card overflow-hidden transition-all hover:-translate-y-0.5 cursor-pointer h-full ${
-                          done ? "border-emerald-500/40" : isCurrent ? "border-primary/50" : "border-border hover:border-primary/30"
+                        className={`group relative rounded-xl border bg-card overflow-hidden transition-all duration-300 hover:-translate-y-1.5 cursor-pointer h-full ${
+                          done
+                            ? "border-[hsl(var(--neon)/.45)] hover:shadow-[0_18px_40px_-24px_hsl(var(--neon))]"
+                            : isCurrent
+                            ? "border-primary/60 shadow-[0_0_0_1px_hsl(var(--primary)/.2)] hover:shadow-[0_18px_40px_-24px_hsl(var(--primary))]"
+                            : "border-border hover:border-primary/40 hover:shadow-[0_18px_40px_-24px_hsl(var(--primary))]"
                         }`}
                         data-testid={`roadmap-module-${m.id}`}
                       >
-                        <div className="flex items-start gap-4 p-4">
-                          <div
-                            className="w-14 h-14 rounded-lg shrink-0 flex items-center justify-center overflow-hidden"
-                            style={{ backgroundColor: `hsl(${stage.hue} 55% 45% / 0.12)` }}
-                          >
-                            {Art ? <Art className="w-full h-full" /> : <Play className="w-5 h-5 text-primary" />}
-                          </div>
+                        {/* Status rail, same language as the challenge grid. */}
+                        <span aria-hidden="true" className={`absolute left-0 top-0 bottom-0 w-[3px] z-10 ${
+                          done ? "bg-[hsl(var(--neon))]" : isCurrent ? "bg-primary" : "bg-transparent group-hover:bg-primary/60"
+                        } transition-colors`} />
 
+                        {/* The cover leads, as it does on a challenge card — a
+                            56px thumbnail beside a title is a list row, and the
+                            curriculum deserves to look like the rooms it is. */}
+                        <div
+                          className="relative h-24 overflow-hidden"
+                          style={{ backgroundColor: `hsl(${stage.hue} 55% 45% / 0.16)` }}
+                        >
+                          {Art ? <Art className="w-full h-full transition-transform duration-700 group-hover:scale-110" /> : <Play className="w-6 h-6 text-primary m-auto" />}
+                          <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
+                        </div>
+
+                        <div className="flex items-start gap-4 p-4 pt-3">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-[11px] font-mono text-muted-foreground">
                                 {String(idx + 1).padStart(2, "0")}
                               </span>
                               {done && (
-                                <span className="inline-flex items-center gap-1 text-[11px] text-emerald-500 font-medium">
+                                <span className="inline-flex items-center gap-1 text-[11px] text-[hsl(var(--neon))] font-bold">
                                   <Check className="w-3 h-3" /> {t("Done", "Tugatilgan", "Пройден")}
                                 </span>
                               )}

@@ -139,17 +139,40 @@ export default function ScoreboardPage() {
                   const isTop3 = rank <= 3;
                   const rankColor = rank === 1 ? "text-yellow-500" : rank === 2 ? "text-slate-400" : rank === 3 ? "text-amber-600" : "text-foreground/20";
                   const rankGlow = rank === 1 ? "shadow-yellow-500/20" : rank === 2 ? "shadow-slate-400/20" : rank === 3 ? "shadow-amber-600/20" : "";
+                  /* A medal, not a number in a column. The top three carry a
+                     ring and a glow in their metal, so the podium is legible
+                     from across the page — a leaderboard that looks like a
+                     spreadsheet is not one anybody wants to climb. */
+                  const medal = rank === 1
+                    ? "border-yellow-500/60 text-yellow-400 bg-yellow-500/10 shadow-[0_0_18px_-4px_theme(colors.yellow.500)]"
+                    : rank === 2
+                    ? "border-slate-400/60 text-slate-300 bg-slate-400/10 shadow-[0_0_18px_-6px_theme(colors.slate.400)]"
+                    : rank === 3
+                    ? "border-amber-600/60 text-amber-500 bg-amber-600/10 shadow-[0_0_18px_-6px_theme(colors.amber.600)]"
+                    : "border-border text-muted-foreground bg-foreground/[0.03]";
 
                   return (
                     <div key={entry.userId}>
                       <Link href={`/profile/${entry.userId}`}>
                         <div
-                          className={`group flex items-center gap-4 md:gap-5 px-4 py-3 transition-colors cursor-pointer rounded-lg mb-1 last:mb-0 hover:bg-foreground/5 border border-transparent ${
-                            isMe ? "bg-primary/[0.08] border-primary/20 shadow-xl shadow-primary/5" : ""
+                          className={`group relative flex items-center gap-4 md:gap-5 px-4 py-3.5 transition-all cursor-pointer rounded-lg mb-1.5 last:mb-0 border overflow-hidden ${
+                            isMe
+                              ? "bg-primary/[0.10] border-primary/40 shadow-[0_0_0_1px_hsl(var(--primary)/.2),0_14px_36px_-24px_hsl(var(--primary))]"
+                              : "border-transparent hover:border-primary/30 hover:bg-foreground/[0.04]"
                           }`}
                         >
-                          {/* Rank */}
-                          <div className={`w-8 md:w-10 text-center text-xl md:text-2xl font-bold tabular-nums ${rankColor}`}>
+                          {/* Rail: your own row, and the podium, are found by
+                              colour before the eye reaches the name. */}
+                          <span aria-hidden="true" className={`absolute left-0 top-0 bottom-0 w-[3px] ${
+                            isMe ? "bg-[hsl(var(--neon))]"
+                            : rank === 1 ? "bg-yellow-500"
+                            : rank === 2 ? "bg-slate-400"
+                            : rank === 3 ? "bg-amber-600"
+                            : "bg-transparent group-hover:bg-primary/60"
+                          } transition-colors`} />
+
+                          {/* Rank medallion */}
+                          <div className={`w-10 h-10 md:w-11 md:h-11 shrink-0 rounded-xl border flex items-center justify-center font-mono text-base md:text-lg font-bold tabular-nums ${medal}`}>
                             {rank}
                           </div>
                           
@@ -189,9 +212,9 @@ export default function ScoreboardPage() {
 
                           {/* Stats */}
                           <div className="text-right shrink-0">
-                            <div className="flex items-center justify-end gap-1.5 text-primary mb-0.5">
-                              <Zap className="w-4 h-4 fill-current" />
-                              <div className="text-xl md:text-2xl font-bold tabular-nums leading-none text-foreground">{entry.points}</div>
+                            <div className="flex items-center justify-end gap-1.5 mb-0.5">
+                              <Zap className="w-4 h-4 fill-current text-[hsl(var(--neon))]" aria-hidden="true" />
+                              <div className="font-mono text-xl md:text-2xl font-bold tabular-nums leading-none text-[hsl(var(--neon))]">{entry.points}</div>
                             </div>
                             <div className="text-xs text-muted-foreground/50">
                               {entry.solvedCtfCount} {t("solved", "yechildi", "решено")}
