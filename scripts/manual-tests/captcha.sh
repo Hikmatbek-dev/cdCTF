@@ -38,7 +38,26 @@ echo
 echo "=== ⭐ Butun zanjir ulangan: token → server → Cloudflare → qabul ==="
 # Not "does it reject" but "does it ever accept" — a check that only ever says
 # no would pass every case above while blocking all registration.
-check "$(reg "$(body ${N}d ',"captchaToken":"dummy-token"')")" "201" "token bilan ro'yxatdan o'tish ISHLAYDI"
+#
+# This one leaves the machine: the server really calls Cloudflare's siteverify,
+# which is the point, and also the one thing here that can fail for reasons that
+# have nothing to do with this code. It failed intermittently in full runs and
+# passed every time in isolation. So: retry a couple of times, and if Cloudflare
+# is simply unreachable, say that instead of blaming the code — a suite that
+# cries wolf gets ignored, and this one guards a real regression.
+CODE=""
+for attempt in 1 2 3; do
+  CODE=$(reg "$(body ${N}d${attempt} ',"captchaToken":"dummy-token"')")
+  [ "$CODE" = "201" ] && break
+  sleep 2
+done
+if [ "$CODE" = "201" ]; then
+  pass "token bilan ro'yxatdan o'tish ISHLAYDI"
+elif ! curl -s -o /dev/null --max-time 8 https://challenges.cloudflare.com/turnstile/v0/siteverify; then
+  echo "  ⚠️  o'tkazib yuborildi — Cloudflare'ga ulanib bo'lmadi (kod aybdor emas)"
+else
+  fail "token bilan ro'yxatdan o'tish ISHLAYDI — kutilgan 201, kelgan $CODE"
+fi
 
 echo
 [ -z "$FAILED" ] && echo "🎉 CAPTCHA HAQIQATAN HIMOYA QILADI" || echo "⚠️  BA'ZI SINOVLAR YIQILDI"
