@@ -149,6 +149,12 @@ import sys,json; print(','.join(str(c['id']) for c in json.load(sys.stdin)['chal
 check "$(curl -s "$API/admin/ctf?limit=3" -H "Authorization: Bearer $ADMIN" | python3 -c "
 import sys,json; d=json.load(sys.stdin); print(d['total'] >= 8)")" "True" "total butun jadvalni sanaydi"
 
+echo "--- tanlagich butun ro'yxatni oladi (sahifalash uni bo'g'masin) ---"
+# The competition form's challenge picker is a checklist, not a browsable list.
+# When /admin/ctf gained a default page size it silently truncated that choice.
+check "$(curl -s "$API/admin/ctf?limit=200" -H "Authorization: Bearer $ADMIN" | python3 -c "
+import sys,json; d=json.load(sys.stdin); print(len(d['challenges']) == min(d['total'], 200))")" "True" "limit=200 hammasini qamraydi"
+
 echo "--- limit cheksiz emas ---"
 check "$(curl -s "$API/admin/ctf?limit=99999" -H "Authorization: Bearer $ADMIN" | python3 -c "
 import sys,json; print(json.load(sys.stdin)['limit'])")" "200" "limit 200 ga qisiladi"

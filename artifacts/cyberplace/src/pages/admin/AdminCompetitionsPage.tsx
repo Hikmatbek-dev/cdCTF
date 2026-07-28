@@ -110,10 +110,13 @@ export default function AdminCompetitionsPage() {
   // GET /api/ctf, which returns one page of *published* challenges — so a
   // competition could not include a draft written for that competition, and
   // could only ever be built from the first page of everything else.
+  // limit=200 is the server's cap and this picker wants all of them: it is a
+  // checklist, not a browsable list. Without it the endpoint's new default page
+  // size silently truncated the choice to the 50 most recent challenges.
   const { data: ctfs } = useQuery({
-    queryKey: ["admin-ctfs"],
+    queryKey: ["admin-ctfs", "picker"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/ctf", { credentials: "include" });
+      const res = await fetch("/api/admin/ctf?limit=200", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch admin ctfs");
       return res.json();
     },
