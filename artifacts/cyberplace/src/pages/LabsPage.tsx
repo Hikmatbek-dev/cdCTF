@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { Server, Play, Square, Clock, ExternalLink, Info, Flag } from "lucide-react";
+import { Server, Play, Square, Clock, ExternalLink, Info, Flag, ChevronDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LoadFailure } from "@/components/LoadFailure";
 import { useToast } from "@/hooks/use-toast";
@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { normalizeArray } from "@/lib/api-shapes";
 import { errorToast } from "@/lib/error-toast";
-import { BrowserLab } from "@/components/labs/BrowserLab";
+import { LabBrief, targetUrl } from "@/components/labs/LabBrief";
 
 type Lab = {
   id: number; slug: string;
@@ -42,6 +42,8 @@ export default function LabsPage() {
   const { isAuthenticated } = useAuth();
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
+  /** Which lab's brief is open. Clicking a card is how you find out what it is. */
+  const [openLab, setOpenLab] = useState<number | null>(null);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["labs"],
@@ -124,25 +126,6 @@ export default function LabsPage() {
           </div>
         )}
 
-        {/* The target itself, right where the learner is looking. A browser lab
-            has nowhere else to live — there is no host to open in a new tab. */}
-        {running && runningLab?.kind === "browser" && runningLab.browserScenario && (
-          <div className="mb-8">
-            <BrowserLab
-              scenarioSlug={runningLab.browserScenario}
-              onClose={() => act(`/api/labs/instances/${running.id}/stop`)}
-            />
-            {runningLab.ctfId && (
-              <Link href={`/ctf/${runningLab.ctfId}`}>
-                <button className="cyber-button h-11 px-6 gap-2 mt-4 w-full sm:w-auto">
-                  <Flag className="w-4 h-4" />
-                  {t("Found it? Submit the flag", "Topdingizmi? Flagni topshiring", "Нашли? Отправьте флаг")}
-                </button>
-              </Link>
-            )}
-          </div>
-        )}
-
         {!available && (
           <div className="rounded-xl border border-border bg-muted/20 p-5 mb-8 flex items-start gap-3" data-testid="labs-unavailable">
             <Info className="w-4 h-4 mt-0.5 shrink-0 text-primary" />
@@ -173,10 +156,17 @@ export default function LabsPage() {
           <div className="space-y-3">
             {labs.map(lab => {
               const isThisRunning = running?.labId === lab.id;
+              const isOpen = openLab === lab.id;
               return (
                 <div key={lab.id} className="rounded-xl border border-border bg-card p-5" data-testid={`lab-${lab.id}`}>
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                    <div className="min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => setOpenLab(v => (v === lab.id ? null : lab.id))}
+                      aria-expanded={isOpen}
+                      className="min-w-0 text-left"
+                      data-testid={`lab-toggle-${lab.id}`}
+                    >
                       <div className="flex items-center gap-2.5 mb-1.5">
                         <h3 className="text-lg font-semibold truncate">{label(lab)}</h3>
                         <span className="text-[11px] rounded-lg border border-border bg-muted/40 px-2 py-0.5 capitalize shrink-0">{lab.difficulty}</span>
@@ -192,19 +182,33 @@ export default function LabsPage() {
                         {lab.kind === "browser" && (
                           <span>{t("Starts instantly · no setup", "Bir zumda ochiladi · sozlash kerak emas", "Открывается мгновенно · без настройки")}</span>
                         )}
-                        {lab.ctfId && (
-                          <Link href={`/ctf/${lab.ctfId}`} className="inline-flex items-center gap-1.5 text-primary hover:text-accent">
-                            <Flag className="w-3.5 h-3.5" /> {t("Submit the flag here", "Flagni shu yerda topshiring", "Отправить флаг здесь")}
-                          </Link>
-                        )}
+                        <span className="inline-flex items-center gap-1 text-primary">
+                          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+                          {isOpen ? t("Less", "Yopish", "Свернуть") : t("What is this?", "Bu nima?", "Что это?")}
+                        </span>
                       </div>
-                    </div>
+                    </button>
                     <div className="shrink-0">
                       {isThisRunning ? (
                         <button onClick={() => act(`/api/labs/instances/${running!.id}/stop`)} disabled={busy}
                           className="cyber-button-outline h-11 px-6 gap-2">
                           <Square className="w-4 h-4" /> {t("Stop", "To'xtatish", "Остановить")}
                         </button>
+                      ) : lab.kind === "browser" && lab.browserScenario && isAuthenticated && !running ? (
+                        // An anchor, not window.open() after an await: the popup
+                        // blocker only trusts a navigation that comes straight
+                        // out of the click.
+                        <a
+                          href={targetUrl(lab.browserScenario)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => { setOpenLab(lab.id); void act(`/api/labs/${lab.id}/start`); }}
+                          className="cyber-button h-11 px-6 gap-2 inline-flex items-center"
+                          data-testid={`start-lab-${lab.id}`}
+                        >
+                          <Play className="w-4 h-4" />
+                          {t("Start", "Boshlash", "Начать")}
+                        </a>
                       ) : (
                         <button onClick={() => act(`/api/labs/${lab.id}/start`)}
                           disabled={busy || !isAuthenticated || !lab.startable || Boolean(running)}
@@ -215,13 +219,14 @@ export default function LabsPage() {
                             ? t("Sign in to start", "Boshlash uchun kiring", "Войдите, чтобы начать")
                             : !lab.startable ? t("Coming soon", "Tez orada", "Скоро")
                             : running ? t("Stop the other one first", "Avval boshqasini to'xtating", "Сначала остановите другую")
-                            : lab.kind === "browser"
-                              ? t("Open the target", "Nishonni ochish", "Открыть цель")
-                              : t("Start machine", "Mashinani ishga tushirish", "Запустить машину")}
+                            : t("Start machine", "Mashinani ishga tushirish", "Запустить машину")}
                         </button>
                       )}
                     </div>
                   </div>
+                  {isOpen && lab.kind === "browser" && lab.browserScenario && (
+                    <LabBrief scenarioSlug={lab.browserScenario} ctfId={lab.ctfId} />
+                  )}
                 </div>
               );
             })}

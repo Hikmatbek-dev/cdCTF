@@ -99,7 +99,7 @@ echo "=== ⭐ Stsenariy fayli va bazadagi flaglar mos ==="
 # Compare them against what the importer stored, so the two cannot drift.
 python3 - <<'PY'
 import re, pathlib, hashlib, subprocess, os
-src = pathlib.Path("artifacts/cyberplace/src/components/labs/scenarios.ts").read_text()
+src = pathlib.Path("lib/lab-scenarios/src/index.ts").read_text()
 flags = sorted(set(re.findall(r"flag\{[a-z0-9_]+\}", src)))
 print(f"  stsenariylarda topilgan flaglar: {len(flags)}")
 bad = 0
@@ -115,12 +115,55 @@ if bad == 0:
 PY
 
 echo
-echo "=== ⭐ Sandbox atributi to'g'ri ==="
-# allow-same-origin next to allow-scripts would let the deliberately vulnerable
-# document read cdCTF's own origin. That must never be added.
-SB=$(grep -o 'sandbox="[^"]*"' "$ROOT/artifacts/cyberplace/src/components/labs/BrowserLab.tsx")
-echo "$SB" | grep -q "allow-scripts" && pass "allow-scripts bor (zaiflik ishlashi kerak)" || fail "allow-scripts yo'q"
-echo "$SB" | grep -q "allow-same-origin" && fail "allow-same-origin QO'SHILGAN — sandbox buzilgan!" || pass "allow-same-origin yo'q — origin ajratilgan"
+echo "=== ⭐ Nishon hujjati o'z siyosati bilan beriladi ==="
+# The documents used to be inlined into an iframe's srcdoc, and a srcdoc document
+# inherits its parent's CSP. cdCTF's policy has no 'unsafe-inline' in script-src
+# and every lab document *is* an inline script, so in production every lab
+# rendered as a dead page. Serving it from the API gives it a policy of its own.
+TARGET_CSP=$(curl -sI $API/labs/target/sql-login-bypass | tr -d '\r' | grep -i '^content-security-policy:')
+check "$(curl -s -o /dev/null -w '%{http_code}' $API/labs/target/sql-login-bypass)" "200" "nishon hujjati beriladi"
+echo "$TARGET_CSP" | grep -q "sandbox allow-scripts" \
+  && pass "sandbox allow-scripts — hujjat opaque originda" || fail "sandbox direktivi yo'q: $TARGET_CSP"
+echo "$TARGET_CSP" | grep -q "allow-same-origin" \
+  && fail "allow-same-origin BERILGAN — hujjat cdCTF originiga kira oladi!" || pass "allow-same-origin yo'q"
+echo "$TARGET_CSP" | grep -q "script-src 'unsafe-inline'" \
+  && pass "inline skript ruxsat etilgan (zaiflik shu)" || fail "inline skript bloklanadi — lab jonsiz bo'ladi"
+check "$(curl -s $API/labs/target/sql-login-bypass | grep -c 'flag{sql_1nj3ct10n_ch1n0r}')" "1" "hujjat haqiqiy stsenariy"
+check "$(curl -s -o /dev/null -w '%{http_code}' $API/labs/target/yo-q-bunday)" "404" "noma'lum slug 404"
+
+echo "--- ilova sahifasining CSP'si nishonni freym qilishga ruxsat beradi ---"
+# frame-src must allow 'self' now that the iframe has a src instead of srcdoc.
+grep -q "frame-src 'self'" "$ROOT/vercel.json" \
+  && pass "vercel.json frame-src 'self' bor" || fail "frame-src 'self' yo'q — iframe bloklanadi"
+
+echo "--- ilovaning o'z script-src'i qattiq qolgan ---"
+# The fix must not have been "add 'unsafe-inline' to the whole app".
+grep -q "script-src 'self' https://challenges.cloudflare.com" "$ROOT/vercel.json" \
+  && pass "ilova script-src'ida 'unsafe-inline' yo'q" || fail "ilova CSP'si bo'shashtirilgan!"
+
+echo
+echo "=== ⭐ Shriftlar o'z serverimizdan (CSP tashqi style-src'ga ruxsat bermaydi) ==="
+# An href, not the word: the comment above the local <link> explains why the
+# Google Fonts URL is gone, and naming it there is not the same as loading it.
+grep -Eq 'href="https://fonts\.(googleapis|gstatic)\.com' "$ROOT/artifacts/cyberplace/index.html" \
+  && fail "index.html hali Google Fonts'ni yuklaydi — CSP uni bloklaydi" || pass "tashqi shrift havolasi yo'q"
+[ -f "$ROOT/artifacts/cyberplace/public/fonts/fonts.css" ] \
+  && pass "mahalliy fonts.css bor" || fail "mahalliy fonts.css yo'q"
+check "$(grep -c 'fonts.gstatic.com' "$ROOT/artifacts/cyberplace/public/fonts/fonts.css")" "0" "fonts.css ichida tashqi URL qolmagan"
+
+echo
+echo "=== ⭐ Nishon yangi oynada ochiladi, freymda emas ==="
+# The target is a top-level document now, so isolation cannot rely on an iframe
+# attribute — it comes from the response's own CSP, checked above. What is
+# checked here is that nothing quietly re-inlines the document: a srcdoc would
+# inherit the app's policy again and the labs would go dead a second time.
+grep -rq "srcDoc" "$ROOT/artifacts/cyberplace/src" \
+  && fail "srcDoc qaytib kelibdi — hujjat yana ilova CSP'sini meros qiladi" \
+  || pass "srcDoc ishlatilmaydi"
+grep -q 'target="_blank"' "$ROOT/artifacts/cyberplace/src/pages/LabsPage.tsx" \
+  && pass "Boshlash tugmasi yangi oynada ochadi" || fail "target=_blank yo'q"
+grep -q 'rel="noopener noreferrer"' "$ROOT/artifacts/cyberplace/src/pages/LabsPage.tsx" \
+  && pass "noopener — nishon ochgan oynani boshqara olmaydi" || fail "noopener yo'q"
 
 echo
 [ -z "${FAILED:-}" ] && echo "🎉 BRAUZER LABORATORIYALARI ISHLAYDI" || echo "⚠️  BA'ZI SINOVLAR YIQILDI"

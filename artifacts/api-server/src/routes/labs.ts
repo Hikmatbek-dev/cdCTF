@@ -7,6 +7,7 @@ import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { labsEnabled, startContainer, stopContainer } from "../lib/lab-runner";
 import { createRateLimiter } from "../middleware/security";
 import { logger } from "../lib/logger";
+import { scenarioFor } from "@workspace/lab-scenarios";
 
 const router = Router();
 
@@ -25,6 +26,52 @@ function publicLab(lab: typeof labsTable.$inferSelect) {
     startable: lab.kind === "browser" || labsEnabled(),
   };
 }
+
+/**
+ * GET /api/labs/target/:slug — the vulnerable document itself.
+ *
+ * It used to be rendered client-side into an iframe's `srcdoc`, and that is
+ * exactly why the labs did not work in production: a srcdoc document inherits
+ * its parent's Content-Security-Policy, cdCTF's policy has no 'unsafe-inline'
+ * in script-src, and every one of these documents *is* an inline script. The
+ * labs rendered as static pages with no behaviour at all. Verified: under the
+ * production policy the inner script never runs; with the header removed, or
+ * with 'unsafe-inline' added, it does.
+ *
+ * Serving it from here gives the document a policy of its own:
+ *
+ *   sandbox allow-scripts allow-forms
+ *     Puts it in an opaque origin. It cannot read cdCTF's cookies, storage or
+ *     DOM even though it is served from the same host — the same isolation the
+ *     iframe's sandbox attribute gave, now enforced by the server so it also
+ *     holds when the page is opened in its own tab.
+ *   script-src / style-src 'unsafe-inline'
+ *     The lab is a deliberately vulnerable inline script. That is the content.
+ *   default-src 'none'
+ *     It has no business talking to anything.
+ *
+ * Unauthenticated on purpose: the documents ship in every learner's browser
+ * anyway, contain no secret beyond a flag that is checked server-side, and
+ * gating them would break opening the target in a new tab.
+ */
+router.get("/target/:slug", (req, res) => {
+  const scenario = scenarioFor(req.params.slug);
+  if (!scenario) return res.status(404).type("text/plain").send("Bunday laboratoriya yo'q");
+
+  res.setHeader("Content-Security-Policy", [
+    "sandbox allow-scripts allow-forms",
+    "default-src 'none'",
+    "script-src 'unsafe-inline'",
+    "style-src 'unsafe-inline'",
+    "img-src data:",
+    // Our own labs page frames this; nobody else's should.
+    "frame-ancestors 'self'",
+  ].join("; "));
+  // A target that is cached is a target that ignores "Reset".
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.type("text/html").send(scenario.html);
+});
 
 /**
  * A browser lab has no container, but it still gets an instance row so that the
