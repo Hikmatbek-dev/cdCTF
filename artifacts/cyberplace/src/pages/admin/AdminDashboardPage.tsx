@@ -5,12 +5,13 @@ import { useLang } from "@/lib/LanguageContext";
 import { useGetAdminDashboard, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
 import { normalizeArray } from "@/lib/api-shapes";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from "recharts";
+import { LoadFailure } from "@/components/LoadFailure";
 
 const COLORS = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
 
 export default function AdminDashboardPage() {
   const { t } = useLang();
-  const { data, isLoading } = useGetAdminDashboard({
+  const { data, isLoading, isError, refetch } = useGetAdminDashboard({
     query: { queryKey: getGetAdminDashboardQueryKey() },
   });
   const mostSolvedCtf = normalizeArray<any>(data?.mostSolvedCtf, ["mostSolvedCtf", "ctf", "data", "items"]);
@@ -23,7 +24,7 @@ export default function AdminDashboardPage() {
     { icon: Flag, label: t("CTF Challenges", "CTF Topshiriqlari", "CTF Заданий"), value: data.totalCtf },
     { icon: BookOpen, label: t("Lessons", "Darslar", "Уроков"), value: data.totalLessons },
     { icon: Trophy, label: t("Competitions", "Musobaqalar", "Соревнований"), value: data.totalCompetitions },
-    { icon: TrendingUp, label: t("Avg Test Score", "O'rtacha Test", "Ср. баoll теста"), value: `${Math.round(data.averageTestResult * 100)}%` },
+    { icon: TrendingUp, label: t("Lessons finished", "Tugatilgan darslar", "Уроков пройдено"), value: `${Math.round(data.averageTestResult * 100)}%` },
     { icon: AlertTriangle, label: t("Blocked Tasks", "Bloklangan", "Заблокировано"), value: data.blockedTasksCount, danger: true },
   ] : [];
 
@@ -33,7 +34,9 @@ export default function AdminDashboardPage() {
       <main className="flex-1 p-6 max-w-5xl">
         <h1 className="text-xl font-bold mb-6">{t("Dashboard", "Boshqaruv Paneli", "Панель управления")}</h1>
 
-        {isLoading ? (
+        {isError ? (
+          <LoadFailure onRetry={() => refetch()} />
+        ) : isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
             {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
           </div>

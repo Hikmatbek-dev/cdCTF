@@ -1,8 +1,8 @@
 import { Router, type Request, type Response } from "express";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import { usersTable, ctfTasksTable, ctfAttemptsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable } from "@workspace/db/schema";
-import { eq, and, desc, inArray, isNotNull, asc } from "drizzle-orm";
+import { usersTable, ctfTasksTable, ctfAttemptsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionTeamsTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable } from "@workspace/db/schema";
+import { eq, and, desc, inArray, isNotNull, asc, not } from "drizzle-orm";
 import { authenticateToken } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import {
@@ -245,7 +245,7 @@ router.get("/ctf", requirePermission("ctf.read.all"), async (_req, res) => {
   }, {} as Record<number, number>);
 
   res.json({
-    challenges: challenges.map(ch => ({
+    challenges: challenges.map(({ flag: _flag, ...ch }) => ({
       ...ch,
       solvedCount: solveCounts[ch.id] || 0,
     })),
@@ -258,11 +258,14 @@ router.get("/ctf/:id", requirePermission("ctf.read.all"), async (req, res) => {
   const id = Number(req.params.id);
   const [task] = await db.select().from(ctfTasksTable).where(eq(ctfTasksTable.id, id)).limit(1);
   if (!task) return res.status(404).json({ error: "Not found" });
-  res.json(task);
+  // The edit form shows "leave empty to keep current" — it never needs the hash,
+  // and nothing else reads this endpoint.
+  const { flag: _flag, ...safe } = task;
+  res.json(safe);
 });
 
 router.post("/ctf", requirePermission("ctf.create"), validateBody(AdminCreateCtfBody), async (req, res) => {
-  const { name, nameUz, nameRu, description, descriptionUz, descriptionRu, category, difficulty, points, hint, flag, fileUrl } = req.body;
+  const { name, nameUz, nameRu, description, descriptionUz, descriptionRu, category, difficulty, points, hint, hintUz, hintRu, hintCost, flag, fileUrl } = req.body;
   if (!name || !description || !category || !difficulty || !flag) return res.status(400).json({ error: "Missing required fields" });
 
   const parsedPoints = Number(points);
@@ -274,8 +277,10 @@ router.post("/ctf", requirePermission("ctf.create"), validateBody(AdminCreateCtf
   const [task] = await db.insert(ctfTasksTable).values({
     name, nameUz: nameUz || null, nameRu: nameRu || null,
     description, descriptionUz: descriptionUz || null, descriptionRu: descriptionRu || null,
-    category, difficulty, points: parsedPoints, hint, flag: hashFlag(String(flag)), fileUrl,
-    hintCost: 10,
+    category, difficulty, points: parsedPoints, flag: hashFlag(String(flag)), fileUrl,
+    hint: hint || null, hintUz: hintUz || null, hintRu: hintRu || null,
+    // Was hardcoded to 10, so the cost field on the form had no effect at all.
+    hintCost: Number.isFinite(Number(hintCost)) && Number(hintCost) >= 0 ? Number(hintCost) : 10,
     authorId: req.user!.userId,
     isPublished: canPublish,
   }).returning();
@@ -458,6 +463,45 @@ async function unblockTaskHandler(req: Request, res: Response) {
 router.post("/unblock", requirePermission("blocks.manage"), unblockTaskHandler);
 router.post("/blocked-tasks/:type/:taskId/unblock/:userId", requirePermission("blocks.manage"), unblockTaskHandler);
 
+// GET /api/admin/competitions
+/**
+ * The admin list, which is not the public one.
+ *
+ * The panel used to render `GET /api/competitions`, and that response has no
+ * `inviteCode` — deliberately, because it is public. So a private competition
+ * was created with a generated eight-character code that was returned once, in
+ * the create response, straight into a `.mutate()` whose `onSuccess` ignored
+ * the body. Nothing displayed it and no endpoint returned it again: the event
+ * existed, was listed, and could never be joined by anyone.
+ *
+ * This route exists so the code has somewhere to be read from. It is gated on
+ * `competitions.manage`, so no role below admin sees a join code.
+ */
+router.get("/competitions", requirePermission("competitions.manage"), async (_req, res) => {
+  const competitions = await db.select().from(competitionsTable).orderBy(desc(competitionsTable.startTime));
+  const tasks = await db.select().from(competitionTasksTable);
+  const members = await db.select().from(competitionUsersTable);
+
+  res.json({
+    competitions: competitions.map(comp => ({
+      id: comp.id,
+      name: comp.name,
+      description: comp.description,
+      type: comp.type,
+      inviteCode: comp.inviteCode,
+      startTime: comp.startTime.toISOString(),
+      endTime: comp.endTime.toISOString(),
+      sponsorName: comp.sponsorName,
+      sponsorLogoUrl: comp.sponsorLogoUrl,
+      sponsorUrl: comp.sponsorUrl,
+      prize: comp.prize,
+      ctfIds: tasks.filter(t => t.competitionId === comp.id).map(t => t.ctfId),
+      ctfCount: tasks.filter(t => t.competitionId === comp.id).length,
+      participantCount: members.filter(m => m.competitionId === comp.id).length,
+    })),
+  });
+});
+
 // POST /api/admin/competitions
 router.post("/competitions", requirePermission("competitions.manage"), validateBody(AdminCreateCompetitionBody), async (req, res) => {
   const { name, description, type, startTime, endTime, ctfIds, inviteCode, sponsorName, sponsorLogoUrl, sponsorUrl, prize } = req.body;
@@ -499,8 +543,18 @@ function cleanText(value: unknown): string | null {
 }
 
 // PATCH /api/admin/competitions/:id
-/** Parses a client-supplied timestamp, rejecting anything that is not a real date. */
+/**
+ * Parses a client-supplied timestamp, rejecting anything that is not a real date.
+ *
+ * A Date is the normal case, not the exception: the request body schema declares
+ * these as `format: date-time`, which orval generates as `zod.coerce.date()`, so
+ * validateBody has already turned the ISO string into a Date before this runs.
+ * Only string and number were accepted, so every attempt to change a
+ * competition's start or end time answered 400 "Invalid start time" — the dates
+ * were the one thing this endpoint could never edit.
+ */
 function parseTimestamp(value: unknown): Date | null {
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
   if (typeof value !== "string" && typeof value !== "number") return null;
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
@@ -524,6 +578,17 @@ async function updateCompetitionHandler(req: Request, res: Response) {
     if (!end) return res.status(400).json({ error: "Invalid end time" });
     updates.endTime = end;
   }
+  // Create refuses end <= start; the edit path did not, so a competition could
+  // be edited into a window that has already closed before it opens. When only
+  // one end is being changed, it is compared against the stored other end.
+  if (updates.startTime !== undefined || updates.endTime !== undefined) {
+    const [stored] = await db.select({ startTime: competitionsTable.startTime, endTime: competitionsTable.endTime })
+      .from(competitionsTable).where(eq(competitionsTable.id, id)).limit(1);
+    if (!stored) return res.status(404).json({ error: "Competition not found" });
+    const start = (updates.startTime as Date | undefined) ?? stored.startTime;
+    const end = (updates.endTime as Date | undefined) ?? stored.endTime;
+    if (end <= start) return res.status(400).json({ error: "Invalid competition time range" });
+  }
   // Same reason as the nickname in users.ts: updates is Record<string, unknown>,
   // so String() would happily store "[object Object]" as a join code.
   if (updates.inviteCode !== undefined && updates.inviteCode !== null) {
@@ -537,15 +602,85 @@ async function updateCompetitionHandler(req: Request, res: Response) {
     if (updates[field] !== undefined) updates[field] = cleanText(updates[field]);
   }
 
-  if (Object.keys(updates).length === 0) return res.status(400).json({ error: "Nothing to update or no permission" });
+  // The challenge set is not a column, so filterAllowedUpdates drops it — which
+  // meant an edit could rename a competition but never fix which challenges it
+  // contains. Handled separately, and only when the caller actually sent it:
+  // an absent ctfIds leaves the set alone, an empty array empties it.
+  const ctfIds: number[] | null = Array.isArray(req.body?.ctfIds)
+    ? [...new Set<number>(req.body.ctfIds.map(Number).filter((n: number) => Number.isInteger(n) && n > 0))]
+    : null;
 
-  const [updated] = await db.update(competitionsTable).set(updates).where(eq(competitionsTable.id, id)).returning();
-  await writeAuditLog(req, "competition.update", "competition", id, { fields: Object.keys(updates) });
+  if (Object.keys(updates).length === 0 && ctfIds === null) {
+    return res.status(400).json({ error: "Nothing to update or no permission" });
+  }
+
+  const updated = await db.transaction(async tx => {
+    if (ctfIds !== null) {
+      // Solves already recorded against a challenge being removed would be
+      // orphaned rows on a scoreboard that no longer lists the challenge.
+      await tx.delete(competitionTasksTable).where(eq(competitionTasksTable.competitionId, id));
+      for (const ctfId of ctfIds) {
+        await tx.insert(competitionTasksTable).values({ competitionId: id, ctfId });
+      }
+      await tx.delete(competitionSolvesTable).where(and(
+        eq(competitionSolvesTable.competitionId, id),
+        ctfIds.length > 0 ? not(inArray(competitionSolvesTable.ctfId, ctfIds)) : undefined,
+      ));
+    }
+    if (Object.keys(updates).length === 0) {
+      const [row] = await tx.select().from(competitionsTable).where(eq(competitionsTable.id, id)).limit(1);
+      return row;
+    }
+    const [row] = await tx.update(competitionsTable).set(updates).where(eq(competitionsTable.id, id)).returning();
+    return row;
+  });
+
+  if (!updated) return res.status(404).json({ error: "Competition not found" });
+
+  await writeAuditLog(req, "competition.update", "competition", id, {
+    fields: Object.keys(updates),
+    ...(ctfIds !== null ? { ctfCount: ctfIds.length } : {}),
+  });
   res.json(updated);
 }
 
 router.patch("/competitions/:id", requirePermission("competitions.manage"), validateBody(UpdateCompetitionBody), updateCompetitionHandler);
 router.put("/competitions/:id", requirePermission("competitions.manage"), validateBody(AdminUpdateCompetitionBody), updateCompetitionHandler);
+
+// DELETE /api/admin/competitions/:id
+/**
+ * A competition created with the wrong date, or a sponsor deal that fell
+ * through, was permanent: there was no delete route at all, and four tables
+ * hold a `references(() => competitionsTable.id)`, so a naive delete would fail
+ * on the foreign key anyway. One transaction, children first.
+ *
+ * Solves are removed with it. That is the point of deleting an event, but it is
+ * also why the audit entry records how many were destroyed.
+ */
+router.delete("/competitions/:id", requirePermission("competitions.manage"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid competition id" });
+
+  const [comp] = await db.select().from(competitionsTable).where(eq(competitionsTable.id, id)).limit(1);
+  if (!comp) return res.status(404).json({ error: "Competition not found" });
+
+  const solveCount = (await db.select({ id: competitionSolvesTable.id }).from(competitionSolvesTable)
+    .where(eq(competitionSolvesTable.competitionId, id))).length;
+
+  await db.transaction(async tx => {
+    await tx.delete(competitionSolvesTable).where(eq(competitionSolvesTable.competitionId, id));
+    // Members reference teams, so members lose their team before teams go.
+    await tx.update(competitionUsersTable).set({ teamId: null })
+      .where(eq(competitionUsersTable.competitionId, id));
+    await tx.delete(competitionUsersTable).where(eq(competitionUsersTable.competitionId, id));
+    await tx.delete(competitionTeamsTable).where(eq(competitionTeamsTable.competitionId, id));
+    await tx.delete(competitionTasksTable).where(eq(competitionTasksTable.competitionId, id));
+    await tx.delete(competitionsTable).where(eq(competitionsTable.id, id));
+  });
+
+  await writeAuditLog(req, "competition.delete", "competition", id, { name: comp.name, solveCount });
+  res.json({ success: true });
+});
 
 // POST /api/admin/competitions/:id/users
 async function addCompetitionUserHandler(req: Request, res: Response) {
@@ -568,6 +703,10 @@ router.get("/lessons", requirePermission("lessons.read.all"), async (_req, res) 
   const lessons = await db.select({
     id: lessonsTable.id, title: lessonsTable.title, titleUz: lessonsTable.titleUz, titleRu: lessonsTable.titleRu,
     categoryId: lessonsTable.categoryId, points: lessonsTable.points, createdAt: lessonsTable.createdAt,
+    // Without this the panel could not even show which lessons are live, let
+    // alone publish one. Authors create drafts by design, so an unpublished
+    // lesson was invisible in the only place it could be published from.
+    isPublished: lessonsTable.isPublished,
     categoryName: learnCategoriesTable.name,
   }).from(lessonsTable).leftJoin(learnCategoriesTable, eq(lessonsTable.categoryId, learnCategoriesTable.id));
   res.json({ lessons });
@@ -684,11 +823,20 @@ async function updateLessonHandler(req: Request, res: Response) {
   }
 
   if (questions && Array.isArray(questions)) {
+    // The translations have to be carried here too.
+    //
+    // Updating replaces the whole question set — delete, then re-insert — and
+    // this insert wrote only `question`, `options` and `correctOption`, while
+    // the create handler thirty lines above writes all six columns. So fixing a
+    // typo in a lesson title silently destroyed that lesson's Uzbek and Russian
+    // quiz, on a platform whose whole point is being trilingual, and reported
+    // "Lesson updated!".
     await db.delete(lessonQuestionsTable).where(eq(lessonQuestionsTable.lessonId, id));
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       await db.insert(lessonQuestionsTable).values({
-        lessonId: id, question: q.question, options: q.options,
+        lessonId: id, question: q.question, questionUz: q.questionUz || null, questionRu: q.questionRu || null,
+        options: q.options, optionsUz: q.optionsUz || null, optionsRu: q.optionsRu || null,
         correctOption: Number(q.correctOption), orderIndex: i,
       });
     }

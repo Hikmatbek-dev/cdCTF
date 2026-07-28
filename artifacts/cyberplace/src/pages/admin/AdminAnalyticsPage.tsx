@@ -4,6 +4,7 @@ import { AdminSidebar } from "@/components/AdminSidebar";
 import { useLang } from "@/lib/LanguageContext";
 import { normalizeArray } from "@/lib/api-shapes";
 import { useGetLearnAnalytics, getGetLearnAnalyticsQueryKey } from "@workspace/api-client-react";
+import { LoadFailure } from "@/components/LoadFailure";
 
 type FunnelRow = {
   moduleId: number;
@@ -22,7 +23,7 @@ function pct(n: number, base: number) {
 
 export default function AdminAnalyticsPage() {
   const { t } = useLang();
-  const { data, isLoading } = useGetLearnAnalytics({ query: { queryKey: getGetLearnAnalyticsQueryKey() } });
+  const { data, isLoading, isError, refetch } = useGetLearnAnalytics({ query: { queryKey: getGetLearnAnalyticsQueryKey() } });
   const modules = normalizeArray<FunnelRow>(data?.modules, ["modules"]);
   const diplomas = data?.diplomasIssued ?? 0;
 
@@ -40,7 +41,9 @@ export default function AdminAnalyticsPage() {
           )}
         </p>
 
-        {isLoading ? (
+        {isError ? (
+          <LoadFailure onRetry={() => refetch()} />
+        ) : isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
           </div>

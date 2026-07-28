@@ -34,12 +34,12 @@ export const columnPermissions: ColumnPermissions = {
     // Authors write content; they may not set their own scoring or publish state.
     author: [
       "name", "nameUz", "nameRu", "description", "descriptionUz", "descriptionRu",
-      "category", "difficulty", "hint", "flag", "fileUrl",
+      "category", "difficulty", "hint", "hintUz", "hintRu", "flag", "fileUrl",
     ],
     moderator: [],
     admin: [
       "name", "nameUz", "nameRu", "description", "descriptionUz", "descriptionRu",
-      "category", "difficulty", "points", "hint", "flag", "fileUrl", "hintCost", "isPublished",
+      "category", "difficulty", "points", "hint", "hintUz", "hintRu", "flag", "fileUrl", "hintCost", "isPublished",
     ],
   },
   lessons: {

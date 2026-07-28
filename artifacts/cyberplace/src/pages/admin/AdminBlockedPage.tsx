@@ -7,29 +7,45 @@ import { useAdminGetBlockedTasks, getAdminGetBlockedTasksQueryKey, useAdminUnblo
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { normalizeArray } from "@/lib/api-shapes";
+import { LoadFailure } from "@/components/LoadFailure";
+import { errorToast } from "@/lib/error-toast";
 
 export default function AdminBlockedPage() {
   const { t } = useLang();
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const { data, isLoading } = useAdminGetBlockedTasks({ query: { queryKey: getAdminGetBlockedTasksQueryKey() } });
+  const { data, isLoading, isError, refetch } = useAdminGetBlockedTasks({ query: { queryKey: getAdminGetBlockedTasksQueryKey() } });
   const blockedCtf = normalizeArray<any>(data?.blockedCtf, ["blockedCtf", "ctf", "data", "items"]);
   const blockedLessons = normalizeArray<any>(data?.blockedLessons, ["blockedLessons", "lessons", "data", "items"]);
   const unblockTask = useAdminUnblockTask();
   const unblockCtfUser = useAdminUnblockCtfUser();
 
   const handleUnblockCtf = (ctfId: number, userId: number) => {
+    if (!confirm(t(
+      "Unblock this challenge for the learner? Their wrong-attempt count is cleared and they can submit again.",
+      "Bu topshiriq o'quvchi uchun ochilsinmi? Uning noto'g'ri urinishlari tozalanadi va u qaytadan yubora oladi.",
+      "Разблокировать задание для учащегося? Счётчик неверных попыток обнулится, и он сможет отправлять снова.",
+    ))) return;
     unblockCtfUser.mutate({ id: ctfId, userId }, {
       onSuccess: () => { toast({ title: t("Unblocked!", "Blokdan chiqdi!", "Разблокировано!") }); void qc.invalidateQueries({ queryKey: getAdminGetBlockedTasksQueryKey() }); },
-      onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
+      onError: e => toast(errorToast(t, e)),
     });
   };
 
   const handleUnblockLesson = (lessonId: number, userId: number) => {
+    // Unblocking a lesson does more than lift the block: the server resets the
+    // learner's attempt to "not_started" and zeroes their escape count. That is
+    // the right behaviour — they need a clean run at it — but it was happening
+    // with no warning at all, and it discards their recorded progress.
+    if (!confirm(t(
+      "Unblock this lesson for the learner? Their attempt is reset to not-started and their progress on it is cleared.",
+      "Bu dars o'quvchi uchun ochilsinmi? Uning urinishi boshlanmagan holatga qaytariladi va progressi tozalanadi.",
+      "Разблокировать урок для учащегося? Его попытка сбросится в «не начато», а прогресс по уроку очистится.",
+    ))) return;
     unblockTask.mutate({ type: "lesson", taskId: lessonId, userId }, {
       onSuccess: () => { toast({ title: t("Unblocked!", "Blokdan chiqdi!", "Разблокировано!") }); void qc.invalidateQueries({ queryKey: getAdminGetBlockedTasksQueryKey() }); },
-      onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
+      onError: e => toast(errorToast(t, e)),
     });
   };
 
@@ -39,7 +55,9 @@ export default function AdminBlockedPage() {
       <main className="flex-1 p-6">
         <h1 className="text-xl font-bold mb-6">{t("Blocked Tasks", "Bloklangan Vazifalar", "Заблокированные задачи")}</h1>
 
-        {isLoading ? (
+        {isError ? (
+          <LoadFailure onRetry={() => refetch()} />
+        ) : isLoading ? (
           <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-lg" />)}</div>
         ) : (
           <div className="space-y-6">

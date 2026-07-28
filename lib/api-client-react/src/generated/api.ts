@@ -22,6 +22,7 @@ import type {
   AdminDashboard,
   AdminLesson,
   AdminLessonListResponse,
+  AdminListCompetitions200,
   AdminListUsersParams,
   AdminUsersResponse,
   ApiTokensResponse,
@@ -3823,14 +3824,14 @@ export const getAdminUpdateCtfUrl = (id: number) => {
 
 export const adminUpdateCtf = async (
   id: number,
-  createCtfBody: CreateCtfBody,
+  updateCtfBody: UpdateCtfBody,
   options?: RequestInit,
 ): Promise<CtfChallengeDetail> => {
   return customFetch<CtfChallengeDetail>(getAdminUpdateCtfUrl(id), {
     ...options,
     method: "PUT",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createCtfBody),
+    body: JSON.stringify(updateCtfBody),
   });
 };
 
@@ -3841,14 +3842,14 @@ export const getAdminUpdateCtfMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof adminUpdateCtf>>,
     TError,
-    { id: number; data: BodyType<CreateCtfBody> },
+    { id: number; data: BodyType<UpdateCtfBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof adminUpdateCtf>>,
   TError,
-  { id: number; data: BodyType<CreateCtfBody> },
+  { id: number; data: BodyType<UpdateCtfBody> },
   TContext
 > => {
   const mutationKey = ["adminUpdateCtf"];
@@ -3862,7 +3863,7 @@ export const getAdminUpdateCtfMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof adminUpdateCtf>>,
-    { id: number; data: BodyType<CreateCtfBody> }
+    { id: number; data: BodyType<UpdateCtfBody> }
   > = (props) => {
     const { id, data } = props ?? {};
 
@@ -3875,7 +3876,7 @@ export const getAdminUpdateCtfMutationOptions = <
 export type AdminUpdateCtfMutationResult = NonNullable<
   Awaited<ReturnType<typeof adminUpdateCtf>>
 >;
-export type AdminUpdateCtfMutationBody = BodyType<CreateCtfBody>;
+export type AdminUpdateCtfMutationBody = BodyType<UpdateCtfBody>;
 export type AdminUpdateCtfMutationError = ErrorType<unknown>;
 
 /**
@@ -3888,14 +3889,14 @@ export const useAdminUpdateCtf = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof adminUpdateCtf>>,
     TError,
-    { id: number; data: BodyType<CreateCtfBody> },
+    { id: number; data: BodyType<UpdateCtfBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof adminUpdateCtf>>,
   TError,
-  { id: number; data: BodyType<CreateCtfBody> },
+  { id: number; data: BodyType<UpdateCtfBody> },
   TContext
 > => {
   return useMutation(getAdminUpdateCtfMutationOptions(options));
@@ -4418,6 +4419,81 @@ export const useAdminUnblockTask = <
 };
 
 /**
+ * @summary List competitions with their invite codes
+ */
+export const getAdminListCompetitionsUrl = () => {
+  return `/api/admin/competitions`;
+};
+
+export const adminListCompetitions = async (
+  options?: RequestInit,
+): Promise<AdminListCompetitions200> => {
+  return customFetch<AdminListCompetitions200>(getAdminListCompetitionsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListCompetitionsQueryKey = () => {
+  return [`/api/admin/competitions`] as const;
+};
+
+export const getAdminListCompetitionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListCompetitions>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListCompetitions>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminListCompetitionsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListCompetitions>>
+  > = ({ signal }) => adminListCompetitions({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListCompetitions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListCompetitionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListCompetitions>>
+>;
+export type AdminListCompetitionsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List competitions with their invite codes
+ */
+
+export function useAdminListCompetitions<
+  TData = Awaited<ReturnType<typeof adminListCompetitions>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListCompetitions>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListCompetitionsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Create a competition
  */
 export const getAdminCreateCompetitionUrl = () => {
@@ -4513,14 +4589,14 @@ export const getAdminUpdateCompetitionUrl = (id: number) => {
 
 export const adminUpdateCompetition = async (
   id: number,
-  createCompetitionBody: CreateCompetitionBody,
+  updateCompetitionBody: UpdateCompetitionBody,
   options?: RequestInit,
 ): Promise<Competition> => {
   return customFetch<Competition>(getAdminUpdateCompetitionUrl(id), {
     ...options,
     method: "PUT",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createCompetitionBody),
+    body: JSON.stringify(updateCompetitionBody),
   });
 };
 
@@ -4531,14 +4607,14 @@ export const getAdminUpdateCompetitionMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof adminUpdateCompetition>>,
     TError,
-    { id: number; data: BodyType<CreateCompetitionBody> },
+    { id: number; data: BodyType<UpdateCompetitionBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof adminUpdateCompetition>>,
   TError,
-  { id: number; data: BodyType<CreateCompetitionBody> },
+  { id: number; data: BodyType<UpdateCompetitionBody> },
   TContext
 > => {
   const mutationKey = ["adminUpdateCompetition"];
@@ -4552,7 +4628,7 @@ export const getAdminUpdateCompetitionMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof adminUpdateCompetition>>,
-    { id: number; data: BodyType<CreateCompetitionBody> }
+    { id: number; data: BodyType<UpdateCompetitionBody> }
   > = (props) => {
     const { id, data } = props ?? {};
 
@@ -4566,7 +4642,7 @@ export type AdminUpdateCompetitionMutationResult = NonNullable<
   Awaited<ReturnType<typeof adminUpdateCompetition>>
 >;
 export type AdminUpdateCompetitionMutationBody =
-  BodyType<CreateCompetitionBody>;
+  BodyType<UpdateCompetitionBody>;
 export type AdminUpdateCompetitionMutationError = ErrorType<unknown>;
 
 /**
@@ -4579,14 +4655,14 @@ export const useAdminUpdateCompetition = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof adminUpdateCompetition>>,
     TError,
-    { id: number; data: BodyType<CreateCompetitionBody> },
+    { id: number; data: BodyType<UpdateCompetitionBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof adminUpdateCompetition>>,
   TError,
-  { id: number; data: BodyType<CreateCompetitionBody> },
+  { id: number; data: BodyType<UpdateCompetitionBody> },
   TContext
 > => {
   return useMutation(getAdminUpdateCompetitionMutationOptions(options));
@@ -4679,6 +4755,90 @@ export const useUpdateCompetition = <
   TContext
 > => {
   return useMutation(getUpdateCompetitionMutationOptions(options));
+};
+
+/**
+ * @summary Delete a competition and everything recorded against it
+ */
+export const getAdminDeleteCompetitionUrl = (id: number) => {
+  return `/api/admin/competitions/${id}`;
+};
+
+export const adminDeleteCompetition = async (
+  id: number,
+  options?: RequestInit,
+): Promise<MessageResponse> => {
+  return customFetch<MessageResponse>(getAdminDeleteCompetitionUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminDeleteCompetitionMutationOptions = <
+  TError = ErrorType<NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteCompetition>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteCompetition>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteCompetition"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteCompetition>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminDeleteCompetition(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteCompetitionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteCompetition>>
+>;
+
+export type AdminDeleteCompetitionMutationError = ErrorType<NotFoundResponse>;
+
+/**
+ * @summary Delete a competition and everything recorded against it
+ */
+export const useAdminDeleteCompetition = <
+  TError = ErrorType<NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteCompetition>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteCompetition>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminDeleteCompetitionMutationOptions(options));
 };
 
 /**

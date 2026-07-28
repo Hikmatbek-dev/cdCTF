@@ -1017,7 +1017,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateCtfBody"
+              $ref: "#/components/schemas/UpdateCtfBody"
       responses:
         "200":
           description: CTF updated
@@ -1166,6 +1166,24 @@ paths:
                 $ref: "#/components/schemas/MessageResponse"
 
   /admin/competitions:
+    get:
+      operationId: adminListCompetitions
+      tags: [admin]
+      summary: List competitions with their invite codes
+      responses:
+        "200":
+          description: Competitions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  competitions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AdminCompetition"
+                required: [competitions]
+
     post:
       operationId: adminCreateCompetition
       tags: [admin]
@@ -1200,7 +1218,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateCompetitionBody"
+              $ref: "#/components/schemas/UpdateCompetitionBody"
       responses:
         "200":
           description: Competition updated
@@ -1236,6 +1254,26 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "403":
           $ref: "#/components/responses/Forbidden"
+
+    delete:
+      operationId: adminDeleteCompetition
+      tags: [admin]
+      summary: Delete a competition and everything recorded against it
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   # ADMIN — USERS AND OPS
   /admin/competitions/{id}/users/{userId}:
@@ -3582,12 +3620,65 @@ components:
         hint:
           type: string
           nullable: true
+        hintUz:
+          type: string
+          nullable: true
+        hintRu:
+          type: string
+          nullable: true
+        hintCost:
+          type: integer
         flag:
           type: string
         fileUrl:
           type: string
           nullable: true
       required: [name, description, category, difficulty, points, flag]
+
+    AdminCompetition:
+      type: object
+      description: A competition as staff see it, including the private join code.
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        type:
+          type: string
+          enum: [public, private]
+        inviteCode:
+          type: string
+          nullable: true
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        sponsorName:
+          type: string
+          nullable: true
+        sponsorLogoUrl:
+          type: string
+          nullable: true
+        sponsorUrl:
+          type: string
+          nullable: true
+        prize:
+          type: string
+          nullable: true
+        ctfIds:
+          type: array
+          items:
+            type: integer
+        ctfCount:
+          type: integer
+        participantCount:
+          type: integer
+      required: [id, name, type, startTime, endTime, ctfIds, ctfCount, participantCount]
 
     CreateCompetitionBody:
       type: object
@@ -4218,6 +4309,14 @@ components:
       description: >-
         Every field is optional; anything the caller's role may not write is
         dropped rather than rejected.
+
+        Used by PUT as well as PATCH. PUT pointed at CreateCtfBody, whose
+        `required` list includes `flag` — and the admin form says "leave empty
+        to keep the current flag" and omits it, so every edit of an existing
+        challenge was rejected with "flag: Required". The stored flag is a
+        sha256 hash that cannot be read back, so the only way through was to
+        invent a new one and silently break the challenge for everyone who had
+        not solved it yet.
       properties:
         name:
           type: string
@@ -4244,6 +4343,13 @@ components:
           description: Admin only.
         hint:
           type: string
+          nullable: true
+        hintUz:
+          type: string
+          nullable: true
+        hintRu:
+          type: string
+          nullable: true
         hintCost:
           type: integer
           description: Admin only.
@@ -4252,6 +4358,7 @@ components:
           description: Plaintext; hashed before storage.
         fileUrl:
           type: string
+          nullable: true
         isPublished:
           type: boolean
           description: Admin only.
@@ -4378,6 +4485,11 @@ components:
     UpdateCompetitionBody:
       type: object
       properties:
+        ctfIds:
+          type: array
+          items:
+            type: integer
+          description: Replaces the competition's challenge set. Omit to leave it unchanged.
         name:
           type: string
         description:

@@ -16,6 +16,7 @@ import { validateBody } from "../middleware/validate";
 import { UpdateUserProfileBody } from "@workspace/api-zod";
 import { uploadBufferToStorage } from "../lib/storage";
 import { logger } from "../lib/logger";
+import { writeAuditLog } from "../lib/audit";
 
 const router = Router();
 
@@ -516,6 +517,10 @@ router.delete("/:id", authenticateToken, requireSession, async (req, res) => {
     return res.status(403).json({ error: "Forbidden" });
   }
 
+  // Read before the transaction: afterwards there is nothing left to name.
+  const [victim] = await db.select({ nickname: usersTable.nickname })
+    .from(usersTable).where(eq(usersTable.id, id)).limit(1);
+
   await db.transaction(async tx => {
     // Competition history, then the membership rows those depend on.
     await tx.delete(competitionSolvesTable).where(eq(competitionSolvesTable.userId, id));
@@ -573,6 +578,14 @@ router.delete("/:id", authenticateToken, requireSession, async (req, res) => {
     // auth tables (sessions, api tokens, passkeys, OAuth links) cascade.
     await tx.delete(usersTable).where(eq(usersTable.id, id));
   });
+
+  // The most destructive action an admin can take was the only one that left no
+  // trace: an account and its whole learning record vanished and the audit page
+  // showed nothing. Self-deletion is not logged — the actor is the account that
+  // just ceased to exist, and this route already strips their name from the log.
+  if (req.user!.userId !== id) {
+    await writeAuditLog(req, "user.delete", "user", id, { nickname: victim?.nickname ?? null });
+  }
 
   res.json({ success: true, message: "Account deleted" });
 });

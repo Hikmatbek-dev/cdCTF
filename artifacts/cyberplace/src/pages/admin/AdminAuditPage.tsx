@@ -3,6 +3,7 @@ import { ShieldCheck } from "lucide-react";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { useLang } from "@/lib/LanguageContext";
 import { normalizeArray } from "@/lib/api-shapes";
+import { LoadFailure } from "@/components/LoadFailure";
 
 type AuditLog = {
   id: number;
@@ -23,7 +24,7 @@ async function fetchAuditLogs() {
 
 export default function AdminAuditPage() {
   const { t } = useLang();
-  const { data, isLoading } = useQuery({ queryKey: ["admin-audit-logs"], queryFn: fetchAuditLogs });
+  const { data, isLoading, isError, refetch } = useQuery({ queryKey: ["admin-audit-logs"], queryFn: fetchAuditLogs });
   const logs = normalizeArray<AuditLog>(data?.logs, ["logs", "data", "items"]);
 
   return (
@@ -47,6 +48,14 @@ export default function AdminAuditPage() {
               </tr>
             </thead>
             <tbody className="bg-card divide-y divide-border">
+              {isError && (
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-destructive">
+                  {t("Could not load the audit log — this is NOT the same as it being empty.",
+                     "Audit jurnalini yuklab bo'lmadi — bu uning bo'shligini anglatmaydi.",
+                     "Не удалось загрузить журнал — это НЕ значит, что он пуст.")}
+                  <button onClick={() => refetch()} className="ml-2 underline">{t("Try again", "Qayta urinish", "Повторить")}</button>
+                </td></tr>
+              )}
               {isLoading && (
                 <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">{t("Loading...", "Yuklanmoqda...", "Загрузка...")}</td></tr>
               )}

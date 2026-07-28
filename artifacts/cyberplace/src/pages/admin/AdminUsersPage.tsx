@@ -6,7 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { useLang } from "@/lib/LanguageContext";
-import { useAdminListUsers, getAdminListUsersQueryKey, useAdminBlockUser, useAdminUnblockUser } from "@workspace/api-client-react";
+import { useAdminListUsers, getAdminListUsersQueryKey, useAdminBlockUser, useAdminUnblockUser, useSetUserRole } from "@workspace/api-client-react";
+import { LoadFailure } from "@/components/LoadFailure";
+import { errorToast } from "@/lib/error-toast";
+import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { normalizeArray } from "@/lib/api-shapes";
@@ -17,7 +20,8 @@ export default function AdminUsersPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
 
-  const { data, isLoading } = useAdminListUsers(
+  const { user: me } = useAuth();
+  const { data, isLoading, isError, refetch } = useAdminListUsers(
     { search: search || undefined },
     { query: { queryKey: getAdminListUsersQueryKey({ search: search || undefined }) } }
   );
@@ -26,14 +30,51 @@ export default function AdminUsersPage() {
 
   const blockUser = useAdminBlockUser();
   const unblockUser = useAdminUnblockUser();
+  const setRole = useSetUserRole();
 
-  const handleBlock = (id: number) => {
+  /**
+   * Roles, in the reader's language.
+   *
+   * PATCH /admin/users/:id/role was fully implemented — it validates, refuses
+   * self-demotion, revokes the user's sessions and writes an audit entry — and
+   * the page rendered the role as a static badge. So promoting anyone to author
+   * or moderator meant writing SQL by hand, and the whole author/moderator
+   * system was unusable from the panel.
+   */
+  const ROLES = ["user", "author", "moderator", "admin"] as const;
+  const roleLabel = (r: string) =>
+    r === "admin" ? t("Admin", "Admin", "Админ")
+    : r === "moderator" ? t("Moderator", "Moderator", "Модератор")
+    : r === "author" ? t("Author", "Muallif", "Автор")
+    : t("Learner", "O'quvchi", "Учащийся");
+
+  const handleRole = (id: number, nickname: string, role: string) => {
+    if (!confirm(t(
+      `Change ${nickname} to ${roleLabel(role)}? This signs them out of every device.`,
+      `${nickname} rolini "${roleLabel(role)}" ga o'zgartirasizmi? Bu uni barcha qurilmalardan chiqaradi.`,
+      `Изменить роль ${nickname} на «${roleLabel(role)}»? Это завершит все его сессии.`,
+    ))) return;
+    setRole.mutate({ id, data: { role: role as "user" | "author" | "moderator" | "admin" } }, {
+      onSuccess: () => {
+        toast({ title: t("Role updated", "Rol yangilandi", "Роль обновлена") });
+        void qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey({ search: search || undefined }) });
+      },
+      onError: e => toast(errorToast(t, e)),
+    });
+  };
+
+  const handleBlock = (id: number, nickname: string) => {
+    if (!confirm(t(
+      `Block ${nickname}? They are signed out of every device and cannot sign in again until unblocked.`,
+      `${nickname} bloklansinmi? U barcha qurilmalardan chiqariladi va blok ochilmaguncha kira olmaydi.`,
+      `Заблокировать ${nickname}? Он выйдет со всех устройств и не сможет войти до разблокировки.`,
+    ))) return;
     blockUser.mutate({ id }, {
       onSuccess: () => { 
         toast({ title: t("User blocked", "Foydalanuvchi bloklandi", "Пользователь заблокирован") }); 
         void qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey({ search: search || undefined }) });
       },
-      onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
+      onError: e => toast(errorToast(t, e)),
     });
   };
 
@@ -43,7 +84,7 @@ export default function AdminUsersPage() {
         toast({ title: t("User unblocked", "Foydalanuvchi blokdan chiqdi", "Пользователь разблокирован") }); 
         void qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey({ search: search || undefined }) });
       },
-      onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
+      onError: e => toast(errorToast(t, e)),
     });
   };
 
@@ -96,7 +137,11 @@ export default function AdminUsersPage() {
           <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={t("Search users...", "Qidirish...", "Поиск...")} className="pl-9" data-testid="input-search-users" />
         </div>
 
-        {isLoading ? (
+        {isError ? (
+          /* The table used to render its headers over nothing when the request
+             failed, which is indistinguishable from a platform with no users. */
+          <LoadFailure onRetry={() => refetch()} />
+        ) : isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-lg" />)}
           </div>
@@ -126,7 +171,24 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3 text-muted-foreground text-xs">{user.email}</td>
                     <td className="px-4 py-3 font-mono text-primary font-bold">{user.points}</td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${user.role === "admin" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>{user.role}</span>
+                      {me?.role === "admin" && user.id !== me.id ? (
+                        <select
+                          value={user.role}
+                          onChange={e => handleRole(user.id, user.nickname, e.target.value)}
+                          aria-label={t("Role", "Rol", "Роль")}
+                          className="bg-background border border-border rounded-lg px-2 py-1 text-xs font-medium focus:border-primary"
+                          data-testid={`select-role-${user.id}`}
+                        >
+                          {ROLES.map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}
+                        </select>
+                      ) : (
+                        /* Your own row has no control: the API refuses
+                           self-demotion, so offering it would only produce a
+                           403. */
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${user.role === "admin" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                          {roleLabel(user.role)}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${user.isBlocked ? "bg-destructive/10 text-destructive" : "bg-green-500/10 text-green-500"}`}>
@@ -140,7 +202,7 @@ export default function AdminUsersPage() {
                             <Shield className="w-3 h-3" /> {t("Unblock", "Blokdan chiqarish", "Разблокировать")}
                           </Button>
                         ) : (
-                          <Button size="sm" variant="outline" onClick={() => handleBlock(user.id)} className="h-7 text-xs gap-1 border-destructive/30 text-destructive hover:bg-destructive/10" data-testid={`button-block-${user.id}`}>
+                          <Button size="sm" variant="outline" onClick={() => handleBlock(user.id, user.nickname)} className="h-7 text-xs gap-1 border-destructive/30 text-destructive hover:bg-destructive/10" data-testid={`button-block-${user.id}`}>
                             <ShieldOff className="w-3 h-3" /> {t("Block", "Bloklash", "Заблокировать")}
                           </Button>
                         )

@@ -1014,6 +1014,9 @@ export const AdminCreateCtfBody = zod.object({
   difficulty: zod.enum(["easy", "medium", "hard", "insane"]),
   points: zod.number(),
   hint: zod.string().nullish(),
+  hintUz: zod.string().nullish(),
+  hintRu: zod.string().nullish(),
+  hintCost: zod.number().optional(),
   flag: zod.string(),
   fileUrl: zod.string().nullish(),
 });
@@ -1056,20 +1059,28 @@ export const AdminUpdateCtfParams = zod.object({
   id: zod.coerce.number(),
 });
 
-export const AdminUpdateCtfBody = zod.object({
-  name: zod.string(),
-  nameUz: zod.string().nullish(),
-  nameRu: zod.string().nullish(),
-  description: zod.string(),
-  descriptionUz: zod.string().nullish(),
-  descriptionRu: zod.string().nullish(),
-  category: zod.string(),
-  difficulty: zod.enum(["easy", "medium", "hard", "insane"]),
-  points: zod.number(),
-  hint: zod.string().nullish(),
-  flag: zod.string(),
-  fileUrl: zod.string().nullish(),
-});
+export const AdminUpdateCtfBody = zod
+  .object({
+    name: zod.string().optional(),
+    nameUz: zod.string().nullish(),
+    nameRu: zod.string().nullish(),
+    description: zod.string().optional(),
+    descriptionUz: zod.string().nullish(),
+    descriptionRu: zod.string().nullish(),
+    category: zod.string().optional(),
+    difficulty: zod.string().optional(),
+    points: zod.number().optional().describe("Admin only."),
+    hint: zod.string().nullish(),
+    hintUz: zod.string().nullish(),
+    hintRu: zod.string().nullish(),
+    hintCost: zod.number().optional().describe("Admin only."),
+    flag: zod.string().optional().describe("Plaintext; hashed before storage."),
+    fileUrl: zod.string().nullish(),
+    isPublished: zod.boolean().optional().describe("Admin only."),
+  })
+  .describe(
+    'Every field is optional; anything the caller\'s role may not write is dropped rather than rejected.\nUsed by PUT as well as PATCH. PUT pointed at CreateCtfBody, whose `required` list includes `flag` — and the admin form says \"leave empty to keep the current flag\" and omits it, so every edit of an existing challenge was rejected with \"flag: Required\". The stored flag is a sha256 hash that cannot be read back, so the only way through was to invent a new one and silently break the challenge for everyone who had not solved it yet.',
+  );
 
 export const AdminUpdateCtfResponse = zod.object({
   id: zod.number(),
@@ -1152,14 +1163,16 @@ export const UpdateCtfBody = zod
     category: zod.string().optional(),
     difficulty: zod.string().optional(),
     points: zod.number().optional().describe("Admin only."),
-    hint: zod.string().optional(),
+    hint: zod.string().nullish(),
+    hintUz: zod.string().nullish(),
+    hintRu: zod.string().nullish(),
     hintCost: zod.number().optional().describe("Admin only."),
     flag: zod.string().optional().describe("Plaintext; hashed before storage."),
-    fileUrl: zod.string().optional(),
+    fileUrl: zod.string().nullish(),
     isPublished: zod.boolean().optional().describe("Admin only."),
   })
   .describe(
-    "Every field is optional; anything the caller's role may not write is dropped rather than rejected.",
+    'Every field is optional; anything the caller\'s role may not write is dropped rather than rejected.\nUsed by PUT as well as PATCH. PUT pointed at CreateCtfBody, whose `required` list includes `flag` — and the admin form says \"leave empty to keep the current flag\" and omits it, so every edit of an existing challenge was rejected with \"flag: Required\". The stored flag is a sha256 hash that cannot be read back, so the only way through was to invent a new one and silently break the challenge for everyone who had not solved it yet.',
   );
 
 export const UpdateCtfResponse = zod
@@ -1238,6 +1251,34 @@ export const AdminUnblockTaskResponse = zod.object({
 });
 
 /**
+ * @summary List competitions with their invite codes
+ */
+export const AdminListCompetitionsResponse = zod.object({
+  competitions: zod.array(
+    zod
+      .object({
+        id: zod.number(),
+        name: zod.string(),
+        description: zod.string().nullish(),
+        type: zod.enum(["public", "private"]),
+        inviteCode: zod.string().nullish(),
+        startTime: zod.coerce.date(),
+        endTime: zod.coerce.date(),
+        sponsorName: zod.string().nullish(),
+        sponsorLogoUrl: zod.string().nullish(),
+        sponsorUrl: zod.string().nullish(),
+        prize: zod.string().nullish(),
+        ctfIds: zod.array(zod.number()),
+        ctfCount: zod.number(),
+        participantCount: zod.number(),
+      })
+      .describe(
+        "A competition as staff see it, including the private join code.",
+      ),
+  ),
+});
+
+/**
  * @summary Create a competition
  */
 export const AdminCreateCompetitionBody = zod.object({
@@ -1281,36 +1322,22 @@ export const AdminUpdateCompetitionParams = zod.object({
 });
 
 export const AdminUpdateCompetitionBody = zod.object({
-  name: zod.string(),
+  ctfIds: zod
+    .array(zod.number())
+    .optional()
+    .describe(
+      "Replaces the competition's challenge set. Omit to leave it unchanged.",
+    ),
+  name: zod.string().optional(),
   description: zod.string().nullish(),
   type: zod.enum(["public", "private"]).optional(),
-  startTime: zod.coerce.date(),
-  endTime: zod.coerce.date(),
-  ctfIds: zod.array(zod.number()).optional(),
-  inviteCode: zod
-    .string()
-    .nullish()
-    .describe(
-      "Join code for a private competition. Ignored when type is public, and generated if a private competition is created without one.",
-    ),
-  sponsorName: zod
-    .string()
-    .nullish()
-    .describe(
-      'The sponsor to credit on the event page, e.g. \"IT Park Uzbekistan\".',
-    ),
-  sponsorLogoUrl: zod
-    .string()
-    .nullish()
-    .describe("Absolute URL of the sponsor logo shown on the event page."),
-  sponsorUrl: zod
-    .string()
-    .nullish()
-    .describe("Link the sponsor's name and logo point to."),
-  prize: zod
-    .string()
-    .nullish()
-    .describe("The prize on offer, shown to participants (free text)."),
+  startTime: zod.coerce.date().optional(),
+  endTime: zod.coerce.date().optional(),
+  inviteCode: zod.string().nullish(),
+  sponsorName: zod.string().nullish(),
+  sponsorLogoUrl: zod.string().nullish(),
+  sponsorUrl: zod.string().nullish(),
+  prize: zod.string().nullish(),
 });
 
 export const AdminUpdateCompetitionResponse = zod.object({
@@ -1336,6 +1363,12 @@ export const UpdateCompetitionParams = zod.object({
 });
 
 export const UpdateCompetitionBody = zod.object({
+  ctfIds: zod
+    .array(zod.number())
+    .optional()
+    .describe(
+      "Replaces the competition's challenge set. Omit to leave it unchanged.",
+    ),
   name: zod.string().optional(),
   description: zod.string().nullish(),
   type: zod.enum(["public", "private"]).optional(),
@@ -1361,6 +1394,17 @@ export const UpdateCompetitionResponse = zod.object({
   isJoined: zod.boolean(),
   sponsorName: zod.string().nullish(),
   prize: zod.string().nullish(),
+});
+
+/**
+ * @summary Delete a competition and everything recorded against it
+ */
+export const AdminDeleteCompetitionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminDeleteCompetitionResponse = zod.object({
+  message: zod.string(),
 });
 
 /**

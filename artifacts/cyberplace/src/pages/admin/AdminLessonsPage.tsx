@@ -11,15 +11,56 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { useLang } from "@/lib/LanguageContext";
-import { normalizeLearnCategories, normalizeLessons, normalizeArray } from "@/lib/api-shapes";
-import { useListLearnCategories, getListLearnCategoriesQueryKey, useListModules, getListModulesQueryKey, useAdminCreateLesson, useAdminUpdateLesson, useAdminDeleteLesson } from "@workspace/api-client-react";
+import { LoadFailure } from "@/components/LoadFailure";
+import { errorToast } from "@/lib/error-toast";
+import { normalizeLearnCategories, normalizeArray } from "@/lib/api-shapes";
+import type { AdminLesson } from "@workspace/api-client-react";
+import { useListLearnCategories, getListLearnCategoriesQueryKey, useListModules, getListModulesQueryKey, useAdminCreateLesson, useAdminUpdateLesson, useAdminDeleteLesson , usePublishLesson } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 
+/**
+ * Drops trailing blanks from an answer list.
+ *
+ * The form always draws four option inputs. A question stored with two — which
+ * is most of them — therefore arrived at the resolver with C and D undefined,
+ * and `z.array(z.string().min(1))` failed them as "Required". The lesson could
+ * not be saved at all: no request was sent, and the two red "Required" labels
+ * sat under boxes an admin was never meant to fill in.
+ *
+ * Only *trailing* blanks are dropped. A gap in the middle would silently
+ * renumber the answers and move the correct one, so that is an error instead.
+ */
+function trimTrailingBlanks(options: (string | undefined)[]): string[] {
+  const trimmed = options.map(o => (o ?? "").trim());
+  while (trimmed.length > 0 && trimmed[trimmed.length - 1] === "") trimmed.pop();
+  return trimmed;
+}
+
 const questionSchema = z.object({
   question: z.string().min(1),
-  options: z.array(z.string().min(1)).min(2),
+  questionUz: z.string().nullish(),
+  questionRu: z.string().nullish(),
+  options: z.array(z.string().optional()),
+  // Nullish, not required: a question may be English-only. But it must be
+  // declared — z.object() strips undeclared keys, so leaving these out meant the
+  // resolver deleted the translations the edit form had just loaded.
+  optionsUz: z.array(z.string().optional()).nullish(),
+  optionsRu: z.array(z.string().optional()).nullish(),
   correctOption: z.coerce.number().min(0),
+}).superRefine((q, ctx) => {
+  const filled = trimTrailingBlanks(q.options);
+  if (filled.length < 2) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["options", 1], message: "At least two answers" });
+    return;
+  }
+  const gap = filled.findIndex(o => o === "");
+  if (gap !== -1) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["options", gap], message: "Fill this in or clear the ones after it" });
+  }
+  if (q.correctOption >= filled.length) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["correctOption"], message: "That answer is empty" });
+  }
 });
 
 const schema = z.object({
@@ -46,7 +87,7 @@ export default function AdminLessonsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  const { data: lessonsData, isLoading } = useQuery({
+  const { data: lessonsData, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin-lessons"],
     queryFn: async () => {
       const res = await fetch("/api/admin/lessons", { credentials: "include" });
@@ -57,12 +98,35 @@ export default function AdminLessonsPage() {
   const { data: categories } = useListLearnCategories({ query: { queryKey: getListLearnCategoriesQueryKey() } });
   const { data: modulesData } = useListModules({ query: { queryKey: getListModulesQueryKey() } });
   const moduleList = normalizeArray<{ id: number; title: string; titleUz?: string | null; titleRu?: string | null }>(modulesData, ["id", "title"]);
-  const lessonList = normalizeLessons(lessonsData);
+  // The admin endpoint returns AdminLesson — same rows plus authorId and
+  // isPublished. normalizeLessons types them as the public Lesson, which has
+  // neither, so the publish state was invisible to the compiler too.
+  const lessonList = normalizeArray<AdminLesson>(lessonsData, ["lessons", "data", "items"]);
   const categoryList = normalizeLearnCategories(categories);
 
   const createLesson = useAdminCreateLesson();
   const updateLesson = useAdminUpdateLesson();
   const deleteLesson = useAdminDeleteLesson();
+  const publishLesson = usePublishLesson();
+
+  /**
+   * Publishing, which the panel could not do at all.
+   *
+   * POST /admin/lessons/:id/publish existed and had no caller anywhere in the
+   * app, and the list did not even show the state — so a draft written by an
+   * author was invisible to learners with no way for anyone to make it live.
+   */
+  const togglePublish = (id: number, next: boolean) => {
+    publishLesson.mutate({ id, data: { isPublished: next } }, {
+      onSuccess: () => {
+        toast({ title: next
+          ? t("Lesson is live", "Dars nashr qilindi", "Урок опубликован")
+          : t("Lesson hidden", "Dars yashirildi", "Урок скрыт") });
+        void refetch();
+      },
+      onError: e => toast(errorToast(t, e)),
+    });
+  };
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -86,7 +150,31 @@ export default function AdminLessonsPage() {
   const onSubmit = (raw: FormData) => {
     // 0 in the dropdown means "no module" — send it as null so the lesson is
     // standalone rather than attached to module id 0.
-    const data = { ...raw, moduleId: raw.moduleId ? raw.moduleId : null };
+    const data = {
+      ...raw,
+      moduleId: raw.moduleId ? raw.moduleId : null,
+      questions: raw.questions.map(q => {
+        const options = trimTrailingBlanks(q.options);
+        // Same length as `options`, so correctOption indexes all three lists.
+        const align = (list: (string | undefined)[] | null | undefined) => {
+          if (!list) return null;
+          const cut = options.map((_, i) => (list[i] ?? "").trim());
+          return cut.some(Boolean) ? cut : null;
+        };
+        return {
+          ...q,
+          options,
+          questionUz: q.questionUz?.trim() || null,
+          questionRu: q.questionRu?.trim() || null,
+          optionsUz: align(q.optionsUz),
+          optionsRu: align(q.optionsRu),
+        };
+      }),
+      contentUz: raw.contentUz?.trim() || null,
+      contentRu: raw.contentRu?.trim() || null,
+      titleUz: raw.titleUz?.trim() || null,
+      titleRu: raw.titleRu?.trim() || null,
+    };
     const invalidate = () => { void qc.invalidateQueries({ queryKey: ["admin-lessons"] }); setShowForm(false); };
     if (editingId) {
       updateLesson.mutate({ id: editingId, data }, {
@@ -102,7 +190,9 @@ export default function AdminLessonsPage() {
   };
 
   const handleDelete = (id: number) => {
-    if (!confirm(t("Delete this lesson?", "O'chirish?", "Удалить?"))) return;
+    if (!confirm(t("Delete this lesson? Every learner's attempt and progress on it is deleted too.",
+        "Bu dars o'chirilsinmi? Har bir o'quvchining urinishi va progressi ham o'chadi.",
+        "Удалить урок? Все попытки и прогресс учащихся по нему также удалятся."))) return;
     deleteLesson.mutate({ id }, {
       onSuccess: () => { toast({ title: t("Deleted", "O'chirildi", "Удалено") }); void qc.invalidateQueries({ queryKey: ["admin-lessons"] }); },
       onError: (e) => toast({ title: errText(e), variant: "destructive" }),
@@ -173,6 +263,14 @@ export default function AdminLessonsPage() {
                 <FormField control={form.control} name="content" render={({ field }) => (
                   <FormItem><FormLabel>{t("Content (EN) - supports markdown + code blocks", "Kontent (EN) - markdown va kod bloklarini qo'llaydi", "Контент (EN) - поддерживает markdown и блоки кода")}</FormLabel><FormControl><Textarea {...field} rows={6} placeholder="## Introduction&#10;&#10;```bash&#10;sudo apt update&#10;```" data-testid="input-lesson-content" /></FormControl><FormMessage /></FormItem>
                 )} />
+                {/* Most learners here read Uzbek. A lesson with no contentUz
+                    falls back to English on the lesson page. */}
+                <FormField control={form.control} name="contentUz" render={({ field }) => (
+                  <FormItem><FormLabel>{t("Content (UZ)", "Kontent (UZ)", "Контент (UZ)")}</FormLabel><FormControl><Textarea {...field} value={field.value ?? ""} rows={6} data-testid="input-lesson-content-uz" /></FormControl></FormItem>
+                )} />
+                <FormField control={form.control} name="contentRu" render={({ field }) => (
+                  <FormItem><FormLabel>{t("Content (RU)", "Kontent (RU)", "Контент (RU)")}</FormLabel><FormControl><Textarea {...field} value={field.value ?? ""} rows={6} data-testid="input-lesson-content-ru" /></FormControl></FormItem>
+                )} />
 
                 {/* Questions */}
                 <div>
@@ -199,6 +297,29 @@ export default function AdminLessonsPage() {
                             )} />
                           ))}
                         </div>
+                        {/* Collapsed by default: the columns exist and the lesson
+                            test renders them, but nothing could ever write one. */}
+                        <details className="mb-2 rounded border border-border/60 bg-background/40 px-3 py-2">
+                          <summary className="cursor-pointer text-xs text-muted-foreground select-none">
+                            {t("Translations (UZ / RU)", "Tarjimalar (UZ / RU)", "Переводы (UZ / RU)")}
+                          </summary>
+                          <div className="mt-3 space-y-2">
+                            {(["Uz", "Ru"] as const).map(suffix => (
+                              <div key={suffix} className="space-y-2">
+                                <FormField control={form.control} name={`questions.${qi}.question${suffix}`} render={({ field: f }) => (
+                                  <FormItem><FormControl><Input {...f} value={f.value ?? ""} placeholder={`${t("Question", "Savol", "Вопрос")} (${suffix.toUpperCase()})`} data-testid={`input-question-${qi}-${suffix.toLowerCase()}`} /></FormControl></FormItem>
+                                )} />
+                                <div className="grid grid-cols-2 gap-2">
+                                  {[0, 1, 2, 3].map(oi => (
+                                    <FormField key={oi} control={form.control} name={`questions.${qi}.options${suffix}.${oi}`} render={({ field: f }) => (
+                                      <FormItem><FormControl><Input {...f} value={f.value ?? ""} placeholder={`${t("Option", "Variant", "Вариант")} ${String.fromCharCode(65 + oi)} (${suffix.toUpperCase()})`} /></FormControl></FormItem>
+                                    )} />
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </details>
                         <FormField control={form.control} name={`questions.${qi}.correctOption`} render={({ field: f }) => (
                           <FormItem>
                             <FormLabel className="text-xs">{t("Correct Answer", "To'g'ri javob", "Правильный ответ")}</FormLabel>
@@ -224,7 +345,9 @@ export default function AdminLessonsPage() {
           </div>
         )}
 
-        {isLoading ? (
+        {isError ? (
+          <LoadFailure onRetry={() => refetch()} />
+        ) : isLoading ? (
           <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-lg" />)}</div>
         ) : (
           <div className="rounded-xl border border-border overflow-x-auto">
@@ -234,6 +357,7 @@ export default function AdminLessonsPage() {
 	                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Title", "Sarlavha", "Заголовок")}</th>
 	                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Category", "Kategoriya", "Категория")}</th>
 	                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Points", "Ball", "Очки")}</th>
+	                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Status", "Holat", "Статус")}</th>
 	                  <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{t("Actions", "Amallar", "Действия")}</th>
                 </tr>
               </thead>
@@ -243,6 +367,22 @@ export default function AdminLessonsPage() {
                     <td className="px-4 py-3 font-medium">{lesson.title}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{lesson.categoryName}</td>
                     <td className="px-4 py-3 font-mono font-bold text-primary">{lesson.points}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => togglePublish(lesson.id, !lesson.isPublished)}
+                        className={`px-2 py-0.5 rounded text-xs font-medium border transition-colors ${
+                          lesson.isPublished
+                            ? "border-[hsl(var(--neon)/.4)] bg-[hsl(var(--neon)/.1)] text-[hsl(var(--neon))]"
+                            : "border-border bg-muted text-muted-foreground hover:border-primary/40"
+                        }`}
+                        title={lesson.isPublished
+                          ? t("Click to hide from learners", "O'quvchilardan yashirish uchun bosing", "Нажмите, чтобы скрыть")
+                          : t("Click to publish", "Nashr qilish uchun bosing", "Нажмите, чтобы опубликовать")}
+                        data-testid={`toggle-publish-lesson-${lesson.id}`}
+                      >
+                        {lesson.isPublished ? t("Live", "Nashrda", "Опубликован") : t("Draft", "Qoralama", "Черновик")}
+                      </button>
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center gap-1 justify-end">
                         <Button size="sm" variant="ghost" onClick={async () => { 
@@ -261,9 +401,15 @@ export default function AdminLessonsPage() {
                               categoryId: data.categoryId,
                               moduleId: data.moduleId ?? data.module_id ?? 0,
                               points: data.points,
+                              // Carry the translations through the round trip,
+                              // into the fields under "Translations (UZ / RU)".
                               questions: data.questions?.map((q: any) => ({
                                 question: q.question,
+                                questionUz: q.questionUz ?? null,
+                                questionRu: q.questionRu ?? null,
                                 options: q.options || ["", "", "", ""],
+                                optionsUz: q.optionsUz ?? null,
+                                optionsRu: q.optionsRu ?? null,
                                 correctOption: q.correctOption,
                               })) || [{ question: "", options: ["", "", "", ""], correctOption: 0 }],
                             });

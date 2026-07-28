@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Pencil, Trash2, Copy, Check, KeyRound } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,15 +11,22 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { useLang } from "@/lib/LanguageContext";
-import { normalizeCompetitions, normalizeCtfChallenges } from "@/lib/api-shapes";
-import { useListCompetitions, getListCompetitionsQueryKey, useAdminCreateCompetition, useListCtfChallenges, getListCtfChallengesQueryKey } from "@workspace/api-client-react";
+import { normalizeArray, normalizeCtfChallenges } from "@/lib/api-shapes";
+import {
+  useAdminListCompetitions, getAdminListCompetitionsQueryKey,
+  useAdminCreateCompetition, useAdminUpdateCompetition, useAdminDeleteCompetition,
+  type AdminCompetition,
+} from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { LoadFailure } from "@/components/LoadFailure";
+import { errorToast } from "@/lib/error-toast";
 
 const schema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
   type: z.enum(["public", "private"]),
+  inviteCode: z.string().optional(),
   startTime: z.string().min(1),
   endTime: z.string().min(1),
   ctfIds: z.array(z.number()).min(1, "Select at least one CTF"),
@@ -31,43 +38,181 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+const EMPTY: FormData = {
+  name: "", description: "", type: "public", inviteCode: "", startTime: "", endTime: "",
+  ctfIds: [], sponsorName: "", sponsorLogoUrl: "", sponsorUrl: "", prize: "",
+};
+
+/** `datetime-local` wants "YYYY-MM-DDTHH:mm" in local time; the API returns UTC ISO. */
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function statusOf(comp: AdminCompetition): "upcoming" | "active" | "ended" {
+  const now = Date.now();
+  if (now < new Date(comp.startTime).getTime()) return "upcoming";
+  if (now > new Date(comp.endTime).getTime()) return "ended";
+  return "active";
+}
+
+/**
+ * The join code, which used to exist only in the database.
+ *
+ * A private competition is created with a generated eight-character code. It
+ * was returned once in the create response, into an onSuccess that read nothing
+ * from it, and the public list omits it — so the event was listed, was private,
+ * and nobody on earth could join it. Now it is on the card, next to a copy
+ * button, because handing it out is the entire workflow.
+ */
+function InviteCode({ code }: { code: string }) {
+  const { t } = useLang();
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard is blocked without https or a user gesture in some browsers.
+      // The code is on screen either way, so there is nothing to recover from.
+    }
+  };
+
+  return (
+    <div className="mt-3 flex items-center gap-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-3 py-2">
+      <KeyRound className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+      <span className="text-xs text-muted-foreground">{t("Join code", "Qo'shilish kodi", "Код входа")}</span>
+      <code className="font-mono text-sm font-semibold tracking-wider text-primary" data-testid="text-invite-code">{code}</code>
+      <button type="button" onClick={copy} className="ml-auto text-muted-foreground hover:text-primary transition-colors" aria-label={t("Copy", "Nusxalash", "Копировать")}>
+        {copied ? <Check className="w-3.5 h-3.5 text-neon" /> : <Copy className="w-3.5 h-3.5" />}
+      </button>
+    </div>
+  );
+}
+
 export default function AdminCompetitionsPage() {
   const { t } = useLang();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<AdminCompetition | null>(null);
   const [selectedCtfs, setSelectedCtfs] = useState<number[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState<AdminCompetition | null>(null);
 
-  const { data: competitions, isLoading } = useListCompetitions({ query: { queryKey: getListCompetitionsQueryKey() } });
-  const { data: ctfs } = useListCtfChallenges({}, { query: { queryKey: getListCtfChallengesQueryKey({}) } });
-  const competitionList = normalizeCompetitions(competitions);
-  const ctfList = normalizeCtfChallenges(ctfs);
-  const createComp = useAdminCreateCompetition();
+  // The admin list, not the public one — only this response carries inviteCode.
+  const { data, isLoading, isError, refetch } = useAdminListCompetitions({ query: { queryKey: getAdminListCompetitionsQueryKey() } });
+  const competitionList = normalizeArray<AdminCompetition>(data?.competitions, ["competitions", "data", "items"]);
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: { name: "", type: "public", startTime: "", endTime: "", ctfIds: [], sponsorName: "", sponsorLogoUrl: "", sponsorUrl: "", prize: "" },
+  // The admin challenge list, not the public one. The picker used to read
+  // GET /api/ctf, which returns one page of *published* challenges — so a
+  // competition could not include a draft written for that competition, and
+  // could only ever be built from the first page of everything else.
+  const { data: ctfs } = useQuery({
+    queryKey: ["admin-ctfs"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/ctf", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch admin ctfs");
+      return res.json();
+    },
   });
+  const ctfList = normalizeCtfChallenges(ctfs);
+
+  const createComp = useAdminCreateCompetition();
+  const updateComp = useAdminUpdateCompetition();
+  const deleteComp = useAdminDeleteCompetition();
+
+  const form = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: EMPTY });
+  const isPrivate = form.watch("type") === "private";
+
+  const refresh = () => qc.invalidateQueries({ queryKey: getAdminListCompetitionsQueryKey() });
+
+  const openCreate = () => {
+    setEditing(null);
+    setSelectedCtfs([]);
+    form.reset(EMPTY);
+    setShowForm(true);
+  };
+
+  const openEdit = (comp: AdminCompetition) => {
+    setEditing(comp);
+    setSelectedCtfs(comp.ctfIds);
+    form.reset({
+      name: comp.name,
+      description: comp.description ?? "",
+      type: comp.type,
+      inviteCode: comp.inviteCode ?? "",
+      startTime: toLocalInput(comp.startTime),
+      endTime: toLocalInput(comp.endTime),
+      ctfIds: comp.ctfIds,
+      sponsorName: comp.sponsorName ?? "",
+      sponsorLogoUrl: comp.sponsorLogoUrl ?? "",
+      sponsorUrl: comp.sponsorUrl ?? "",
+      prize: comp.prize ?? "",
+    });
+    setShowForm(true);
+  };
 
   const toggleCtf = (id: number) => {
     const next = selectedCtfs.includes(id) ? selectedCtfs.filter(c => c !== id) : [...selectedCtfs, id];
     setSelectedCtfs(next);
-    form.setValue("ctfIds", next);
+    form.setValue("ctfIds", next, { shouldValidate: true });
   };
 
-  const onSubmit = (data: FormData) => {
-    createComp.mutate({ data: {
-      ...data, ctfIds: selectedCtfs, description: data.description || null,
-      startTime: new Date(data.startTime).toISOString(), endTime: new Date(data.endTime).toISOString(),
-      sponsorName: data.sponsorName || null, sponsorLogoUrl: data.sponsorLogoUrl || null,
-      sponsorUrl: data.sponsorUrl || null, prize: data.prize || null,
-    } }, {
-      onSuccess: () => { toast({ title: t("Competition created!", "Musobaqa yaratildi!", "Соревнование создано!") }); void qc.invalidateQueries({ queryKey: getListCompetitionsQueryKey() }); setShowForm(false); setSelectedCtfs([]); },
-      onError: () => toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" }),
+  const onSubmit = (values: FormData) => {
+    const body = {
+      name: values.name,
+      description: values.description || null,
+      type: values.type,
+      // A public competition has no code. Sending "" would store an empty string
+      // into a column with a unique index, so a second public event would collide.
+      inviteCode: values.type === "private" ? (values.inviteCode || null) : null,
+      startTime: new Date(values.startTime).toISOString(),
+      endTime: new Date(values.endTime).toISOString(),
+      ctfIds: selectedCtfs,
+      sponsorName: values.sponsorName || null,
+      sponsorLogoUrl: values.sponsorLogoUrl || null,
+      sponsorUrl: values.sponsorUrl || null,
+      prize: values.prize || null,
+    };
+
+    const done = (title: string) => () => {
+      toast({ title });
+      void refresh();
+      setShowForm(false);
+      setEditing(null);
+      setSelectedCtfs([]);
+    };
+    const failed = (err: unknown) => toast(errorToast(t, err));
+
+    if (editing) {
+      updateComp.mutate({ id: editing.id, data: body }, {
+        onSuccess: done(t("Competition updated", "Musobaqa yangilandi", "Соревнование обновлено")),
+        onError: failed,
+      });
+    } else {
+      createComp.mutate({ data: body }, {
+        onSuccess: done(t("Competition created!", "Musobaqa yaratildi!", "Соревнование создано!")),
+        onError: failed,
+      });
+    }
+  };
+
+  const doDelete = (comp: AdminCompetition) => {
+    deleteComp.mutate({ id: comp.id }, {
+      onSuccess: () => {
+        toast({ title: t("Competition deleted", "Musobaqa o'chirildi", "Соревнование удалено") });
+        void refresh();
+        setConfirmDelete(null);
+      },
+      onError: (err) => toast(errorToast(t, err)),
     });
   };
 
   const formatDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const saving = createComp.isPending || updateComp.isPending;
 
   return (
     <div className="flex min-h-screen bg-background pt-14">
@@ -75,7 +220,7 @@ export default function AdminCompetitionsPage() {
       <main className="flex-1 p-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-bold">{t("Competitions", "Musobaqalar", "Соревнования")}</h1>
-          <Button size="sm" onClick={() => { setShowForm(true); setSelectedCtfs([]); form.reset(); }} className="gap-1.5" data-testid="button-create-competition">
+          <Button size="sm" onClick={openCreate} className="gap-1.5" data-testid="button-create-competition">
             <Plus className="w-4 h-4" /> {t("Create Competition", "Musobaqa Yaratish", "Создать соревнование")}
           </Button>
         </div>
@@ -83,8 +228,14 @@ export default function AdminCompetitionsPage() {
         {showForm && (
           <div className="mb-6 p-5 rounded-xl border border-border bg-card">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold">{t("New Competition", "Yangi Musobaqa", "Новое соревнование")}</h2>
-              <button onClick={() => setShowForm(false)}><X className="w-4 h-4 text-muted-foreground" /></button>
+              <h2 className="font-semibold">
+                {editing
+                  ? t("Edit competition", "Musobaqani tahrirlash", "Редактировать соревнование")
+                  : t("New Competition", "Yangi Musobaqa", "Новое соревнование")}
+              </h2>
+              <button onClick={() => { setShowForm(false); setEditing(null); }} aria-label={t("Close", "Yopish", "Закрыть")}>
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
             </div>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-4">
@@ -93,7 +244,7 @@ export default function AdminCompetitionsPage() {
                 )} />
                 <FormField control={form.control} name="type" render={({ field }) => (
                   <FormItem><FormLabel>{t("Type", "Turi", "Тип")}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger data-testid="select-comp-type"><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>
                         <SelectItem value="public">{t("Public", "Ochiq", "Публичный")}</SelectItem>
@@ -102,6 +253,19 @@ export default function AdminCompetitionsPage() {
                     </Select>
                   </FormItem>
                 )} />
+                {isPrivate && (
+                  <FormField control={form.control} name="inviteCode" render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>{t("Join code", "Qo'shilish kodi", "Код входа")}</FormLabel>
+                      <FormControl><Input {...field} placeholder={t("leave empty to generate one", "bo'sh qoldirsangiz avtomatik yaratiladi", "оставьте пустым — сгенерируется")} data-testid="input-comp-invite" /></FormControl>
+                      <p className="text-xs text-muted-foreground">
+                        {t("Participants type this to join. It is shown on the card below after saving.",
+                           "Qatnashchilar shu kodni kiritib qo'shiladi. Saqlagandan keyin quyidagi kartada ko'rinadi.",
+                           "Участники вводят его, чтобы войти. После сохранения он показан на карточке ниже.")}
+                      </p>
+                    </FormItem>
+                  )} />
+                )}
                 <FormField control={form.control} name="description" render={({ field }) => (
                   <FormItem className="col-span-2"><FormLabel>{t("Description", "Tavsif", "Описание")}</FormLabel><FormControl><Textarea {...field} rows={2} /></FormControl></FormItem>
                 )} />
@@ -146,9 +310,9 @@ export default function AdminCompetitionsPage() {
                   {form.formState.errors.ctfIds && <p className="text-destructive text-xs mt-1">{form.formState.errors.ctfIds.message}</p>}
                 </div>
                 <div className="col-span-2 flex gap-2 justify-end">
-                  <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>{t("Cancel", "Bekor", "Отмена")}</Button>
-                  <Button type="submit" size="sm" disabled={createComp.isPending} data-testid="button-submit-comp-form">
-                    {t("Create", "Yaratish", "Создать")}
+                  <Button type="button" variant="outline" size="sm" onClick={() => { setShowForm(false); setEditing(null); }}>{t("Cancel", "Bekor", "Отмена")}</Button>
+                  <Button type="submit" size="sm" disabled={saving} data-testid="button-submit-comp-form">
+                    {editing ? t("Save", "Saqlash", "Сохранить") : t("Create", "Yaratish", "Создать")}
                   </Button>
                 </div>
               </form>
@@ -156,26 +320,62 @@ export default function AdminCompetitionsPage() {
           </div>
         )}
 
-        {isLoading ? (
+        {isError ? (
+          <LoadFailure onRetry={() => refetch()} />
+        ) : isLoading ? (
           <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}</div>
+        ) : competitionList.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-10 text-center">
+            {t("No competitions yet.", "Hali musobaqa yo'q.", "Соревнований пока нет.")}
+          </p>
         ) : (
           <div className="space-y-3">
-            {competitionList.map(comp => (
-              <div key={comp.id} className="p-4 rounded-xl border border-border bg-card" data-testid={`card-competition-admin-${comp.id}`}>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-medium">{comp.name}</h3>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                      <span className={`px-1.5 py-0.5 rounded ${comp.status === "active" ? "bg-green-500/10 text-green-500" : comp.status === "upcoming" ? "bg-blue-500/10 text-blue-500" : "bg-muted"}`}>{comp.status}</span>
-                      <span>{comp.type}</span>
-                      <span>{formatDate(comp.startTime)} — {formatDate(comp.endTime)}</span>
-                      <span>{comp.participantCount} {t("participants", "qatnashchi", "участников")}</span>
-                      <span>{comp.ctfCount} CTF</span>
+            {competitionList.map(comp => {
+              const status = statusOf(comp);
+              return (
+                <div key={comp.id} className="p-4 rounded-xl border border-border bg-card" data-testid={`card-competition-admin-${comp.id}`}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <h3 className="font-medium">{comp.name}</h3>
+                      <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-muted-foreground">
+                        <span className={`px-1.5 py-0.5 rounded ${status === "active" ? "bg-green-500/10 text-green-500" : status === "upcoming" ? "bg-blue-500/10 text-blue-500" : "bg-muted"}`}>{status}</span>
+                        <span>{comp.type}</span>
+                        <span>{formatDate(comp.startTime)} — {formatDate(comp.endTime)}</span>
+                        <span>{comp.participantCount} {t("participants", "qatnashchi", "участников")}</span>
+                        <span>{comp.ctfCount} CTF</span>
+                        {comp.sponsorName && <span className="text-primary">{comp.sponsorName}</span>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(comp)} data-testid={`button-edit-comp-${comp.id}`} aria-label={t("Edit", "Tahrirlash", "Редактировать")}>
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(comp)} className="text-destructive hover:text-destructive" data-testid={`button-delete-comp-${comp.id}`} aria-label={t("Delete", "O'chirish", "Удалить")}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
                     </div>
                   </div>
+
+                  {comp.type === "private" && comp.inviteCode && <InviteCode code={comp.inviteCode} />}
+
+                  {confirmDelete?.id === comp.id && (
+                    <div className="mt-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+                      <p className="text-sm">
+                        {t(`Delete "${comp.name}"? Every solve recorded in it is destroyed. This cannot be undone.`,
+                           `"${comp.name}" o'chirilsinmi? Undagi barcha yechimlar ham yo'q qilinadi. Buni qaytarib bo'lmaydi.`,
+                           `Удалить "${comp.name}"? Все решения в нём будут уничтожены. Отменить нельзя.`)}
+                      </p>
+                      <div className="flex gap-2 justify-end mt-3">
+                        <Button variant="outline" size="sm" onClick={() => setConfirmDelete(null)}>{t("Cancel", "Bekor", "Отмена")}</Button>
+                        <Button variant="destructive" size="sm" disabled={deleteComp.isPending} onClick={() => doDelete(comp)} data-testid={`button-confirm-delete-comp-${comp.id}`}>
+                          {t("Delete", "O'chirish", "Удалить")}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>

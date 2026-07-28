@@ -701,8 +701,39 @@ export interface CreateCtfBody {
   difficulty: CreateCtfBodyDifficulty;
   points: number;
   hint?: string | null;
+  hintUz?: string | null;
+  hintRu?: string | null;
+  hintCost?: number;
   flag: string;
   fileUrl?: string | null;
+}
+
+export type AdminCompetitionType =
+  (typeof AdminCompetitionType)[keyof typeof AdminCompetitionType];
+
+export const AdminCompetitionType = {
+  public: "public",
+  private: "private",
+} as const;
+
+/**
+ * A competition as staff see it, including the private join code.
+ */
+export interface AdminCompetition {
+  id: number;
+  name: string;
+  description?: string | null;
+  type: AdminCompetitionType;
+  inviteCode?: string | null;
+  startTime: string;
+  endTime: string;
+  sponsorName?: string | null;
+  sponsorLogoUrl?: string | null;
+  sponsorUrl?: string | null;
+  prize?: string | null;
+  ctfIds: number[];
+  ctfCount: number;
+  participantCount: number;
 }
 
 export type CreateCompetitionBodyType =
@@ -1092,6 +1123,7 @@ export interface AdminCtfListResponse {
 
 /**
  * Every field is optional; anything the caller's role may not write is dropped rather than rejected.
+Used by PUT as well as PATCH. PUT pointed at CreateCtfBody, whose `required` list includes `flag` — and the admin form says "leave empty to keep the current flag" and omits it, so every edit of an existing challenge was rejected with "flag: Required". The stored flag is a sha256 hash that cannot be read back, so the only way through was to invent a new one and silently break the challenge for everyone who had not solved it yet.
  */
 export interface UpdateCtfBody {
   name?: string;
@@ -1104,12 +1136,14 @@ export interface UpdateCtfBody {
   difficulty?: string;
   /** Admin only. */
   points?: number;
-  hint?: string;
+  hint?: string | null;
+  hintUz?: string | null;
+  hintRu?: string | null;
   /** Admin only. */
   hintCost?: number;
   /** Plaintext; hashed before storage. */
   flag?: string;
-  fileUrl?: string;
+  fileUrl?: string | null;
   /** Admin only. */
   isPublished?: boolean;
 }
@@ -1179,6 +1213,8 @@ export const UpdateCompetitionBodyType = {
 } as const;
 
 export interface UpdateCompetitionBody {
+  /** Replaces the competition's challenge set. Omit to leave it unchanged. */
+  ctfIds?: number[];
   name?: string;
   description?: string | null;
   type?: UpdateCompetitionBodyType;
@@ -1305,6 +1341,10 @@ export type AdminListUsersParams = {
   search?: string;
   limit?: number;
   offset?: number;
+};
+
+export type AdminListCompetitions200 = {
+  competitions: AdminCompetition[];
 };
 
 export type GetLoginHistoryParams = {

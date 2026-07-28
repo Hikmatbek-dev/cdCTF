@@ -6,14 +6,14 @@ import { useAuth } from "@/lib/AuthContext";
 // Each link declares the permission its page actually requires, so an author
 // or moderator is never shown a button that answers 403.
 const ADMIN_LINKS = [
-  { href: "/admin/dashboard", permission: "admin.panel", icon: LayoutDashboard, label: { en: "Root Dashboard", uz: "Boshqaruv", ru: "Главная" } },
-  { href: "/admin/users", permission: "users.read", icon: Users, label: { en: "Operative Registry", uz: "Foydalanuvchilar", ru: "Пользователи" } },
-  { href: "/admin/ctf", permission: "ctf.read.all", icon: Flag, label: { en: "Mission Assets", uz: "CTF Topshiriqlari", ru: "CTF Задания" } },
-  { href: "/admin/competitions", permission: "competitions.manage", icon: Trophy, label: { en: "Tournament Grid", uz: "Musobaqalar", ru: "Соревнования" } },
-  { href: "/admin/lessons", permission: "lessons.read.all", icon: BookOpen, label: { en: "Academic Modules", uz: "Darsliklar", ru: "Уроки" } },
+  { href: "/admin/dashboard", permission: "admin.panel", icon: LayoutDashboard, label: { en: "Overview", uz: "Boshqaruv", ru: "Главная" } },
+  { href: "/admin/users", permission: "users.read", icon: Users, label: { en: "Users", uz: "Foydalanuvchilar", ru: "Пользователи" } },
+  { href: "/admin/ctf", permission: "ctf.read.all", icon: Flag, label: { en: "Challenges", uz: "CTF Topshiriqlari", ru: "CTF Задания" } },
+  { href: "/admin/competitions", permission: "competitions.manage", icon: Trophy, label: { en: "Competitions", uz: "Musobaqalar", ru: "Соревнования" } },
+  { href: "/admin/lessons", permission: "lessons.read.all", icon: BookOpen, label: { en: "Lessons", uz: "Darsliklar", ru: "Уроки" } },
   { href: "/admin/analytics", permission: "lessons.read.all", icon: LineChart, label: { en: "Learning Analytics", uz: "Analitika", ru: "Аналитика" } },
-  { href: "/admin/blocked", permission: "blocks.manage", icon: AlertTriangle, label: { en: "Incident Reports", uz: "Bloklanganlar", ru: "Заблокированные" } },
-  { href: "/admin/audit", permission: "audit.read", icon: ShieldCheck, label: { en: "Audit Streams", uz: "Audit", ru: "Аудит" } },
+  { href: "/admin/blocked", permission: "blocks.manage", icon: AlertTriangle, label: { en: "Blocked", uz: "Bloklanganlar", ru: "Заблокированные" } },
+  { href: "/admin/audit", permission: "audit.read", icon: ShieldCheck, label: { en: "Audit log", uz: "Audit", ru: "Аудит" } },
 ];
 
 export function AdminSidebar() {

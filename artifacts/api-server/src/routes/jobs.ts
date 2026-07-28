@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { jobsTable, jobApplicationsTable, usersTable, ctfAttemptsTable } from "@workspace/db/schema";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
+import { writeAuditLog } from "../lib/audit";
 
 const router = Router();
 
@@ -168,8 +169,14 @@ router.patch("/:id", authenticateToken, async (req, res) => {
 router.delete("/:id", authenticateToken, async (req, res) => {
   const job = await loadOwnedJob(req, res);
   if (!job) return;
+  const applicantCount = (await db.select({ id: jobApplicationsTable.id })
+    .from(jobApplicationsTable).where(eq(jobApplicationsTable.jobId, job.id))).length;
   await db.delete(jobApplicationsTable).where(eq(jobApplicationsTable.jobId, job.id));
   await db.delete(jobsTable).where(eq(jobsTable.id, job.id));
+  // Deleting someone else's listing discards every application on it. An admin
+  // doing that left no record; the owner doing it to their own listing does now
+  // as well, because the applicants have no other trace of where they applied.
+  await writeAuditLog(req, "job.delete", "job", job.id, { title: job.title, applicantCount });
   res.json({ success: true });
 });
 

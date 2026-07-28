@@ -140,7 +140,7 @@ echo "==> Port: $API_PORT"
 # uz-content runs last of the server suites on purpose: it imports a real
 # challenge pack into the shared throwaway database, which would shift the
 # counts other suites assert.
-SUITES="${SUITES:-lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens oauth passkeys scoring scoreboard competitions profile jobs labs stats streaks reminders seo abuse browser-labs writeups validation body-fields modules-certificates diploma csrf captcha captcha-failclosed rate-limit uz-content}"
+SUITES="${SUITES:-lesson-test-exploit lesson-test-honest auth-sessions roles-permissions two-factor api-tokens oauth passkeys scoring scoreboard competitions profile jobs labs stats streaks reminders seo abuse browser-labs admin-panel writeups validation body-fields modules-certificates diploma csrf captcha captcha-failclosed rate-limit uz-content}"
 FAILED=""
 
 for suite in $SUITES; do
