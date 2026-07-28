@@ -162,7 +162,7 @@ export default function EventPage() {
             ].map((u, i) => (
               <div key={i} className="rounded-2xl border border-border bg-card py-4 text-center">
                 <div className="text-3xl font-black tabular-nums leading-none">{String(u.v).padStart(2, "0")}</div>
-                <div className="text-[11px] uppercase tracking-wide text-muted-foreground mt-1.5">{u.l}</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mt-1.5">{u.l}</div>
               </div>
             ))}
             <div className="col-span-4 text-center text-xs text-muted-foreground -mt-1">
@@ -193,7 +193,7 @@ export default function EventPage() {
             <div key={i} className="rounded-2xl border border-border bg-card/60 p-5 text-center" data-testid={`event-stat-${i}`}>
               <s.icon className="w-4 h-4 text-primary mx-auto mb-2" />
               <div className="text-2xl font-bold tabular-nums leading-none">{s.v}</div>
-              <div className="text-[11px] text-muted-foreground mt-1.5">{s.l}</div>
+              <div className="text-xs text-muted-foreground mt-1.5">{s.l}</div>
             </div>
           ))}
         </div>

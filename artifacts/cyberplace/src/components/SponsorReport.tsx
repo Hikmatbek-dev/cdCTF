@@ -74,7 +74,7 @@ export function SponsorReport({ competitionId, sponsorName }: { competitionId: n
           <div key={i} className="rounded-lg border border-border bg-muted/20 p-4">
             <s.icon className="w-4 h-4 text-primary mb-2" />
             <div className="text-2xl font-bold tabular-nums leading-none">{s.value}</div>
-            <div className="text-[11px] text-muted-foreground mt-1">
+            <div className="text-xs text-muted-foreground mt-1">
               {s.label}{s.note ? ` · ${s.note}` : ""}
             </div>
           </div>
@@ -112,7 +112,7 @@ export function SponsorReport({ competitionId, sponsorName }: { competitionId: n
           {challenges.slice(0, 6).map(c => (
             <div key={c.id} className="flex items-center gap-3 text-sm">
               <span className="flex-1 truncate">{c.name}</span>
-              <span className="text-[11px] text-muted-foreground">{c.category}</span>
+              <span className="text-xs text-muted-foreground">{c.category}</span>
               <span className="tabular-nums font-semibold w-8 text-right">{c.solves}</span>
             </div>
           ))}

@@ -167,7 +167,7 @@ export function Navbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-card/95 border border-foreground/10 rounded-xl w-64 p-2 mt-2 shadow-2xl">
                   <div className="p-4 mb-2 bg-foreground/5 rounded-2xl border border-foreground/5">
-                    <div className="text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-[0.15em] mb-1">{t("Signed in as", "Kirgan foydalanuvchi", "Вы вошли как")}</div>
+                    <div className="text-xs font-semibold text-muted-foreground/50 uppercase tracking-[0.15em] mb-1">{t("Signed in as", "Kirgan foydalanuvchi", "Вы вошли как")}</div>
                     <div className="text-sm font-semibold text-foreground">{user.nickname}</div>
                   </div>
                   <DropdownMenuItem asChild className="p-2.5 cursor-pointer rounded-xl hover:bg-foreground/5 focus:bg-foreground/5 transition-all mb-1">

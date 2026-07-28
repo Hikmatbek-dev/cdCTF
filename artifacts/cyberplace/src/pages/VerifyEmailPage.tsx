@@ -74,7 +74,7 @@ export default function VerifyEmailPage() {
         {/* The raw server reason, kept but demoted: it is English and technical,
             so it sits under the explanation rather than replacing it. */}
         {status === "error" && serverError && (
-          <p className="text-xs text-muted-foreground/70 mb-5 font-mono">{serverError}</p>
+          <p className="text-xs text-muted-foreground mb-5 font-mono">{serverError}</p>
         )}
 
         <div className="flex flex-wrap items-center justify-center gap-3">

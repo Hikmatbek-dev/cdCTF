@@ -227,7 +227,7 @@ export default function ModuleDetailPage() {
                           <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">
                             {t(c.name, c.nameUz ?? undefined, c.nameRu ?? undefined)}
                           </div>
-                          <div className={`text-[11px] capitalize ${diff.text}`}>{c.difficulty}</div>
+                          <div className={`text-xs capitalize ${diff.text}`}>{c.difficulty}</div>
                         </div>
                         <span className="text-xs tabular-nums text-muted-foreground pr-3 shrink-0">{c.points}</span>
                       </div>

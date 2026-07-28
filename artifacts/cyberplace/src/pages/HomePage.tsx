@@ -264,7 +264,7 @@ export default function HomePage() {
                 {t("Eight modules, in order", "Sakkiz modul, ketma-ket", "Восемь модулей, по порядку")}
               </h2>
             </div>
-            <Link href="/modules" className="hidden sm:inline-flex items-center gap-1 min-h-[24px] py-1 text-sm font-medium text-primary hover:text-accent transition-colors shrink-0">
+            <Link href="/modules" className="hidden sm:inline-flex items-center gap-1 min-h-[40px] py-2 text-sm font-medium text-primary hover:text-accent transition-colors shrink-0">
               {t("See the full path", "To'liq yo'lni ko'rish", "Смотреть весь путь")}
               <ChevronRight className="w-4 h-4" />
             </Link>
@@ -280,12 +280,12 @@ export default function HomePage() {
                     {/* The cover is the hero of the card, not a small icon. */}
                     <div className="relative aspect-[16/10] bg-gradient-to-br from-primary/[0.12] to-accent/[0.05] border-b border-border overflow-hidden">
                       <Art className="absolute inset-0 w-full h-full p-3" />
-                      <span className="absolute top-3 left-3 font-mono text-[11px] text-muted-foreground bg-background/70 rounded px-1.5 py-0.5">
+                      <span className="absolute top-3 left-3 font-mono text-xs text-muted-foreground bg-background/70 rounded px-1.5 py-0.5">
                         {String(i + 1).padStart(2, "0")}
                       </span>
                     </div>
                     <div className="p-4 flex flex-col flex-1">
-                      <span className={`self-start text-[11px] font-medium px-2 py-0.5 rounded-full border mb-2 ${lvl.cls}`}>
+                      <span className={`self-start text-xs font-medium px-2 py-0.5 rounded-full border mb-2 ${lvl.cls}`}>
                         {lvl.label}
                       </span>
                       <h3 className="font-semibold leading-snug group-hover:text-primary transition-colors">
@@ -365,10 +365,10 @@ export default function HomePage() {
                   <div className="h-2 rounded-full bg-muted w-4/5 mb-4" />
                   <div className="rounded-lg border border-border overflow-hidden">
                     <div className="flex items-center justify-between px-3 py-1.5 bg-primary/[0.06] border-b border-border">
-                      <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">shell</span>
-                      <span className="font-mono text-[11px] text-primary">{t("Copy", "Nusxa", "Копия")}</span>
+                      <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">shell</span>
+                      <span className="font-mono text-xs text-primary">{t("Copy", "Nusxa", "Копия")}</span>
                     </div>
-                    <pre className="p-3 font-mono text-[11px] leading-5 overflow-x-auto">
+                    <pre className="p-3 font-mono text-xs leading-5 overflow-x-auto">
 <span className="text-primary">$ nmap -sn 10.10.12.0/24</span>{"\n"}
 <span className="text-muted-foreground">Nmap scan report for 10.10.12.85</span>{"\n"}
 <span className="text-muted-foreground">Host is up (0.0021s latency).</span>{"\n"}
@@ -390,7 +390,7 @@ export default function HomePage() {
                 { n: "Root Me", pts: 450, cat: "pwn" },
               ].map((c, i) => (
                 <div key={c.n} className={`glass-card !p-4 ${i % 2 ? "translate-y-4" : ""}`}>
-                  <div className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground mb-2">{c.cat}</div>
+                  <div className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2">{c.cat}</div>
                   <div className="font-semibold text-sm mb-3">{c.n}</div>
                   <div className="flex items-center justify-between">
                     <span className="text-primary font-semibold text-sm tabular-nums">{c.pts}</span>
@@ -496,7 +496,7 @@ export default function HomePage() {
                   </div>
                   <h2 className="text-3xl font-bold tracking-tight">{t("Top players", "Eng yaxshilar", "Лучшие игроки")}</h2>
                 </div>
-                <Link href="/scoreboard" className="inline-flex items-center gap-1 min-h-[24px] py-1 text-sm font-medium text-primary hover:text-accent transition-colors">
+                <Link href="/scoreboard" className="inline-flex items-center gap-1 min-h-[40px] py-2 text-sm font-medium text-primary hover:text-accent transition-colors">
                   {t("Full ranking", "To'liq reyting", "Весь рейтинг")}
                   <ChevronRight className="w-4 h-4" />
                 </Link>
@@ -628,17 +628,17 @@ export default function HomePage() {
             </div>
             <div>
               <div className="eyebrow mb-4">{t("Learn", "O'rganish", "Обучение")}</div>
-              <ul className="space-y-2.5 text-sm">
-                <li><Link href="/modules" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("Modules", "Modullar", "Модули")}</Link></li>
-                <li><Link href="/learn" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("Lessons", "Darslar", "Уроки")}</Link></li>
-                <li><Link href="/ctf" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("CTF challenges", "CTF topshiriqlar", "CTF задания")}</Link></li>
+              <ul className="space-y-0.5 text-sm">
+                <li><Link href="/modules" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Modules", "Modullar", "Модули")}</Link></li>
+                <li><Link href="/learn" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Lessons", "Darslar", "Уроки")}</Link></li>
+                <li><Link href="/ctf" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("CTF challenges", "CTF topshiriqlar", "CTF задания")}</Link></li>
               </ul>
             </div>
             <div>
               <div className="eyebrow mb-4">{t("Compete", "Bellashuv", "Соревнование")}</div>
-              <ul className="space-y-2.5 text-sm">
-                <li><Link href="/scoreboard" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("Leaderboard", "Reyting", "Рейтинг")}</Link></li>
-                <li><Link href="/competitions" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("Competitions", "Musobaqalar", "Соревнования")}</Link></li>
+              <ul className="space-y-0.5 text-sm">
+                <li><Link href="/scoreboard" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Leaderboard", "Reyting", "Рейтинг")}</Link></li>
+                <li><Link href="/competitions" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Competitions", "Musobaqalar", "Соревнования")}</Link></li>
               </ul>
             </div>
             {/* Careers and the platform pages. Impact and the credential check
@@ -646,11 +646,11 @@ export default function HomePage() {
                 and visitors, not to someone working through the course. */}
             <div>
               <div className="eyebrow mb-4">{t("More", "Yana", "Ещё")}</div>
-              <ul className="space-y-2.5 text-sm">
-                <li><Link href="/jobs" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("Careers", "Karyera", "Карьера")}</Link></li>
-                <li><Link href="/talent" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("Hire from cdCTF", "cdCTF'dan yollash", "Наём с cdCTF")}</Link></li>
-                <li><Link href="/verify" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("Verify a credential", "Sertifikatni tekshirish", "Проверить сертификат")}</Link></li>
-                <li><Link href="/impact" className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-primary transition-colors">{t("Impact", "Ta'sir", "Влияние")}</Link></li>
+              <ul className="space-y-0.5 text-sm">
+                <li><Link href="/jobs" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Careers", "Karyera", "Карьера")}</Link></li>
+                <li><Link href="/talent" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Hire from cdCTF", "cdCTF'dan yollash", "Наём с cdCTF")}</Link></li>
+                <li><Link href="/verify" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Verify a credential", "Sertifikatni tekshirish", "Проверить сертификат")}</Link></li>
+                <li><Link href="/impact" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Impact", "Ta'sir", "Влияние")}</Link></li>
               </ul>
             </div>
           </div>

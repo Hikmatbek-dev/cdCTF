@@ -47,7 +47,7 @@ export function LabBrief({ scenarioSlug, ctfId }: { scenarioSlug: string; ctfId:
           <Target className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
         </div>
         <div className="min-w-0">
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-0.5">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-0.5">
             {t("Your task", "Sizning vazifangiz", "Ваша задача")}
           </div>
           <p className="text-sm leading-relaxed text-foreground/90">{pick(scenario.brief)}</p>
@@ -91,7 +91,7 @@ export function LabBrief({ scenarioSlug, ctfId }: { scenarioSlug: string; ctfId:
         </div>
       )}
 
-      <p className="mt-3 text-[11px] text-muted-foreground">
+      <p className="mt-3 text-xs text-muted-foreground">
         {t("The target opens in its own tab, isolated from cdCTF and from the internet. Attack it freely.",
            "Nishon alohida oynada ochiladi — cdCTF'dan va internetdan ajratilgan. Bemalol hujum qiling.",
            "Цель откроется в отдельной вкладке, изолированно от cdCTF и от интернета. Атакуйте свободно.")}

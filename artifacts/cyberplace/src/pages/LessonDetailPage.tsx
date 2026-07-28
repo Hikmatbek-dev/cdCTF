@@ -69,12 +69,12 @@ function CodeBlock({ code, lang }: { code: string; lang: string }) {
   return (
     <div className="my-5 rounded-xl overflow-hidden border border-border bg-[hsl(var(--card))]/60 group/code">
       <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-primary/[0.04]">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+        <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
           {lang || t("shell", "shell", "shell")}
         </span>
         <button
           onClick={copy}
-          className="inline-flex items-center gap-1.5 min-h-[28px] px-2 -mr-2 rounded-md text-[11px] font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+          className="inline-flex items-center gap-1.5 min-h-[28px] px-2 -mr-2 rounded-md text-xs font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
           aria-label={t("Copy code", "Nusxa olish", "Копировать")}
         >
           {copied
@@ -313,7 +313,7 @@ export default function LessonDetailPage() {
                       }`}>
                       {l.isCompleted
                         ? <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                        : <span className={`w-4 h-4 shrink-0 flex items-center justify-center text-[11px] tabular-nums rounded-full border ${active ? "border-primary text-primary" : "border-muted-foreground/30"}`}>{i + 1}</span>}
+                        : <span className={`w-4 h-4 shrink-0 flex items-center justify-center text-xs tabular-nums rounded-full border ${active ? "border-primary text-primary" : "border-muted-foreground/30"}`}>{i + 1}</span>}
                       <span className="truncate">{t(l.title, l.titleUz ?? undefined, l.titleRu ?? undefined)}</span>
                     </Link>
                   );
@@ -328,7 +328,7 @@ export default function LessonDetailPage() {
             <details className="lg:hidden glass-card !p-0 mb-6 overflow-hidden group">
               <summary className="flex items-center justify-between gap-3 p-4 cursor-pointer list-none">
                 <span className="min-w-0">
-                  <span className="block text-[11px] uppercase tracking-wider text-muted-foreground truncate">{moduleTitle}</span>
+                  <span className="block text-xs uppercase tracking-wider text-muted-foreground truncate">{moduleTitle}</span>
                   <span className="block text-sm font-medium mt-0.5">
                     {t("Lesson", "Dars", "Урок")} {currentIndex + 1}/{siblings.length} · {sibDone} {t("done", "tugatilgan", "готово")}
                   </span>
@@ -346,7 +346,7 @@ export default function LessonDetailPage() {
                     }`}>
                     {l.isCompleted
                       ? <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                      : <span className="w-4 h-4 shrink-0 flex items-center justify-center text-[11px] tabular-nums rounded-full border border-muted-foreground/30">{i + 1}</span>}
+                      : <span className="w-4 h-4 shrink-0 flex items-center justify-center text-xs tabular-nums rounded-full border border-muted-foreground/30">{i + 1}</span>}
                     <span className="truncate">{t(l.title, l.titleUz ?? undefined, l.titleRu ?? undefined)}</span>
                   </Link>
                 ))}
@@ -373,14 +373,14 @@ export default function LessonDetailPage() {
 
             {/* Header */}
             <div className="flex items-center gap-2 mb-3">
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 rounded-full px-2.5 py-1">
+              <span className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 rounded-full px-2.5 py-1">
                 <BookOpen className="w-3 h-3" /> {lesson.points} {t("pts", "ball", "очк")}
               </span>
               {lesson.isCompleted && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-primary"><CheckCircle2 className="w-3.5 h-3.5" /> {t("Completed", "Tugatilgan", "Завершено")}</span>
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-primary"><CheckCircle2 className="w-3.5 h-3.5" /> {t("Completed", "Tugatilgan", "Завершено")}</span>
               )}
               {lesson.isBlocked && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-destructive"><Lock className="w-3.5 h-3.5" /> {t("Blocked", "Bloklangan", "Заблокировано")}</span>
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-destructive"><Lock className="w-3.5 h-3.5" /> {t("Blocked", "Bloklangan", "Заблокировано")}</span>
               )}
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-8 leading-tight" data-testid="text-lesson-title">{localizedTitle}</h1>
@@ -502,7 +502,7 @@ export default function LessonDetailPage() {
                     <Flag className="w-5 h-5 text-primary" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-0.5">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground mb-0.5">
                       {t("Now use it", "Endi qo'llang", "Теперь примените")}
                     </div>
                     <div className="font-semibold group-hover:text-primary transition-colors">
@@ -525,7 +525,7 @@ export default function LessonDetailPage() {
                   <Link href={`/learn/${prev.id}`} className="group glass-card !p-4 flex items-center gap-3 hover:border-primary/40">
                     <ChevronLeft className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                     <div className="min-w-0">
-                      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{t("Previous", "Oldingi", "Назад")}</div>
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground">{t("Previous", "Oldingi", "Назад")}</div>
                       <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">{t(prev.title, prev.titleUz ?? undefined, prev.titleRu ?? undefined)}</div>
                     </div>
                   </Link>
@@ -534,7 +534,7 @@ export default function LessonDetailPage() {
                 {next ? (
                   <Link href={`/learn/${next.id}`} className="group glass-card !p-4 flex items-center gap-3 text-right hover:border-primary/40 sm:justify-end">
                     <div className="min-w-0 order-1 sm:order-none">
-                      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{t("Next", "Keyingi", "Далее")}</div>
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground">{t("Next", "Keyingi", "Далее")}</div>
                       <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">{t(next.title, next.titleUz ?? undefined, next.titleRu ?? undefined)}</div>
                     </div>
                     <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0 order-2" />
@@ -542,7 +542,7 @@ export default function LessonDetailPage() {
                 ) : mod ? (
                   <Link href={`/modules/${mod.id}`} className="group glass-card !p-4 flex items-center gap-3 hover:border-primary/40 sm:justify-end border-primary/25">
                     <div className="min-w-0">
-                      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{t("Finish", "Yakun", "Финал")}</div>
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground">{t("Finish", "Yakun", "Финал")}</div>
                       <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">{t("Back to module & exam", "Modul va imtihonga", "К модулю и экзамену")}</div>
                     </div>
                     <GraduationCap className="w-5 h-5 text-primary shrink-0" />

@@ -228,7 +228,7 @@ export default function JobsPage() {
                                 <Link href={`/profile/${a.userId}`} className="font-medium hover:text-primary">{a.nickname}</Link>
                                 <span className="text-xs text-muted-foreground tabular-nums">{a.points} {t("pts", "ball", "очк")}</span>
                                 <span className="text-xs text-muted-foreground tabular-nums">· {a.solvedCtfCount} {t("solved", "yechim", "решено")}</span>
-                                {a.openToWork && <span className="text-[11px] text-emerald-500 border border-emerald-500/30 rounded-full px-2">{t("Open to work", "Ishga tayyor", "Открыт")}</span>}
+                                {a.openToWork && <span className="text-xs text-emerald-500 border border-emerald-500/30 rounded-full px-2">{t("Open to work", "Ishga tayyor", "Открыт")}</span>}
                               </div>
                               {a.message && <p className="text-xs text-muted-foreground mt-1.5 whitespace-pre-line">{a.message}</p>}
                             </div>

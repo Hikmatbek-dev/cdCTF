@@ -83,9 +83,13 @@ export function RoadmapTree({ modules }: { modules: RoadmapModule[] }) {
                   className="relative z-10 inline-flex items-center gap-2.5 rounded-full border px-4 py-2 bg-background ml-0 md:ml-0"
                   style={{ borderColor: `hsl(${stage.hue} 60% 45% / 0.45)` }}
                 >
+                  {/* 45% lightness put white on a mid-tone green at 2.5:1 — the
+                      stage number on the main learning path was the least
+                      readable text on the site. 32% clears 4.5:1 for all three
+                      stage hues and the marker still reads as its colour. */}
                   <span
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold text-white"
-                    style={{ backgroundColor: `hsl(${stage.hue} 62% 45%)` }}
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                    style={{ backgroundColor: `hsl(${stage.hue} 62% 32%)` }}
                   >
                     {si + 1}
                   </span>
@@ -140,16 +144,16 @@ export function RoadmapTree({ modules }: { modules: RoadmapModule[] }) {
                         <div className="flex items-start gap-4 p-4 pt-3">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-[11px] font-mono text-muted-foreground">
+                              <span className="text-xs font-mono text-muted-foreground">
                                 {String(idx + 1).padStart(2, "0")}
                               </span>
                               {done && (
-                                <span className="inline-flex items-center gap-1 text-[11px] text-[hsl(var(--neon))] font-bold">
+                                <span className="inline-flex items-center gap-1 text-xs text-[hsl(var(--neon))] font-bold">
                                   <Check className="w-3 h-3" /> {t("Done", "Tugatilgan", "Пройден")}
                                 </span>
                               )}
                               {isCurrent && !done && (
-                                <span className="inline-flex items-center gap-1 text-[11px] text-primary font-medium">
+                                <span className="inline-flex items-center gap-1 text-xs text-primary font-medium">
                                   <Play className="w-3 h-3" /> {t("Start here", "Shu yerdan", "Начать здесь")}
                                 </span>
                               )}
@@ -158,7 +162,7 @@ export function RoadmapTree({ modules }: { modules: RoadmapModule[] }) {
                               {t(m.title, m.titleUz || m.title, m.titleRu || m.title)}
                             </h3>
 
-                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground mb-2">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
                               <span className="tabular-nums">{m.lessonCount} {t("lessons", "dars", "уроков")}</span>
                               {m.estimatedHours ? <span className="tabular-nums">· {m.estimatedHours}{t("h", "s", "ч")}</span> : null}
                             </div>

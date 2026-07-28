@@ -354,7 +354,7 @@ export default function CompetitionDetailPage() {
                   </div>
                   <div className="text-right shrink-0">
                     <div className="font-mono font-bold text-primary tabular-nums">{team.points}</div>
-                    <div className="text-[11px] text-muted-foreground">{team.solvedCount} {t("solved", "yechim", "решено")}</div>
+                    <div className="text-xs text-muted-foreground">{team.solvedCount} {t("solved", "yechim", "решено")}</div>
                   </div>
                 </div>
               ))}

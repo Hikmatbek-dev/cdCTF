@@ -169,9 +169,9 @@ export default function LabsPage() {
                     >
                       <div className="flex items-center gap-2.5 mb-1.5">
                         <h3 className="text-lg font-semibold truncate">{label(lab)}</h3>
-                        <span className="text-[11px] rounded-lg border border-border bg-muted/40 px-2 py-0.5 capitalize shrink-0">{lab.difficulty}</span>
+                        <span className="text-xs rounded-lg border border-border bg-muted/40 px-2 py-0.5 capitalize shrink-0">{lab.difficulty}</span>
                         {lab.kind === "browser" && (
-                          <span className="text-[11px] rounded-lg border border-primary/30 bg-primary/10 text-primary px-2 py-0.5 shrink-0">
+                          <span className="text-xs rounded-lg border border-primary/30 bg-primary/10 text-primary px-2 py-0.5 shrink-0">
                             {t("In your browser", "Brauzeringizda", "В браузере")}
                           </span>
                         )}

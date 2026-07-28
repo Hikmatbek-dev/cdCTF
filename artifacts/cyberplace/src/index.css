@@ -142,7 +142,12 @@
   --popover-border: 218 28% 22%;
 
   --primary: 258 90% 68%;
-  --primary-foreground: 0 0% 100%;
+  /* Dark ink, not white. The accent is a bright violet chosen to glow against a
+     near-black page, and white on it is 3.9:1 — every default <Button> in the
+     app failed AA on its own label. Against the same violet this reads 4.9:1,
+     and dark-on-bright is what the neon-terminal look wants anyway. The light
+     theme keeps white: its primary is a much deeper violet at 7.5:1. */
+  --primary-foreground: 258 45% 8%;
 
   --secondary: 262 30% 16%;
   --secondary-foreground: 255 30% 96%;
@@ -352,7 +357,7 @@
   /* Section label. Monospace, and prefixed with a shell caret — the app teaches
      the command line, so its own labels may as well look like it. */
   .eyebrow {
-    @apply font-mono text-[11px] uppercase tracking-[0.18em] font-semibold inline-flex items-center gap-2;
+    @apply font-mono text-xs uppercase tracking-[0.18em] font-semibold inline-flex items-center gap-2;
     color: hsl(var(--primary));
     width: fit-content;
   }
@@ -396,7 +401,7 @@
 
   /* A terminal-style chip: mono, boxed, quiet until it matters. */
   .chip {
-    @apply inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider px-2 py-0.5 border;
+    @apply inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider px-2 py-0.5 border;
     border-radius: var(--radius-sm);
     border-color: hsl(var(--border));
     background-color: hsl(var(--foreground) / .04);

@@ -153,7 +153,7 @@ export default function CtfDetailPage() {
         <div className="mb-20">
           <FadeIn>
             <div className="flex flex-wrap items-center gap-4 mb-10">
-              <DifficultyBadge difficulty={challenge.difficulty} className="rounded-lg px-3 py-1 text-[11px] font-medium shadow-lg border-foreground/5" />
+              <DifficultyBadge difficulty={challenge.difficulty} className="rounded-lg px-3 py-1 text-xs font-medium shadow-lg border-foreground/5" />
               <div className="px-4 py-1.5 bg-foreground/5 border border-foreground/5 rounded-lg text-xs font-medium text-muted-foreground ">{challenge.category}</div>
               
               {challenge.isSolved && (
@@ -253,7 +253,7 @@ export default function CtfDetailPage() {
                       <GraduationCap className="w-5 h-5 text-primary" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-0.5">
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground mb-0.5">
                         {t("Learn this", "Buni o'rganing", "Изучите это")}
                       </div>
                       <div className="font-semibold truncate group-hover:text-primary transition-colors">

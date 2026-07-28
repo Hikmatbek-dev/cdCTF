@@ -169,7 +169,7 @@ export default function LoginPage() {
               <div
                 role="alert"
                 data-testid="oauth-error"
-                className="mb-8 p-4 rounded-2xl border border-destructive/40 bg-destructive/10 text-[11px] font-bold leading-relaxed text-destructive"
+                className="mb-8 p-4 rounded-2xl border border-destructive/40 bg-destructive/10 text-xs font-bold leading-relaxed text-destructive"
               >
                 {OAUTH_ERRORS[oauthError]?.[lang] ?? oauthError}
               </div>
@@ -200,7 +200,7 @@ export default function LoginPage() {
                       className="w-full pl-12 pr-6 h-14 bg-foreground/5 border border-foreground/5 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold text-sm tracking-wide placeholder:text-muted-foreground/20"
                     />
                   </div>
-                  <p className="text-[11px] text-muted-foreground/60 mt-3 ml-1 leading-relaxed">
+                  <p className="text-xs text-muted-foreground/60 mt-3 ml-1 leading-relaxed">
                     {t(
                       "Enter the 6-digit code from your authenticator app, or one of your backup codes.",
                       "Authenticator ilovangizdagi 6 xonali kodni yoki backup kodlaringizdan birini kiriting.",
@@ -247,14 +247,14 @@ export default function LoginPage() {
                         />
                       </FormControl>
                     </div>
-                    <FormMessage className="text-[11px] font-bold uppercase mt-2 ml-1" />
+                    <FormMessage className="text-xs font-bold uppercase mt-2 ml-1" />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="password" render={({ field }) => (
                   <FormItem>
                     <div className="flex items-center justify-between ml-1 mb-2">
                       <FormLabel className="text-sm font-medium text-muted-foreground">{t("Password", "Parol", "Пароль")}</FormLabel>
-                      <Link href="/forgot-password" className="text-xs font-medium text-primary hover:text-accent transition-colors">
+                      <Link href="/forgot-password" className="inline-flex items-center min-h-[24px] px-1 -mx-1 text-xs font-medium text-primary hover:text-accent transition-colors">
                         {t("Forgot?", "Unutdingizmi?", "Забыли?")}
                       </Link>
                     </div>
@@ -271,7 +271,7 @@ export default function LoginPage() {
                         />
                       </FormControl>
                     </div>
-                    <FormMessage className="text-[11px] font-bold uppercase mt-2 ml-1" />
+                    <FormMessage className="text-xs font-bold uppercase mt-2 ml-1" />
                   </FormItem>
                 )} />
                 
@@ -336,13 +336,13 @@ export default function LoginPage() {
           <div className="mt-10 space-y-4">
             <p className="text-center text-sm text-muted-foreground">
               {t("No account?", "Hisobingiz yo'qmi?", "Нет аккаунта?")}{" "}
-              <Link href="/register" className="text-primary hover:text-accent transition-colors font-medium" data-testid="link-register">
+              <Link href="/register" className="inline-flex items-center min-h-[32px] px-1.5 -mx-1.5 text-primary hover:text-accent transition-colors font-medium" data-testid="link-register">
                 {t("Sign up", "Ro'yxatdan o'ting", "Зарегистрироваться")}
               </Link>
             </p>
-            <p className="text-center text-xs text-muted-foreground/70 leading-relaxed max-w-[300px] mx-auto">
+            <p className="text-center text-xs text-muted-foreground leading-relaxed max-w-[300px] mx-auto">
               {t("New accounts need email verification.", "Yangi hisoblar tasdiqlanishi kerak.", "Требуется подтверждение email.")}{" "}
-              <Link href="/resend-verification" className="text-primary hover:text-accent transition-colors">
+              <Link href="/resend-verification" className="inline-flex items-center min-h-[24px] px-1 -mx-1 text-primary hover:text-accent transition-colors">
                 {t("Resend", "Qayta yuborish", "Отправить")}
               </Link>
             </p>

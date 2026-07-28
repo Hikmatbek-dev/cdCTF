@@ -64,7 +64,7 @@ export function HeroTerminal({ challengeCount }: { challengeCount?: number } = {
           <span className="w-3 h-3 rounded-full bg-destructive/70" />
           <span className="w-3 h-3 rounded-full bg-amber-400/70" />
           <span className="w-3 h-3 rounded-full bg-emerald-400/70" />
-          <span className="ml-2 font-mono text-[11px] text-muted-foreground">root@cdctf: ~</span>
+          <span className="ml-2 font-mono text-xs text-muted-foreground">root@cdctf: ~</span>
         </div>
 
         {/* Scan */}
@@ -86,8 +86,8 @@ export function HeroTerminal({ challengeCount }: { challengeCount?: number } = {
           <Award className="w-4.5 h-4.5 text-white" />
         </div>
         <div className="leading-tight">
-          <div className="text-[11px] font-semibold">{t("Certificate", "Sertifikat", "Сертификат")}</div>
-          <div className="text-[11px] text-muted-foreground">{t("per module", "har modulga", "за модуль")}</div>
+          <div className="text-xs font-semibold">{t("Certificate", "Sertifikat", "Сертификат")}</div>
+          <div className="text-xs text-muted-foreground">{t("per module", "har modulga", "за модуль")}</div>
         </div>
       </div>
 
@@ -99,10 +99,10 @@ export function HeroTerminal({ challengeCount }: { challengeCount?: number } = {
           <Flag className="w-4.5 h-4.5" />
         </div>
         <div className="leading-tight">
-          <div className="text-[11px] font-semibold font-mono">flag&#123;...&#125;</div>
+          <div className="text-xs font-semibold font-mono">flag&#123;...&#125;</div>
           {/* The live count. This badge said "40+" while the stat row beside it
               read the real number — two different answers on one screen. */}
-          <div className="text-[11px] text-muted-foreground">
+          <div className="text-xs text-muted-foreground">
             {challengeCount && challengeCount > 0
               ? t(`${challengeCount} challenges`, `${challengeCount} topshiriq`, `${challengeCount} заданий`)
               : t("Practice challenges", "Mashq topshiriqlari", "Практические задания")}

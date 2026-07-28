@@ -268,7 +268,7 @@ export default function CtfListPage() {
                           </h3>
 
                           <div className="mt-auto flex items-center justify-between pt-3 border-t border-border">
-                            <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-[11px] font-medium capitalize ${diff.text} ${diff.tint} ${diff.border}`}>
+                            <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-xs font-medium capitalize ${diff.text} ${diff.tint} ${diff.border}`}>
                               {/* Dots as well as colour: difficulty must not depend on
                                   telling red from green. */}
                               <span className="flex gap-0.5" aria-hidden="true">

@@ -141,13 +141,13 @@ export function LessonTasks({ lessonId, tasks, renderBody }: Props) {
                 aria-expanded={isOpen}
                 className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-muted/30 transition-colors"
               >
-                <span className={`w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-bold shrink-0 ${
+                <span className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold shrink-0 ${
                   isDone ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"
                 }`}>
                   {isDone ? <Check className="w-3.5 h-3.5" /> : i + 1}
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="block text-[11px] uppercase tracking-wider text-muted-foreground">
+                  <span className="block text-xs uppercase tracking-wider text-muted-foreground">
                     {t("Task", "Vazifa", "Задача")} {i + 1}
                   </span>
                   <span className="block font-medium truncate">

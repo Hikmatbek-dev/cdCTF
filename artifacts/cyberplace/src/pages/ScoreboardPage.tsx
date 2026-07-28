@@ -190,7 +190,7 @@ export default function ScoreboardPage() {
                                 {entry.nickname}
                               </span>
                               {isMe && (
-                                <div className="px-3 py-1 bg-primary text-primary-foreground text-[11px] font-semibold rounded-lg shadow-lg shadow-primary/20">
+                                <div className="px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-lg shadow-lg shadow-primary/20">
                                   {t("You", "Siz", "Вы")}
                                 </div>
                               )}
