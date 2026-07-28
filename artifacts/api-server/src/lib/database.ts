@@ -395,6 +395,10 @@ async function applySchema() {
   await pool.query("CREATE INDEX IF NOT EXISTS lab_instances_status_idx ON lab_instances(status)");
   // One running machine per learner: two concurrent "Start" clicks must not both
   // win and strand a container nobody is tracking.
+  // Browser labs — see lib/db/src/schema/labs.ts.
+  await pool.query("ALTER TABLE labs ADD COLUMN IF NOT EXISTS kind text NOT NULL DEFAULT 'container'");
+  await pool.query("ALTER TABLE labs ADD COLUMN IF NOT EXISTS browser_scenario text");
+
   await createIndexSafely("lab_instances_one_running_idx", "CREATE UNIQUE INDEX IF NOT EXISTS lab_instances_one_running_idx ON lab_instances(user_id) WHERE status = 'running'");
 
   await createIndexSafely("job_applications_job_user_idx", "CREATE UNIQUE INDEX IF NOT EXISTS job_applications_job_user_idx ON job_applications(job_id, user_id)");

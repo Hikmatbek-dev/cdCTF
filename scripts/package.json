@@ -12,7 +12,8 @@
     "import-balance": "tsx ./src/import-balance-challenges.ts",
     "import-uz": "tsx ./src/import-uz-scenarios.ts",
     "audit": "tsx ./src/audit-content.ts",
-    "smoke": "bash ./smoke.sh"
+    "smoke": "bash ./smoke.sh",
+    "import-labs": "tsx ./src/import-browser-labs.ts"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

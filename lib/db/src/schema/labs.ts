@@ -21,7 +21,23 @@ export const labsTable = pgTable("labs", {
   description: text("description").notNull(),
   descriptionUz: text("description_uz"),
   descriptionRu: text("description_ru"),
-  /** Docker image the runner starts, e.g. "vulnerables/web-dvwa". */
+  /**
+   * How this lab runs.
+   *
+   * "container" needs the Docker runner on a host we control — real machines,
+   * real network, and a server bill. "browser" runs entirely in the learner's
+   * own tab: a deliberately vulnerable mini-application rendered by the SPA
+   * inside a sandboxed iframe, with a real flag to find.
+   *
+   * Browser labs exist because the container ones are gated behind
+   * infrastructure that does not exist yet, and a labs page that answers "not
+   * available" to everyone teaches nobody. They start instantly, cost nothing,
+   * and cannot be used to attack anything real.
+   */
+  kind: text("kind").notNull().default("container"),
+  /** For kind = "browser": which built-in scenario to render. */
+  browserScenario: text("browser_scenario"),
+  /** Docker image the runner starts, e.g. "vulnerables/web-dvwa". Container labs only. */
   image: text("image").notNull(),
   /** Port inside the container the learner connects to. */
   containerPort: integer("container_port").notNull().default(80),

@@ -44,8 +44,11 @@ check "$(echo "$L" | python3 -c 'import sys,json;print(json.load(sys.stdin)["run
 echo
 echo "=== ⭐ Ishga tushirish darvozalari ==="
 check "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/labs/$LAB/start)" "401" "tizimga kirmasdan ishga tushirib bo'lmaydi"
-check "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/labs/$LAB/start -H "Authorization: Bearer $U")" "503" "runner yo'q — 503 (yoqilmagan)"
-check "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/labs/999999/start -H "Authorization: Bearer $U")" "503" "yo'q lab ham 503 (darvoza avval ishlaydi)"
+check "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/labs/$LAB/start -H "Authorization: Bearer $U")" "503" "konteynerli lab, runner yo'q — 503"
+# The availability gate used to run before the lookup, so a lab that did not
+# exist also answered 503. It is per-lab now — a browser lab needs no runner —
+# so the lookup has to come first, and a missing lab is a missing lab.
+check "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/labs/999999/start -H "Authorization: Bearer $U")" "404" "yo'q lab — 404"
 check "$(q "SELECT count(*) FROM lab_instances")" "0" "hech qanday instance yaratilmadi"
 
 echo

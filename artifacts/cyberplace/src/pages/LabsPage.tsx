@@ -9,12 +9,14 @@ import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { normalizeArray } from "@/lib/api-shapes";
 import { errorToast } from "@/lib/error-toast";
+import { BrowserLab } from "@/components/labs/BrowserLab";
 
 type Lab = {
   id: number; slug: string;
   name: string; nameUz: string | null; nameRu: string | null;
   description: string; descriptionUz: string | null; descriptionRu: string | null;
   difficulty: string; ttlMinutes: number; ctfId: number | null;
+  kind: "container" | "browser"; browserScenario: string | null; startable: boolean;
 };
 type Running = { id: number; labId: number; host: string; port: number; startedAt: string; expiresAt: string };
 type LabsResponse = { labs: Lab[]; running: Running | null; available: boolean };
@@ -56,6 +58,7 @@ export default function LabsPage() {
   const running = data?.running ?? null;
   const available = data?.available ?? false;
   const countdown = useCountdown(running?.expiresAt);
+  const runningLab = labs.find(l => l.id === running?.labId) ?? null;
 
   const act = async (url: string) => {
     if (busy) return;
@@ -97,11 +100,17 @@ export default function LabsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <div className="text-sm font-semibold text-emerald-500 mb-1.5">{t("Your machine is running", "Mashinangiz ishlayapti", "Ваша машина запущена")}</div>
-                <div className="font-mono text-sm">
-                  <a href={`http://${running.host}:${running.port}`} target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary inline-flex items-center gap-1.5">
-                    {running.host}:{running.port} <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
+                {runningLab?.kind === "browser" ? (
+                  <div className="text-sm text-muted-foreground">
+                    {t("The target is open below.", "Nishon quyida ochiq.", "Цель открыта ниже.")}
+                  </div>
+                ) : (
+                  <div className="font-mono text-sm">
+                    <a href={`http://${running.host}:${running.port}`} target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary inline-flex items-center gap-1.5">
+                      {running.host}:{running.port} <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                )}
                 <div className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5" />
                   {countdown ? t(`${countdown} left`, `${countdown} qoldi`, `осталось ${countdown}`) : ""}
@@ -115,11 +124,30 @@ export default function LabsPage() {
           </div>
         )}
 
+        {/* The target itself, right where the learner is looking. A browser lab
+            has nowhere else to live — there is no host to open in a new tab. */}
+        {running && runningLab?.kind === "browser" && runningLab.browserScenario && (
+          <div className="mb-8">
+            <BrowserLab
+              scenarioSlug={runningLab.browserScenario}
+              onClose={() => act(`/api/labs/instances/${running.id}/stop`)}
+            />
+            {runningLab.ctfId && (
+              <Link href={`/ctf/${runningLab.ctfId}`}>
+                <button className="cyber-button h-11 px-6 gap-2 mt-4 w-full sm:w-auto">
+                  <Flag className="w-4 h-4" />
+                  {t("Found it? Submit the flag", "Topdingizmi? Flagni topshiring", "Нашли? Отправьте флаг")}
+                </button>
+              </Link>
+            )}
+          </div>
+        )}
+
         {!available && (
           <div className="rounded-xl border border-border bg-muted/20 p-5 mb-8 flex items-start gap-3" data-testid="labs-unavailable">
             <Info className="w-4 h-4 mt-0.5 shrink-0 text-primary" />
             <p className="text-sm text-muted-foreground">
-              {t("Labs are being set up and will open shortly. Everything else — lessons and practice challenges — is already live.",
+              {t("Machine-based labs are being set up and will open shortly. Everything else — lessons and practice challenges — is already live.",
                  "Laboratoriyalar sozlanmoqda va tez orada ochiladi. Qolgani — darslar va mashq topshiriqlari — allaqachon ishlayapti.",
                  "Лаборатории настраиваются и скоро откроются. Всё остальное — уроки и практика — уже работает.")}
             </p>
@@ -152,10 +180,18 @@ export default function LabsPage() {
                       <div className="flex items-center gap-2.5 mb-1.5">
                         <h3 className="text-lg font-semibold truncate">{label(lab)}</h3>
                         <span className="text-[11px] rounded-lg border border-border bg-muted/40 px-2 py-0.5 capitalize shrink-0">{lab.difficulty}</span>
+                        {lab.kind === "browser" && (
+                          <span className="text-[11px] rounded-lg border border-primary/30 bg-primary/10 text-primary px-2 py-0.5 shrink-0">
+                            {t("In your browser", "Brauzeringizda", "В браузере")}
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground">{blurb(lab)}</p>
                       <div className="text-xs text-muted-foreground mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
                         <span className="inline-flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {lab.ttlMinutes} {t("min", "daqiqa", "мин")}</span>
+                        {lab.kind === "browser" && (
+                          <span>{t("Starts instantly · no setup", "Bir zumda ochiladi · sozlash kerak emas", "Открывается мгновенно · без настройки")}</span>
+                        )}
                         {lab.ctfId && (
                           <Link href={`/ctf/${lab.ctfId}`} className="inline-flex items-center gap-1.5 text-primary hover:text-accent">
                             <Flag className="w-3.5 h-3.5" /> {t("Submit the flag here", "Flagni shu yerda topshiring", "Отправить флаг здесь")}
@@ -171,14 +207,17 @@ export default function LabsPage() {
                         </button>
                       ) : (
                         <button onClick={() => act(`/api/labs/${lab.id}/start`)}
-                          disabled={busy || !isAuthenticated || !available || Boolean(running)}
+                          disabled={busy || !isAuthenticated || !lab.startable || Boolean(running)}
                           className="cyber-button h-11 px-6 gap-2 disabled:opacity-50"
                           data-testid={`start-lab-${lab.id}`}>
                           <Play className="w-4 h-4" />
                           {!isAuthenticated
                             ? t("Sign in to start", "Boshlash uchun kiring", "Войдите, чтобы начать")
-                            : running ? t("Machine already running", "Mashina allaqachon ishlayapti", "Машина уже запущена")
-                            : t("Start machine", "Mashinani ishga tushirish", "Запустить машину")}
+                            : !lab.startable ? t("Coming soon", "Tez orada", "Скоро")
+                            : running ? t("Stop the other one first", "Avval boshqasini to'xtating", "Сначала остановите другую")
+                            : lab.kind === "browser"
+                              ? t("Open the target", "Nishonni ochish", "Открыть цель")
+                              : t("Start machine", "Mashinani ishga tushirish", "Запустить машину")}
                         </button>
                       )}
                     </div>

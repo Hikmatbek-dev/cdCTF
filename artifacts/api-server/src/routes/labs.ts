@@ -1,7 +1,8 @@
 import { Router } from "express";
+import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
 import { labsTable, labInstancesTable } from "@workspace/db/schema";
-import { and, desc, eq, lt } from "drizzle-orm";
+import { and, desc, eq, lt, or } from "drizzle-orm";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { labsEnabled, startContainer, stopContainer } from "../lib/lab-runner";
 import { createRateLimiter } from "../middleware/security";
@@ -18,8 +19,20 @@ function publicLab(lab: typeof labsTable.$inferSelect) {
     name: lab.name, nameUz: lab.nameUz, nameRu: lab.nameRu,
     description: lab.description, descriptionUz: lab.descriptionUz, descriptionRu: lab.descriptionRu,
     difficulty: lab.difficulty, ttlMinutes: lab.ttlMinutes, ctfId: lab.ctfId,
+    kind: lab.kind, browserScenario: lab.browserScenario,
+    // A container lab is only startable once a runner exists; a browser lab
+    // always is. Saying so per lab beats one page-wide "not available".
+    startable: lab.kind === "browser" || labsEnabled(),
   };
 }
+
+/**
+ * A browser lab has no container, but it still gets an instance row so that the
+ * one-at-a-time rule, the TTL and the history all work exactly as they do for a
+ * real machine. The synthetic id is prefixed so nothing ever hands it to Docker.
+ */
+const BROWSER_PREFIX = "browser:";
+const isBrowserInstance = (containerId: string) => containerId.startsWith(BROWSER_PREFIX);
 
 /**
  * Expires instances whose time is up.
@@ -39,7 +52,7 @@ async function reapExpired(): Promise<void> {
   // seeing anything. allSettled because a container that is already gone must
   // not stop the rest from being marked stopped.
   await Promise.allSettled(stale.map(async instance => {
-    await stopContainer(instance.containerId);
+    if (!isBrowserInstance(instance.containerId)) await stopContainer(instance.containerId);
     await db.update(labInstancesTable)
       .set({ status: "stopped", stoppedAt: new Date() })
       .where(eq(labInstancesTable.id, instance.id));
@@ -69,14 +82,15 @@ router.get("/", optionalAuth, async (req, res) => {
     }
   }
 
-  res.json({ labs: labs.map(publicLab), running, available: labsEnabled() });
+  // "available" now means "there is at least one lab you can actually start",
+  // which is true the moment a browser lab is published — the container runner
+  // is no longer the only path.
+  const available = labsEnabled() || labs.some(lab => lab.kind === "browser");
+  res.json({ labs: labs.map(publicLab), running, available });
 });
 
 // POST /api/labs/:id/start — bring up this learner's own copy.
 router.post("/:id/start", authenticateToken, startLimit, async (req, res) => {
-  if (!labsEnabled()) {
-    return res.status(503).json({ error: "Labs are not available yet" });
-  }
   const labId = Number(req.params.id);
   const userId = req.user!.userId;
   if (!Number.isInteger(labId) || labId <= 0) return res.status(400).json({ error: "Invalid lab id" });
@@ -86,6 +100,11 @@ router.post("/:id/start", authenticateToken, startLimit, async (req, res) => {
   const [lab] = await db.select().from(labsTable)
     .where(and(eq(labsTable.id, labId), eq(labsTable.isPublished, true))).limit(1);
   if (!lab) return res.status(404).json({ error: "Not found" });
+
+  // Checked per lab, not per page: a browser lab needs no runner.
+  if (lab.kind !== "browser" && !labsEnabled()) {
+    return res.status(503).json({ error: "Labs are not available yet" });
+  }
 
   // One machine at a time. Tell them which one rather than silently refusing.
   const [existing] = await db.select().from(labInstancesTable)
@@ -98,11 +117,17 @@ router.post("/:id/start", authenticateToken, startLimit, async (req, res) => {
   }
 
   let started;
-  try {
-    started = await startContainer(lab.image, lab.containerPort, lab.ttlMinutes);
-  } catch (err) {
-    logger.error({ err, labId }, "lab runner failed to start a container");
-    return res.status(502).json({ error: "Could not start the machine. Try again in a moment." });
+  if (lab.kind === "browser") {
+    // Nothing to boot. The scenario is rendered by the client; this row only
+    // records that the learner has one open.
+    started = { containerId: `${BROWSER_PREFIX}${randomUUID()}`, host: "browser", port: 0 };
+  } else {
+    try {
+      started = await startContainer(lab.image, lab.containerPort, lab.ttlMinutes);
+    } catch (err) {
+      logger.error({ err, labId }, "lab runner failed to start a container");
+      return res.status(502).json({ error: "Could not start the machine. Try again in a moment." });
+    }
   }
 
   const expiresAt = new Date(Date.now() + lab.ttlMinutes * 60_000);
@@ -113,14 +138,15 @@ router.post("/:id/start", authenticateToken, startLimit, async (req, res) => {
     }).returning();
 
     res.status(201).json({
-      id: instance.id, labId: lab.id,
+      id: instance.id, labId: lab.id, kind: lab.kind,
+      browserScenario: lab.browserScenario,
       host: instance.host, port: instance.port,
       startedAt: instance.startedAt, expiresAt: instance.expiresAt,
     });
   } catch (err) {
     // The unique index rejected a second concurrent start. The container we just
     // created has no row pointing at it, so stop it rather than leak it.
-    await stopContainer(started.containerId);
+    if (!isBrowserInstance(started.containerId)) await stopContainer(started.containerId);
     logger.warn({ err, userId }, "concurrent lab start rejected; container released");
     return res.status(409).json({ error: "You already have a machine running." });
   }
@@ -139,7 +165,7 @@ router.post("/instances/:id/stop", authenticateToken, async (req, res) => {
   }
   if (instance.status !== "running") return res.json({ stopped: true });
 
-  await stopContainer(instance.containerId);
+  if (!isBrowserInstance(instance.containerId)) await stopContainer(instance.containerId);
   await db.update(labInstancesTable)
     .set({ status: "stopped", stoppedAt: new Date() })
     .where(eq(labInstancesTable.id, instance.id));
