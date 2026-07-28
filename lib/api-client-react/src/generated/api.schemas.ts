@@ -655,6 +655,8 @@ export interface AdminDashboard {
 export interface AdminUsersResponse {
   users: User[];
   total: number;
+  limit?: number;
+  offset?: number;
 }
 
 export type BlockedTasksResponseBlockedCtfItem = {
@@ -1119,6 +1121,9 @@ export interface AdminCtfTask {
 
 export interface AdminCtfListResponse {
   challenges: AdminCtfTask[];
+  total?: number;
+  limit?: number;
+  offset?: number;
 }
 
 /**
@@ -1186,6 +1191,9 @@ export interface AdminLesson {
 
 export interface AdminLessonListResponse {
   lessons: AdminLesson[];
+  total?: number;
+  limit?: number;
+  offset?: number;
 }
 
 export interface UpdateLessonBody {
@@ -1273,6 +1281,9 @@ export interface AuditLogEntry {
 
 export interface AuditLogsResponse {
   logs: AuditLogEntry[];
+  total?: number;
+  limit?: number;
+  offset?: number;
 }
 
 /**
@@ -1343,8 +1354,24 @@ export type AdminListUsersParams = {
   offset?: number;
 };
 
+export type ListAdminCtfParams = {
+  /**
+   * Page size, capped at 200.
+   */
+  limit?: number;
+  offset?: number;
+};
+
 export type AdminListCompetitions200 = {
   competitions: AdminCompetition[];
+};
+
+export type ListAdminLessonsParams = {
+  /**
+   * Page size, capped at 200.
+   */
+  limit?: number;
+  offset?: number;
 };
 
 export type GetLoginHistoryParams = {
@@ -1392,4 +1419,12 @@ export type UploadAvatarBody = {
 
 export type UploadCtfFileBody = {
   file: Blob;
+};
+
+export type ListAuditLogsParams = {
+  /**
+   * Page size, capped at 200.
+   */
+  limit?: number;
+  offset?: number;
 };

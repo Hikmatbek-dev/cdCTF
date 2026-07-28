@@ -991,6 +991,18 @@ paths:
       operationId: listAdminCtf
       tags: [admin]
       summary: Every challenge, drafts included
+      parameters:
+      - in: query
+        name: limit
+        description: Page size, capped at 200.
+        schema:
+          type: integer
+          default: 50
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          default: 0
       responses:
         "200":
           description: Challenges
@@ -1323,6 +1335,18 @@ paths:
       operationId: listAdminLessons
       tags: [admin]
       summary: Every lesson, drafts included
+      parameters:
+      - in: query
+        name: limit
+        description: Page size, capped at 200.
+        schema:
+          type: integer
+          default: 50
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          default: 0
       responses:
         "200":
           description: Lessons
@@ -2358,7 +2382,19 @@ paths:
     get:
       operationId: listAuditLogs
       tags: [admin]
-      summary: The 200 most recent audit entries
+      summary: The audit log, newest first
+      parameters:
+      - in: query
+        name: limit
+        description: Page size, capped at 200.
+        schema:
+          type: integer
+          default: 50
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          default: 0
       responses:
         "200":
           description: Audit log
@@ -3546,6 +3582,10 @@ components:
             $ref: "#/components/schemas/User"
         total:
           type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
       required: [users, total]
 
     BlockedTasksResponse:
@@ -4303,6 +4343,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AdminCtfTask"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
       required: [challenges]
     UpdateCtfBody:
       type: object
@@ -4448,6 +4494,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AdminLesson"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
       required: [lessons]
     UpdateLessonBody:
       type: object
@@ -4574,6 +4626,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AuditLogEntry"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
       required: [logs]
   responses:
     Unauthorized:

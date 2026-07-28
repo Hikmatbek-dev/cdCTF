@@ -12,6 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 import { useLang } from "@/lib/LanguageContext";
+import { useAuth } from "@/lib/AuthContext";
+import { Pager, PAGE_SIZE } from "@/components/Pager";
 import { LoadFailure } from "@/components/LoadFailure";
 import { errorToast } from "@/lib/error-toast";
 import { normalizeCtfChallenges } from "@/lib/api-shapes";
@@ -52,22 +54,39 @@ const MAX_CHALLENGE_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 
 export default function AdminCtfPage() {
   const { t } = useLang();
+  const { can, user: me } = useAuth();
   const { toast } = useToast();
+
+  // The page is reached with `ctf.read.all`, which authors and moderators both
+  // hold — but deleting, publishing and creating are separate permissions they
+  // do not. Every one of these buttons was rendered for them and answered 403.
+  // A button you are not allowed to press should not be there to press.
+  const canCreate = can("ctf.create");
+  const canPublish = can("ctf.publish");
+  const canDelete = can("ctf.delete");
+  const canEditAny = can("ctf.update.any");
+  // An author holds `ctf.update.own`, so the server refuses an edit to someone
+  // else's challenge. Mirroring that here means the button is absent rather
+  // than present-and-403 — the same rule canEditResource applies server-side.
+  const canEditThis = (authorId: number | null | undefined) =>
+    canEditAny || (can("ctf.update.own") && authorId != null && authorId === me?.id);
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const [offset, setOffset] = useState(0);
   const { data: challengesData, isLoading, isError, refetch } = useQuery({
-    queryKey: ["admin-ctfs"],
+    queryKey: ["admin-ctfs", offset],
     queryFn: async () => {
-      const res = await fetch("/api/admin/ctf", { credentials: "include" });
+      const res = await fetch(`/api/admin/ctf?limit=${PAGE_SIZE}&offset=${offset}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch admin ctfs");
       return res.json();
     }
   });
   const challengeList = normalizeCtfChallenges(challengesData);
+  const total = typeof challengesData?.total === "number" ? challengesData.total : challengeList.length;
 
   const createCtf = useAdminCreateCtf();
   const updateCtf = useAdminUpdateCtf();
@@ -291,9 +310,11 @@ export default function AdminCtfPage() {
       <main className="flex-1 p-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-bold">{t("CTF Challenges", "CTF Topshiriqlari", "CTF Задания")}</h1>
-          <Button size="sm" onClick={openCreate} className="gap-1.5" data-testid="button-create-ctf">
-            <Plus className="w-4 h-4" /> {t("Create CTF", "CTF Yaratish", "Создать CTF")}
-          </Button>
+          {canCreate && (
+            <Button size="sm" onClick={openCreate} className="gap-1.5" data-testid="button-create-ctf">
+              <Plus className="w-4 h-4" /> {t("Create CTF", "CTF Yaratish", "Создать CTF")}
+            </Button>
+          )}
         </div>
 
         {/* Form */}
@@ -411,6 +432,7 @@ export default function AdminCtfPage() {
         ) : isLoading ? (
           <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-lg" />)}</div>
         ) : (
+          <>
           <div className="rounded-xl border border-border overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b border-border">
@@ -434,15 +456,18 @@ export default function AdminCtfPage() {
                     <td className="px-4 py-3 text-muted-foreground">{ch.solvedCount}</td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => togglePublish(ch.id, !ch.isPublished)}
+                        onClick={() => canPublish && togglePublish(ch.id, !ch.isPublished)}
+                        disabled={!canPublish}
                         className={`px-2 py-0.5 rounded text-xs font-medium border transition-colors ${
                           ch.isPublished
                             ? "border-[hsl(var(--neon)/.4)] bg-[hsl(var(--neon)/.1)] text-[hsl(var(--neon))]"
-                            : "border-border bg-muted text-muted-foreground hover:border-primary/40"
-                        }`}
-                        title={ch.isPublished
-                          ? t("Click to hide from learners", "O'quvchilardan yashirish uchun bosing", "Нажмите, чтобы скрыть")
-                          : t("Click to publish", "Nashr qilish uchun bosing", "Нажмите, чтобы опубликовать")}
+                            : "border-border bg-muted text-muted-foreground"
+                        } ${canPublish ? (ch.isPublished ? "" : "hover:border-primary/40") : "cursor-default"}`}
+                        title={!canPublish
+                          ? t("Only an admin can publish", "Faqat admin nashr qila oladi", "Публиковать может только админ")
+                          : ch.isPublished
+                            ? t("Click to hide from learners", "O'quvchilardan yashirish uchun bosing", "Нажмите, чтобы скрыть")
+                            : t("Click to publish", "Nashr qilish uchun bosing", "Нажмите, чтобы опубликовать")}
                         data-testid={`toggle-publish-ctf-${ch.id}`}
                       >
                         {ch.isPublished ? t("Live", "Nashrda", "Опубликовано") : t("Draft", "Qoralama", "Черновик")}
@@ -450,8 +475,8 @@ export default function AdminCtfPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center gap-1 justify-end">
-                        <Button size="sm" variant="ghost" onClick={() => openEdit(ch)} className="h-7 w-7 p-0" data-testid={`button-edit-ctf-${ch.id}`}><Pencil className="w-3.5 h-3.5" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => handleDelete(ch.id)} className="h-7 w-7 p-0 text-destructive hover:text-destructive" data-testid={`button-delete-ctf-${ch.id}`}><Trash2 className="w-3.5 h-3.5" /></Button>
+                        {canEditThis(ch.authorId) && <Button size="sm" variant="ghost" onClick={() => openEdit(ch)} className="h-7 w-7 p-0" data-testid={`button-edit-ctf-${ch.id}`}><Pencil className="w-3.5 h-3.5" /></Button>}
+                        {canDelete && <Button size="sm" variant="ghost" onClick={() => handleDelete(ch.id)} className="h-7 w-7 p-0 text-destructive hover:text-destructive" data-testid={`button-delete-ctf-${ch.id}`}><Trash2 className="w-3.5 h-3.5" /></Button>}
                       </div>
                     </td>
                   </tr>
@@ -459,6 +484,8 @@ export default function AdminCtfPage() {
               </tbody>
             </table>
           </div>
+          <Pager total={total} offset={offset} limit={PAGE_SIZE} onChange={setOffset} />
+          </>
         )}
       </main>
     </div>

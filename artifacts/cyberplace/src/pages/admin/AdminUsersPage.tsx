@@ -10,6 +10,7 @@ import { useAdminListUsers, getAdminListUsersQueryKey, useAdminBlockUser, useAdm
 import { LoadFailure } from "@/components/LoadFailure";
 import { errorToast } from "@/lib/error-toast";
 import { useAuth } from "@/lib/AuthContext";
+import { Pager, PAGE_SIZE } from "@/components/Pager";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { normalizeArray } from "@/lib/api-shapes";
@@ -19,11 +20,13 @@ export default function AdminUsersPage() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [offset, setOffset] = useState(0);
+  const params = { search: search || undefined, limit: PAGE_SIZE, offset };
 
-  const { user: me } = useAuth();
+  const { user: me, can } = useAuth();
   const { data, isLoading, isError, refetch } = useAdminListUsers(
-    { search: search || undefined },
-    { query: { queryKey: getAdminListUsersQueryKey({ search: search || undefined }) } }
+    params,
+    { query: { queryKey: getAdminListUsersQueryKey(params) } }
   );
   const users = normalizeArray<any>(data?.users, ["users", "data", "items"]);
   const total = typeof data?.total === "number" ? data.total : users.length;
@@ -57,7 +60,7 @@ export default function AdminUsersPage() {
     setRole.mutate({ id, data: { role: role as "user" | "author" | "moderator" | "admin" } }, {
       onSuccess: () => {
         toast({ title: t("Role updated", "Rol yangilandi", "Роль обновлена") });
-        void qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey({ search: search || undefined }) });
+        void qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey(params) });
       },
       onError: e => toast(errorToast(t, e)),
     });
@@ -72,7 +75,7 @@ export default function AdminUsersPage() {
     blockUser.mutate({ id }, {
       onSuccess: () => { 
         toast({ title: t("User blocked", "Foydalanuvchi bloklandi", "Пользователь заблокирован") }); 
-        void qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey({ search: search || undefined }) });
+        void qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey(params) });
       },
       onError: e => toast(errorToast(t, e)),
     });
@@ -82,7 +85,7 @@ export default function AdminUsersPage() {
     unblockUser.mutate({ id }, {
       onSuccess: () => { 
         toast({ title: t("User unblocked", "Foydalanuvchi blokdan chiqdi", "Пользователь разблокирован") }); 
-        void qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey({ search: search || undefined }) });
+        void qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey(params) });
       },
       onError: e => toast(errorToast(t, e)),
     });
@@ -103,7 +106,7 @@ export default function AdminUsersPage() {
       });
       if (!res.ok) throw new Error();
       toast({ title: t("Points recalculated", "Ballar qayta hisoblandi", "Баллы пересчитаны") });
-      void qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey({ search: search || undefined }) });
+      void qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey(params) });
     } catch (err) {
       toast({ title: t("Error", "Xato", "Ошибка"), variant: "destructive" });
     } finally {
@@ -118,23 +121,27 @@ export default function AdminUsersPage() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-bold">{t("Users", "Foydalanuvchilar", "Пользователи")}</h1>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={handleRecalculate} 
-              disabled={isRecalculating}
-              className="text-xs h-8"
-              data-testid="button-recalculate-points"
-            >
-              {isRecalculating ? t("Recalculating...", "Hisoblanmoqda...", "Пересчет...") : t("Recalculate Points", "Ballarni qayta hisoblash", "Пересчитать баллы")}
-            </Button>
+            {/* `users.read` opens this page and a moderator holds it; recalculating
+                needs `system.maintenance`, which only an admin has. */}
+            {can("system.maintenance") && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRecalculate}
+                disabled={isRecalculating}
+                className="text-xs h-8"
+                data-testid="button-recalculate-points"
+              >
+                {isRecalculating ? t("Recalculating...", "Hisoblanmoqda...", "Пересчет...") : t("Recalculate Points", "Ballarni qayta hisoblash", "Пересчитать баллы")}
+              </Button>
+            )}
           </div>
           <span className="text-sm text-muted-foreground">{data ? `${total} ${t("total", "jami", "всего")}` : ""}</span>
         </div>
 
         <div className="relative mb-4 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={t("Search users...", "Qidirish...", "Поиск...")} className="pl-9" data-testid="input-search-users" />
+          <Input value={search} onChange={e => { setSearch(e.target.value); setOffset(0); }} placeholder={t("Search users...", "Qidirish...", "Поиск...")} className="pl-9" data-testid="input-search-users" />
         </div>
 
         {isError ? (
@@ -146,6 +153,7 @@ export default function AdminUsersPage() {
             {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-lg" />)}
           </div>
         ) : (
+          <>
           <div className="rounded-xl border border-border overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b border-border">
@@ -213,6 +221,8 @@ export default function AdminUsersPage() {
               </tbody>
             </table>
           </div>
+          <Pager total={total} offset={offset} limit={PAGE_SIZE} onChange={setOffset} />
+          </>
         )}
       </main>
     </div>

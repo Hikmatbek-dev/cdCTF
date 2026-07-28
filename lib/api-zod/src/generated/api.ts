@@ -976,6 +976,8 @@ export const AdminListUsersResponse = zod.object({
     }),
   ),
   total: zod.number(),
+  limit: zod.number().optional(),
+  offset: zod.number().optional(),
 });
 
 /**
@@ -1024,6 +1026,17 @@ export const AdminCreateCtfBody = zod.object({
 /**
  * @summary Every challenge, drafts included
  */
+export const listAdminCtfQueryLimitDefault = 50;
+export const listAdminCtfQueryOffsetDefault = 0;
+
+export const ListAdminCtfQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .default(listAdminCtfQueryLimitDefault)
+    .describe("Page size, capped at 200."),
+  offset: zod.coerce.number().default(listAdminCtfQueryOffsetDefault),
+});
+
 export const ListAdminCtfResponse = zod.object({
   challenges: zod.array(
     zod
@@ -1050,6 +1063,9 @@ export const ListAdminCtfResponse = zod.object({
         "The stored row. `flag` is the sha256$ hash, never the plaintext — which is unrecoverable by design.",
       ),
   ),
+  total: zod.number().optional(),
+  limit: zod.number().optional(),
+  offset: zod.number().optional(),
 });
 
 /**
@@ -1455,6 +1471,17 @@ export const AdminCreateLessonBody = zod.object({
 /**
  * @summary Every lesson, drafts included
  */
+export const listAdminLessonsQueryLimitDefault = 50;
+export const listAdminLessonsQueryOffsetDefault = 0;
+
+export const ListAdminLessonsQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .default(listAdminLessonsQueryLimitDefault)
+    .describe("Page size, capped at 200."),
+  offset: zod.coerce.number().default(listAdminLessonsQueryOffsetDefault),
+});
+
 export const ListAdminLessonsResponse = zod.object({
   lessons: zod.array(
     zod.object({
@@ -1486,6 +1513,9 @@ export const ListAdminLessonsResponse = zod.object({
       createdAt: zod.coerce.date().optional(),
     }),
   ),
+  total: zod.number().optional(),
+  limit: zod.number().optional(),
+  offset: zod.number().optional(),
 });
 
 /**
@@ -2395,8 +2425,19 @@ export const RecalculateAllPointsResponse = zod.object({
 });
 
 /**
- * @summary The 200 most recent audit entries
+ * @summary The audit log, newest first
  */
+export const listAuditLogsQueryLimitDefault = 50;
+export const listAuditLogsQueryOffsetDefault = 0;
+
+export const ListAuditLogsQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .default(listAuditLogsQueryLimitDefault)
+    .describe("Page size, capped at 200."),
+  offset: zod.coerce.number().default(listAuditLogsQueryOffsetDefault),
+});
+
 export const ListAuditLogsResponse = zod.object({
   logs: zod.array(
     zod.object({
@@ -2411,6 +2452,9 @@ export const ListAuditLogsResponse = zod.object({
       createdAt: zod.coerce.date(),
     }),
   ),
+  total: zod.number().optional(),
+  limit: zod.number().optional(),
+  offset: zod.number().optional(),
 });
 
 /**

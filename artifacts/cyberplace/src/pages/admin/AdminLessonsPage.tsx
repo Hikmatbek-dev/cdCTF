@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { useLang } from "@/lib/LanguageContext";
+import { useAuth } from "@/lib/AuthContext";
+import { Pager, PAGE_SIZE } from "@/components/Pager";
 import { LoadFailure } from "@/components/LoadFailure";
 import { errorToast } from "@/lib/error-toast";
 import { normalizeLearnCategories, normalizeArray } from "@/lib/api-shapes";
@@ -82,15 +84,29 @@ type FormData = z.infer<typeof schema>;
 
 export default function AdminLessonsPage() {
   const { t } = useLang();
+  const { can, user: me } = useAuth();
   const { toast } = useToast();
+
+  // `lessons.read.all` opens this page, and a moderator holds it — while holding
+  // none of create, update, publish or delete. Every action on the page answered
+  // 403 for them, and an author saw a publish toggle that is admin-only.
+  const canCreate = can("lessons.create");
+  const canPublish = can("lessons.publish");
+  const canDelete = can("lessons.delete");
+  const canEditAny = can("lessons.update.any");
+  // Same rule as the challenge list: an author may edit their own drafts only,
+  // so a lesson someone else wrote gets no edit button rather than a 403.
+  const canEditThis = (authorId: number | null | undefined) =>
+    canEditAny || (can("lessons.update.own") && authorId != null && authorId === me?.id);
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
+  const [offset, setOffset] = useState(0);
   const { data: lessonsData, isLoading, isError, refetch } = useQuery({
-    queryKey: ["admin-lessons"],
+    queryKey: ["admin-lessons", offset],
     queryFn: async () => {
-      const res = await fetch("/api/admin/lessons", { credentials: "include" });
+      const res = await fetch(`/api/admin/lessons?limit=${PAGE_SIZE}&offset=${offset}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch admin lessons");
       return res.json();
     }
@@ -102,6 +118,7 @@ export default function AdminLessonsPage() {
   // isPublished. normalizeLessons types them as the public Lesson, which has
   // neither, so the publish state was invisible to the compiler too.
   const lessonList = normalizeArray<AdminLesson>(lessonsData, ["lessons", "data", "items"]);
+  const total = typeof (lessonsData as any)?.total === "number" ? (lessonsData as any).total : lessonList.length;
   const categoryList = normalizeLearnCategories(categories);
 
   const createLesson = useAdminCreateLesson();
@@ -205,9 +222,11 @@ export default function AdminLessonsPage() {
       <main className="flex-1 p-6 overflow-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-bold">{t("Lessons", "Darslar", "Уроки")}</h1>
-          <Button size="sm" onClick={openCreate} className="gap-1.5" data-testid="button-create-lesson">
-            <Plus className="w-4 h-4" /> {t("Create Lesson", "Dars Yaratish", "Создать урок")}
-          </Button>
+          {canCreate && (
+            <Button size="sm" onClick={openCreate} className="gap-1.5" data-testid="button-create-lesson">
+              <Plus className="w-4 h-4" /> {t("Create Lesson", "Dars Yaratish", "Создать урок")}
+            </Button>
+          )}
         </div>
 
         {showForm && (
@@ -350,6 +369,7 @@ export default function AdminLessonsPage() {
         ) : isLoading ? (
           <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-lg" />)}</div>
         ) : (
+          <>
           <div className="rounded-xl border border-border overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b border-border">
@@ -369,15 +389,18 @@ export default function AdminLessonsPage() {
                     <td className="px-4 py-3 font-mono font-bold text-primary">{lesson.points}</td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => togglePublish(lesson.id, !lesson.isPublished)}
+                        onClick={() => canPublish && togglePublish(lesson.id, !lesson.isPublished)}
+                        disabled={!canPublish}
                         className={`px-2 py-0.5 rounded text-xs font-medium border transition-colors ${
                           lesson.isPublished
                             ? "border-[hsl(var(--neon)/.4)] bg-[hsl(var(--neon)/.1)] text-[hsl(var(--neon))]"
-                            : "border-border bg-muted text-muted-foreground hover:border-primary/40"
-                        }`}
-                        title={lesson.isPublished
-                          ? t("Click to hide from learners", "O'quvchilardan yashirish uchun bosing", "Нажмите, чтобы скрыть")
-                          : t("Click to publish", "Nashr qilish uchun bosing", "Нажмите, чтобы опубликовать")}
+                            : "border-border bg-muted text-muted-foreground"
+                        } ${canPublish ? (lesson.isPublished ? "" : "hover:border-primary/40") : "cursor-default"}`}
+                        title={!canPublish
+                          ? t("Only an admin can publish", "Faqat admin nashr qila oladi", "Публиковать может только админ")
+                          : lesson.isPublished
+                            ? t("Click to hide from learners", "O'quvchilardan yashirish uchun bosing", "Нажмите, чтобы скрыть")
+                            : t("Click to publish", "Nashr qilish uchun bosing", "Нажмите, чтобы опубликовать")}
                         data-testid={`toggle-publish-lesson-${lesson.id}`}
                       >
                         {lesson.isPublished ? t("Live", "Nashrda", "Опубликован") : t("Draft", "Qoralama", "Черновик")}
@@ -385,7 +408,7 @@ export default function AdminLessonsPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center gap-1 justify-end">
-                        <Button size="sm" variant="ghost" onClick={async () => { 
+                        {canEditThis(lesson.authorId) && <Button size="sm" variant="ghost" onClick={async () => { 
                           try {
                             const res = await fetch(`/api/admin/lessons/${lesson.id}`, { credentials: "include" });
                             if (!res.ok) throw new Error();
@@ -417,8 +440,8 @@ export default function AdminLessonsPage() {
                           } catch (e) {
                             toast({ title: t("Failed to load lesson details", "Dars ma'lumotlarini yuklab bo'lmadi", "Не удалось загрузить данные урока"), variant: "destructive" });
                           }
-                        }} className="h-7 w-7 p-0" data-testid={`button-edit-lesson-${lesson.id}`}><Pencil className="w-3.5 h-3.5" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => handleDelete(lesson.id)} className="h-7 w-7 p-0 text-destructive hover:text-destructive" data-testid={`button-delete-lesson-${lesson.id}`}><Trash2 className="w-3.5 h-3.5" /></Button>
+                        }} className="h-7 w-7 p-0" data-testid={`button-edit-lesson-${lesson.id}`}><Pencil className="w-3.5 h-3.5" /></Button>}
+                        {canDelete && <Button size="sm" variant="ghost" onClick={() => handleDelete(lesson.id)} className="h-7 w-7 p-0 text-destructive hover:text-destructive" data-testid={`button-delete-lesson-${lesson.id}`}><Trash2 className="w-3.5 h-3.5" /></Button>}
                       </div>
                     </td>
                   </tr>
@@ -426,6 +449,8 @@ export default function AdminLessonsPage() {
               </tbody>
             </table>
           </div>
+          <Pager total={total} offset={offset} limit={PAGE_SIZE} onChange={setOffset} />
+          </>
         )}
       </main>
     </div>

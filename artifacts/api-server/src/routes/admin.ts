@@ -1,8 +1,8 @@
 import { Router, type Request, type Response } from "express";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import { usersTable, ctfTasksTable, ctfAttemptsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionTeamsTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable } from "@workspace/db/schema";
-import { eq, and, desc, inArray, isNotNull, asc, not } from "drizzle-orm";
+import { usersTable, ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionTeamsTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable } from "@workspace/db/schema";
+import { eq, and, or, desc, inArray, isNotNull, asc, not, count, ilike } from "drizzle-orm";
 import { authenticateToken } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import {
@@ -40,6 +40,31 @@ const router = Router();
 // Staff-only floor. Every route below additionally declares the specific
 // permission it needs — this `use` is the backstop, not the authorisation.
 router.use(authenticateToken, requireStaff);
+
+const DEFAULT_PAGE_SIZE = 50;
+const MAX_PAGE_SIZE = 200;
+
+/**
+ * The page window for an admin list.
+ *
+ * Every list on this router used to select its whole table and hand all of it
+ * back — users, challenges, lessons — and the users list then filtered the
+ * search in JavaScript, so searching for one nickname read every row. The
+ * OpenAPI description of /admin/users has advertised `limit` and `offset` for
+ * as long as it has existed; the handler simply ignored them.
+ *
+ * `limit` is capped rather than rejected: a client asking for 10000 rows gets
+ * MAX_PAGE_SIZE, which is the honest answer to "give me everything".
+ */
+function pageWindow(req: Request): { limit: number; offset: number } {
+  const rawLimit = Number(req.query.limit);
+  const rawOffset = Number(req.query.offset);
+  const limit = Number.isFinite(rawLimit) && rawLimit > 0
+    ? Math.min(Math.floor(rawLimit), MAX_PAGE_SIZE)
+    : DEFAULT_PAGE_SIZE;
+  const offset = Number.isFinite(rawOffset) && rawOffset > 0 ? Math.floor(rawOffset) : 0;
+  return { limit, offset };
+}
 
 // GET /api/admin/dashboard
 router.get("/dashboard", requirePermission("admin.panel"), async (_req, res) => {
@@ -108,16 +133,38 @@ router.get("/dashboard", requirePermission("admin.panel"), async (_req, res) => 
 // GET /api/admin/users
 router.get("/users", requirePermission("users.read"), async (req, res) => {
   const { search } = req.query as { search?: string };
-  let users = await db.select().from(usersTable);
-  if (search) users = users.filter(u => u.nickname.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()));
-  users = users.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  res.json({ users: users.map(u => ({ id: u.id, nickname: u.nickname, email: u.email, points: u.points, role: u.role, isBlocked: u.isBlocked, createdAt: u.createdAt })), total: users.length });
+  const { limit, offset } = pageWindow(req);
+
+  // The search runs in the database now. It used to load every user and filter
+  // the array, so the cost of finding one nickname was the whole table.
+  const term = typeof search === "string" ? search.trim() : "";
+  const filter = term
+    ? or(ilike(usersTable.nickname, `%${term}%`), ilike(usersTable.email, `%${term}%`))
+    : undefined;
+
+  const [{ total }] = await db.select({ total: count() }).from(usersTable).where(filter);
+  const users = await db.select({
+    id: usersTable.id, nickname: usersTable.nickname, email: usersTable.email,
+    points: usersTable.points, role: usersTable.role, isBlocked: usersTable.isBlocked,
+    createdAt: usersTable.createdAt,
+  }).from(usersTable).where(filter)
+    .orderBy(asc(usersTable.createdAt))
+    .limit(limit).offset(offset);
+
+  res.json({ users, total, limit, offset });
 });
 
 // GET /api/admin/audit-logs
-router.get("/audit-logs", requirePermission("audit.read"), async (_req, res) => {
-  const logs = await db.select().from(auditLogsTable).orderBy(desc(auditLogsTable.createdAt)).limit(200);
+router.get("/audit-logs", requirePermission("audit.read"), async (req, res) => {
+  // Was a hard limit of 200 with no way to reach anything older, which is a
+  // strange property for the record of who did what.
+  const { limit, offset } = pageWindow(req);
+  const [{ total }] = await db.select({ total: count() }).from(auditLogsTable);
+  const logs = await db.select().from(auditLogsTable)
+    .orderBy(desc(auditLogsTable.createdAt))
+    .limit(limit).offset(offset);
   res.json({
+    total, limit, offset,
     logs: logs.map(log => ({
       id: log.id,
       actorUserId: log.actorUserId,
@@ -236,15 +283,26 @@ router.post("/users/recalculate-points", requirePermission("system.maintenance")
 });
 
 // GET /api/admin/ctf
-router.get("/ctf", requirePermission("ctf.read.all"), async (_req, res) => {
-  const challenges = await db.select().from(ctfTasksTable);
-  const solves = await db.select({ ctfId: ctfAttemptsTable.ctfId }).from(ctfAttemptsTable).where(eq(ctfAttemptsTable.solved, true));
+router.get("/ctf", requirePermission("ctf.read.all"), async (req, res) => {
+  const { limit, offset } = pageWindow(req);
+  const [{ total }] = await db.select({ total: count() }).from(ctfTasksTable);
+  const challenges = await db.select().from(ctfTasksTable)
+    .orderBy(desc(ctfTasksTable.id))
+    .limit(limit).offset(offset);
+
+  // Solve counts only for the page being returned.
+  const ids = challenges.map(c => c.id);
+  const solves = ids.length
+    ? await db.select({ ctfId: ctfAttemptsTable.ctfId }).from(ctfAttemptsTable)
+        .where(and(eq(ctfAttemptsTable.solved, true), inArray(ctfAttemptsTable.ctfId, ids)))
+    : [];
   const solveCounts = solves.reduce((acc, s) => {
     acc[s.ctfId] = (acc[s.ctfId] || 0) + 1;
     return acc;
   }, {} as Record<number, number>);
 
   res.json({
+    total, limit, offset,
     challenges: challenges.map(({ flag: _flag, ...ch }) => ({
       ...ch,
       solvedCount: solveCounts[ch.id] || 0,
@@ -699,17 +757,24 @@ router.post("/competitions/:id/users", requirePermission("competitions.manage"),
 router.post("/competitions/:id/users/:userId", requirePermission("competitions.manage"), addCompetitionUserHandler);
 
 // GET /api/admin/lessons
-router.get("/lessons", requirePermission("lessons.read.all"), async (_req, res) => {
+router.get("/lessons", requirePermission("lessons.read.all"), async (req, res) => {
+  const { limit, offset } = pageWindow(req);
+  const [{ total }] = await db.select({ total: count() }).from(lessonsTable);
   const lessons = await db.select({
     id: lessonsTable.id, title: lessonsTable.title, titleUz: lessonsTable.titleUz, titleRu: lessonsTable.titleRu,
     categoryId: lessonsTable.categoryId, points: lessonsTable.points, createdAt: lessonsTable.createdAt,
+    // The panel decides whether to offer an author an edit button, and an author
+    // may only edit their own — without this it had to guess, and guessed yes.
+    authorId: lessonsTable.authorId,
     // Without this the panel could not even show which lessons are live, let
     // alone publish one. Authors create drafts by design, so an unpublished
     // lesson was invisible in the only place it could be published from.
     isPublished: lessonsTable.isPublished,
     categoryName: learnCategoriesTable.name,
-  }).from(lessonsTable).leftJoin(learnCategoriesTable, eq(lessonsTable.categoryId, learnCategoriesTable.id));
-  res.json({ lessons });
+  }).from(lessonsTable).leftJoin(learnCategoriesTable, eq(lessonsTable.categoryId, learnCategoriesTable.id))
+    .orderBy(asc(lessonsTable.id))
+    .limit(limit).offset(offset);
+  res.json({ lessons, total, limit, offset });
 });
 
 // GET /api/admin/lessons/:id
@@ -907,6 +972,289 @@ router.delete("/lessons/:id", requirePermission("lessons.delete"), async (req, r
   await db.delete(lessonsTable).where(eq(lessonsTable.id, id));
   await writeAuditLog(req, "lesson.delete", "lesson", id);
   res.json({ success: true, message: "Lesson deleted" });
+});
+
+/* ---------------------------------------------------------------------------
+ * Curriculum: modules and their categories.
+ *
+ * Both tables were read-only from the panel's point of view — there was no
+ * route to create, edit, reorder, publish or delete either one. The eight
+ * production modules exist because a seed script inserted them; fixing a typo
+ * in a module title, adding a ninth, or changing an exam pass mark meant
+ * writing SQL against the live database.
+ *
+ * Categories matter more than they look: the lesson form requires a category
+ * and the create handler rejects one that does not exist, so on a database with
+ * no categories a lesson simply could not be written.
+ * ------------------------------------------------------------------------ */
+
+/** Trims to a stored value, or null when the field is blank or absent. */
+function optionalText(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+// GET /api/admin/modules
+router.get("/modules", requirePermission("lessons.read.all"), async (_req, res) => {
+  const modules = await db.select().from(modulesTable).orderBy(asc(modulesTable.orderIndex), asc(modulesTable.id));
+  const lessons = await db.select({ id: lessonsTable.id, moduleId: lessonsTable.moduleId }).from(lessonsTable);
+  res.json({
+    modules: modules.map(m => ({
+      ...m,
+      createdAt: m.createdAt.toISOString(),
+      lessonCount: lessons.filter(l => l.moduleId === m.id).length,
+    })),
+  });
+});
+
+// POST /api/admin/modules
+router.post("/modules", requirePermission("lessons.publish"), async (req, res) => {
+  const title = optionalText(req.body?.title);
+  const description = optionalText(req.body?.description);
+  const slug = optionalText(req.body?.slug);
+  if (!title || !description) return res.status(400).json({ error: "title and description are required" });
+  if (!slug) return res.status(400).json({ error: "slug is required" });
+  if (!/^[a-z0-9-]+$/.test(slug)) {
+    return res.status(400).json({ error: "slug may contain only lowercase letters, digits and hyphens" });
+  }
+
+  const [clash] = await db.select({ id: modulesTable.id }).from(modulesTable)
+    .where(eq(modulesTable.slug, slug)).limit(1);
+  if (clash) return res.status(409).json({ error: "A module with that slug already exists" });
+
+  const [created] = await db.insert(modulesTable).values({
+    slug, title, description,
+    titleUz: optionalText(req.body?.titleUz), titleRu: optionalText(req.body?.titleRu),
+    descriptionUz: optionalText(req.body?.descriptionUz), descriptionRu: optionalText(req.body?.descriptionRu),
+    categoryId: Number.isInteger(Number(req.body?.categoryId)) && Number(req.body?.categoryId) > 0
+      ? Number(req.body.categoryId) : null,
+    orderIndex: clampInt(req.body?.orderIndex, 0, 0, 9999),
+    estimatedHours: clampInt(req.body?.estimatedHours, 0, 0, 10000),
+    difficulty: MODULE_DIFFICULTIES.includes(String(req.body?.difficulty)) ? String(req.body.difficulty) : "beginner",
+    passScore: clampInt(req.body?.passScore, 80, 0, 100),
+    // New modules start hidden. A module is a course; publishing one with no
+    // lessons in it puts an empty shell on the curriculum page.
+    isPublished: false,
+  }).returning();
+
+  await writeAuditLog(req, "module.create", "module", created.id, { slug: created.slug });
+  res.status(201).json(created);
+});
+
+const MODULE_DIFFICULTIES = ["beginner", "intermediate", "advanced"];
+
+/** Reads an integer from a request body, falling back and clamping to a range. */
+function clampInt(value: unknown, fallback: number, min: number, max: number): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, Math.floor(parsed)));
+}
+
+// PATCH /api/admin/modules/:id
+router.patch("/modules/:id", requirePermission("lessons.publish"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid module id" });
+  const [existing] = await db.select().from(modulesTable).where(eq(modulesTable.id, id)).limit(1);
+  if (!existing) return res.status(404).json({ error: "Module not found" });
+
+  const updates: Record<string, unknown> = {};
+  if (req.body?.title !== undefined) {
+    const title = optionalText(req.body.title);
+    if (!title) return res.status(400).json({ error: "title cannot be empty" });
+    updates.title = title;
+  }
+  if (req.body?.description !== undefined) {
+    const description = optionalText(req.body.description);
+    if (!description) return res.status(400).json({ error: "description cannot be empty" });
+    updates.description = description;
+  }
+  for (const field of ["titleUz", "titleRu", "descriptionUz", "descriptionRu"] as const) {
+    if (req.body?.[field] !== undefined) updates[field] = optionalText(req.body[field]);
+  }
+  if (req.body?.orderIndex !== undefined) updates.orderIndex = clampInt(req.body.orderIndex, existing.orderIndex, 0, 9999);
+  if (req.body?.estimatedHours !== undefined) updates.estimatedHours = clampInt(req.body.estimatedHours, existing.estimatedHours, 0, 10000);
+  // The pass mark decides who gets a certificate, so it is bounded rather than
+  // trusted: a 0 would hand one to anybody who opened the exam.
+  if (req.body?.passScore !== undefined) updates.passScore = clampInt(req.body.passScore, existing.passScore, 1, 100);
+  if (req.body?.difficulty !== undefined) {
+    if (!MODULE_DIFFICULTIES.includes(String(req.body.difficulty))) {
+      return res.status(400).json({ error: `difficulty must be one of: ${MODULE_DIFFICULTIES.join(", ")}` });
+    }
+    updates.difficulty = String(req.body.difficulty);
+  }
+  if (req.body?.categoryId !== undefined) {
+    const categoryId = Number(req.body.categoryId);
+    updates.categoryId = Number.isInteger(categoryId) && categoryId > 0 ? categoryId : null;
+  }
+  if (req.body?.isPublished !== undefined) {
+    if (typeof req.body.isPublished !== "boolean") {
+      return res.status(400).json({ error: "isPublished must be a boolean" });
+    }
+    updates.isPublished = req.body.isPublished;
+  }
+
+  if (Object.keys(updates).length === 0) return res.status(400).json({ error: "Nothing to update" });
+
+  const [updated] = await db.update(modulesTable).set(updates).where(eq(modulesTable.id, id)).returning();
+  await writeAuditLog(req, "module.update", "module", id, { fields: Object.keys(updates) });
+  res.json(updated);
+});
+
+// DELETE /api/admin/modules/:id
+/**
+ * Refuses while lessons still point at it. Deleting anyway would either break
+ * the foreign key or orphan a course's worth of lessons out of the curriculum
+ * with no way to find them again — detach or delete them first, deliberately.
+ */
+router.delete("/modules/:id", requirePermission("lessons.delete"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid module id" });
+  const [existing] = await db.select().from(modulesTable).where(eq(modulesTable.id, id)).limit(1);
+  if (!existing) return res.status(404).json({ error: "Module not found" });
+
+  const lessons = await db.select({ id: lessonsTable.id }).from(lessonsTable).where(eq(lessonsTable.moduleId, id));
+  if (lessons.length > 0) {
+    return res.status(409).json({ error: `Move or delete this module's ${lessons.length} lesson(s) first` });
+  }
+  const certs = await db.select({ id: certificatesTable.id }).from(certificatesTable).where(eq(certificatesTable.moduleId, id));
+  if (certs.length > 0) {
+    return res.status(409).json({ error: `${certs.length} certificate(s) were awarded for this module` });
+  }
+
+  await db.transaction(async tx => {
+    await tx.delete(moduleExamAttemptsTable).where(eq(moduleExamAttemptsTable.moduleId, id));
+    await tx.delete(modulesTable).where(eq(modulesTable.id, id));
+  });
+  await writeAuditLog(req, "module.delete", "module", id, { slug: existing.slug });
+  res.json({ success: true });
+});
+
+// GET /api/admin/learn-categories
+router.get("/learn-categories", requirePermission("lessons.read.all"), async (_req, res) => {
+  const categories = await db.select().from(learnCategoriesTable).orderBy(asc(learnCategoriesTable.id));
+  const lessons = await db.select({ categoryId: lessonsTable.categoryId }).from(lessonsTable);
+  res.json({
+    categories: categories.map(c => ({
+      id: c.id, name: c.name, nameUz: c.nameUz, nameRu: c.nameRu,
+      lessonCount: lessons.filter(l => l.categoryId === c.id).length,
+    })),
+  });
+});
+
+// POST /api/admin/learn-categories
+router.post("/learn-categories", requirePermission("lessons.publish"), async (req, res) => {
+  const name = optionalText(req.body?.name);
+  if (!name) return res.status(400).json({ error: "name is required" });
+  const [created] = await db.insert(learnCategoriesTable).values({
+    name, nameUz: optionalText(req.body?.nameUz), nameRu: optionalText(req.body?.nameRu),
+  }).returning();
+  await writeAuditLog(req, "learn_category.create", "learn_category", created.id, { name });
+  res.status(201).json(created);
+});
+
+// PATCH /api/admin/learn-categories/:id
+router.patch("/learn-categories/:id", requirePermission("lessons.publish"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid category id" });
+  const updates: Record<string, unknown> = {};
+  if (req.body?.name !== undefined) {
+    const name = optionalText(req.body.name);
+    if (!name) return res.status(400).json({ error: "name cannot be empty" });
+    updates.name = name;
+  }
+  for (const field of ["nameUz", "nameRu"] as const) {
+    if (req.body?.[field] !== undefined) updates[field] = optionalText(req.body[field]);
+  }
+  if (Object.keys(updates).length === 0) return res.status(400).json({ error: "Nothing to update" });
+
+  const [updated] = await db.update(learnCategoriesTable).set(updates).where(eq(learnCategoriesTable.id, id)).returning();
+  if (!updated) return res.status(404).json({ error: "Category not found" });
+  await writeAuditLog(req, "learn_category.update", "learn_category", id, { fields: Object.keys(updates) });
+  res.json(updated);
+});
+
+// DELETE /api/admin/learn-categories/:id
+router.delete("/learn-categories/:id", requirePermission("lessons.delete"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid category id" });
+  const lessons = await db.select({ id: lessonsTable.id }).from(lessonsTable).where(eq(lessonsTable.categoryId, id));
+  if (lessons.length > 0) {
+    return res.status(409).json({ error: `${lessons.length} lesson(s) still use this category` });
+  }
+  const modules = await db.select({ id: modulesTable.id }).from(modulesTable).where(eq(modulesTable.categoryId, id));
+  if (modules.length > 0) {
+    return res.status(409).json({ error: `${modules.length} module(s) still use this category` });
+  }
+  const [deleted] = await db.delete(learnCategoriesTable).where(eq(learnCategoriesTable.id, id)).returning();
+  if (!deleted) return res.status(404).json({ error: "Category not found" });
+  await writeAuditLog(req, "learn_category.delete", "learn_category", id, { name: deleted.name });
+  res.json({ success: true });
+});
+
+/* ---------------------------------------------------------------------------
+ * Writeups.
+ *
+ * `ctf_writeups.is_published` exists, the public read filters on it, and
+ * nothing in the codebase ever set it to false — so the column was a moderation
+ * switch with no switch attached. The only lever staff had was deleting the
+ * writeup outright, which is not a proportionate response to a spoiler in the
+ * wrong place or a first draft that leaks a flag.
+ *
+ * There was also no way to see writeups at all without first solving the
+ * challenge they belong to, which is the correct rule for learners and a
+ * useless one for whoever has to moderate them.
+ * ------------------------------------------------------------------------ */
+
+// GET /api/admin/writeups
+router.get("/writeups", requirePermission("writeups.moderate"), async (req, res) => {
+  const { limit, offset } = pageWindow(req);
+  const [{ total }] = await db.select({ total: count() }).from(ctfWriteupsTable);
+  const writeups = await db.select({
+    id: ctfWriteupsTable.id,
+    ctfId: ctfWriteupsTable.ctfId,
+    ctfName: ctfTasksTable.name,
+    authorId: ctfWriteupsTable.userId,
+    authorNickname: usersTable.nickname,
+    content: ctfWriteupsTable.content,
+    isPublished: ctfWriteupsTable.isPublished,
+    createdAt: ctfWriteupsTable.createdAt,
+    updatedAt: ctfWriteupsTable.updatedAt,
+  })
+    .from(ctfWriteupsTable)
+    .innerJoin(usersTable, eq(ctfWriteupsTable.userId, usersTable.id))
+    .innerJoin(ctfTasksTable, eq(ctfWriteupsTable.ctfId, ctfTasksTable.id))
+    .orderBy(desc(ctfWriteupsTable.updatedAt))
+    .limit(limit).offset(offset);
+
+  res.json({
+    total, limit, offset,
+    writeups: writeups.map(w => ({
+      ...w,
+      createdAt: w.createdAt.toISOString(),
+      updatedAt: w.updatedAt.toISOString(),
+    })),
+  });
+});
+
+// PATCH /api/admin/writeups/:id
+router.patch("/writeups/:id", requirePermission("writeups.moderate"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid writeup id" });
+  if (typeof req.body?.isPublished !== "boolean") {
+    return res.status(400).json({ error: "isPublished must be a boolean" });
+  }
+
+  const [updated] = await db.update(ctfWriteupsTable)
+    .set({ isPublished: req.body.isPublished })
+    .where(eq(ctfWriteupsTable.id, id)).returning();
+  if (!updated) return res.status(404).json({ error: "Writeup not found" });
+
+  // Hiding someone's work is a moderation decision; it belongs in the record.
+  await writeAuditLog(req, "writeup.moderate", "writeup", id, {
+    isPublished: updated.isPublished, authorId: updated.userId, ctfId: updated.ctfId,
+  });
+  res.json({ id: updated.id, isPublished: updated.isPublished });
 });
 
 export default router;

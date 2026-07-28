@@ -70,6 +70,9 @@ import type {
   LearnCategory,
   Lesson,
   LessonDetail,
+  ListAdminCtfParams,
+  ListAdminLessonsParams,
+  ListAuditLogsParams,
   ListCtfChallengesParams,
   ListLessonsParams,
   LoginBody,
@@ -3743,41 +3746,57 @@ export const useAdminCreateCtf = <
 /**
  * @summary Every challenge, drafts included
  */
-export const getListAdminCtfUrl = () => {
-  return `/api/admin/ctf`;
+export const getListAdminCtfUrl = (params?: ListAdminCtfParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/ctf?${stringifiedParams}`
+    : `/api/admin/ctf`;
 };
 
 export const listAdminCtf = async (
+  params?: ListAdminCtfParams,
   options?: RequestInit,
 ): Promise<AdminCtfListResponse> => {
-  return customFetch<AdminCtfListResponse>(getListAdminCtfUrl(), {
+  return customFetch<AdminCtfListResponse>(getListAdminCtfUrl(params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getListAdminCtfQueryKey = () => {
-  return [`/api/admin/ctf`] as const;
+export const getListAdminCtfQueryKey = (params?: ListAdminCtfParams) => {
+  return [`/api/admin/ctf`, ...(params ? [params] : [])] as const;
 };
 
 export const getListAdminCtfQueryOptions = <
   TData = Awaited<ReturnType<typeof listAdminCtf>>,
   TError = ErrorType<ForbiddenResponse>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listAdminCtf>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params?: ListAdminCtfParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAdminCtf>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListAdminCtfQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getListAdminCtfQueryKey(params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminCtf>>> = ({
     signal,
-  }) => listAdminCtf({ signal, ...requestOptions });
+  }) => listAdminCtf(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listAdminCtf>>,
@@ -3798,15 +3817,18 @@ export type ListAdminCtfQueryError = ErrorType<ForbiddenResponse>;
 export function useListAdminCtf<
   TData = Awaited<ReturnType<typeof listAdminCtf>>,
   TError = ErrorType<ForbiddenResponse>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listAdminCtf>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListAdminCtfQueryOptions(options);
+>(
+  params?: ListAdminCtfParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAdminCtf>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAdminCtfQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -5018,41 +5040,60 @@ export const useAdminCreateLesson = <
 /**
  * @summary Every lesson, drafts included
  */
-export const getListAdminLessonsUrl = () => {
-  return `/api/admin/lessons`;
+export const getListAdminLessonsUrl = (params?: ListAdminLessonsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/lessons?${stringifiedParams}`
+    : `/api/admin/lessons`;
 };
 
 export const listAdminLessons = async (
+  params?: ListAdminLessonsParams,
   options?: RequestInit,
 ): Promise<AdminLessonListResponse> => {
-  return customFetch<AdminLessonListResponse>(getListAdminLessonsUrl(), {
+  return customFetch<AdminLessonListResponse>(getListAdminLessonsUrl(params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getListAdminLessonsQueryKey = () => {
-  return [`/api/admin/lessons`] as const;
+export const getListAdminLessonsQueryKey = (
+  params?: ListAdminLessonsParams,
+) => {
+  return [`/api/admin/lessons`, ...(params ? [params] : [])] as const;
 };
 
 export const getListAdminLessonsQueryOptions = <
   TData = Awaited<ReturnType<typeof listAdminLessons>>,
   TError = ErrorType<ForbiddenResponse>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listAdminLessons>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params?: ListAdminLessonsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAdminLessons>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListAdminLessonsQueryKey();
+  const queryKey =
+    queryOptions?.queryKey ?? getListAdminLessonsQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof listAdminLessons>>
-  > = ({ signal }) => listAdminLessons({ signal, ...requestOptions });
+  > = ({ signal }) => listAdminLessons(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listAdminLessons>>,
@@ -5073,15 +5114,18 @@ export type ListAdminLessonsQueryError = ErrorType<ForbiddenResponse>;
 export function useListAdminLessons<
   TData = Awaited<ReturnType<typeof listAdminLessons>>,
   TError = ErrorType<ForbiddenResponse>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listAdminLessons>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListAdminLessonsQueryOptions(options);
+>(
+  params?: ListAdminLessonsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAdminLessons>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAdminLessonsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -8891,43 +8935,59 @@ export const useRecalculateAllPoints = <
 };
 
 /**
- * @summary The 200 most recent audit entries
+ * @summary The audit log, newest first
  */
-export const getListAuditLogsUrl = () => {
-  return `/api/admin/audit-logs`;
+export const getListAuditLogsUrl = (params?: ListAuditLogsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/audit-logs?${stringifiedParams}`
+    : `/api/admin/audit-logs`;
 };
 
 export const listAuditLogs = async (
+  params?: ListAuditLogsParams,
   options?: RequestInit,
 ): Promise<AuditLogsResponse> => {
-  return customFetch<AuditLogsResponse>(getListAuditLogsUrl(), {
+  return customFetch<AuditLogsResponse>(getListAuditLogsUrl(params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getListAuditLogsQueryKey = () => {
-  return [`/api/admin/audit-logs`] as const;
+export const getListAuditLogsQueryKey = (params?: ListAuditLogsParams) => {
+  return [`/api/admin/audit-logs`, ...(params ? [params] : [])] as const;
 };
 
 export const getListAuditLogsQueryOptions = <
   TData = Awaited<ReturnType<typeof listAuditLogs>>,
   TError = ErrorType<ForbiddenResponse>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listAuditLogs>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params?: ListAuditLogsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAuditLogs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListAuditLogsQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getListAuditLogsQueryKey(params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof listAuditLogs>>> = ({
     signal,
-  }) => listAuditLogs({ signal, ...requestOptions });
+  }) => listAuditLogs(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listAuditLogs>>,
@@ -8942,21 +9002,24 @@ export type ListAuditLogsQueryResult = NonNullable<
 export type ListAuditLogsQueryError = ErrorType<ForbiddenResponse>;
 
 /**
- * @summary The 200 most recent audit entries
+ * @summary The audit log, newest first
  */
 
 export function useListAuditLogs<
   TData = Awaited<ReturnType<typeof listAuditLogs>>,
   TError = ErrorType<ForbiddenResponse>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listAuditLogs>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListAuditLogsQueryOptions(options);
+>(
+  params?: ListAuditLogsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAuditLogs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAuditLogsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

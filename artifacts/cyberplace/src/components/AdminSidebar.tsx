@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, Flag, Trophy, BookOpen, AlertTriangle, ChevronLeft, ShieldCheck, Terminal, LineChart } from "lucide-react";
+import { LayoutDashboard, Users, Flag, Trophy, BookOpen, GraduationCap, FileText, AlertTriangle, ChevronLeft, ShieldCheck, Terminal, LineChart } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -11,6 +11,8 @@ const ADMIN_LINKS = [
   { href: "/admin/ctf", permission: "ctf.read.all", icon: Flag, label: { en: "Challenges", uz: "CTF Topshiriqlari", ru: "CTF Задания" } },
   { href: "/admin/competitions", permission: "competitions.manage", icon: Trophy, label: { en: "Competitions", uz: "Musobaqalar", ru: "Соревнования" } },
   { href: "/admin/lessons", permission: "lessons.read.all", icon: BookOpen, label: { en: "Lessons", uz: "Darsliklar", ru: "Уроки" } },
+  { href: "/admin/curriculum", permission: "lessons.read.all", icon: GraduationCap, label: { en: "Curriculum", uz: "O'quv dasturi", ru: "Программа" } },
+  { href: "/admin/writeups", permission: "writeups.moderate", icon: FileText, label: { en: "Writeups", uz: "Writeuplar", ru: "Разборы" } },
   { href: "/admin/analytics", permission: "lessons.read.all", icon: LineChart, label: { en: "Learning Analytics", uz: "Analitika", ru: "Аналитика" } },
   { href: "/admin/blocked", permission: "blocks.manage", icon: AlertTriangle, label: { en: "Blocked", uz: "Bloklanganlar", ru: "Заблокированные" } },
   { href: "/admin/audit", permission: "audit.read", icon: ShieldCheck, label: { en: "Audit log", uz: "Audit", ru: "Аудит" } },

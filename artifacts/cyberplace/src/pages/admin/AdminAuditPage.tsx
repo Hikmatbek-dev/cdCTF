@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ShieldCheck } from "lucide-react";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { useLang } from "@/lib/LanguageContext";
 import { normalizeArray } from "@/lib/api-shapes";
 import { LoadFailure } from "@/components/LoadFailure";
+import { Pager, PAGE_SIZE } from "@/components/Pager";
 
 type AuditLog = {
   id: number;
@@ -16,16 +18,21 @@ type AuditLog = {
   createdAt: string;
 };
 
-async function fetchAuditLogs() {
-  const response = await fetch("/api/admin/audit-logs", { credentials: "include" });
+async function fetchAuditLogs(offset: number) {
+  const response = await fetch(`/api/admin/audit-logs?limit=${PAGE_SIZE}&offset=${offset}`, { credentials: "include" });
   if (!response.ok) throw new Error("Failed to load audit logs");
-  return response.json() as Promise<{ logs: AuditLog[] }>;
+  return response.json() as Promise<{ logs: AuditLog[]; total?: number }>;
 }
 
 export default function AdminAuditPage() {
   const { t } = useLang();
-  const { data, isLoading, isError, refetch } = useQuery({ queryKey: ["admin-audit-logs"], queryFn: fetchAuditLogs });
+  const [offset, setOffset] = useState(0);
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin-audit-logs", offset],
+    queryFn: () => fetchAuditLogs(offset),
+  });
   const logs = normalizeArray<AuditLog>(data?.logs, ["logs", "data", "items"]);
+  const total = typeof data?.total === "number" ? data.total : logs.length;
 
   return (
     <div className="flex min-h-screen bg-background pt-14">
@@ -74,6 +81,7 @@ export default function AdminAuditPage() {
             </tbody>
           </table>
         </div>
+        <Pager total={total} offset={offset} limit={PAGE_SIZE} onChange={setOffset} />
       </main>
     </div>
   );

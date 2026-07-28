@@ -45,6 +45,8 @@ const AdminLessonsPage = lazy(() => import("@/pages/admin/AdminLessonsPage"));
 const AdminAnalyticsPage = lazy(() => import("@/pages/admin/AdminAnalyticsPage"));
 const AdminBlockedPage = lazy(() => import("@/pages/admin/AdminBlockedPage"));
 const AdminAuditPage = lazy(() => import("@/pages/admin/AdminAuditPage"));
+const AdminCurriculumPage = lazy(() => import("@/pages/admin/AdminCurriculumPage"));
+const AdminWriteupsPage = lazy(() => import("@/pages/admin/AdminWriteupsPage"));
 const CompetitionCtfPage = lazy(() => import("@/pages/CompetitionCtfPage"));
 const ResendVerificationPage = lazy(() => import("@/pages/ResendVerificationPage"));
 const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage"));
@@ -273,6 +275,12 @@ function Router() {
           </Route>
           <Route path="/admin/lessons">
             {() => <PageTransition><PermissionRoute component={AdminLessonsPage} permission="lessons.read.all" /></PageTransition>}
+          </Route>
+          <Route path="/admin/curriculum">
+            {() => <PageTransition><PermissionRoute component={AdminCurriculumPage} permission="lessons.read.all" /></PageTransition>}
+          </Route>
+          <Route path="/admin/writeups">
+            {() => <PageTransition><PermissionRoute component={AdminWriteupsPage} permission="writeups.moderate" /></PageTransition>}
           </Route>
           <Route path="/admin/blocked">
             {() => <PageTransition><PermissionRoute component={AdminBlockedPage} permission="blocks.manage" /></PageTransition>}

@@ -32,6 +32,7 @@ export const PERMISSIONS = [
   "lessons.delete",
   "lessons.publish",
   "competitions.manage",
+  "writeups.moderate",
   "system.maintenance",
 ] as const;
 
@@ -61,6 +62,7 @@ const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     "blocks.manage",
     "ctf.read.all",
     "lessons.read.all",
+    "writeups.moderate",
   ],
   admin: PERMISSIONS,
 };
