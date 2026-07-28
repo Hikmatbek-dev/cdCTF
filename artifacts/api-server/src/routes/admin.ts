@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import { usersTable, ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionTeamsTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable } from "@workspace/db/schema";
+import { usersTable, ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionTeamsTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleQuestionsTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable } from "@workspace/db/schema";
 import { eq, and, or, desc, inArray, isNotNull, asc, not, count, ilike } from "drizzle-orm";
 import { authenticateToken } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
@@ -1255,6 +1255,165 @@ router.patch("/writeups/:id", requirePermission("writeups.moderate"), async (req
     isPublished: updated.isPublished, authorId: updated.userId, ctfId: updated.ctfId,
   });
   res.json({ id: updated.id, isPublished: updated.isPublished });
+});
+
+/* ---------------------------------------------------------------------------
+ * Module exams.
+ *
+ * Fifteen questions per module decide who gets a certificate, and until now the
+ * only way to write or correct one was SQL against the live database. The
+ * lesson editor has had a form for its questions all along; the exam — the
+ * higher-stakes half of the same system — had nothing.
+ * ------------------------------------------------------------------------ */
+
+/** An exam session with nothing newer than this behind it is abandoned. */
+const EXAM_SESSION_STALE_MS = 3 * 60 * 60 * 1000;
+
+type ExamQuestion = {
+  question: string;
+  questionUz: string | null;
+  questionRu: string | null;
+  options: string[];
+  optionsUz: string[] | null;
+  optionsRu: string[] | null;
+  correctOption: number;
+};
+
+/**
+ * Validates one submitted exam question, or explains what is wrong with it.
+ *
+ * The answer lists are index-aligned: `correctOption` indexes all three of
+ * them, so a translation of a different length silently points the Uzbek reader
+ * at the wrong answer. Trailing blanks are dropped because a form with four
+ * boxes is used to write a two-answer question; a blank in the *middle* is an
+ * error rather than a silent renumbering, for the same reason.
+ */
+function parseExamQuestion(raw: unknown, index: number): { ok: true; value: ExamQuestion } | { ok: false; error: string } {
+  const where = `Question ${index + 1}`;
+  if (typeof raw !== "object" || raw === null) return { ok: false, error: `${where}: not an object` };
+  const q = raw as Record<string, unknown>;
+
+  const text = typeof q.question === "string" ? q.question.trim() : "";
+  if (!text) return { ok: false, error: `${where}: text is required` };
+
+  if (!Array.isArray(q.options)) return { ok: false, error: `${where}: options must be a list` };
+  const options = q.options.map(o => (typeof o === "string" ? o.trim() : ""));
+  while (options.length > 0 && options[options.length - 1] === "") options.pop();
+  if (options.length < 2) return { ok: false, error: `${where}: needs at least two answers` };
+  if (options.some(o => o === "")) return { ok: false, error: `${where}: an answer in the middle is blank` };
+
+  const correctOption = Number(q.correctOption);
+  if (!Number.isInteger(correctOption) || correctOption < 0 || correctOption >= options.length) {
+    return { ok: false, error: `${where}: the correct answer is not one of the answers` };
+  }
+
+  const align = (value: unknown): string[] | null => {
+    if (!Array.isArray(value)) return null;
+    const cut = options.map((_, i) => (typeof value[i] === "string" ? (value[i] as string).trim() : ""));
+    return cut.some(Boolean) ? cut : null;
+  };
+
+  return {
+    ok: true,
+    value: {
+      question: text,
+      questionUz: typeof q.questionUz === "string" && q.questionUz.trim() ? q.questionUz.trim() : null,
+      questionRu: typeof q.questionRu === "string" && q.questionRu.trim() ? q.questionRu.trim() : null,
+      options,
+      optionsUz: align(q.optionsUz),
+      optionsRu: align(q.optionsRu),
+      correctOption,
+    },
+  };
+}
+
+// GET /api/admin/modules/:id/questions
+router.get("/modules/:id/questions", requirePermission("lessons.read.all"), async (req, res) => {
+  const moduleId = Number(req.params.id);
+  if (!Number.isInteger(moduleId) || moduleId <= 0) return res.status(400).json({ error: "Invalid module id" });
+  const [mod] = await db.select().from(modulesTable).where(eq(modulesTable.id, moduleId)).limit(1);
+  if (!mod) return res.status(404).json({ error: "Module not found" });
+
+  const questions = await db.select().from(moduleQuestionsTable)
+    .where(eq(moduleQuestionsTable.moduleId, moduleId))
+    .orderBy(asc(moduleQuestionsTable.orderIndex), asc(moduleQuestionsTable.id));
+
+  // Context the editor needs in order to warn honestly before a change lands.
+  const certificates = await db.select({ id: certificatesTable.id }).from(certificatesTable)
+    .where(eq(certificatesTable.moduleId, moduleId));
+  const attempts = await db.select().from(moduleExamAttemptsTable)
+    .where(eq(moduleExamAttemptsTable.moduleId, moduleId));
+  const now = Date.now();
+  const activeSessions = attempts.filter(a =>
+    a.examSessionId !== null && a.examStartedAt !== null
+    && now - a.examStartedAt.getTime() < EXAM_SESSION_STALE_MS).length;
+
+  res.json({
+    moduleId,
+    passScore: mod.passScore,
+    certificateCount: certificates.length,
+    activeSessions,
+    questions,
+  });
+});
+
+// PUT /api/admin/modules/:id/questions
+/**
+ * Replaces the whole question set, which is how the lesson editor works too.
+ *
+ * Replacing means new row ids, and submitting an exam checks every answer
+ * against the ids handed out when the session started — so a learner who is
+ * sitting the exam right now would have their submission rejected wholesale.
+ * That is why an in-flight session refuses the write instead of racing it.
+ */
+router.put("/modules/:id/questions", requirePermission("lessons.publish"), async (req, res) => {
+  const moduleId = Number(req.params.id);
+  if (!Number.isInteger(moduleId) || moduleId <= 0) return res.status(400).json({ error: "Invalid module id" });
+  const [mod] = await db.select().from(modulesTable).where(eq(modulesTable.id, moduleId)).limit(1);
+  if (!mod) return res.status(404).json({ error: "Module not found" });
+
+  if (!Array.isArray(req.body?.questions)) return res.status(400).json({ error: "questions must be a list" });
+  if (req.body.questions.length === 0) {
+    // An empty exam is not a draft state: start returns "Module has no exam yet"
+    // and the module becomes uncompletable. Deliberate deletion, not a typo.
+    if (req.body.confirmEmpty !== true) {
+      return res.status(400).json({ error: "An exam with no questions makes the module uncompletable. Send confirmEmpty to do it anyway." });
+    }
+  }
+
+  const parsed: ExamQuestion[] = [];
+  for (const [i, raw] of req.body.questions.entries()) {
+    const result = parseExamQuestion(raw, i);
+    if (!result.ok) return res.status(400).json({ error: result.error });
+    parsed.push(result.value);
+  }
+
+  const now = Date.now();
+  const attempts = await db.select().from(moduleExamAttemptsTable)
+    .where(eq(moduleExamAttemptsTable.moduleId, moduleId));
+  const inFlight = attempts.filter(a =>
+    a.examSessionId !== null && a.examStartedAt !== null
+    && now - a.examStartedAt.getTime() < EXAM_SESSION_STALE_MS).length;
+  if (inFlight > 0) {
+    return res.status(409).json({
+      error: `${inFlight} learner(s) are sitting this exam right now. Their answers would be rejected — try again shortly.`,
+    });
+  }
+
+  await db.transaction(async tx => {
+    await tx.delete(moduleQuestionsTable).where(eq(moduleQuestionsTable.moduleId, moduleId));
+    for (const [i, q] of parsed.entries()) {
+      await tx.insert(moduleQuestionsTable).values({
+        moduleId,
+        question: q.question, questionUz: q.questionUz, questionRu: q.questionRu,
+        options: q.options, optionsUz: q.optionsUz, optionsRu: q.optionsRu,
+        correctOption: q.correctOption, orderIndex: i,
+      });
+    }
+  });
+
+  await writeAuditLog(req, "module.exam_update", "module", moduleId, { questionCount: parsed.length });
+  res.json({ moduleId, questionCount: parsed.length });
 });
 
 export default router;

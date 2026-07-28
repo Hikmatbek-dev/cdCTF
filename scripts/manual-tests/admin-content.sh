@@ -99,6 +99,71 @@ check "$(curl -s -o /dev/null -w '%{http_code}' -X DELETE $API/admin/modules/$MO
 check "$(q "SELECT count(*) FROM audit_logs WHERE action='module.delete' AND target_id='$MOD_ID'")" "1" "o'chirish audit jurnalida"
 
 echo
+echo "=== ⭐ 2b. Modul imtihonini tahrirlash ==="
+# Fifteen questions per module decide who earns a certificate, and the only way
+# to write or correct one was SQL against the live database.
+MOD2=$(curl -s -X POST $API/admin/modules -H 'Content-Type: application/json' -H "Authorization: Bearer $ADMIN" \
+  -d "{\"slug\":\"${TAG}-exam\",\"title\":\"Imtihon moduli\",\"description\":\"D\",\"passScore\":80}" | json id)
+check "$(curl -s $API/admin/modules/$MOD2/questions -H "Authorization: Bearer $ADMIN" | python3 -c "
+import sys,json; d=json.load(sys.stdin); print(len(d['questions']))")" "0" "yangi modulda savol yo'q"
+
+EXAM='{"questions":[
+  {"question":"SQL inyeksiya nima?","questionUz":"SQL inyeksiya nima?","questionRu":"Что такое SQL-инъекция?",
+   "options":["Kirish maydoniga SQL qo\u0027shish","Parolni taxmin qilish","",""],
+   "optionsUz":["Kirish maydoniga SQL qo\u0027shish","Parolni taxmin qilish","",""],
+   "correctOption":0},
+  {"question":"XSS qanday himoyalanadi?","options":["Chiqishni ekranlash","Hech narsa","Portni yopish","Loglash"],"correctOption":0}
+]}'
+check "$(curl -s -o /dev/null -w '%{http_code}' -X PUT $API/admin/modules/$MOD2/questions \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $ADMIN" -d "$EXAM")" "200" "imtihon saqlandi"
+check "$(q "SELECT count(*) FROM module_questions WHERE module_id=$MOD2")" "2" "ikkita savol yozildi"
+echo "--- ortidagi bo'sh variantlar kesiladi, tarjima moslashadi ---"
+check "$(q "SELECT jsonb_array_length(options) FROM module_questions WHERE module_id=$MOD2 ORDER BY order_index LIMIT 1")" "2" "bo'sh variantlar olib tashlandi"
+check "$(q "SELECT jsonb_array_length(options_uz) FROM module_questions WHERE module_id=$MOD2 ORDER BY order_index LIMIT 1")" "2" "o'zbekcha variantlar bir xil uzunlikda"
+check "$(q "SELECT coalesce(question_ru,'YO_Q') FROM module_questions WHERE module_id=$MOD2 ORDER BY order_index LIMIT 1")" "Что такое SQL-инъекция?" "ruscha savol saqlandi"
+
+echo "--- noto'g'ri savollar rad etiladi ---"
+bad() { curl -s -X PUT $API/admin/modules/$MOD2/questions -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $ADMIN" -d "$1" | python3 -c "import sys,json; print('error' in json.load(sys.stdin))"; }
+check "$(bad '{"questions":[{"question":"X","options":["a"],"correctOption":0}]}')" "True" "bitta variantli savol rad etiladi"
+check "$(bad '{"questions":[{"question":"X","options":["a","b"],"correctOption":5}]}')" "True" "mavjud bo'lmagan javob rad etiladi"
+check "$(bad '{"questions":[{"question":"","options":["a","b"],"correctOption":0}]}')" "True" "bo'sh savol rad etiladi"
+check "$(bad '{"questions":[{"question":"X","options":["a","","c"],"correctOption":0}]}')" "True" "o'rtada bo'sh variant rad etiladi"
+check "$(bad '{"questions":[]}')" "True" "bo'sh imtihon tasdiqsiz rad etiladi"
+echo "--- rad etilgandan keyin eski imtihon joyida ---"
+check "$(q "SELECT count(*) FROM module_questions WHERE module_id=$MOD2")" "2" "eski savollar buzilmadi"
+
+echo "--- imtihon topshirayotgan o'quvchi bo'lsa yozish rad etiladi ---"
+SITTER=$(mkuser sitter)
+STID=$(q "SELECT id FROM users WHERE nickname='${TAG}_sitter'")
+q "INSERT INTO module_exam_attempts (user_id,module_id,exam_session_id,exam_started_at)
+   VALUES ($STID,$MOD2,'sessiya-1',now())" > /dev/null
+check "$(curl -s -o /dev/null -w '%{http_code}' -X PUT $API/admin/modules/$MOD2/questions \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $ADMIN" -d "$EXAM")" "409" "jonli sessiya yozishni to'xtatadi"
+check "$(curl -s $API/admin/modules/$MOD2/questions -H "Authorization: Bearer $ADMIN" | python3 -c "
+import sys,json; print(json.load(sys.stdin)['activeSessions'])")" "1" "tahrirlagich jonli sessiyani ko'rsatadi"
+echo "--- tashlab ketilgan sessiya to'sib qo'ymaydi ---"
+q "UPDATE module_exam_attempts SET exam_started_at = now() - interval '5 hours' WHERE user_id=$STID" > /dev/null
+check "$(curl -s -o /dev/null -w '%{http_code}' -X PUT $API/admin/modules/$MOD2/questions \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $ADMIN" -d "$EXAM")" "200" "eski sessiya to'smaydi"
+check "$(q "SELECT count(*) FROM audit_logs WHERE action='module.exam_update' AND target_id='$MOD2'")" "2" "har saqlash audit jurnalida"
+
+echo "--- panelda yozilgan imtihonni o'quv tomoni ko'radi ---"
+# The two halves are wired through module_questions and nothing else. If the
+# admin write and the learner read ever disagree about that table, this notices.
+# The learner route serves published modules by numeric id.
+curl -s -o /dev/null -X PATCH $API/admin/modules/$MOD2 -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $ADMIN" -d '{"isPublished":true}'
+check "$(curl -s $API/learn/modules/$MOD2 | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+print(d.get('examQuestionCount', 'MAYDON-YO_Q'))")" "2" "modul sahifasi ikkita savolni sanaydi"
+
+echo "--- muallif imtihonni o'zgartira olmaydi ---"
+check "$(curl -s -o /dev/null -w '%{http_code}' -X PUT $API/admin/modules/$MOD2/questions \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $AUTHOR" -d "$EXAM")" "403" "muallifga yopiq"
+
+echo
 echo "=== ⭐ 3. Writeup moderatsiyasi ==="
 CID=$(q "INSERT INTO ctf_tasks (name,description,category,difficulty,points,flag,is_published)
          VALUES ('${TAG}_ctf','D','Web','easy',100,'sha256\$h',true) RETURNING id")

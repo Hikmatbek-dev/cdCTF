@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, X, GraduationCap, Tag } from "lucide-react";
+import { Plus, Pencil, Trash2, X, GraduationCap, Tag, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,6 +12,7 @@ import { errorToast } from "@/lib/error-toast";
 import { normalizeArray } from "@/lib/api-shapes";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ExamEditor } from "@/components/admin/ExamEditor";
 
 type AdminModule = {
   id: number;
@@ -87,6 +88,8 @@ export default function AdminCurriculumPage() {
   const [editingModule, setEditingModule] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [newCategory, setNewCategory] = useState("");
+  /** Which module's exam is open for editing. */
+  const [examModule, setExamModule] = useState<AdminModule | null>(null);
 
   const refreshModules = () => qc.invalidateQueries({ queryKey: ["admin-modules"] });
   const refreshCategories = () => qc.invalidateQueries({ queryKey: ["admin-learn-categories"] });
@@ -320,6 +323,16 @@ export default function AdminCurriculumPage() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center gap-1 justify-end">
+                          {/* The exam is the thing that decides certificates, and
+                              until now it could only be written in SQL. */}
+                          <Button
+                            size="sm" variant="ghost" className="h-7 gap-1 px-2 text-xs"
+                            onClick={() => setExamModule(examModule?.id === m.id ? null : m)}
+                            data-testid={`button-exam-module-${m.id}`}
+                          >
+                            <ClipboardList className="w-3.5 h-3.5" />
+                            {t("Exam", "Imtihon", "Экзамен")}
+                          </Button>
                           {canWrite && (
                             <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditModule(m)} data-testid={`button-edit-module-${m.id}`}>
                               <Pencil className="w-3.5 h-3.5" />
@@ -342,6 +355,15 @@ export default function AdminCurriculumPage() {
                 </tbody>
               </table>
             </div>
+          )}
+
+          {examModule && (
+            <ExamEditor
+              key={examModule.id}
+              moduleId={examModule.id}
+              moduleTitle={t(examModule.title, examModule.titleUz ?? undefined, examModule.titleRu ?? undefined)}
+              onClose={() => setExamModule(null)}
+            />
           )}
         </section>
 
