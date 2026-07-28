@@ -92,7 +92,7 @@ export function HeroTerminal({ challengeCount }: { challengeCount?: number } = {
       </div>
 
       <div
-        className="absolute -left-3 sm:-left-6 bottom-10 glass-card !p-3 flex items-center gap-2.5 animate-float shadow-xl"
+        className="absolute -left-3 sm:-left-6 -bottom-6 glass-card !p-3 flex items-center gap-2.5 animate-float shadow-xl"
         style={{ animationDelay: "1.6s" }}
       >
         <div className="w-9 h-9 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center text-primary shrink-0">

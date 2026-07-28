@@ -240,11 +240,13 @@ export default function CtfListPage() {
                             and from position, before any text is parsed. */}
                         <span
                           aria-hidden="true"
-                          className={`absolute left-0 top-0 bottom-0 w-[3px] z-10 ${ch.isSolved ? "bg-[hsl(var(--neon))]" : "bg-transparent group-hover:bg-primary/70"} transition-colors`}
+                          className={`absolute left-0 top-0 bottom-0 z-10 transition-all ${
+                            ch.isSolved ? "w-[5px] bg-[hsl(var(--neon))]" : "w-[3px] bg-transparent group-hover:bg-primary/70"
+                          }`}
                         />
 
                         <div className="relative h-[132px] overflow-hidden">
-                          <ChallengeArt name={ch.name} hue={cat.hue} solved={ch.isSolved} className="w-full h-full transition-transform duration-700 group-hover:scale-110" />
+                          <ChallengeArt name={ch.name} category={ch.category} hue={cat.hue} solved={ch.isSolved} className="w-full h-full transition-transform duration-700 group-hover:scale-110" />
                           {/* Darken toward the title so the type below always
                               has something to sit on. */}
                           <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-card via-card/25 to-transparent" />
@@ -263,7 +265,9 @@ export default function CtfListPage() {
                         </div>
 
                         <div className="p-5 pt-3 flex flex-col flex-1">
-                          <h3 className="text-base font-bold tracking-tight group-hover:text-primary transition-colors leading-snug mb-3 break-words">
+                          <h3 className={`text-base font-bold tracking-tight transition-colors leading-snug mb-3 break-words ${
+                            ch.isSolved ? "text-muted-foreground group-hover:text-foreground" : "group-hover:text-primary"
+                          }`}>
                             {t(ch.name, ch.nameUz ?? undefined, ch.nameRu ?? undefined)}
                           </h3>
 
@@ -279,7 +283,7 @@ export default function CtfListPage() {
                               {ch.difficulty}
                             </span>
                             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                              <span className="font-mono tabular-nums font-bold text-[hsl(var(--neon))]">+{ch.points}</span>
+                              <span className="font-mono tabular-nums font-bold text-foreground">+{ch.points}</span>
                               <span className="tabular-nums">{ch.solvedCount} {t("solves", "yechim", "решений")}</span>
                             </div>
                           </div>

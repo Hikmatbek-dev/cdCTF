@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { Server, Play, Square, Clock, ExternalLink, Info, Flag, ChevronDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,6 +44,20 @@ export default function LabsPage() {
   const [busy, setBusy] = useState(false);
   /** Which lab's brief is open. Clicking a card is how you find out what it is. */
   const [openLab, setOpenLab] = useState<number | null>(null);
+  /**
+   * The tab the target is running in.
+   *
+   * Stopping a lab only ever updated a database row, so the target carried on
+   * working in its own tab and the clock on this page meant nothing. There is
+   * no server to shut down — a browser lab is a document — so the honest way to
+   * stop one is to close the window we opened.
+   */
+  const targetWindow = useRef<Window | null>(null);
+
+  const closeTarget = () => {
+    try { targetWindow.current?.close(); } catch { /* already gone */ }
+    targetWindow.current = null;
+  };
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["labs"],
@@ -75,6 +89,30 @@ export default function LabsPage() {
       toast(errorToast(t, e));
     } finally { setBusy(false); }
   };
+
+  /**
+   * The clock has to mean something.
+   *
+   * Nothing watched it before: the countdown reached 0:00, the row stayed
+   * "running" until someone pressed Stop, and the target kept working either
+   * way. Now the deadline closes the tab and releases the instance, which is
+   * what a time limit is.
+   */
+  useEffect(() => {
+    if (!running?.expiresAt) return;
+    const left = new Date(running.expiresAt).getTime() - Date.now();
+    const finish = () => {
+      closeTarget();
+      toast({ title: t("Time is up — the lab has been released.",
+                       "Vaqt tugadi — laboratoriya bo'shatildi.",
+                       "Время вышло — лаборатория освобождена.") });
+      void act(`/api/labs/instances/${running.id}/stop`);
+    };
+    if (left <= 0) { finish(); return; }
+    const id = setTimeout(finish, left);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [running?.id, running?.expiresAt]);
 
   const label = (l: Lab) => t(l.name, l.nameUz || l.name, l.nameRu || l.name);
   const blurb = (l: Lab) => t(l.description, l.descriptionUz || l.description, l.descriptionRu || l.description);
@@ -118,7 +156,7 @@ export default function LabsPage() {
                   {countdown ? t(`${countdown} left`, `${countdown} qoldi`, `осталось ${countdown}`) : ""}
                 </div>
               </div>
-              <button onClick={() => act(`/api/labs/instances/${running.id}/stop`)} disabled={busy}
+              <button onClick={() => { closeTarget(); void act(`/api/labs/instances/${running.id}/stop`); }} disabled={busy}
                 className="cyber-button-outline h-11 px-6 gap-2 shrink-0" data-testid="stop-machine">
                 <Square className="w-4 h-4" /> {t("Stop", "To'xtatish", "Остановить")}
               </button>
@@ -190,25 +228,26 @@ export default function LabsPage() {
                     </button>
                     <div className="shrink-0">
                       {isThisRunning ? (
-                        <button onClick={() => act(`/api/labs/instances/${running!.id}/stop`)} disabled={busy}
+                        <button onClick={() => { closeTarget(); void act(`/api/labs/instances/${running!.id}/stop`); }} disabled={busy}
                           className="cyber-button-outline h-11 px-6 gap-2">
                           <Square className="w-4 h-4" /> {t("Stop", "To'xtatish", "Остановить")}
                         </button>
                       ) : lab.kind === "browser" && lab.browserScenario && isAuthenticated && !running ? (
-                        // An anchor, not window.open() after an await: the popup
-                        // blocker only trusts a navigation that comes straight
-                        // out of the click.
-                        <a
-                          href={targetUrl(lab.browserScenario)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={() => { setOpenLab(lab.id); void act(`/api/labs/${lab.id}/start`); }}
+                        <button
+                          onClick={() => {
+                            // Opened synchronously, before any await: that is
+                            // what keeps the popup blocker out of it. Holding
+                            // the handle is what lets Stop actually stop it.
+                            targetWindow.current = window.open(targetUrl(lab.browserScenario!), "_blank", "noopener=no");
+                            setOpenLab(lab.id);
+                            void act(`/api/labs/${lab.id}/start`);
+                          }}
                           className="cyber-button h-11 px-6 gap-2 inline-flex items-center"
                           data-testid={`start-lab-${lab.id}`}
                         >
                           <Play className="w-4 h-4" />
                           {t("Start", "Boshlash", "Начать")}
-                        </a>
+                        </button>
                       ) : (
                         <button onClick={() => act(`/api/labs/${lab.id}/start`)}
                           disabled={busy || !isAuthenticated || !lab.startable || Boolean(running)}

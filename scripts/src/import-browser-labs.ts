@@ -58,7 +58,7 @@ const LABS: BrowserLab[] = [
     descriptionUz: "Kiritganingizni to'g'ridan-to'g'ri SQL so'roviga qo'yadigan kirish formasi. Parolsiz admin bo'lib kiring.",
     descriptionRu: "Форма входа, вставляющая ваш ввод прямо в SQL-запрос. Войдите как admin без пароля.",
     difficulty: "easy",
-    ttlMinutes: 60,
+    ttlMinutes: 20,
     challenge: {
       name: "Lab: Chinor Telecom admin panel",
       nameUz: "Lab: Chinor Telecom admin paneli",
@@ -83,7 +83,7 @@ const LABS: BrowserLab[] = [
     descriptionUz: "Qidiruv sahifasi so'rovingizni razmetka sifatida qaytaradi. Sahifani o'z JavaScript'ingizni bajarishga majburlang.",
     descriptionRu: "Страница поиска возвращает ваш запрос как разметку. Заставьте страницу выполнить ваш JavaScript.",
     difficulty: "easy",
-    ttlMinutes: 60,
+    ttlMinutes: 20,
     challenge: {
       name: "Lab: Registon Market search",
       nameUz: "Lab: Registon bozori qidiruvi",
@@ -108,7 +108,7 @@ const LABS: BrowserLab[] = [
     descriptionUz: "Hisob bor-yo'qligini tekshiradigan, lekin u kimniki ekanini hech tekshirmaydigan portal.",
     descriptionRu: "Биллинг-портал проверяет, существует ли счёт, но не проверяет, чей он.",
     difficulty: "easy",
-    ttlMinutes: 60,
+    ttlMinutes: 15,
     challenge: {
       name: "Lab: Anhor Bank invoices",
       nameUz: "Lab: Anhor Bank hisoblari",
@@ -133,7 +133,7 @@ const LABS: BrowserLab[] = [
     descriptionUz: "Ruxsatlaringizni brauzeringizdagi cookie asosida hal qiladigan ichki portal.",
     descriptionRu: "Внутренний портал определяет ваши права по куке, которая лежит в вашем браузере.",
     difficulty: "easy",
-    ttlMinutes: 60,
+    ttlMinutes: 15,
     challenge: {
       name: "Lab: Sardoba Energy staff portal",
       nameUz: "Lab: Sardoba Energy xodimlar portali",
@@ -158,7 +158,7 @@ const LABS: BrowserLab[] = [
     descriptionUz: "Fayl nomingizni asosiy katalogga qo'shadigan va hech narsani normallashtirmaydigan ko'ruvchi.",
     descriptionRu: "Просмотрщик дописывает имя файла к базовому каталогу и ничего не нормализует.",
     difficulty: "medium",
-    ttlMinutes: 60,
+    ttlMinutes: 30,
     challenge: {
       name: "Lab: Registon Market documents",
       nameUz: "Lab: Registon bozori hujjatlari",

@@ -213,10 +213,10 @@ export default function ScoreboardPage() {
                           {/* Stats */}
                           <div className="text-right shrink-0">
                             <div className="flex items-center justify-end gap-1.5 mb-0.5">
-                              <Zap className="w-4 h-4 fill-current text-[hsl(var(--neon))]" aria-hidden="true" />
-                              <div className="font-mono text-xl md:text-2xl font-bold tabular-nums leading-none text-[hsl(var(--neon))]">{entry.points}</div>
+                              <Zap className="w-4 h-4 fill-current text-muted-foreground" aria-hidden="true" />
+                              <div className="font-mono text-xl md:text-2xl font-bold tabular-nums leading-none text-foreground">{entry.points}</div>
                             </div>
-                            <div className="text-xs text-muted-foreground/50">
+                            <div className="text-xs text-muted-foreground">
                               {entry.solvedCtfCount} {t("solved", "yechildi", "решено")}
                             </div>
                           </div>

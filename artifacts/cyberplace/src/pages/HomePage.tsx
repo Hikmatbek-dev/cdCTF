@@ -142,6 +142,28 @@ export default function HomePage() {
     <div className="min-h-screen bg-background text-foreground">
       {/* ── Dark: hero ─────────────────────────────────────────────── */}
       <div className="relative">
+        {/* A real photograph behind the hero: network hardware in a rack, dark
+            and lit green. The alternative on offer was a masked figure in a
+            hoodie, which is the stereotype this platform exists to argue with —
+            it trains defenders, and it is shown to sponsors and ministries.
+            Two sizes, WebP, 19 KB on a phone and 45 KB on a desk; the scrim
+            over it is heavy enough that the headline keeps its contrast. */}
+        <div aria-hidden="true" className="absolute inset-x-0 top-0 h-[560px] overflow-hidden pointer-events-none">
+          <img
+            src="/img/hero-1600.webp"
+            srcSet="/img/hero-800.webp 800w, /img/hero-1600.webp 1600w"
+            sizes="100vw"
+            alt=""
+            className="w-full h-full object-cover opacity-60"
+            fetchPriority="high"
+            decoding="async"
+          />
+          {/* Two scrims: one down, so the section melts into the page, and one
+              across, so the headline always has near-solid background under it
+              while the picture stays visible on the right. */}
+          <div className="absolute inset-0 bg-gradient-to-b from-background/45 via-background/75 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-transparent" />
+        </div>
         <div className="fixed inset-0 mono-grid pointer-events-none" />
         <div className="relative max-w-6xl mx-auto px-6">
           <section className="pt-28 sm:pt-36 pb-20 grid lg:grid-cols-[1fr_1.05fr] gap-14 lg:gap-12 items-center">
