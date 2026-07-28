@@ -100,6 +100,10 @@
   --grid-line: 262 30% 12%;
   --grid-opacity: 0.035;
 
+  /* Same role as in dark mode; darkened so it can carry text on white. */
+  --neon: 92 70% 30%;
+  --neon-ink: 0 0% 100%;
+
   /* Button fill, kept separate from --primary on purpose. --primary doubles as
      a *text* colour on the page background, so it has to stay bright in dark
      mode; but white text sitting *on* that same bright violet only reaches
@@ -108,31 +112,34 @@
   --btn-from: 262 62% 48%;
   --btn-to: 221 83% 45%;
 
-  --cyber-cyan: 262 62% 48%;
+  --cyber-cyan: 190 80% 34%;
   --cyber-purple: 262 62% 48%;
   --cyber-blue: 221 83% 47%;
-  --cyber-pink: 262 62% 48%;
+  --cyber-pink: 320 65% 45%;
 }
 
 /* The primary experience. Deep violet-black, a violet→blue accent, and the
    glass chrome (frosted cards, glossy gradient buttons, generous glow) defined
    in the components layer below. */
 .dark {
-  --background: 264 44% 6%;
-  --foreground: 255 30% 96%;
-  --border: 260 26% 22%;
-  --input: 260 24% 24%;
+  /* Blue-slate near-black, not violet-black. The old base plus "one calm flat
+     surface" read as a minimal productivity app; this is a security platform,
+     and it should look like the tools it teaches. */
+  --background: 220 42% 5%;
+  --foreground: 210 32% 96%;
+  --border: 218 30% 18%;
+  --input: 218 28% 20%;
   --ring: 258 90% 68%;
 
-  /* A dark violet, one step off the page; .glass-card frosts it and lays a
-     violet→blue sheen over the top. */
-  --card: 264 40% 10%;
-  --card-foreground: 255 30% 96%;
-  --card-border: 260 30% 26%;
+  /* Panels sit visibly above the page and carry a top highlight — see
+     .glass-card. */
+  --card: 220 34% 9%;
+  --card-foreground: 210 32% 96%;
+  --card-border: 218 28% 20%;
 
-  --popover: 264 44% 8%;
-  --popover-foreground: 255 30% 96%;
-  --popover-border: 260 30% 26%;
+  --popover: 220 38% 7%;
+  --popover-foreground: 210 32% 96%;
+  --popover-border: 218 28% 22%;
 
   --primary: 258 90% 68%;
   --primary-foreground: 0 0% 100%;
@@ -151,18 +158,24 @@
   --destructive-foreground: 0 0% 100%;
 
   --glow: 258 90% 68%;
-  --grid-line: 258 60% 80%;
-  --grid-opacity: 0.045;
+  --grid-line: 210 60% 80%;
+  --grid-opacity: 0.05;
+
+  /* The second accent. One brand colour made every state look the same; a
+     terminal green for "live, solved, yours" gives the interface somewhere to
+     shout, and it is the colour this whole field is coded in. */
+  --neon: 84 88% 52%;
+  --neon-ink: 220 42% 5%;
 
   /* See :root — the bright violet that works as text would fail as a fill
      behind white label text, so the button gradient darkens to clear 4.5:1. */
   --btn-from: 258 90% 63%;
   --btn-to: 217 91% 51%;
 
-  --cyber-cyan: 258 90% 68%;
+  --cyber-cyan: 190 90% 55%;
   --cyber-purple: 258 90% 68%;
   --cyber-blue: 217 91% 62%;
-  --cyber-pink: 258 90% 68%;
+  --cyber-pink: 320 85% 65%;
 }
 
 @layer base {
@@ -189,10 +202,52 @@
     @apply font-sans antialiased bg-background text-foreground selection:bg-primary/25 selection:text-foreground;
   }
 
-  /* Strong minimalist: the page is one calm, flat surface. No aurora glow, no
-     light "behind glass" — depth comes from hairline borders and whitespace,
-     not decorative gradients. */
+  /*
+   * The page is not a calm flat surface any more.
+   *
+   * It was, deliberately, and that was the mistake: a security platform styled
+   * like a note-taking app. A hex mesh, two fixed colour washes and a fine
+   * scanline sit behind everything — all painted in CSS, no image requests, so
+   * the whole atmosphere costs nothing on a slow connection.
+   */
   #root { position: relative; z-index: 1; }
+
+  body::before,
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* Hex mesh: two 60-degree line families plus a vertical one. */
+  body::before {
+    background-image:
+      linear-gradient(60deg,  hsl(var(--grid-line) / var(--grid-opacity)) 1px, transparent 1px),
+      linear-gradient(-60deg, hsl(var(--grid-line) / var(--grid-opacity)) 1px, transparent 1px),
+      linear-gradient(0deg,   hsl(var(--grid-line) / calc(var(--grid-opacity) * 0.7)) 1px, transparent 1px);
+    background-size: 46px 80px, 46px 80px, 46px 80px;
+    mask-image: radial-gradient(ellipse 120% 90% at 50% 0%, #000 35%, transparent 78%);
+  }
+
+  /* Two colour washes so the page has a top and a horizon. */
+  body::after {
+    background:
+      radial-gradient(1100px 620px at 12% -8%,  hsl(var(--primary) / 0.16), transparent 62%),
+      radial-gradient(900px 520px at 92% 4%,    hsl(var(--cyber-blue) / 0.12), transparent 60%),
+      radial-gradient(1200px 700px at 50% 108%, hsl(var(--neon) / 0.06), transparent 66%);
+  }
+
+  /* Scanline. Hairline, and switched off for anyone who asked for less motion
+     or contrast than this. */
+  @media (prefers-reduced-motion: no-preference) {
+    #root::before {
+      content: "";
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: repeating-linear-gradient(
+        180deg, hsl(var(--grid-line) / 0.035) 0 1px, transparent 1px 3px);
+      opacity: .5;
+    }
+  }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-display font-semibold tracking-tight;
@@ -204,28 +259,81 @@
    chrome: frosted glass cards, glossy violet→blue buttons, and a gradient
    eyebrow label for the small caps above headings. */
 @layer components {
-  /* Strong minimalist card: a flat solid surface and a single hairline border.
-     No frost, no glow, no gradient sheen. Depth is the border and the space
-     around it; on hover the border simply firms up. */
+  /*
+   * A panel, not a sheet of paper.
+   *
+   * Every page in the app already uses this class, so the card is where a
+   * redesign either lands or does not. It carries a vertical gradient, a lit
+   * top edge, and on hover an accent border with a glow and a small lift —
+   * the thing the old "hairline border and whitespace" rule explicitly refused.
+   */
   .glass-card {
-    @apply relative border p-6 transition-colors duration-150;
+    @apply relative border p-6 transition-all duration-200;
     border-radius: var(--radius-lg);
     border-color: hsl(var(--card-border));
-    background-color: hsl(var(--card));
+    background:
+      linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--background) / .92) 100%);
+    box-shadow: 0 1px 0 0 hsl(var(--foreground) / .06) inset, 0 8px 24px -18px #000;
+  }
+  .glass-card::before {
+    content: "";
+    position: absolute; inset: 0 0 auto 0; height: 1px;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    background: linear-gradient(90deg, transparent, hsl(var(--primary) / .5), transparent);
+    opacity: .55; transition: opacity .2s;
   }
   .glass-card:hover {
-    border-color: hsl(var(--border) / 0.85);
+    border-color: hsl(var(--primary) / .45);
+    box-shadow:
+      0 1px 0 0 hsl(var(--foreground) / .08) inset,
+      0 0 0 1px hsl(var(--primary) / .12),
+      0 18px 40px -24px hsl(var(--primary) / .55);
+    transform: translateY(-2px);
   }
+  .glass-card:hover::before { opacity: 1; }
 
-  /* Solid accent button. One flat violet fill (the WCAG-safe stop), white text,
-     no gradient and no glow; hover just darkens a touch. */
+  /* Angular corner brackets — the detail that reads instantly as a security
+     tool rather than a dashboard template. Opt-in, so dense lists stay quiet. */
+  .bracket-card { position: relative; }
+  .bracket-card::after {
+    content: "";
+    position: absolute; inset: 0; pointer-events: none;
+    border-radius: inherit;
+    background:
+      linear-gradient(hsl(var(--primary) / .8), hsl(var(--primary) / .8)) 0 0 / 14px 2px no-repeat,
+      linear-gradient(hsl(var(--primary) / .8), hsl(var(--primary) / .8)) 0 0 / 2px 14px no-repeat,
+      linear-gradient(hsl(var(--primary) / .8), hsl(var(--primary) / .8)) 100% 100% / 14px 2px no-repeat,
+      linear-gradient(hsl(var(--primary) / .8), hsl(var(--primary) / .8)) 100% 100% / 2px 14px no-repeat;
+    opacity: .35; transition: opacity .2s;
+  }
+  .bracket-card:hover::after { opacity: 1; }
+
+  /* The primary action: a violet→blue fill with a glow that grows on hover.
+     Both stops still clear 4.5:1 behind white text — that constraint survived
+     the redesign, the flatness did not. */
   .cyber-button {
-    @apply inline-flex items-center justify-center gap-2 text-white px-5 py-2.5 font-semibold text-sm transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none;
+    @apply relative inline-flex items-center justify-center gap-2 text-white px-5 py-2.5 font-semibold text-sm transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none overflow-hidden;
     border-radius: var(--radius-md);
-    background-color: hsl(var(--btn-from));
+    background: linear-gradient(135deg, hsl(var(--btn-from)), hsl(var(--btn-to)));
+    box-shadow: 0 6px 18px -10px hsl(var(--btn-from) / .9), 0 1px 0 0 hsl(0 0% 100% / .18) inset;
   }
   .cyber-button:hover:not(:disabled) {
-    background-color: hsl(var(--btn-to));
+    box-shadow: 0 10px 26px -10px hsl(var(--btn-from)), 0 1px 0 0 hsl(0 0% 100% / .28) inset;
+    transform: translateY(-1px);
+  }
+  .cyber-button:active:not(:disabled) { transform: translateY(0); }
+
+  /* The "you did it" variant — solved, live, running. Terminal green. */
+  .neon-button {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 font-bold text-sm transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;
+    border-radius: var(--radius-md);
+    color: hsl(var(--neon-ink));
+    background: hsl(var(--neon));
+    box-shadow: 0 6px 20px -10px hsl(var(--neon) / .9);
+  }
+  .neon-button:hover:not(:disabled) {
+    box-shadow: 0 10px 28px -10px hsl(var(--neon));
+    transform: translateY(-1px);
   }
 
   /* Quiet secondary: transparent with a hairline border; hover fills faintly. */
@@ -236,24 +344,39 @@
     background-color: transparent;
   }
   .cyber-button-outline:hover:not(:disabled) {
-    border-color: hsl(var(--primary) / 0.55);
-    background-color: hsl(var(--primary) / 0.06);
+    border-color: hsl(var(--primary) / 0.7);
+    background-color: hsl(var(--primary) / 0.10);
+    box-shadow: 0 0 0 1px hsl(var(--primary) / .18), 0 8px 22px -16px hsl(var(--primary));
   }
 
-  /* Small-caps label above a heading — a single flat accent colour, no gradient. */
+  /* Section label. Monospace, and prefixed with a shell caret — the app teaches
+     the command line, so its own labels may as well look like it. */
   .eyebrow {
     @apply font-mono text-[11px] uppercase tracking-[0.18em] font-semibold inline-flex items-center gap-2;
     color: hsl(var(--primary));
     width: fit-content;
   }
+  .eyebrow::before {
+    content: "▸";
+    color: hsl(var(--neon));
+    font-size: .9em;
+  }
   .eyebrow svg {
     color: hsl(var(--primary));
   }
 
-  /* Emphasis without glow: a thin accent ring. Kept for API compatibility with
-     the many `neon-glow` call sites; it just no longer glows. */
+  /* It glows again. The class was neutered during the minimalist pass and kept
+     only for API compatibility; every call site meant "make this the thing you
+     look at first", and now it does. */
   .neon-glow {
-    box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.25);
+    box-shadow:
+      inset 0 0 0 1px hsl(var(--primary) / .35),
+      0 0 22px -6px hsl(var(--primary) / .75);
+  }
+  .neon-glow-green {
+    box-shadow:
+      inset 0 0 0 1px hsl(var(--neon) / .45),
+      0 0 22px -6px hsl(var(--neon) / .8);
   }
 
   .terminal-input {
@@ -261,8 +384,32 @@
     background-color: hsl(var(--card));
   }
 
-  /* Accent heading text — a single flat colour now, not a gradient. */
+  /* Headline accent: a real gradient again, violet through blue. */
   .gradient-text {
+    background: linear-gradient(100deg, hsl(var(--primary)), hsl(var(--cyber-blue)) 60%, hsl(var(--cyber-pink)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  /* For the "solved / live / earned" register. */
+  .neon-text { color: hsl(var(--neon)); }
+
+  /* A terminal-style chip: mono, boxed, quiet until it matters. */
+  .chip {
+    @apply inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider px-2 py-0.5 border;
+    border-radius: var(--radius-sm);
+    border-color: hsl(var(--border));
+    background-color: hsl(var(--foreground) / .04);
+    color: hsl(var(--muted-foreground));
+  }
+  .chip-neon {
+    border-color: hsl(var(--neon) / .4);
+    background-color: hsl(var(--neon) / .10);
+    color: hsl(var(--neon));
+  }
+  .chip-primary {
+    border-color: hsl(var(--primary) / .4);
+    background-color: hsl(var(--primary) / .10);
     color: hsl(var(--primary));
   }
 }

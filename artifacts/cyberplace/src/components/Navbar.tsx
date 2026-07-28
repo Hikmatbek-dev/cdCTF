@@ -50,13 +50,28 @@ export function Navbar() {
   const isActive = (href: string) => location.startsWith(href);
 
   return (
-    <div className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 px-6 ${scrolled ? "pt-4" : "pt-8"}`}>
-      <nav className={`max-w-7xl mx-auto transition-all duration-500 rounded-xl border ${scrolled ? "bg-card/40 -2xl border-foreground/10 shadow-2xl py-3 px-8" : "bg-transparent border-transparent py-4 px-8"}`}>
+    /*
+     * A fixed instrument panel, not a floating pill.
+     *
+     * The old bar was a rounded card hovering in the middle of the page with
+     * generous padding — the shape every minimal SaaS template ships. This one
+     * spans the full width, sits on a hairline, and gains a blur and a lit
+     * bottom edge once you scroll past the hero.
+     */
+    <div className="fixed top-0 left-0 right-0 z-50">
+      <nav className={`transition-all duration-300 border-b ${
+        scrolled
+          ? "bg-background/85 backdrop-blur-xl border-primary/20 shadow-[0_1px_0_0_hsl(var(--primary)/.25),0_18px_40px_-30px_#000]"
+          : "bg-background/40 backdrop-blur-md border-transparent"
+      }`}>
+       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform duration-500">
+            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-cyber-blue flex items-center justify-center shadow-[0_0_20px_-4px_hsl(var(--primary))] group-hover:shadow-[0_0_28px_-2px_hsl(var(--primary))] transition-shadow">
               <Shield className="w-5 h-5 text-white" />
+              {/* The live dot: this thing is a running system. */}
+              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[hsl(var(--neon))] shadow-[0_0_8px_hsl(var(--neon))]" />
             </div>
             <div className="flex items-center font-display text-2xl font-black tracking-tighter">
               <span className="gradient-text">cd</span>
@@ -65,19 +80,23 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-2 bg-foreground/5 p-1.5 rounded-2xl border border-foreground/5 ">
+          <div className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map(link => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`relative px-5 py-2 text-sm font-medium transition-all rounded-xl overflow-hidden group ${
+                className={`relative px-4 py-2 font-mono text-[13px] uppercase tracking-wider transition-colors ${
                   isActive(link.href)
-                    ? "text-primary"
+                    ? "text-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {isActive(link.href) && (
-                  <motion.div layoutId="nav-bg" className="absolute inset-0 bg-primary/10" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
+                  <motion.div
+                    layoutId="nav-bg"
+                    className="absolute inset-x-2 -bottom-[13px] h-0.5 bg-[hsl(var(--neon))] shadow-[0_0_10px_hsl(var(--neon))]"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                  />
                 )}
                 <span className="relative z-10">{link.label[lang]}</span>
               </Link>
@@ -85,9 +104,9 @@ export function Navbar() {
             {isStaff && (
               <Link
                 href="/admin/dashboard"
-                className={`px-5 py-2 text-sm font-medium transition-all rounded-xl ${
+                className={`px-4 py-2 font-mono text-[13px] uppercase tracking-wider transition-colors ${
                   isActive("/admin")
-                    ? "text-accent bg-accent/10"
+                    ? "text-accent"
                     : "text-muted-foreground hover:text-accent"
                 }`}
               >
@@ -209,6 +228,7 @@ export function Navbar() {
             </Button>
           </div>
         </div>
+       </div>
       </nav>
 
       {/* Mobile menu */}

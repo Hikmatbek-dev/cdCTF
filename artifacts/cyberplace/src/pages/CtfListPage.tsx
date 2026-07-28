@@ -224,20 +224,43 @@ export default function CtfListPage() {
                   return (
                   <FadeIn key={ch.id} delay={i * 0.05}>
                     <Link href={`/ctf/${ch.id}`}>
+                      {/* A room card, not a list row: a tall cover in the
+                          category's colour, a status rail down the left edge,
+                          and a hover state that lifts and lights up. The point
+                          of the grid is that you can read it without reading
+                          it. */}
                       <div
-                        className={`group cursor-pointer transition-all duration-300 hover:-translate-y-1 relative overflow-hidden rounded-xl flex flex-col h-full border bg-card ${
-                          ch.isSolved ? "border-emerald-500/40" : "border-border hover:border-primary/40"
+                        className={`group cursor-pointer transition-all duration-300 hover:-translate-y-1.5 relative overflow-hidden rounded-xl flex flex-col h-full border bg-card ${
+                          ch.isSolved
+                            ? "border-[hsl(var(--neon)/.45)] shadow-[0_0_0_1px_hsl(var(--neon)/.15)] hover:shadow-[0_18px_40px_-24px_hsl(var(--neon))]"
+                            : "border-border hover:border-primary/50 hover:shadow-[0_18px_40px_-24px_hsl(var(--primary))]"
                         } ${ch.isBlocked ? "opacity-40 grayscale pointer-events-none" : ""}`}
                       >
-                        <div className="relative h-[104px] overflow-hidden">
-                          <ChallengeArt name={ch.name} hue={cat.hue} solved={ch.isSolved} className="w-full h-full transition-transform duration-500 group-hover:scale-105" />
-                          <span className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-semibold backdrop-blur-sm bg-black/35 text-white`}>
+                        {/* Status rail — solved reads at a glance, from colour
+                            and from position, before any text is parsed. */}
+                        <span
+                          aria-hidden="true"
+                          className={`absolute left-0 top-0 bottom-0 w-[3px] z-10 ${ch.isSolved ? "bg-[hsl(var(--neon))]" : "bg-transparent group-hover:bg-primary/70"} transition-colors`}
+                        />
+
+                        <div className="relative h-[132px] overflow-hidden">
+                          <ChallengeArt name={ch.name} hue={cat.hue} solved={ch.isSolved} className="w-full h-full transition-transform duration-700 group-hover:scale-110" />
+                          {/* Darken toward the title so the type below always
+                              has something to sit on. */}
+                          <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-card via-card/25 to-transparent" />
+                          <span className="absolute left-3 top-3 chip chip-primary backdrop-blur-sm">
                             {ch.category}
                           </span>
+                          {ch.isSolved && (
+                            <span className="absolute right-3 top-3 chip chip-neon backdrop-blur-sm">
+                              <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
+                              {t("Solved", "Yechilgan", "Решено")}
+                            </span>
+                          )}
                         </div>
 
-                        <div className="p-5 flex flex-col flex-1">
-                          <h3 className="text-base font-semibold tracking-tight group-hover:text-primary transition-colors leading-snug mb-3 break-words">
+                        <div className="p-5 pt-3 flex flex-col flex-1">
+                          <h3 className="text-base font-bold tracking-tight group-hover:text-primary transition-colors leading-snug mb-3 break-words">
                             {t(ch.name, ch.nameUz ?? undefined, ch.nameRu ?? undefined)}
                           </h3>
 
@@ -253,7 +276,7 @@ export default function CtfListPage() {
                               {ch.difficulty}
                             </span>
                             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                              <span className="tabular-nums font-semibold text-foreground">{ch.points}</span>
+                              <span className="font-mono tabular-nums font-bold text-[hsl(var(--neon))]">+{ch.points}</span>
                               <span className="tabular-nums">{ch.solvedCount} {t("solves", "yechim", "решений")}</span>
                             </div>
                           </div>
