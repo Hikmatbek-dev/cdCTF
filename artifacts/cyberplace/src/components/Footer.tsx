@@ -33,6 +33,7 @@ export function Footer() {
               <li><Link href="/modules" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Modules", "Modullar", "Модули")}</Link></li>
               <li><Link href="/learn" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Lessons", "Darslar", "Уроки")}</Link></li>
               <li><Link href="/ctf" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("CTF challenges", "CTF topshiriqlar", "CTF задания")}</Link></li>
+              <li><Link href="/glossary" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Glossary", "Lug'at", "Словарь")}</Link></li>
             </ul>
           </div>
           <div>

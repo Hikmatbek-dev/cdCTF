@@ -45,8 +45,14 @@ router.get("/me/dashboard", authenticateToken, async (req, res) => {
   // unnecessary now that awardPoints simply never pays an excluded account. Use
   // POST /admin/users/recalculate-points to fix historical rows.
   const [solvedCtf, completedLessons, titles, rank] = await Promise.all([
-    db.select().from(ctfAttemptsTable).where(and(eq(ctfAttemptsTable.userId, userId), eq(ctfAttemptsTable.solved, true))),
-    db.select().from(userLessonAttemptsTable).where(and(eq(userLessonAttemptsTable.userId, userId), eq(userLessonAttemptsTable.status, "completed"))),
+    db.select({ ctfId: ctfAttemptsTable.ctfId, solvedAt: ctfAttemptsTable.solvedAt, name: ctfTasksTable.name })
+      .from(ctfAttemptsTable)
+      .innerJoin(ctfTasksTable, eq(ctfAttemptsTable.ctfId, ctfTasksTable.id))
+      .where(and(eq(ctfAttemptsTable.userId, userId), eq(ctfAttemptsTable.solved, true))),
+    db.select({ lessonId: userLessonAttemptsTable.lessonId, completedAt: userLessonAttemptsTable.completedAt, title: lessonsTable.title, titleUz: lessonsTable.titleUz, titleRu: lessonsTable.titleRu })
+      .from(userLessonAttemptsTable)
+      .innerJoin(lessonsTable, eq(userLessonAttemptsTable.lessonId, lessonsTable.id))
+      .where(and(eq(userLessonAttemptsTable.userId, userId), eq(userLessonAttemptsTable.status, "completed"))),
     db.select({ id: titlesTable.id, name: titlesTable.name, category: titlesTable.category, earnedAt: userTitlesTable.earnedAt })
       .from(userTitlesTable)
       .innerJoin(titlesTable, eq(userTitlesTable.titleId, titlesTable.id))
@@ -80,8 +86,8 @@ router.get("/me/dashboard", authenticateToken, async (req, res) => {
     },
     nextLesson,
     recent: {
-      solvedCtf: solvedCtf.slice(-5).reverse().map(item => ({ ctfId: item.ctfId, solvedAt: item.solvedAt })),
-      completedLessons: completedLessons.slice(-5).reverse().map(item => ({ lessonId: item.lessonId, completedAt: item.completedAt })),
+      solvedCtf: solvedCtf.slice(-5).reverse().map(item => ({ ctfId: item.ctfId, solvedAt: item.solvedAt, name: item.name })),
+      completedLessons: completedLessons.slice(-5).reverse().map(item => ({ lessonId: item.lessonId, completedAt: item.completedAt, title: item.title, titleUz: item.titleUz, titleRu: item.titleRu })),
     },
     titles: titles.map(item => ({ id: item.id, name: item.name, category: item.category, earnedAt: item.earnedAt })),
   });

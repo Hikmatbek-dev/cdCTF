@@ -374,7 +374,7 @@ export default function CompetitionDetailPage() {
                   <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:border-primary/30 transition-colors cursor-pointer" data-testid={`card-comp-ctf-${ch.id}`}>
                     <DifficultyBadge difficulty={ch.difficulty} />
                     <span className="flex-1 text-sm font-medium truncate">{ch.name}</span>
-                    <span className="text-xs font-mono text-primary">{ch.points}pts</span>
+                    <span className="text-xs font-mono text-primary">{ch.points} points</span>
                   </div>
                 </Link>
               ))}

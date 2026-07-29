@@ -120,7 +120,7 @@ export default function AdminDashboardPage() {
                     <div key={u.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 text-sm">
                       <span className="w-5 font-mono text-muted-foreground text-xs">#{i + 1}</span>
                       <span className="flex-1 truncate font-medium">{u.nickname}</span>
-                      <span className="font-mono text-xs text-primary font-bold">{u.points} pts</span>
+                      <span className="font-mono text-xs text-primary font-bold">{u.points} points</span>
                     </div>
                   ))}
                 </div>

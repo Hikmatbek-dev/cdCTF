@@ -115,9 +115,9 @@ export default function HomePage() {
     {
       q: t("How long does it take?", "Qancha vaqt oladi?", "Сколько времени займёт?"),
       a: t(
-        "About six months at a steady pace — roughly 340 hours across eight modules. It is yours to go faster or slower.",
-        "Bir tekis sur'atda taxminan olti oy — sakkiz modulda qariyb 340 soat. Tezroq yoki sekinroq borish o'zingizga bog'liq.",
-        "Около шести месяцев в ровном темпе — примерно 340 часов на восемь модулей. Быстрее или медленнее — решать вам.",
+        `About six months at a steady pace — roughly ${moduleCount > 0 ? moduleCount * 42 : 340} hours across ${moduleCount > 0 ? moduleCount : 8} modules. It is yours to go faster or slower.`,
+        `Bir tekis sur'atda taxminan olti oy — ${moduleCount > 0 ? moduleCount : 8} modulda qariyb ${moduleCount > 0 ? moduleCount * 42 : 340} soat. Tezroq yoki sekinroq borish o'zingizga bog'liq.`,
+        `Около шести месяцев в ровном темпе — примерно ${moduleCount > 0 ? moduleCount * 42 : 340} часов на ${moduleCount > 0 ? moduleCount : 8} модулей. Быстрее или медленнее — решать вам.`,
       ),
     },
     {
@@ -467,14 +467,16 @@ export default function HomePage() {
                 { n: "Lost Packet", pts: 300, cat: "forensics" },
                 { n: "Root Me", pts: 450, cat: "pwn" },
               ].map((c, i) => (
-                <div key={c.n} className={`glass-card !p-4 ${i % 2 ? "translate-y-4" : ""}`}>
-                  <div className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2">{c.cat}</div>
-                  <div className="font-semibold text-sm mb-3">{c.n}</div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-primary font-semibold text-sm tabular-nums">{c.pts}</span>
-                    <Flag className="w-3.5 h-3.5 text-muted-foreground" />
+                <Link key={c.n} href="/ctf" className="block">
+                  <div className={`glass-card !p-4 hover:border-primary/30 transition-colors ${i % 2 ? "translate-y-4" : ""}`}>
+                    <div className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2">{c.cat}</div>
+                    <div className="font-semibold text-sm mb-3">{c.n}</div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-primary font-semibold text-sm tabular-nums">{c.pts}</span>
+                      <Flag className="w-3.5 h-3.5 text-muted-foreground" />
+                    </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
             <div className="order-1 lg:order-2">
@@ -666,9 +668,9 @@ export default function HomePage() {
                 </h2>
                 <p className="text-muted-foreground max-w-xl mx-auto mb-9">
                   {t(
-                    "Eight modules, sixty-four lessons, and a certificate at every step. Free, in your language.",
-                    "Sakkiz modul, oltmish to'rt dars va har qadamda sertifikat. Bepul, o'z tilingizda.",
-                    "Восемь модулей, шестьдесят четыре урока и сертификат на каждом шаге. Бесплатно, на вашем языке.",
+                    `${moduleCount > 0 ? moduleCount : 8} modules, ${lessonCount > 0 ? lessonCount : 64} lessons, and a certificate at every step. Free, in your language.`,
+                    `${moduleCount > 0 ? moduleCount : 8} modul, ${lessonCount > 0 ? lessonCount : 64} dars va har qadamda sertifikat. Bepul, o'z tilingizda.`,
+                    `${moduleCount > 0 ? moduleCount : 8} модулей, ${lessonCount > 0 ? lessonCount : 64} уроков и сертификат на каждом шаге. Бесплатно, на вашем языке.`,
                   )}
                 </p>
                 <Link href="/register" className="inline-block">

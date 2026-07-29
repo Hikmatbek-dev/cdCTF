@@ -15,8 +15,8 @@ type DashboardResponse = {
   user: { id: number; nickname: string; points: number; rank: number };
   progress: { solvedCtfCount: number; completedLessonCount: number; titleCount: number; currentStreak?: number; longestStreak?: number };
   recent: {
-    solvedCtf: Array<{ ctfId: number; solvedAt: string | null }>;
-    completedLessons: Array<{ lessonId: number; completedAt: string | null }>;
+    solvedCtf: Array<{ ctfId: number; solvedAt: string | null; name: string }>;
+    completedLessons: Array<{ lessonId: number; completedAt: string | null; title: string; titleUz: string | null; titleRu: string | null }>;
   };
   titles: Array<{ id: number | null; name: string | null; category: string | null; earnedAt: string | null }>;
   nextLesson: { id: number; title: string; titleUz: string | null; titleRu: string | null; moduleId: number | null } | null;
@@ -116,7 +116,7 @@ export default function DashboardPage() {
                 <div className="flex items-baseline justify-between mb-2 gap-4">
                   <span className="font-semibold">{t("Level", "Daraja", "Уровень")} {lv.level}</span>
                   <span className="text-xs text-muted-foreground tabular-nums shrink-0">
-                    {lv.toNext} {t("XP to level", "ball keyingi darajaga", "очк. до уровня")} {lv.level + 1}
+                    {lv.toNext} {t("points to level", "ball keyingi darajaga", "очков до уровня")} {lv.level + 1}
                   </span>
                 </div>
                 <div className="h-2.5 rounded-full bg-muted/40 overflow-hidden">
@@ -230,7 +230,7 @@ export default function DashboardPage() {
                         </div>
                         <div>
                           <div className="text-sm font-medium group-hover:text-primary transition-colors">{t("Challenge solved", "Topshiriq yechildi", "Задание решено")}</div>
-                          <div className="text-xs text-muted-foreground mt-1">#{item.ctfId}</div>
+                          <div className="text-xs text-muted-foreground mt-1">{item.name} <span className="opacity-50">(#{item.ctfId})</span></div>
                         </div>
                       </div>
                       <ChevronRight className="w-5 h-5 text-muted-foreground/20 group-hover:text-primary transition-all group-hover:translate-x-1" />
@@ -247,7 +247,7 @@ export default function DashboardPage() {
                         </div>
                         <div>
                           <div className="text-sm font-medium group-hover:text-primary transition-colors">{t("Lesson completed", "Dars tugatildi", "Урок пройден")}</div>
-                          <div className="text-xs text-muted-foreground mt-1">#{item.lessonId}</div>
+                          <div className="text-xs text-muted-foreground mt-1">{t(item.title, item.titleUz || item.title, item.titleRu || item.title)} <span className="opacity-50">(#{item.lessonId})</span></div>
                         </div>
                       </div>
                       <ChevronRight className="w-5 h-5 text-muted-foreground/20 group-hover:text-primary transition-all group-hover:translate-x-1" />

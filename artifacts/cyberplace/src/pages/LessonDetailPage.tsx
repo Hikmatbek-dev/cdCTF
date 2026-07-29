@@ -374,7 +374,7 @@ export default function LessonDetailPage() {
             {/* Header */}
             <div className="flex items-center gap-2 mb-3">
               <span className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 rounded-full px-2.5 py-1">
-                <BookOpen className="w-3 h-3" /> {lesson.points} {t("pts", "ball", "очк")}
+                <BookOpen className="w-3 h-3" /> {lesson.points} {t("points", "ball", "очки")}
               </span>
               {lesson.isCompleted && (
                 <span className="inline-flex items-center gap-1 text-xs font-medium text-primary"><CheckCircle2 className="w-3.5 h-3.5" /> {t("Completed", "Tugatilgan", "Завершено")}</span>

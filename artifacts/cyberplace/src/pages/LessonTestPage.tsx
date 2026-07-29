@@ -168,7 +168,7 @@ export default function LessonTestPage() {
             {result.correctCount}/{result.totalCount} {t("correct", "to'g'ri", "правильно")}
           </p>
           {result.passed && result.pointsEarned > 0 && (
-            <p className="text-sm font-semibold text-primary mb-4">+{result.pointsEarned} {t("pts", "ball", "очков")}</p>
+            <p className="text-sm font-semibold text-primary mb-4">+{result.pointsEarned} {t("points", "ball", "очки")}</p>
           )}
           {!result.passed && (
             <p className="text-xs text-muted-foreground mb-4">

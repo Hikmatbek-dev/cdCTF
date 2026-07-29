@@ -49,7 +49,7 @@ export default function CompetitionCtfPage() {
       if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : "Submit failed");
 
       if (data.correct) {
-        toast({ title: t("Competition solve accepted!", "Competition yechimi qabul qilindi!", "Решение в соревновании принято!"), description: `+${data.pointsEarned ?? challenge?.points ?? 0} pts` });
+        toast({ title: t("Competition solve accepted!", "Competition yechimi qabul qilindi!", "Решение в соревновании принято!"), description: `+${data.pointsEarned ?? challenge?.points ?? 0} points` });
       } else if (data.blocked) {
         toast({ title: t("Challenge blocked", "Topshiriq bloklandi", "Задание заблокировано"), description: t("You used all attempts for this challenge.", "Bu topshiriqda barcha urinishlar tugadi.", "Вы исчерпали попытки для этого задания."), variant: "destructive" });
       } else {

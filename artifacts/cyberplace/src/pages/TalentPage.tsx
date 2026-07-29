@@ -111,7 +111,7 @@ export default function TalentPage() {
 
                     <div className="flex flex-wrap gap-4 text-sm">
                       <span className="flex items-center gap-1.5 text-foreground">
-                        <Trophy className="w-4 h-4 text-primary" /> <span className="tabular-nums font-semibold">{entry.points}</span> <span className="text-muted-foreground">{t("pts", "ball", "очк")}</span>
+                        <Trophy className="w-4 h-4 text-primary" /> <span className="tabular-nums font-semibold">{entry.points}</span> <span className="text-muted-foreground">{t("points", "ball", "очки")}</span>
                       </span>
                       <span className="flex items-center gap-1.5 text-foreground">
                         <Flag className="w-4 h-4 text-primary" /> <span className="tabular-nums font-semibold">{entry.solvedCtfCount}</span> <span className="text-muted-foreground">{t("solved", "yechim", "решено")}</span>

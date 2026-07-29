@@ -226,7 +226,7 @@ export default function JobsPage() {
                             <div key={a.userId} className="rounded-lg bg-muted/20 p-3 text-sm">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <Link href={`/profile/${a.userId}`} className="font-medium hover:text-primary">{a.nickname}</Link>
-                                <span className="text-xs text-muted-foreground tabular-nums">{a.points} {t("pts", "ball", "очк")}</span>
+                                <span className="text-xs text-muted-foreground tabular-nums">{a.points} {t("points", "ball", "очки")}</span>
                                 <span className="text-xs text-muted-foreground tabular-nums">· {a.solvedCtfCount} {t("solved", "yechim", "решено")}</span>
                                 {a.openToWork && <span className="text-xs text-emerald-500 border border-emerald-500/30 rounded-full px-2">{t("Open to work", "Ishga tayyor", "Открыт")}</span>}
                               </div>

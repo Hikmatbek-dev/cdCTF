@@ -52,6 +52,7 @@ const CompetitionCtfPage = lazy(() => import("@/pages/CompetitionCtfPage"));
 const ResendVerificationPage = lazy(() => import("@/pages/ResendVerificationPage"));
 const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
+const GlossaryPage = lazy(() => import("@/pages/GlossaryPage"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 /**
@@ -259,6 +260,9 @@ function Router() {
           </Route>
           <Route path="/profile/:id">
             <PageTransition><ProfilePage /></PageTransition>
+          </Route>
+          <Route path="/glossary">
+            {() => <PageTransition><GlossaryPage /></PageTransition>}
           </Route>
           
           <Route path="/admin/dashboard">
