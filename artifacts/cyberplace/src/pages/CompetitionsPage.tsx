@@ -7,18 +7,9 @@ import { normalizeCompetitions } from "@/lib/api-shapes";
 import { useListCompetitions, getListCompetitionsQueryKey } from "@workspace/api-client-react";
 import { statusLabel } from "@/lib/status-label";
 
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    upcoming: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-    active: "bg-green-500/10 text-green-500 border-green-500/20",
-    ended: "bg-muted text-muted-foreground border-border",
-  };
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium ${styles[status] ?? styles.ended}`}>
-      {status}
-    </span>
-  );
-}
+// A dead `StatusBadge` component lived here — it rendered the raw, untranslated
+// status string and was shadowed everywhere by statusLabel(t, …), which the
+// page actually uses. Removed.
 
 export default function CompetitionsPage() {
   const { t } = useLang();
@@ -31,8 +22,6 @@ export default function CompetitionsPage() {
 
   return (
     <div className="min-h-screen bg-background page relative overflow-hidden">
-      {/* Background Glow */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full hidden pointer-events-none" />
 
       <div className="shell-mid py-8 relative z-10">
         <div className="flex items-center gap-4 mb-12">

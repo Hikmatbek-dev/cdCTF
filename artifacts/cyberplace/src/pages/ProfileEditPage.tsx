@@ -6,6 +6,10 @@ import { Camera, Lock, Trash2, User, Mail, AlertTriangle, Briefcase } from "luci
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useUpdateUserProfile, getGetUserProfileQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/AuthContext";
@@ -157,8 +161,11 @@ export default function ProfileEditPage() {
     }
   };
 
+  // The confirmation is an AlertDialog now — deleting an account is the most
+  // destructive thing a user can do here, and a native confirm() is both
+  // untranslatable in the browser chrome and trivially dismissed by muscle
+  // memory.
   const handleDeleteAccount = async () => {
-    if (!confirm(t("Are you sure? This action is permanent!", "Ishonchingiz komilmi? Bu amalni ortga qaytarib bo'lmaydi!", "Вы уверены? Это действие необратимо!"))) return;
     if (!user) return;
     try {
       const res = await fetch(`/api/users/${user.id}`, { method: "DELETE" });
@@ -339,10 +346,30 @@ export default function ProfileEditPage() {
             <p className="text-sm text-muted-foreground mb-4">
               {t("Once you delete your account, there is no going back. Please be certain.", "Hisobingizni o'chirganingizdan so'ng, uni qayta tiklab bo'lmaydi. Iltimos, ehtiyot bo'ling.", "После удаления аккаунта пути назад нет. Пожалуйста, будьте уверены.")}
             </p>
-            <Button variant="destructive" onClick={handleDeleteAccount} className="gap-2">
-              <Trash2 className="w-4 h-4" />
-              {t("Delete Account", "Hisobni O'chirish", "Удалить аккаунт")}
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="gap-2">
+                  <Trash2 className="w-4 h-4" />
+                  {t("Delete Account", "Hisobni O'chirish", "Удалить аккаунт")}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("Delete your account?", "Hisobingizni o'chirasizmi?", "Удалить аккаунт?")}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t("This permanently deletes your account, your progress and your solves. It cannot be undone.",
+                       "Bu hisobingizni, yutuqlaringizni va yechimlaringizni butunlay o'chiradi. Buni qaytarib bo'lmaydi.",
+                       "Это навсегда удалит ваш аккаунт, прогресс и решения. Отменить нельзя.")}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("Cancel", "Bekor", "Отмена")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    {t("Delete Account", "Hisobni O'chirish", "Удалить аккаунт")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </section>
         </div>
       </div>

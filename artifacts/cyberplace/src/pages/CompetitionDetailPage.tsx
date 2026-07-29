@@ -77,7 +77,7 @@ export default function CompetitionDetailPage() {
         body: JSON.stringify(body),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : "Failed");
+      if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : t("Something went wrong", "Xatolik yuz berdi", "Что-то пошло не так"));
       toast({ title: t("Team created!", "Jamoa yaratildi!", "Команда создана!") });
       setTeamName("");
       refreshTeamState();
@@ -98,7 +98,7 @@ export default function CompetitionDetailPage() {
         body: JSON.stringify({ inviteCode: teamCode.trim() }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : "Failed");
+      if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : t("Something went wrong", "Xatolik yuz berdi", "Что-то пошло не так"));
       toast({ title: t("Joined the team!", "Jamoaga qo'shildingiz!", "Вы вступили в команду!") });
       setTeamCode("");
       refreshTeamState();

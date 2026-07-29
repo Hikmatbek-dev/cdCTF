@@ -6,6 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LoadFailure } from "@/components/LoadFailure";
+import { Pagination } from "@/components/Pagination";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
@@ -13,6 +18,8 @@ import { normalizeArray } from "@/lib/api-shapes";
 import { useQueryClient } from "@tanstack/react-query";
 import { useListJobs, getListJobsQueryKey, useListMyJobs, getListMyJobsQueryKey } from "@workspace/api-client-react";
 import { errorToast } from "@/lib/error-toast";
+
+const PER_PAGE = 10;
 
 type Job = {
   id: number; title: string; company: string; description: string;
@@ -57,6 +64,14 @@ export default function JobsPage() {
   const [applyMsg, setApplyMsg] = useState("");
   const [viewApplicants, setViewApplicants] = useState<number | null>(null);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
+  const [pendingDelete, setPendingDelete] = useState<Job | null>(null);
+  const [page, setPage] = useState(1);
+
+  // The board is a plain array from the server (capped at 200). Page through it
+  // on the client rather than showing a wall of every listing at once.
+  const totalPages = Math.max(1, Math.ceil(jobs.length / PER_PAGE));
+  const pageJobs = jobs.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const goToPage = (p: number) => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); };
 
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: getListJobsQueryKey() });
@@ -70,7 +85,9 @@ export default function JobsPage() {
       body: body ? JSON.stringify(body) : undefined,
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(typeof data?.error === "string" ? data.error : "Failed");
+    // A translated fallback rather than a bare English "Failed" — errorToast
+    // shows the thrown message verbatim, so this is what a user would have read.
+    if (!res.ok) throw new Error(typeof data?.error === "string" ? data.error : t("Something went wrong", "Xatolik yuz berdi", "Что-то пошло не так"));
     return data;
   };
 
@@ -104,7 +121,7 @@ export default function JobsPage() {
     try {
       const r = await fetch(`/api/jobs/${jobId}/applications`);
       const d = await r.json();
-      if (!r.ok) throw new Error(d?.error || "Failed");
+      if (!r.ok) throw new Error(d?.error || t("Something went wrong", "Xatolik yuz berdi", "Что-то пошло не так"));
       setApplicants(normalizeArray<Applicant>(d?.applications, ["applications", "data", "items"]));
       setViewApplicants(jobId);
     } catch (e) {
@@ -131,17 +148,18 @@ export default function JobsPage() {
     catch (e) { toast(errorToast(t, e)); }
   };
 
-  const removeJob = async (job: Job) => {
-    if (!confirm(t("Delete this posting?", "E'lonni o'chirasizmi?", "Удалить эту вакансию?"))) return;
+  // The confirmation is an AlertDialog now, not a blocking native confirm().
+  const confirmRemove = async () => {
+    const job = pendingDelete;
+    if (!job) return;
+    setPendingDelete(null);
     try { await post(`/api/jobs/${job.id}`, "DELETE"); refresh(); }
     catch (e) { toast(errorToast(t, e)); }
   };
 
   return (
-    <div className="min-h-screen bg-background page relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full hidden pointer-events-none" />
-
-      <div className="shell-mid py-8 relative z-10">
+    <div className="min-h-screen bg-background page">
+      <div className="shell-mid py-8">
         <div className="flex items-center gap-4 mb-8">
           <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
             <Briefcase className="w-7 h-7 text-primary" />
@@ -217,7 +235,7 @@ export default function JobsPage() {
                         <button onClick={() => toggleActive(job)} className="text-muted-foreground hover:text-primary" title={job.isActive ? t("Hide", "Yashirish", "Скрыть") : t("Show", "Ko'rsatish", "Показать")}>
                           {job.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
-                        <button onClick={() => removeJob(job)} className="text-muted-foreground hover:text-destructive" title={t("Delete", "O'chirish", "Удалить")}><Trash2 className="w-4 h-4" /></button>
+                        <button onClick={() => setPendingDelete(job)} className="text-muted-foreground hover:text-destructive" title={t("Delete", "O'chirish", "Удалить")}><Trash2 className="w-4 h-4" /></button>
                       </div>
                       {viewApplicants === job.id && (
                         <div className="mt-2 ml-4 space-y-2 border-l-2 border-primary/20 pl-4" data-testid={`applicants-${job.id}`}>
@@ -284,7 +302,7 @@ export default function JobsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {jobs.map(job => (
+            {pageJobs.map(job => (
               <div key={job.id} className="rounded-2xl border border-border bg-card p-5 hover:border-primary/30 transition-colors" data-testid={`job-${job.id}`}>
                 <div className="flex items-start justify-between gap-4 mb-2">
                   <div className="min-w-0">
@@ -307,7 +325,10 @@ export default function JobsPage() {
                     )}
                     {job.applyUrl && (
                       <a href={job.applyUrl} target="_blank" rel="noopener noreferrer">
-                        <Button size="sm" className="gap-1.5" data-testid={`apply-${job.id}`}>{t("External", "Tashqi", "Внешне")} <ExternalLink className="w-3.5 h-3.5" /></Button>
+                        {/* "External" told a user nothing about where the button
+                            went; "Apply on site" says it links out to the
+                            employer's own page. */}
+                        <Button size="sm" className="gap-1.5" data-testid={`apply-${job.id}`}>{t("Apply on site", "Sayt orqali", "На сайте")} <ExternalLink className="w-3.5 h-3.5" /></Button>
                       </a>
                     )}
                   </div>
@@ -333,9 +354,31 @@ export default function JobsPage() {
                 )}
               </div>
             ))}
+            <div className="pt-6">
+              <Pagination currentPage={page} totalPages={totalPages} onPageChange={goToPage} />
+            </div>
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={open => { if (!open) setPendingDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("Delete this posting?", "E'lonni o'chirasizmi?", "Удалить эту вакансию?")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("This removes the listing and every application on it. It cannot be undone.",
+                 "Bu e'lonni va undagi barcha arizalarni o'chiradi. Buni qaytarib bo'lmaydi.",
+                 "Это удалит вакансию и все отклики на неё. Отменить нельзя.")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("Cancel", "Bekor", "Отмена")}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRemove} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {t("Delete", "O'chirish", "Удалить")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

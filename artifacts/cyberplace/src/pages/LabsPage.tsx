@@ -88,7 +88,7 @@ export default function LabsPage() {
     try {
       const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" } });
       const d = await r.json().catch(() => ({})) as Record<string, unknown>;
-      if (!r.ok) throw new Error(typeof d?.error === "string" ? d.error : "Failed");
+      if (!r.ok) throw new Error(typeof d?.error === "string" ? d.error : t("Something went wrong", "Xatolik yuz berdi", "Что-то пошло не так"));
       void qc.invalidateQueries({ queryKey: ["labs"] });
       return d;
     } catch (e) {

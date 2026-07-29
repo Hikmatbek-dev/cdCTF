@@ -29,7 +29,7 @@ export default function AdminDashboardPage() {
   ] : [];
 
   return (
-    <div className="flex min-h-screen bg-background pt-20">
+    <div className="flex min-h-screen bg-background pt-28 md:pt-20">
       <AdminSidebar />
       <main className="flex-1 p-6 max-w-5xl">
         <h1 className="text-xl font-bold mb-6">{t("Dashboard", "Boshqaruv Paneli", "Панель управления")}</h1>

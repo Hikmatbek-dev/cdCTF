@@ -53,8 +53,12 @@
          preview links back to the host the reader actually clicked from.
          og:image is relative for the same reason — resolved against that URL,
          it always exists; the absolute one pointed at an unconnected domain and
-         rendered as an empty grey box in every chat app. -->
-    <meta property="og:image" content="/logo.png" />
+         rendered as an empty grey box in every chat app.
+         It is a purpose-built 1200×630 card now, not the 600×342 logo a link
+         unfurler had to letterbox or crop. -->
+    <meta property="og:image" content="/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:locale" content="uz_UZ" />
     <meta property="og:locale:alternate" content="ru_RU" />
     <meta property="og:locale:alternate" content="en_US" />
@@ -62,10 +66,15 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="cdCTF — Kiberxavfsizlik akademiyasi" />
     <meta name="twitter:description" content="A hands-on, six-month cybersecurity program in Uzbek, Russian and English — with real commands, CTF, and a certificate." />
-    <meta name="twitter:image" content="/logo.png" />
+    <meta name="twitter:image" content="/og.png" />
 
-    <link rel="icon" type="image/jpeg" href="/icon.jpg" />
-    <link rel="apple-touch-icon" href="/logo.png" />
+    <!-- Icons, at the sizes they claim to be. The old favicon was a 2048×2048
+         255 KB JPEG, and the manifest labelled it 192×192; the maskable slot
+         pointed at a 600×342 non-square PNG that could never be masked. These
+         are generated PNGs at their true dimensions. -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
 
     <!-- Self-hosted. The stylesheet used to come from fonts.googleapis.com and

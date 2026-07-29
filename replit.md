@@ -1,6 +1,8 @@
-# CyberPlace
+# cdCTF
 
-A full-stack cybersecurity learning & CTF platform for the Uzbek community — like HackTheBox/TryHackMe, but built locally. Solve CTF challenges, study structured lessons, compete in monthly tournaments, and climb the scoreboard.
+A full-stack cybersecurity learning & CTF platform for the Uzbek community — like HackTheBox/TryHackMe, but built locally and free. Solve CTF challenges, study structured lessons, break into hands-on labs, compete in timed events, and climb the scoreboard.
+
+Brand: **cdCTF**. Canonical domain: **cdctf.uz** (the repo folder is named "CyberPlace.uz" for historical reasons — the product is cdCTF everywhere).
 
 ## Run & Operate
 
@@ -57,12 +59,16 @@ A full-stack cybersecurity learning & CTF platform for the Uzbek community — l
 
 ## Product
 
-- **CTF Challenges** — 8 seeded challenges across Web, Crypto, Steganography, Pwn, Forensics, OSINT, Reverse categories
-- **Learn** — 5 lessons across 5 categories with 5-question tests; anti-cheat fullscreen enforcement
-- **Scoreboard** — ranked by points, shows CTF solves, titles, and lesson completions
-- **Competitions** — monthly events; admin creates them and assigns CTF tasks
-- **Admin Panel** — `/admin/*` — full CRUD for users, CTFs, lessons, competitions; blocked users management
+- **Learn** — 8 modules / ~165 lessons, each with a copy-runnable command and a short test; a final module exam issues a verifiable certificate at 80%+
+- **CTF Challenges** — dozens across Web, Crypto, Steganography, Pwn, Forensics, OSINT, Reverse and more, each with generated category cover art
+- **Labs** — deliberately vulnerable browser targets (SQLi, XSS, IDOR, cookie-role, path traversal). Each runs in the learner's own tab under a per-instance token; the flag is issued by the server only once the exploit is proven. See `lib/lab-scenarios` and `docs/labs.md`.
+- **Scoreboard** — ranked by points; shows CTF solves, titles, and lesson completions
+- **Competitions** — timed events; an admin creates them and assigns CTF tasks
+- **Careers** — a job board and an opt-in talent directory (learners who turn on "Open to work")
+- **Admin Panel** — `/admin/*` — full CRUD for users, CTFs, lessons, competitions; blocked-user management
 - **Profile** — avatar upload, edit nickname/email, view earned titles
+
+> Content counts move as the catalogue grows — the numbers rendered in the app come from the live API, not from this file. Treat any count here as illustrative.
 
 ## User preferences
 

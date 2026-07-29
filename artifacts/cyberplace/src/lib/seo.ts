@@ -12,7 +12,9 @@ import { Language, useLang } from "@/lib/LanguageContext";
  */
 const SITE_URL = typeof window === "undefined" ? "https://cdctf.uz" : window.location.origin;
 const SITE_NAME = "cdCTF";
-const DEFAULT_IMAGE = `${SITE_URL}/logo.png`;
+// The purpose-built 1200×630 social card, not the 600×342 logo a link
+// unfurler had to letterbox. Pages may still override it per route.
+const DEFAULT_IMAGE = `${SITE_URL}/og.png`;
 
 type LocalizedText = Record<Language, string>;
 

@@ -297,9 +297,11 @@ function LoginHistorySection() {
     return <p className="text-sm text-muted-foreground">{t("Nothing yet.", "Hozircha yo'q.", "Пока ничего.")}</p>;
   }
 
+  // The list is flex rows that already wrap gracefully; the rigid 320px
+  // min-width only forced a horizontal scrollbar on the narrowest phones.
   return (
-    <div className="overflow-x-auto">
-      <ul className="space-y-2 min-w-[20rem]">
+    <div>
+      <ul className="space-y-2">
         {entries.map(entry => (
           <li key={entry.id} className="flex items-center justify-between gap-3 p-3 bg-muted/40 rounded-xl text-sm">
             <div className="min-w-0">

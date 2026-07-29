@@ -3,6 +3,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useLang } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +30,7 @@ export function Writeups({ ctfId }: { ctfId: number }) {
   const [draft, setDraft] = useState("");
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<number | null>(null);
 
   const key = ["ctf-writeups", ctfId];
   const { data } = useQuery({
@@ -59,13 +64,15 @@ export function Writeups({ ctfId }: { ctfId: number }) {
     } finally { setBusy(false); }
   };
 
-  const remove = async (id: number) => {
-    if (!confirm(t("Delete your writeup?", "Yechimingizni o'chirasizmi?", "Удалить ваш разбор?"))) return;
+  const remove = async () => {
+    const id = pendingDelete;
+    if (id == null) return;
+    setPendingDelete(null);
     try {
       const r = await fetch(`/api/ctf/${ctfId}/writeups/${id}`, { method: "DELETE" });
       if (!r.ok) throw new Error("del");
       void qc.invalidateQueries({ queryKey: key });
-    } catch { toast({ title: t("Failed", "Xato", "Ошибка"), variant: "destructive" }); }
+    } catch { toast({ title: t("Something went wrong", "Xatolik yuz berdi", "Что-то пошло не так"), variant: "destructive" }); }
   };
 
   return (
@@ -106,7 +113,7 @@ export function Writeups({ ctfId }: { ctfId: number }) {
               {w.authorId === user?.id && (
                 <div className="flex items-center gap-2">
                   <button onClick={() => { setEditing(true); setDraft(w.content); }} className="text-muted-foreground hover:text-primary" title={t("Edit", "Tahrir", "Изменить")}><Pencil className="w-4 h-4" /></button>
-                  <button onClick={() => remove(w.id)} className="text-muted-foreground hover:text-destructive" title={t("Delete", "O'chirish", "Удалить")}><Trash2 className="w-4 h-4" /></button>
+                  <button onClick={() => setPendingDelete(w.id)} className="text-muted-foreground hover:text-destructive" title={t("Delete", "O'chirish", "Удалить")}><Trash2 className="w-4 h-4" /></button>
                 </div>
               )}
             </div>
@@ -114,6 +121,25 @@ export function Writeups({ ctfId }: { ctfId: number }) {
           </div>
         ))}
       </div>
+
+      <AlertDialog open={pendingDelete != null} onOpenChange={open => { if (!open) setPendingDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("Delete your writeup?", "Yechimingizni o'chirasizmi?", "Удалить ваш разбор?")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("Your writeup will be removed for everyone. This cannot be undone.",
+                 "Yechimingiz hamma uchun o'chiriladi. Buni qaytarib bo'lmaydi.",
+                 "Ваш разбор будет удалён для всех. Отменить нельзя.")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("Cancel", "Bekor", "Отмена")}</AlertDialogCancel>
+            <AlertDialogAction onClick={remove} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {t("Delete", "O'chirish", "Удалить")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

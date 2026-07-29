@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { Briefcase, Flag, BookOpen, Trophy, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LoadFailure } from "@/components/LoadFailure";
+import { Pagination } from "@/components/Pagination";
 import { useLang } from "@/lib/LanguageContext";
 import { normalizeArray } from "@/lib/api-shapes";
 import { useGetTalentDirectory, getGetTalentDirectoryQueryKey } from "@workspace/api-client-react";
@@ -16,20 +18,28 @@ type TalentEntry = {
   titles: string[];
 };
 
+const PER_PAGE = 24;
+
 export default function TalentPage() {
   const { t } = useLang();
-  const { data, isLoading, isError, refetch } = useGetTalentDirectory(undefined, {
-    query: { queryKey: getGetTalentDirectoryQueryKey() },
+  // The page never asked for a page: it printed the real `total` from the
+  // server ("60 candidates") and rendered only the first 24, with no way to see
+  // the rest. The server has always paginated; this passes the page it wants.
+  const [page, setPage] = useState(1);
+  const params = { page, limit: PER_PAGE };
+  const { data, isLoading, isError, refetch } = useGetTalentDirectory(params, {
+    query: { queryKey: getGetTalentDirectoryQueryKey(params) },
   });
 
   const entries = normalizeArray<TalentEntry>(data?.entries, ["entries", "data", "items"]);
   const total = data?.total ?? entries.length;
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+
+  const goToPage = (p: number) => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); };
 
   return (
-    <div className="min-h-screen bg-background page relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-500/5 rounded-full hidden pointer-events-none" />
-
-      <div className="shell py-8 relative z-10">
+    <div className="min-h-screen bg-background page">
+      <div className="shell py-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
@@ -124,15 +134,24 @@ export default function TalentPage() {
                     {entry.titles.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-5 pt-5 border-t border-border">
                         {entry.titles.slice(0, 3).map(title => (
-                          <span key={title} className="text-xs font-medium text-muted-foreground bg-muted border border-border px-3 py-1 rounded-xl">
+                          <span key={title} className="chip">
                             {title}
                           </span>
                         ))}
+                        {/* The list silently dropped anything past the third
+                            title; now it says how many it kept back. */}
+                        {entry.titles.length > 3 && (
+                          <span className="chip">+{entry.titles.length - 3}</span>
+                        )}
                       </div>
                     )}
                   </div>
                 </Link>
               ))}
+            </div>
+
+            <div className="pt-10">
+              <Pagination currentPage={page} totalPages={totalPages} onPageChange={goToPage} />
             </div>
           </>
         )}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
-import { AlertTriangle, Timer, CheckCircle2, XCircle, ArrowRight } from "lucide-react";
+import { CheckCircle2, XCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useLang } from "@/lib/LanguageContext";
@@ -27,7 +27,6 @@ export default function LessonTestPage() {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [result, setResult] = useState<{ passed: boolean; score: number; correctCount: number; totalCount: number; pointsEarned: number } | null>(null);
-  const [blocked] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const startTest = useStartLessonTest();
@@ -119,36 +118,6 @@ export default function LessonTestPage() {
       }
     );
   };
-
-  if (blocked) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        {/* "Contact admin" with no way to contact one is a dead end. Say what is
-            still open — the lesson, the rest of the module, the exam — and give
-            a route that actually reaches somebody. */}
-        <div className="glass-card text-center max-w-md w-full">
-          <AlertTriangle className="w-12 h-12 text-destructive mx-auto mb-4" />
-          <h2 className="text-xl font-bold mb-2">{t("This test is locked", "Bu test qulflandi", "Тест заблокирован")}</h2>
-          <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-            {t(
-              "This test was closed by a moderator. The lesson itself stays open, the rest of the module is unaffected, and the final exam still covers this material.",
-              "Bu testni moderator yopgan. Darsning o'zi ochiq qoladi, modulning qolgani ta'sirlanmaydi, va yakuniy imtihon bu mavzuni baribir qamrab oladi.",
-              "Этот тест закрыт модератором. Сам урок остаётся открытым, остальная часть модуля не затронута, а итоговый экзамен всё равно охватывает материал.",
-            )}
-          </p>
-          <p className="text-sm text-muted-foreground mb-6">
-            {t("Think it was a mistake?", "Xato bo'ldi deb o'ylaysizmi?", "Считаете это ошибкой?")}{" "}
-            <a href="https://t.me/cdctf" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-accent transition-colors">
-              {t("Ask on Telegram", "Telegramda so'rang", "Спросите в Telegram")}
-            </a>
-          </p>
-          <Button onClick={() => setLocation(`/learn/${id}`)}>
-            {t("Back to the lesson", "Darsga qaytish", "Вернуться к уроку")}
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   if (result) {
     const percentage = Math.round(result.score * 100);

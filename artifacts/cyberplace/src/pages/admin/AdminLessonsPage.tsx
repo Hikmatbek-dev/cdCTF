@@ -9,6 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { useLang } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
@@ -103,6 +107,7 @@ export default function AdminLessonsPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const [offset, setOffset] = useState(0);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const { data: lessonsData, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin-lessons", offset],
     queryFn: async () => {
@@ -206,10 +211,12 @@ export default function AdminLessonsPage() {
     }
   };
 
-  const handleDelete = (id: number) => {
-    if (!confirm(t("Delete this lesson? Every learner's attempt and progress on it is deleted too.",
-        "Bu dars o'chirilsinmi? Har bir o'quvchining urinishi va progressi ham o'chadi.",
-        "Удалить урок? Все попытки и прогресс учащихся по нему также удалятся."))) return;
+  // Confirmed through an AlertDialog rather than a native confirm(): the browser
+  // dialog can't be translated and reads as a relic in an admin tool.
+  const confirmDelete = () => {
+    const id = pendingDeleteId;
+    if (id == null) return;
+    setPendingDeleteId(null);
     deleteLesson.mutate({ id }, {
       onSuccess: () => { toast({ title: t("Deleted", "O'chirildi", "Удалено") }); void qc.invalidateQueries({ queryKey: ["admin-lessons"] }); },
       onError: (e) => toast({ title: errText(e), variant: "destructive" }),
@@ -217,7 +224,7 @@ export default function AdminLessonsPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background pt-20">
+    <div className="flex min-h-screen bg-background pt-28 md:pt-20">
       <AdminSidebar />
       <main className="flex-1 p-6 overflow-auto">
         <div className="flex items-center justify-between mb-6">
@@ -441,7 +448,7 @@ export default function AdminLessonsPage() {
                             toast({ title: t("Failed to load lesson details", "Dars ma'lumotlarini yuklab bo'lmadi", "Не удалось загрузить данные урока"), variant: "destructive" });
                           }
                         }} className="h-7 w-7 p-0" data-testid={`button-edit-lesson-${lesson.id}`}><Pencil className="w-3.5 h-3.5" /></Button>}
-                        {canDelete && <Button size="sm" variant="ghost" onClick={() => handleDelete(lesson.id)} className="h-7 w-7 p-0 text-destructive hover:text-destructive" data-testid={`button-delete-lesson-${lesson.id}`}><Trash2 className="w-3.5 h-3.5" /></Button>}
+                        {canDelete && <Button size="sm" variant="ghost" onClick={() => setPendingDeleteId(lesson.id)} className="h-7 w-7 p-0 text-destructive hover:text-destructive" data-testid={`button-delete-lesson-${lesson.id}`}><Trash2 className="w-3.5 h-3.5" /></Button>}
                       </div>
                     </td>
                   </tr>
@@ -453,6 +460,25 @@ export default function AdminLessonsPage() {
           </>
         )}
       </main>
+
+      <AlertDialog open={pendingDeleteId != null} onOpenChange={open => { if (!open) setPendingDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("Delete this lesson?", "Bu darsni o'chirasizmi?", "Удалить этот урок?")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("Every learner's attempt and progress on it is deleted too. This cannot be undone.",
+                 "Har bir o'quvchining urinishi va progressi ham o'chadi. Buni qaytarib bo'lmaydi.",
+                 "Все попытки и прогресс учащихся по нему также удалятся. Отменить нельзя.")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("Cancel", "Bekor", "Отмена")}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {t("Delete", "O'chirish", "Удалить")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

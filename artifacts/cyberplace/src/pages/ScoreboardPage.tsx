@@ -46,12 +46,7 @@ export default function ScoreboardPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground page relative overflow-hidden">
-      {/* Background Effects */}
       <div className="fixed inset-0 mono-grid opacity-20 pointer-events-none" />
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[15%] right-[-10%] w-[50%] h-[50%] bg-primary/5 hidden rounded-full opacity-30" />
-        <div className="absolute bottom-[15%] left-[-10%] w-[50%] h-[50%] bg-accent/5 hidden rounded-full opacity-30" />
-      </div>
 
       <div className="shell relative z-10">
         {/* Header Section */}

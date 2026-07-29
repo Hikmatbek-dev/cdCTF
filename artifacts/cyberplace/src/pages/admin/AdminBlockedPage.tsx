@@ -50,7 +50,7 @@ export default function AdminBlockedPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background pt-20">
+    <div className="flex min-h-screen bg-background pt-28 md:pt-20">
       <AdminSidebar />
       <main className="flex-1 p-6">
         <h1 className="text-xl font-bold mb-6">{t("Blocked Tasks", "Bloklangan Vazifalar", "Заблокированные задачи")}</h1>

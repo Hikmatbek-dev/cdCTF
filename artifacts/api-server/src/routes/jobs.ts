@@ -169,8 +169,11 @@ router.patch("/:id", authenticateToken, async (req, res) => {
 router.delete("/:id", authenticateToken, async (req, res) => {
   const job = await loadOwnedJob(req, res);
   if (!job) return;
-  const applicantCount = (await db.select({ id: jobApplicationsTable.id })
-    .from(jobApplicationsTable).where(eq(jobApplicationsTable.jobId, job.id))).length;
+  // count(*), not a full row fetch we only take .length of — the same pattern
+  // GET /mine and /talent already use.
+  const [{ applicantCount }] = await db
+    .select({ applicantCount: sql<number>`count(*)::int` })
+    .from(jobApplicationsTable).where(eq(jobApplicationsTable.jobId, job.id));
   await db.delete(jobApplicationsTable).where(eq(jobApplicationsTable.jobId, job.id));
   await db.delete(jobsTable).where(eq(jobsTable.id, job.id));
   // Deleting someone else's listing discards every application on it. An admin

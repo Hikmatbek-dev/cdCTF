@@ -200,12 +200,14 @@ export default function DashboardPage() {
             { icon: BookOpen, label: t("Lessons done", "Tugatilgan dars", "Уроков пройдено"), value: data.progress.completedLessonCount, color: "text-foreground" },
             { icon: Star, label: t("Titles", "Unvonlar", "Титулы"), value: data.progress.titleCount, color: "text-foreground" }
           ].map((stat, i) => (
-            <div key={i} className="glass-card bg-muted/10 p-10 rounded-xl group hover:bg-muted/20 transition-all border-border hover:border-primary/20">
-              <div className="flex items-center gap-4 mb-6">
-                <stat.icon className={`w-5 h-5 ${stat.color} group-hover:scale-110 transition-transform`} />
+            <div key={i} className="glass-card bg-muted/10 p-5 sm:p-8 rounded-xl group hover:bg-muted/20 transition-all border-border hover:border-primary/20">
+              <div className="flex items-center gap-2.5 sm:gap-4 mb-4 sm:mb-6">
+                <stat.icon className={`w-5 h-5 shrink-0 ${stat.color} group-hover:scale-110 transition-transform`} />
                 <span className="text-xs text-muted-foreground">{stat.label}</span>
               </div>
-              <div className="text-5xl font-bold tracking-tight leading-none tabular-nums">{String(stat.value).padStart(2, '0')}</div>
+              {/* Was a flat text-5xl at every breakpoint — 48px numerals in a
+                  two-up grid overflowed the narrowest phones. */}
+              <div className="text-3xl sm:text-5xl font-bold tracking-tight leading-none tabular-nums">{String(stat.value).padStart(2, '0')}</div>
             </div>
           ))}
         </div>

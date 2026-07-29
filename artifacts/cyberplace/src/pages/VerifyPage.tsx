@@ -41,7 +41,6 @@ export default function VerifyPage() {
 
   return (
     <div className="min-h-screen bg-background page relative overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-primary/5 rounded-full hidden pointer-events-none" />
 
       <div className="shell-narrow py-8 relative z-10">
         <div className="text-center mb-10">

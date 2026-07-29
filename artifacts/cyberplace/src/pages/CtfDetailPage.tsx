@@ -172,17 +172,20 @@ export default function CtfDetailPage() {
               <span className="gradient-text">{t(challenge.name, challenge.nameUz ?? undefined, challenge.nameRu ?? undefined)}</span>
             </h1>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-10 border-y border-border">
+            {/* Two stats, a divider between. It was a 4-column grid whose two
+                dividers were `hidden md:block` grid cells — which left an empty
+                cell on mobile and a trailing empty column on desktop. Flex keeps
+                the divider out of the flow when it is hidden. */}
+            <div className="flex items-center gap-8 sm:gap-12 py-8 sm:py-10 border-y border-border">
               <div>
                 <span className="text-xs text-muted-foreground mb-2 block">{t("Points", "Ball", "Очки")}</span>
-                <span className="text-4xl font-black text-foreground tabular-nums leading-none tracking-tighter">{challenge.points}</span>
+                <span className="text-3xl sm:text-4xl font-black text-foreground tabular-nums leading-none tracking-tighter">{challenge.points}</span>
               </div>
-              <div className="hidden md:block w-px h-12 bg-border mx-auto" />
+              <div className="w-px h-12 bg-border" />
               <div>
                 <span className="text-xs text-muted-foreground mb-2 block">{t("Solved by", "Yechganlar", "Решили")}</span>
-                <span className="text-4xl font-black text-primary tabular-nums leading-none tracking-tighter">{challenge.solvedCount}</span>
+                <span className="text-3xl sm:text-4xl font-black text-primary tabular-nums leading-none tracking-tighter">{challenge.solvedCount}</span>
               </div>
-              <div className="hidden md:block w-px h-12 bg-border mx-auto" />
             </div>
           </FadeIn>
         </div>

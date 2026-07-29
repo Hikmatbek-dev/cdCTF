@@ -7,6 +7,7 @@ import { LoadFailure, isNotFound } from "@/components/LoadFailure";
 import { useLang } from "@/lib/LanguageContext";
 import { useGetModule, getGetModuleQueryKey } from "@workspace/api-client-react";
 import { ChallengeArt } from "@/components/ChallengeArt";
+import { SolvedBadge, solvedCardBorder } from "@/components/SolvedMark";
 import { categoryStyle, difficultyStyle } from "@/lib/category-style";
 
 type ModuleLesson = {
@@ -217,17 +218,17 @@ export default function ModuleDetailPage() {
                   return (
                     <Link href={`/ctf/${c.id}`} key={c.id}>
                       <div
-                        className={`group flex items-center gap-3 rounded-lg border overflow-hidden bg-card hover:-translate-y-0.5 transition-all cursor-pointer ${
-                          c.isSolved ? "border-emerald-500/40" : "border-border hover:border-primary/40"
-                        }`}
+                        className={`group flex items-center gap-3 rounded-lg border overflow-hidden bg-card hover:-translate-y-0.5 transition-all cursor-pointer ${solvedCardBorder(c.isSolved)}`}
                         data-testid={`module-practice-${c.id}`}
                       >
                         <ChallengeArt name={c.name} category={c.category} hue={cat.hue} solved={c.isSolved} className="w-16 h-14 shrink-0" />
                         <div className="min-w-0 flex-1 py-2">
-                          <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                          <div className={`text-sm font-medium truncate transition-colors ${c.isSolved ? "text-muted-foreground group-hover:text-foreground" : "group-hover:text-primary"}`}>
                             {t(c.name, c.nameUz ?? undefined, c.nameRu ?? undefined)}
                           </div>
-                          <div className={`text-xs capitalize ${diff.text}`}>{c.difficulty}</div>
+                          {/* Same badge as the challenge list, in place of the
+                              bare difficulty text when a challenge is done. */}
+                          {c.isSolved ? <SolvedBadge className="mt-0.5" /> : <div className={`text-xs capitalize ${diff.text}`}>{c.difficulty}</div>}
                         </div>
                         <span className="text-xs tabular-nums text-muted-foreground pr-3 shrink-0">{c.points}</span>
                       </div>

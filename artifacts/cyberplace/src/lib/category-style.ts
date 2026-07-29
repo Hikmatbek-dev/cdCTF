@@ -34,6 +34,17 @@ const STYLES: Record<string, CategoryStyle> = {
   Networking:     { hue: 199, text: "text-sky-700 dark:text-sky-400",         tint: "bg-sky-500/10",      border: "border-sky-500/30" },
   Scripting:      { hue: 84,  text: "text-lime-700 dark:text-lime-400",       tint: "bg-lime-500/10",     border: "border-lime-500/30" },
   Steganography:  { hue: 292, text: "text-fuchsia-700 dark:text-fuchsia-400", tint: "bg-fuchsia-500/10",  border: "border-fuchsia-500/30" },
+  // OSINT ships four challenges and had no entry here, so every one fell through
+  // to the grey fallback hue — while ChallengeArt drew the correct `osint`
+  // scene, giving a slate card wrapped around teal art. Teal to match the art.
+  OSINT:          { hue: 174, text: "text-teal-700 dark:text-teal-400",       tint: "bg-teal-500/10",     border: "border-teal-500/30" },
+  // These four have hand-drawn scenes in ChallengeArt that nothing could reach,
+  // because a challenge in the category rendered on the fallback hue. Giving
+  // them a colour is what makes their art appear.
+  Cloud:          { hue: 205, text: "text-sky-700 dark:text-sky-400",         tint: "bg-sky-500/10",      border: "border-sky-500/30" },
+  Mobile:         { hue: 142, text: "text-green-700 dark:text-green-400",     tint: "bg-green-500/10",    border: "border-green-500/30" },
+  Hardware:       { hue: 22,  text: "text-orange-700 dark:text-orange-400",   tint: "bg-orange-500/10",   border: "border-orange-500/30" },
+  AI:             { hue: 280, text: "text-purple-700 dark:text-purple-400",   tint: "bg-purple-500/10",   border: "border-purple-500/30" },
   Miscellaneous:  { hue: 43,  text: "text-amber-700 dark:text-amber-400",     tint: "bg-amber-500/10",    border: "border-amber-500/30" },
   Others:         { hue: 215, text: "text-slate-700 dark:text-slate-300",     tint: "bg-slate-500/10",    border: "border-slate-500/30" },
 };
