@@ -1,8 +1,8 @@
-import { Router } from "express";
+import { Router, text } from "express";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
 import { labsTable, labInstancesTable } from "@workspace/db/schema";
-import { and, desc, eq, lt, or } from "drizzle-orm";
+import { and, desc, eq, gt, lt, or } from "drizzle-orm";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { labsEnabled, startContainer, stopContainer } from "../lib/lab-runner";
 import { createRateLimiter } from "../middleware/security";
@@ -28,15 +28,74 @@ function publicLab(lab: typeof labsTable.$inferSelect) {
 }
 
 /**
- * GET /api/labs/target/:slug — the vulnerable document itself.
+ * A browser lab has no container, but it still gets an instance row so that the
+ * one-at-a-time rule, the TTL and the history all work exactly as they do for a
+ * real machine. The synthetic id is prefixed so nothing ever hands it to Docker.
+ *
+ * The random half of that id doubles as the instance's access token. It is
+ * generated per start, stored only here, and handed to nobody but the learner
+ * who started the lab — so it is exactly the credential the target route was
+ * missing, without a schema change to carry it.
+ */
+const BROWSER_PREFIX = "browser:";
+const isBrowserInstance = (containerId: string) => containerId.startsWith(BROWSER_PREFIX);
+const tokenOf = (containerId: string) =>
+  isBrowserInstance(containerId) ? containerId.slice(BROWSER_PREFIX.length) : null;
+
+/** Where a learner sends their browser to reach their own running target. */
+function targetPathFor(slug: string, token: string) {
+  return `/api/labs/target/${encodeURIComponent(slug)}?t=${encodeURIComponent(token)}`;
+}
+
+/**
+ * The instance this token belongs to, if it is running and still has time.
+ *
+ * This is the whole of the access check. Stopping a lab flips `status`, the TTL
+ * moves `expiresAt` into the past, and either one makes the token stop working
+ * on the next request — which is what "Stop" always claimed to do and never did.
+ */
+async function liveInstanceFor(token: string) {
+  if (!token || token.length > 200) return null;
+  const [row] = await db
+    .select({ instance: labInstancesTable, lab: labsTable })
+    .from(labInstancesTable)
+    .innerJoin(labsTable, eq(labInstancesTable.labId, labsTable.id))
+    .where(and(
+      eq(labInstancesTable.containerId, `${BROWSER_PREFIX}${token}`),
+      eq(labInstancesTable.status, "running"),
+      gt(labInstancesTable.expiresAt, new Date()),
+    ))
+    .limit(1);
+  return row ?? null;
+}
+
+/** Shown instead of a target when the token is missing, wrong, stopped or expired. */
+const NOT_RUNNING_PAGE = `<!doctype html><html lang="uz"><head><meta charset="utf-8">
+<title>Laboratoriya ishlamayapti</title>
+<style>
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+         font-family:-apple-system,"Segoe UI",Roboto,sans-serif; background:#f4f5f7; color:#1b1f27; padding:24px; }
+  .box { max-width:420px; background:#fff; border-radius:10px; padding:28px; text-align:center;
+         box-shadow:0 1px 3px rgba(0,0,0,.12); }
+  h1 { font-size:18px; margin:0 0 10px; }
+  p { font-size:14px; line-height:1.6; color:#5b6472; margin:0 0 6px; }
+</style></head><body>
+<div class="box">
+  <h1>Bu laboratoriya ishlamayapti</h1>
+  <p>Nishon faqat siz uni ishga tushirgan vaqt davomida ochiq bo'ladi. cdCTF'dagi <b>Laboratoriya</b> sahifasidan qaytadan boshlang.</p>
+  <p>The target is only served while you have this lab running. Start it again from the Labs page.</p>
+  <p>Цель доступна только пока лаборатория запущена. Запустите её заново на странице «Лаборатории».</p>
+</div>
+</body></html>`;
+
+/**
+ * GET /api/labs/target/:slug?t=… — the vulnerable document itself.
  *
  * It used to be rendered client-side into an iframe's `srcdoc`, and that is
  * exactly why the labs did not work in production: a srcdoc document inherits
  * its parent's Content-Security-Policy, cdCTF's policy has no 'unsafe-inline'
  * in script-src, and every one of these documents *is* an inline script. The
- * labs rendered as static pages with no behaviour at all. Verified: under the
- * production policy the inner script never runs; with the header removed, or
- * with 'unsafe-inline' added, it does.
+ * labs rendered as static pages with no behaviour at all.
  *
  * Serving it from here gives the document a policy of its own:
  *
@@ -47,39 +106,92 @@ function publicLab(lab: typeof labsTable.$inferSelect) {
  *     holds when the page is opened in its own tab.
  *   script-src / style-src 'unsafe-inline'
  *     The lab is a deliberately vulnerable inline script. That is the content.
- *   default-src 'none'
- *     It has no business talking to anything.
+ *   connect-src <this origin>
+ *     The one thing it may talk to: the solve endpoint that holds its flag.
+ *     Spelled absolutely, because 'self' inside an opaque origin means nothing.
+ *   default-src 'none' / frame-ancestors 'none'
+ *     Everything else, denied. 'none' rather than 'self' so this agrees with the
+ *     X-Frame-Options: DENY that securityHeaders sets on every response — the
+ *     two used to contradict each other, and the target opens in a tab anyway.
  *
- * Unauthenticated on purpose: the documents ship in every learner's browser
- * anyway, contain no secret beyond a flag that is checked server-side, and
- * gating them would break opening the target in a new tab.
+ * It was unauthenticated, with a comment saying so on purpose. That was the
+ * hole: anyone could curl it, and pressing "Stop" changed nothing about who
+ * could. Now it takes the instance token and refuses everything else.
  */
-router.get("/target/:slug", (req, res) => {
+router.get("/target/:slug", async (req, res) => {
+  const token = typeof req.query.t === "string" ? req.query.t : "";
+  const live = await liveInstanceFor(token);
+
+  // Also checks that this token belongs to *this* scenario: one running lab
+  // must not open the target of another.
+  if (!live || live.lab.browserScenario !== req.params.slug) {
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(403).type("text/html").send(NOT_RUNNING_PAGE);
+  }
+
   const scenario = scenarioFor(req.params.slug);
   if (!scenario) return res.status(404).type("text/plain").send("Bunday laboratoriya yo'q");
 
+  const origin = `${req.protocol}://${req.get("host")}`;
   res.setHeader("Content-Security-Policy", [
     "sandbox allow-scripts allow-forms",
     "default-src 'none'",
     "script-src 'unsafe-inline'",
     "style-src 'unsafe-inline'",
     "img-src data:",
-    // Our own labs page frames this; nobody else's should.
-    "frame-ancestors 'self'",
+    `connect-src ${origin}`,
+    "frame-ancestors 'none'",
   ].join("; "));
-  // A target that is cached is a target that ignores "Reset".
+  // A target that is cached is a target that ignores "Stop".
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Content-Type-Options", "nosniff");
-  res.type("text/html").send(scenario.html);
+  res.type("text/html").send(scenario.render({ token, solveUrl: `${origin}/api/labs/solve` }));
 });
 
+/** A wrong guess is cheap to make and cheap to check; a flood of them is not. */
+const solveLimit = createRateLimiter({ windowMs: 60 * 1000, max: 60, keyPrefix: "lab-solve", store: "instance" });
+
 /**
- * A browser lab has no container, but it still gets an instance row so that the
- * one-at-a-time rule, the TTL and the history all work exactly as they do for a
- * real machine. The synthetic id is prefixed so nothing ever hands it to Docker.
+ * POST /api/labs/solve — the flag, in exchange for a working exploit.
+ *
+ * The flags used to be written into the documents, which meant four of the five
+ * labs could be finished with "view source" and the fifth with one line of
+ * console. They live on the server now, and this is the only way out of it: the
+ * target posts the payload the learner actually used, and the scenario re-runs
+ * the same engine the document ran (lib/lab-scenarios/src/engines.ts is the one
+ * copy) to decide whether the flaw was really exploited.
+ *
+ * The body is text/plain so the request stays CORS-simple — the caller is a
+ * sandboxed document in an opaque origin, and a preflight from `Origin: null`
+ * is a fight not worth having. Nothing here reads a cookie: the token in the
+ * body is the entire credential, which is why the route is safe to answer for
+ * a null origin at all. See corsDelegate in middleware/security.ts.
  */
-const BROWSER_PREFIX = "browser:";
-const isBrowserInstance = (containerId: string) => containerId.startsWith(BROWSER_PREFIX);
+router.post("/solve", solveLimit, text({ type: () => true, limit: "32kb" }), async (req, res) => {
+  let payload: unknown;
+  try {
+    payload = JSON.parse(typeof req.body === "string" && req.body ? req.body : "{}");
+  } catch {
+    return res.status(400).json({ error: "So'rov noto'g'ri." });
+  }
+
+  const body = typeof payload === "object" && payload !== null ? payload as Record<string, unknown> : {};
+  const token = typeof body.t === "string" ? body.t : "";
+
+  const live = await liveInstanceFor(token);
+  if (!live) return res.status(403).json({ error: "Laboratoriya ishlamayapti yoki muddati tugagan." });
+
+  const scenario = scenarioFor(live.lab.browserScenario);
+  if (!scenario) return res.status(404).json({ error: "Bunday laboratoriya yo'q" });
+
+  if (!scenario.verify(body.proof)) {
+    return res.status(200).json({ error: "Hali emas — zaiflikdan foydalanilmadi." });
+  }
+
+  logger.info({ userId: live.instance.userId, lab: live.lab.slug }, "browser lab solved");
+  res.setHeader("Cache-Control", "no-store");
+  res.json({ flag: scenario.flag });
+});
 
 /**
  * Expires instances whose time is up.
@@ -121,10 +233,17 @@ router.get("/", optionalAuth, async (req, res) => {
       .where(and(eq(labInstancesTable.userId, req.user.userId), eq(labInstancesTable.status, "running")))
       .limit(1);
     if (instance) {
+      // The token travels with the running instance, not just with the reply to
+      // "Start" — otherwise reloading /labs loses the only way back into a lab
+      // that is still running, which is how the untracked "Reopen" link came to
+      // exist in the first place.
+      const lab = labs.find(l => l.id === instance.labId);
+      const token = tokenOf(instance.containerId);
       running = {
         id: instance.id, labId: instance.labId,
         host: instance.host, port: instance.port,
         startedAt: instance.startedAt, expiresAt: instance.expiresAt,
+        targetPath: lab?.browserScenario && token ? targetPathFor(lab.browserScenario, token) : null,
       };
     }
   }
@@ -184,11 +303,14 @@ router.post("/:id/start", authenticateToken, startLimit, async (req, res) => {
       host: started.host, port: started.port, expiresAt,
     }).returning();
 
+    const token = tokenOf(instance.containerId);
     res.status(201).json({
       id: instance.id, labId: lab.id, kind: lab.kind,
       browserScenario: lab.browserScenario,
       host: instance.host, port: instance.port,
       startedAt: instance.startedAt, expiresAt: instance.expiresAt,
+      // The only time this token is minted. Losing it means starting again.
+      targetPath: lab.browserScenario && token ? targetPathFor(lab.browserScenario, token) : null,
     });
   } catch (err) {
     // The unique index rejected a second concurrent start. The container we just

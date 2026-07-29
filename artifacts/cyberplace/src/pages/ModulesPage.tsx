@@ -42,14 +42,14 @@ export default function ModulesPage() {
   const currentIndex = modules.findIndex(m => !(m.certificateSerial || m.examPassed) || m.completedCount < m.lessonCount);
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-28 pb-24">
-      <div className="max-w-3xl mx-auto px-6">
+    <div className="min-h-screen bg-background text-foreground page">
+      <div className="shell-narrow">
         <header className="mb-10">
           <div className="eyebrow mb-3">
             <GraduationCap className="w-3.5 h-3.5" />
             {t("cdCTF · Your path", "cdCTF · Sizning yo'lingiz", "cdCTF · Ваш путь")}
           </div>
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-3">
+          <h1 className="mb-3">
             <span className="gradient-text">{t("The learning path", "O'rganish yo'li", "Путь обучения")}</span>
           </h1>
           <p className="text-muted-foreground max-w-2xl">

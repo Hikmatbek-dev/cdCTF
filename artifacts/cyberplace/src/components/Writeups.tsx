@@ -69,7 +69,7 @@ export function Writeups({ ctfId }: { ctfId: number }) {
   };
 
   return (
-    <div className="glass-card p-8 rounded-xl border-foreground/5" data-testid="writeups">
+    <div className="glass-card p-8 rounded-xl border-border" data-testid="writeups">
       <h3 className="text-lg font-semibold tracking-tight mb-6 flex items-center gap-3">
         <FileText className="w-5 h-5 text-primary" />
         {t("Writeups", "Yechim izohlari", "Разборы")}
@@ -100,7 +100,7 @@ export function Writeups({ ctfId }: { ctfId: number }) {
           <p className="text-sm text-muted-foreground py-6 text-center">{t("No writeups yet — be the first.", "Hali yechim izohi yo'q — birinchi bo'ling.", "Разборов пока нет — будьте первым.")}</p>
         )}
         {writeups.map(w => (
-          <div key={w.id} className="rounded-2xl border border-foreground/5 bg-muted/10 p-5" data-testid={`writeup-${w.id}`}>
+          <div key={w.id} className="rounded-2xl border border-border bg-muted/10 p-5" data-testid={`writeup-${w.id}`}>
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium">{w.authorNickname}</span>
               {w.authorId === user?.id && (

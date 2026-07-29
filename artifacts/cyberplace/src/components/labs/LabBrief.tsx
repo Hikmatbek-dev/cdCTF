@@ -2,12 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { ExternalLink, Flag, Lightbulb, Target } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
-import { scenarioFor } from "@workspace/lab-scenarios";
-
-/** Where the API serves the vulnerable document, under its own policy. */
-export function targetUrl(slug: string) {
-  return `/api/labs/target/${encodeURIComponent(slug)}`;
-}
+import { metaFor } from "@workspace/lab-scenarios/meta";
 
 /**
  * What a lab is, before you commit to it.
@@ -22,11 +17,30 @@ export function targetUrl(slug: string) {
  * in an opaque origin either way — and a top-level document is what devtools
  * are actually usable against, which is most of what a learner needs while
  * attacking one.
+ *
+ * `targetPath` comes from the API and is null unless *this* lab is running for
+ * *this* learner. It used to be built here from the slug, which meant the
+ * reopen link was a permanent, unauthenticated door into the target: it
+ * rendered for signed-out visitors, on labs nobody had started, and the window
+ * it opened was never one LabsPage could close again.
+ *
+ * This module deliberately imports @workspace/lab-scenarios/meta and not the
+ * package root. The root holds the documents, the flags and the checks; it is
+ * server-only, and importing it here is what once shipped all five flags in a
+ * public JS chunk.
  */
-export function LabBrief({ scenarioSlug, ctfId }: { scenarioSlug: string; ctfId: number | null }) {
+export function LabBrief({
+  scenarioSlug,
+  ctfId,
+  targetPath,
+}: {
+  scenarioSlug: string;
+  ctfId: number | null;
+  targetPath: string | null;
+}) {
   const { t, lang } = useLang();
   const [showHint, setShowHint] = useState(false);
-  const scenario = scenarioFor(scenarioSlug);
+  const scenario = metaFor(scenarioSlug);
 
   if (!scenario) {
     return (
@@ -73,16 +87,18 @@ export function LabBrief({ scenarioSlug, ctfId }: { scenarioSlug: string; ctfId:
             {t("Submit the flag", "Flagni topshirish", "Отправить флаг")}
           </Link>
         )}
-        <a
-          href={targetUrl(scenario.slug)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors"
-          data-testid={`lab-reopen-${scenarioSlug}`}
-        >
-          <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-          {t("Reopen the target", "Nishonni qayta ochish", "Открыть цель снова")}
-        </a>
+        {targetPath && (
+          <a
+            href={targetPath}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors"
+            data-testid={`lab-reopen-${scenarioSlug}`}
+          >
+            <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+            {t("Reopen the target", "Nishonni qayta ochish", "Открыть цель снова")}
+          </a>
+        )}
       </div>
 
       {showHint && (
@@ -92,9 +108,9 @@ export function LabBrief({ scenarioSlug, ctfId }: { scenarioSlug: string; ctfId:
       )}
 
       <p className="mt-3 text-xs text-muted-foreground">
-        {t("The target opens in its own tab, isolated from cdCTF and from the internet. Attack it freely.",
-           "Nishon alohida oynada ochiladi — cdCTF'dan va internetdan ajratilgan. Bemalol hujum qiling.",
-           "Цель откроется в отдельной вкладке, изолированно от cdCTF и от интернета. Атакуйте свободно.")}
+        {t("The target opens in its own tab, isolated from cdCTF and from the internet. Attack it freely — it stops answering the moment you stop the lab or the clock runs out.",
+           "Nishon alohida oynada ochiladi — cdCTF'dan va internetdan ajratilgan. Bemalol hujum qiling: laboratoriyani to'xtatsangiz yoki vaqt tugasa, u javob berishni to'xtatadi.",
+           "Цель откроется в отдельной вкладке, изолированно от cdCTF и от интернета. Атакуйте свободно — она перестанет отвечать, как только вы остановите лабораторию или выйдет время.")}
       </p>
     </div>
   );

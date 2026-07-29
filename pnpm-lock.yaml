@@ -543,6 +543,9 @@ importers:
       '@types/pg':
         specifier: ^8.18.0
         version: 8.18.0
+      '@workspace/lab-scenarios':
+        specifier: workspace:*
+        version: link:../lib/lab-scenarios
       bcryptjs:
         specifier: ^2.4.3
         version: 2.4.3

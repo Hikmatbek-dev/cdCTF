@@ -53,8 +53,8 @@ export default function ModuleDetailPage() {
   // the not-found state nor null is safe to draw then.
   if (!routeMatches || isLoading) {
     return (
-      <div className="min-h-screen bg-background pt-28 pb-24">
-        <div className="max-w-3xl mx-auto px-6 space-y-4">
+      <div className="min-h-screen bg-background page">
+        <div className="shell-narrow space-y-4">
           <Skeleton className="h-10 w-2/3" />
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-64 w-full" />
@@ -67,8 +67,8 @@ export default function ModuleDetailPage() {
   // to someone whose phone lost signal is wrong and leaves them nowhere to go.
   if (isError && !isNotFound(error)) {
     return (
-      <div className="min-h-screen bg-background pt-28 pb-24">
-        <div className="max-w-3xl mx-auto px-6">
+      <div className="min-h-screen bg-background page">
+        <div className="shell-narrow">
           <LoadFailure onRetry={() => refetch()} backHref="/modules" backLabel={t("All modules", "Barcha modullar", "Все модули")} />
         </div>
       </div>
@@ -77,8 +77,8 @@ export default function ModuleDetailPage() {
 
   if (!mod) {
     return (
-      <div className="min-h-screen bg-background pt-28 pb-24">
-        <div className="max-w-3xl mx-auto px-6 text-center py-20">
+      <div className="min-h-screen bg-background page">
+        <div className="shell-narrow text-center py-20">
           <p className="text-muted-foreground mb-6">
             {t("Module not found.", "Modul topilmadi.", "Модуль не найден.")}
           </p>
@@ -97,8 +97,8 @@ export default function ModuleDetailPage() {
   const started = mod.completedCount > 0;
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-28 pb-24">
-      <div className="max-w-3xl mx-auto px-6">
+    <div className="min-h-screen bg-background text-foreground page">
+      <div className="shell-narrow">
         <Link href="/modules">
           <button className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors">
             <ArrowLeft className="w-4 h-4" />
@@ -107,7 +107,7 @@ export default function ModuleDetailPage() {
         </Link>
 
         <header className="mb-8">
-          <h1 className="text-3xl font-semibold tracking-tight mb-3" data-testid="text-module-title">
+          <h1 className="font-semibold mb-3" data-testid="text-module-title">
             {t(mod.title, mod.titleUz ?? undefined, mod.titleRu ?? undefined)}
           </h1>
           <p className="text-muted-foreground mb-5">

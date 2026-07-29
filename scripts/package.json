@@ -13,12 +13,14 @@
     "import-uz": "tsx ./src/import-uz-scenarios.ts",
     "audit": "tsx ./src/audit-content.ts",
     "smoke": "bash ./smoke.sh",
-    "import-labs": "tsx ./src/import-browser-labs.ts"
+    "import-labs": "tsx ./src/import-browser-labs.ts",
+    "check-labs": "tsx ./src/check-labs.ts"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "catalog:",
     "@types/pg": "^8.18.0",
+    "@workspace/lab-scenarios": "workspace:*",
     "bcryptjs": "^2.4.3",
     "drizzle-orm": "catalog:",
     "pg": "^8.20.0",

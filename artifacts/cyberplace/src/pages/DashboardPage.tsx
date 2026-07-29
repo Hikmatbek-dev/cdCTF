@@ -40,7 +40,7 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pt-24 px-6">
+      <div className="min-h-screen bg-background page">
         <div className="max-w-6xl mx-auto space-y-8">
           <Skeleton className="h-32 w-full bg-muted rounded-xl" />
           <div className="grid md:grid-cols-3 gap-6">
@@ -57,7 +57,7 @@ export default function DashboardPage() {
   // under the navbar: no message, no retry, no way to tell it from a bug.
   if (isError || !data) {
     return (
-      <div className="min-h-screen bg-background pt-32 px-6">
+      <div className="min-h-screen bg-background page">
         <div className="max-w-2xl mx-auto">
           <LoadFailure
             onRetry={() => refetch()}
@@ -75,11 +75,11 @@ export default function DashboardPage() {
   const titles = normalizeArray<DashboardResponse["titles"][number]>(data.titles, ["titles", "data", "items"]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-32 pb-24 relative overflow-hidden">
+    <div className="min-h-screen bg-background text-foreground page relative overflow-hidden">
       {/* Background Grid */}
       <div className="fixed inset-0 mono-grid pointer-events-none" />
 
-      <div className="max-w-6xl mx-auto px-6 relative z-10">
+      <div className="shell relative z-10">
         {/* Dashboard Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-12 mb-16">
           <div>
@@ -88,7 +88,7 @@ export default function DashboardPage() {
               <div className="h-px w-12 bg-border" />
               <span className="eyebrow">{t("cdCTF · Dashboard", "cdCTF · Panel", "cdCTF · Панель")}</span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 leading-tight">
+            <h1 className="mb-6">
               {t("Dashboard", "Boshqaruv paneli", "Панель управления")}
             </h1>
             <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
@@ -110,7 +110,7 @@ export default function DashboardPage() {
           return (
             <div className="glass-card !p-6 mb-10 flex items-center gap-5" data-testid="level-bar">
               <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shrink-0 neon-glow">
-                <span className="text-lg font-black text-white tabular-nums">{lv.level}</span>
+                <span className="text-lg font-black text-primary-foreground tabular-nums">{lv.level}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline justify-between mb-2 gap-4">
@@ -145,7 +145,7 @@ export default function DashboardPage() {
             <div className="glass-card !p-8 border-primary/30 flex flex-col sm:flex-row sm:items-center justify-between gap-6 group cursor-pointer">
               <div className="flex items-center gap-5">
                 <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shrink-0 neon-glow">
-                  <GraduationCap className="w-7 h-7 text-white" />
+                  <GraduationCap className="w-7 h-7 text-primary-foreground" />
                 </div>
                 <div>
                   <div className="eyebrow mb-1">{t("Get started", "Boshlang", "Начните")}</div>
@@ -172,7 +172,7 @@ export default function DashboardPage() {
             <div className="glass-card !p-8 border-primary/30 flex flex-col sm:flex-row sm:items-center justify-between gap-6 group cursor-pointer">
               <div className="flex items-center gap-5">
                 <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shrink-0 neon-glow">
-                  <BookOpen className="w-7 h-7 text-white" />
+                  <BookOpen className="w-7 h-7 text-primary-foreground" />
                 </div>
                 <div>
                   <div className="eyebrow mb-1">{t("Continue learning", "O'qishni davom eting", "Продолжить обучение")}</div>

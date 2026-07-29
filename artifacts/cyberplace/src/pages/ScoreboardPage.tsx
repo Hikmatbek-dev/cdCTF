@@ -45,7 +45,7 @@ export default function ScoreboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-24 sm:pt-28 pb-24 relative overflow-hidden">
+    <div className="min-h-screen bg-background text-foreground page relative overflow-hidden">
       {/* Background Effects */}
       <div className="fixed inset-0 mono-grid opacity-20 pointer-events-none" />
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -53,7 +53,7 @@ export default function ScoreboardPage() {
         <div className="absolute bottom-[15%] left-[-10%] w-[50%] h-[50%] bg-accent/5 hidden rounded-full opacity-30" />
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 relative z-10">
+      <div className="shell relative z-10">
         {/* Header Section */}
         <div className="mb-8">
           <FadeIn>
@@ -62,7 +62,7 @@ export default function ScoreboardPage() {
                 <Trophy className="w-7 h-7 text-primary" />
               </div>
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-none mb-2">{t("Leaderboard", "Reyting", "Рейтинг")}</h1>
+                <h1 className="mb-2">{t("Leaderboard", "Reyting", "Рейтинг")}</h1>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-primary" />
                   <p className="text-sm text-muted-foreground">
@@ -82,7 +82,7 @@ export default function ScoreboardPage() {
                 placeholder={t("Search players…", "Foydalanuvchilarni qidirish…", "Поиск игроков…")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full h-12 pl-11 pr-4 bg-foreground/5 border border-border rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-sm placeholder:text-muted-foreground/60"
+                className="field !pl-11"
               />
             </div>
           </FadeIn>
@@ -94,7 +94,7 @@ export default function ScoreboardPage() {
             <div className="mb-6 glass-card bg-primary/[0.06] !p-6 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 border-primary/20 relative overflow-hidden">
                             <div className="relative z-10 text-center sm:text-left">
                 <p className="text-xs font-medium text-muted-foreground mb-1">{t("Your position", "Sizning joyingiz", "Ваша позиция")}</p>
-                <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-primary">#{data.currentUserRank}</h2>
+                <h2 className="text-primary">#{data.currentUserRank}</h2>
               </div>
               <div className="text-center sm:text-right relative z-10">
                 <p className="text-xs font-medium text-muted-foreground mb-1">{t("Your points", "Sizning ballaringiz", "Ваши очки")}</p>
@@ -113,11 +113,11 @@ export default function ScoreboardPage() {
             <LoadFailure onRetry={() => refetch()} />
           ) : isLoading ? (
             <div className="space-y-4">
-              {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-14 bg-foreground/5 rounded-lg" />)}
+              {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-14 bg-muted rounded-lg" />)}
             </div>
           ) : entries.length === 0 ? (
-            <div className="glass-card py-20 text-center rounded-xl border-foreground/5">
-               <div className="w-20 h-20 bg-foreground/5 border border-foreground/5 rounded-3xl flex items-center justify-center mx-auto mb-8">
+            <div className="glass-card py-20 text-center rounded-xl border-border">
+               <div className="w-20 h-20 bg-muted border border-border rounded-3xl flex items-center justify-center mx-auto mb-8">
                 <Target className="w-10 h-10 text-muted-foreground/20" />
                </div>
                {/* Blaming a search the visitor never made is worse than saying
@@ -130,7 +130,7 @@ export default function ScoreboardPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="glass-card !p-2 rounded-xl border-foreground/5 mb-8">
+              <div className="glass-card !p-2 rounded-xl border-border mb-8">
                 {entries.map((entry, i) => {
                   const isMe = user?.id === entry.userId;
                   const rank = entry.rank;
@@ -177,7 +177,7 @@ export default function ScoreboardPage() {
                           </div>
                           
                           {/* Avatar */}
-                          <div className={`w-11 h-11 bg-foreground/5 border rounded-xl flex items-center justify-center text-base font-bold text-primary shrink-0 overflow-hidden ${isMe ? "border-primary/40" : "border-foreground/10 group-hover:border-primary/30"}`}>
+                          <div className={`w-11 h-11 bg-muted border rounded-xl flex items-center justify-center text-base font-bold text-primary shrink-0 overflow-hidden ${isMe ? "border-primary/40" : "border-border group-hover:border-primary/30"}`}>
                             {entry.avatarUrl ? (
                               <img src={entry.avatarUrl} alt={entry.nickname} className="w-full h-full object-cover" />
                             ) : <span>{entry.nickname[0].toUpperCase()}</span>}
@@ -203,7 +203,7 @@ export default function ScoreboardPage() {
                                 </span>
                               )}
                               {titles.slice(0, 2).map(title => (
-                                <span key={title} className="text-xs font-medium text-muted-foreground bg-foreground/5 border border-foreground/5 px-3 py-1 rounded-xl group-hover:border-primary/30 transition-all">
+                                <span key={title} className="text-xs font-medium text-muted-foreground bg-muted border border-border px-3 py-1 rounded-xl group-hover:border-primary/30 transition-all">
                                   {title}
                                 </span>
                               ))}

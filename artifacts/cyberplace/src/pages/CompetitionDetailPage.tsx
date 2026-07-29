@@ -120,8 +120,8 @@ export default function CompetitionDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pt-14">
-        <div className="max-w-4xl mx-auto px-4 py-8 space-y-4">
+      <div className="min-h-screen bg-background page">
+        <div className="shell-mid py-8 space-y-4">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-32 w-full" />
         </div>
@@ -131,7 +131,7 @@ export default function CompetitionDetailPage() {
 
   if (!comp) {
     return (
-      <div className="min-h-screen bg-background pt-14 flex items-center justify-center">
+      <div className="min-h-screen bg-background page flex items-center justify-center">
         <p className="text-muted-foreground">{t("Competition not found", "Musobaqa topilmadi", "Соревнование не найдено")}</p>
       </div>
     );
@@ -144,8 +144,8 @@ export default function CompetitionDetailPage() {
   const canManageTeam = isAuthenticated && comp.status !== "ended";
 
   return (
-    <div className="min-h-screen bg-background pt-14">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background page">
+      <div className="shell-mid py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-3">

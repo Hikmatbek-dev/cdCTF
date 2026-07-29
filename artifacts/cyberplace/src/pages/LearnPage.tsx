@@ -32,11 +32,11 @@ export default function LearnPage() {
     : allLessons;
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-28 pb-24 relative">
+    <div className="min-h-screen bg-background text-foreground page relative">
       {/* Faint signature grid, fixed behind the content. */}
       <div className="fixed inset-0 mono-grid pointer-events-none" />
 
-      <div className="max-w-6xl mx-auto px-6 relative z-10">
+      <div className="shell relative z-10">
         <header className="mb-12">
           <div className="eyebrow mb-3 flex items-center gap-2">
             <BookOpen className="w-3.5 h-3.5" />
@@ -44,7 +44,7 @@ export default function LearnPage() {
           </div>
           {/* Named for what it is — a flat index of every lesson — so it does
               not read as a second, competing course next to the module path. */}
-          <h1 className="text-4xl font-bold tracking-tight mb-3">
+          <h1 className="mb-3">
             <span className="gradient-text">{t("All lessons", "Barcha darslar", "Все уроки")}</span>
           </h1>
           <p className="text-muted-foreground max-w-2xl">

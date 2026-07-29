@@ -140,82 +140,140 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* ── Dark: hero ─────────────────────────────────────────────── */}
+      {/* ── Hero ───────────────────────────────────────────────────── */}
       <div className="relative">
-        {/* A real photograph behind the hero: network hardware in a rack, dark
-            and lit green. The alternative on offer was a masked figure in a
-            hoodie, which is the stereotype this platform exists to argue with —
-            it trains defenders, and it is shown to sponsors and ministries.
-            Two sizes, WebP, 19 KB on a phone and 45 KB on a desk; the scrim
-            over it is heavy enough that the headline keeps its contrast. */}
-        <div aria-hidden="true" className="absolute inset-x-0 top-0 h-[560px] overflow-hidden pointer-events-none">
-          <img
-            src="/img/hero-1600.webp"
-            srcSet="/img/hero-800.webp 800w, /img/hero-1600.webp 1600w"
-            sizes="100vw"
-            alt=""
-            className="w-full h-full object-cover opacity-60"
-            fetchPriority="high"
-            decoding="async"
-          />
-          {/* Two scrims: one down, so the section melts into the page, and one
-              across, so the headline always has near-solid background under it
-              while the picture stays visible on the right. */}
-          <div className="absolute inset-0 bg-gradient-to-b from-background/45 via-background/75 to-background" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-transparent" />
-        </div>
-        <div className="fixed inset-0 mono-grid pointer-events-none" />
-        <div className="relative max-w-6xl mx-auto px-6">
-          <section className="pt-28 sm:pt-36 pb-20 grid lg:grid-cols-[1fr_1.05fr] gap-14 lg:gap-12 items-center">
+        {/*
+          The photograph used to be here: a dark rack of network hardware,
+          full-bleed behind the headline under two heavy scrims. It was made for
+          a near-black page, and on paper it can only be one of two things — a
+          grey smear under the type, or a dark slab that puts the old identity
+          straight back at the top of the site. It moves to the "how it works"
+          band, where the three step photographs already live and where a picture
+          is illustrating something rather than setting a mood.
+        */}
+        <div className="relative shell">
+          <section className="pt-24 sm:pt-28 pb-12 grid lg:grid-cols-[1fr_1.05fr] gap-14 lg:gap-12 items-center">
             <div className="text-center lg:text-left">
               <div className="eyebrow mb-6 mx-auto lg:mx-0">
                 {t("cdCTF · Cybersecurity Academy", "cdCTF · Kiberxavfsizlik akademiyasi", "cdCTF · Академия кибербезопасности")}
               </div>
-              <h1 className="text-[2.75rem] sm:text-6xl lg:text-[4.25rem] font-bold tracking-tight leading-[1.04] mb-6">
-                {/* The Uzbek line was "Hacking'ni o'rganing" — an English noun
-                    with a Uzbek suffix bolted on. "Hujumni" is the word people
-                    actually use, and it mirrors "Himoyani" the way the English
-                    pair mirrors itself. */}
-                {t("Learn to hack.", "Hujumni o'rganing.", "Учитесь взламывать.")}<br />
-                <span className="gradient-text">{t("Learn to defend.", "Himoyani o'rganing.", "Учитесь защищать.")}</span>
+              {/* "Learn to hack. Learn to defend." was a good slogan and a bad
+                  first screen: it says what the site is about and nothing about
+                  what to do next. The second line is the invitation now. */}
+              <h1 className="mb-5">
+                {t("Learn cybersecurity from zero.", "Kiberxavfsizlikni noldan o'rganing.", "Изучите кибербезопасность с нуля.")}{" "}
+                <span className="gradient-text">{t("Start right now.", "Hoziroq boshlang.", "Начните прямо сейчас.")}</span>
               </h1>
-              <p className="text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0 mb-9 leading-relaxed">
+              <p className="text-base sm:text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0 mb-5 leading-relaxed">
                 {t(
-                  "A hands-on, six-month cybersecurity program in Uzbek, Russian and English — with real terminal commands, CTF practice, and a certificate at the end.",
-                  "Amaliy, 6 oylik kiberxavfsizlik dasturi — o'zbek, rus va ingliz tilida, real terminal buyruqlar, CTF mashqlar va oxirida sertifikat bilan.",
-                  "Практическая шестимесячная программа по кибербезопасности на узбекском, русском и английском — с реальными командами, CTF и сертификатом.",
+                  "Six months, hands on, in Uzbek, Russian and English — real commands, CTF practice, a certificate at the end.",
+                  "6 oy, to'liq amaliy — o'zbek, rus va ingliz tilida. Real buyruqlar, CTF mashqlar, oxirida sertifikat.",
+                  "Полгода практики на узбекском, русском и английском — реальные команды, CTF и сертификат в конце.",
                 )}
               </p>
-              <div className="flex flex-col sm:flex-row items-center lg:justify-start justify-center gap-3">
-                {/* /start, not /modules: a list of eight modules is a decision
-                    a first-time visitor cannot make. Two questions can. */}
-                <Link href="/start" className="w-full sm:w-auto">
-                  <button className="cyber-button h-12 px-8 w-full sm:w-auto" data-testid="button-hero-start">
-                    <GraduationCap className="w-4 h-4" />
-                    {t("Start learning", "O'rganishni boshlash", "Начать обучение")}
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </Link>
-                <Link href="/ctf" className="w-full sm:w-auto">
-                  <button className="cyber-button-outline h-12 px-8 w-full sm:w-auto" data-testid="button-hero-ctf">
-                    {t("Try the CTF challenges", "CTF topshiriqlarni sinash", "Попробовать CTF")}
-                  </button>
-                </Link>
-              </div>
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 mt-6 text-xs text-muted-foreground">
+              {/* The reasons to press the button belong above it, not under it. */}
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 mb-6 text-xs text-muted-foreground">
                 {[
                   t("Free, forever", "Bepul, doim", "Бесплатно, навсегда"),
                   t("No experience needed", "Tajriba shart emas", "Опыт не нужен"),
-                  t("Certificate included", "Sertifikat bilan", "С сертификатом"),
+                  t("Uzbek, Russian, English", "O'zbek, rus, ingliz tilida", "Узбекский, русский, английский"),
                 ].map(x => (
                   <span key={x} className="inline-flex items-center gap-1.5">
                     <Check className="w-3.5 h-3.5 text-primary" /> {x}
                   </span>
                 ))}
               </div>
+
+              {/* One action. There used to be two of near-equal weight — "Start
+                  learning" and "Try the CTF challenges" — and a first-time
+                  visitor has no basis for choosing between them, which is
+                  exactly what made the screen unreadable. The other route is
+                  still here, as a link, for the people who already know. */}
+              <div className="flex flex-col items-center lg:items-start gap-3">
+                <Link href="/start" className="w-full sm:w-auto">
+                  <button className="cyber-button h-14 px-9 w-full sm:w-auto text-base" data-testid="button-hero-start">
+                    <GraduationCap className="w-5 h-5" />
+                    {t("Start the first lesson", "Birinchi darsni boshlash", "Начать первый урок")}
+                    <ArrowRight className="w-5 h-5" />
+                  </button>
+                </Link>
+                {/* What the button actually does, before it is pressed. Both
+                    claims are true: /start is public, and a lesson is readable
+                    without an account — only its test asks you to sign in. */}
+                <p className="text-sm text-muted-foreground max-w-md text-center lg:text-left">
+                  {t(
+                    "Two questions, then we drop you at the right lesson. No account needed to read.",
+                    "2 ta savol — va sizni mos darsdan boshlaymiz. O'qish uchun ro'yxatdan o'tish shart emas.",
+                    "Два вопроса — и вы на подходящем уроке. Регистрация для чтения не нужна.",
+                  )}
+                </p>
+                <Link href="/ctf" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors mt-1" data-testid="button-hero-ctf">
+                  {t("Or look at the CTF challenges first", "Yoki avval CTF topshiriqlarini ko'ring", "Или сначала посмотрите CTF-задания")}
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
             </div>
 
             <div className="lg:pl-4"><HeroTerminal challengeCount={ctfCount} /></div>
+          </section>
+
+          {/* The path, on the first screen.
+              "How it works" already existed — three cards, a long way down the
+              page. A visitor deciding whether to press the button cannot see
+              it, so the button was a step into the dark. This is the same three
+              steps, compressed to a strip, with the one the button leads to
+              marked. */}
+          <section className="pb-14">
+            <ol className="grid sm:grid-cols-3 gap-3">
+              {[
+                {
+                  n: 1,
+                  title: t("Read", "O'qing", "Читайте"),
+                  body: t("Theory, then the real commands, in your language.",
+                          "Nazariya, keyin real buyruqlar — o'z tilingizda.",
+                          "Теория, затем реальные команды, на вашем языке."),
+                  here: true,
+                },
+                {
+                  n: 2,
+                  title: t("Attack", "Hujum qiling", "Атакуйте"),
+                  body: t("Break a deliberately vulnerable target in your browser.",
+                          "Brauzeringizda ataylab zaif qilingan nishonni buzing.",
+                          "Взломайте намеренно уязвимую цель в браузере."),
+                },
+                {
+                  n: 3,
+                  title: t("Get certified", "Sertifikat oling", "Получите сертификат"),
+                  body: t("Pass the module exam; the credential is publicly verifiable.",
+                          "Modul imtihonidan o'ting — sertifikat ommaviy tekshiriladi.",
+                          "Сдайте экзамен модуля — сертификат публично проверяем."),
+                },
+              ].map(step => (
+                <li
+                  key={step.n}
+                  className={`rounded-xl border p-4 flex gap-3 ${
+                    step.here ? "border-primary/45 bg-primary/5" : "border-border bg-card/40"
+                  }`}
+                >
+                  <span className={`w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-xs font-bold ${
+                    step.here ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  }`}>
+                    {step.n}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold flex flex-wrap items-center gap-2">
+                      {step.title}
+                      {step.here && (
+                        <span className="chip chip-primary">
+                          {t("the button starts here", "tugma shu yerdan boshlaydi", "кнопка ведёт сюда")}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{step.body}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </section>
 
           {/* Trust band */}
@@ -234,12 +292,12 @@ export default function HomePage() {
 
       {/* ── Bright band: how it works + the curriculum ──────────────── */}
       <div className="section-alt relative z-10">
-        <div className="max-w-6xl mx-auto px-6 py-24">
+        <div className="shell py-20 sm:py-24">
           <div className="eyebrow mb-3">{t("How it works", "Qanday ishlaydi", "Как это работает")}</div>
-          <h2 className="text-3xl sm:text-[2.5rem] font-bold tracking-tight mb-3 max-w-2xl leading-tight">
+          <h2 className="mb-3 max-w-2xl">
             {t("Read it, run it, capture the flag", "O'qing, bajaring, flagni oling", "Прочитайте, выполните, возьмите флаг")}
           </h2>
-          <p className="text-muted-foreground max-w-2xl mb-12">
+          <p className="lead mb-12">
             {t(
               "The same loop in every lesson — which is why the skill actually sticks.",
               "Har darsda bir xil aylanma — ko'nikma aynan shuning uchun qoladi.",
@@ -282,7 +340,7 @@ export default function HomePage() {
           <div className="flex items-end justify-between gap-4 mb-10">
             <div>
               <div className="eyebrow mb-3">{t("The curriculum", "O'quv dasturi", "Программа")}</div>
-              <h2 className="text-3xl sm:text-[2.5rem] font-bold tracking-tight leading-tight">
+              <h2>
                 {t("Eight modules, in order", "Sakkiz modul, ketma-ket", "Восемь модулей, по порядку")}
               </h2>
             </div>
@@ -342,14 +400,14 @@ export default function HomePage() {
 
       {/* ── Dark: inside a lesson + practice ────────────────────────── */}
       <div className="relative">
-        <div className="max-w-6xl mx-auto px-6 py-24">
+        <div className="shell py-20 sm:py-24">
           <div className="grid lg:grid-cols-2 gap-12 items-center mb-24">
             <div>
               <div className="eyebrow mb-3">{t("Inside a lesson", "Dars ichida", "Внутри урока")}</div>
-              <h2 className="text-3xl sm:text-[2.5rem] font-bold tracking-tight mb-4 leading-tight">
+              <h2 className="mb-4">
                 {t("Commands you actually run", "Siz haqiqatan bajaradigan buyruqlar", "Команды, которые вы реально выполняете")}
               </h2>
-              <p className="text-muted-foreground mb-7 leading-relaxed">
+              <p className="lead mb-7">
                 {t(
                   "No screenshots of someone else's terminal. Copy the command, run it on your own machine, and compare against the output printed right there in the lesson.",
                   "Birovning terminali rasmi emas. Buyruqni ko'chiring, o'z mashinangizda bajaring va darsda yozib qo'yilgan natija bilan solishtiring.",
@@ -372,8 +430,6 @@ export default function HomePage() {
 
             {/* A live miniature of the reader, rather than a static image. */}
             <div className="relative">
-              <div className="absolute -inset-6 rounded-xl blur-3xl pointer-events-none"
-                style={{ background: "radial-gradient(60% 60% at 50% 50%, hsl(var(--accent) / 0.22), transparent 70%)" }} />
               <div className="relative glass-card !p-0 overflow-hidden">
                 <div className="px-5 py-3 border-b border-border flex items-center gap-2 text-xs text-muted-foreground">
                   <BookOpen className="w-3.5 h-3.5 text-primary" />
@@ -423,10 +479,10 @@ export default function HomePage() {
             </div>
             <div className="order-1 lg:order-2">
               <div className="eyebrow mb-3">{t("Practice", "Amaliyot", "Практика")}</div>
-              <h2 className="text-3xl sm:text-[2.5rem] font-bold tracking-tight mb-4 leading-tight">
+              <h2 className="mb-4">
                 {t("Then prove it on real challenges", "So'ng buni real topshiriqlarda isbotlang", "Затем докажите это на реальных заданиях")}
               </h2>
-              <p className="text-muted-foreground mb-7 leading-relaxed">
+              <p className="lead mb-7">
                 {t(
                   "Dozens of CTF challenges across web, crypto, forensics and more — the same categories the lessons teach. Submit a flag, take the points, climb the board.",
                   "Veb, kripto, forenzika va boshqa yo'nalishlarda o'nlab CTF topshiriq — darslar o'rgatgan o'sha kategoriyalar. Flagni topshiring, ballni oling, reytingda ko'tariling.",
@@ -446,13 +502,13 @@ export default function HomePage() {
 
       {/* ── Bright band: the certificate ────────────────────────────── */}
       <div className="section-alt relative z-10">
-        <div className="max-w-6xl mx-auto px-6 py-24">
+        <div className="shell py-20 sm:py-24">
           <div className="max-w-2xl mb-12">
             <div className="eyebrow mb-3">{t("Proof of work", "Ish isboti", "Доказательство работы")}</div>
-            <h2 className="text-3xl sm:text-[2.5rem] font-bold tracking-tight mb-4 leading-tight">
+            <h2 className="mb-4">
               {t("A certificate per module — and a diploma at the end", "Har modulga sertifikat — oxirida esa diplom", "Сертификат за модуль — и диплом в конце")}
             </h2>
-            <p className="text-muted-foreground mb-7 leading-relaxed">
+            <p className="lead mb-7">
               {t(
                 "Pass a module's final exam at 80% or above and the certificate is issued with your score and a serial number anyone can verify. Finish all eight and the program diploma follows.",
                 "Modul yakuniy imtihonidan 80% va undan yuqori o'ting — sertifikat balingiz va har kim tekshira oladigan seriya raqami bilan beriladi. Sakkizalasini tugatsangiz, dastur diplomi keladi.",
@@ -507,7 +563,7 @@ export default function HomePage() {
 
       {/* ── Dark: leaderboard, community, FAQ, CTA ──────────────────── */}
       <div className="relative">
-        <div className="max-w-6xl mx-auto px-6 py-24">
+        <div className="shell py-20 sm:py-24">
           {scoreboardEntries.length > 0 && (
             <section className="mb-24">
               <div className="flex items-center justify-between mb-8">
@@ -516,7 +572,7 @@ export default function HomePage() {
                     <Trophy className="w-3.5 h-3.5" />
                     {t("Leaderboard", "Reyting", "Рейтинг")}
                   </div>
-                  <h2 className="text-3xl font-bold tracking-tight">{t("Top players", "Eng yaxshilar", "Лучшие игроки")}</h2>
+                  <h2>{t("Top players", "Eng yaxshilar", "Лучшие игроки")}</h2>
                 </div>
                 <Link href="/scoreboard" className="inline-flex items-center gap-1 min-h-[40px] py-2 text-sm font-medium text-primary hover:text-accent transition-colors">
                   {t("Full ranking", "To'liq reyting", "Весь рейтинг")}
@@ -553,9 +609,9 @@ export default function HomePage() {
                 style={{ background: "radial-gradient(50% 70% at 50% 0%, hsl(var(--primary) / 0.16), transparent 70%)" }} />
               <div className="relative">
                 <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-5">
-                  <Users className="w-7 h-7 text-white" />
+                  <Users className="w-7 h-7 text-primary-foreground" />
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-3">
+                <h2 className="mb-3">
                   {t("Learning is easier together", "Birga o'rganish osonroq", "Вместе учиться легче")}
                 </h2>
                 <p className="text-muted-foreground max-w-xl mx-auto mb-7">
@@ -577,7 +633,7 @@ export default function HomePage() {
           {/* FAQ */}
           <section className="mb-24 max-w-3xl">
             <div className="eyebrow mb-3">FAQ</div>
-            <h2 className="text-3xl sm:text-[2.5rem] font-bold tracking-tight mb-10 leading-tight">
+            <h2 className="mb-10">
               {t("Questions people ask", "Odamlar so'raydigan savollar", "Что обычно спрашивают")}
             </h2>
             <div className="space-y-3">
@@ -604,7 +660,7 @@ export default function HomePage() {
               <div className="absolute inset-0 pointer-events-none"
                 style={{ background: "radial-gradient(60% 90% at 50% 0%, hsl(var(--primary) / 0.28), transparent 70%)" }} />
               <div className="relative">
-                <h2 className="text-3xl sm:text-5xl font-bold tracking-tight mb-4 leading-tight">
+                <h2 className="mb-4">
                   {t("Your first command is", "Birinchi buyrug'ingiz", "Ваша первая команда —")}{" "}
                   <span className="gradient-text">{t("one click away", "bir bosish narida", "в одном клике")}</span>
                 </h2>
@@ -627,61 +683,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-border py-14 relative">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 mb-10">
-            <div className="sm:col-span-2 lg:col-span-1">
-              <div className="text-2xl font-bold tracking-tight mb-3">
-                <span className="gradient-text">cd</span><span className="text-foreground/60">CTF</span>
-              </div>
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mb-5">
-                {t(
-                  "The cybersecurity academy for the Uzbek community — learn, practice, and get certified.",
-                  "O'zbek jamiyati uchun kiberxavfsizlik akademiyasi — o'rganing, mashq qiling va sertifikat oling.",
-                  "Академия кибербезопасности для узбекского сообщества — учитесь, практикуйтесь, получайте сертификат.",
-                )}
-              </p>
-              <a href="https://t.me/cdctf" target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#0077b0] text-white text-sm font-medium hover:bg-[#0088cc] transition-colors">
-                <Send className="w-4 h-4" />
-                Telegram
-              </a>
-            </div>
-            <div>
-              <div className="eyebrow mb-4">{t("Learn", "O'rganish", "Обучение")}</div>
-              <ul className="space-y-0.5 text-sm">
-                <li><Link href="/modules" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Modules", "Modullar", "Модули")}</Link></li>
-                <li><Link href="/learn" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Lessons", "Darslar", "Уроки")}</Link></li>
-                <li><Link href="/ctf" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("CTF challenges", "CTF topshiriqlar", "CTF задания")}</Link></li>
-              </ul>
-            </div>
-            <div>
-              <div className="eyebrow mb-4">{t("Compete", "Bellashuv", "Соревнование")}</div>
-              <ul className="space-y-0.5 text-sm">
-                <li><Link href="/scoreboard" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Leaderboard", "Reyting", "Рейтинг")}</Link></li>
-                <li><Link href="/competitions" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Competitions", "Musobaqalar", "Соревнования")}</Link></li>
-              </ul>
-            </div>
-            {/* Careers and the platform pages. Impact and the credential check
-                live here rather than in the main nav — they matter to employers
-                and visitors, not to someone working through the course. */}
-            <div>
-              <div className="eyebrow mb-4">{t("More", "Yana", "Ещё")}</div>
-              <ul className="space-y-0.5 text-sm">
-                <li><Link href="/jobs" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Careers", "Karyera", "Карьера")}</Link></li>
-                <li><Link href="/talent" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Hire from cdCTF", "cdCTF'dan yollash", "Наём с cdCTF")}</Link></li>
-                <li><Link href="/verify" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Verify a credential", "Sertifikatni tekshirish", "Проверить сертификат")}</Link></li>
-                <li><Link href="/impact" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Impact", "Ta'sir", "Влияние")}</Link></li>
-              </ul>
-            </div>
-          </div>
-          <div className="pt-8 border-t border-border text-sm text-muted-foreground flex items-center gap-2">
-            <Languages className="w-4 h-4" />
-            © {new Date().getFullYear()} cdCTF
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

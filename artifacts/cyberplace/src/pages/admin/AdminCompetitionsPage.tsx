@@ -218,7 +218,7 @@ export default function AdminCompetitionsPage() {
   const saving = createComp.isPending || updateComp.isPending;
 
   return (
-    <div className="flex min-h-screen bg-background pt-14">
+    <div className="flex min-h-screen bg-background pt-20">
       <AdminSidebar />
       <main className="flex-1 p-6">
         <div className="flex items-center justify-between mb-6">

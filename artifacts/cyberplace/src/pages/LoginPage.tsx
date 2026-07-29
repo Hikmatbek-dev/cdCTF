@@ -155,16 +155,16 @@ export default function LoginPage() {
       <div className="w-full max-w-md relative z-10">
         <ScaleIn>
           <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl bg-primary/10 border border-foreground/10 mb-8 animate-float shadow-2xl ">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl bg-primary/10 border border-border mb-8 animate-float shadow-2xl ">
               <Shield className="w-10 h-10 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight mb-2">{t("Sign in", "Kirish", "Вход")}</h1>
+            <h1 className="mb-2">{t("Sign in", "Kirish", "Вход")}</h1>
             <p className="text-sm text-muted-foreground">{t("Welcome back to cdCTF.", "cdCTF'ga xush kelibsiz.", "С возвращением в cdCTF.")}</p>
           </div>
         </ScaleIn>
 
         <FadeIn delay={0.2}>
-          <div className="glass-card p-10 rounded-xl border-foreground/10 shadow-2xl">
+          <div className="glass-card p-10 rounded-xl border-border shadow-2xl">
             {oauthError && (
               <div
                 role="alert"
@@ -197,7 +197,7 @@ export default function LoginPage() {
                       autoComplete="one-time-code"
                       inputMode="text"
                       autoFocus
-                      className="w-full pl-12 pr-6 h-14 bg-foreground/5 border border-foreground/5 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold text-sm tracking-wide placeholder:text-muted-foreground/20"
+                      className="field !pl-12"
                     />
                   </div>
                   <p className="text-xs text-muted-foreground/60 mt-3 ml-1 leading-relaxed">
@@ -243,7 +243,7 @@ export default function LoginPage() {
                           placeholder="your_nickname"
                           data-testid="input-nickname"
                           autoComplete="username"
-                          className="w-full pl-12 pr-6 h-14 bg-foreground/5 border border-foreground/5 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold text-sm tracking-wide placeholder:text-muted-foreground/20"
+                          className="field !pl-12"
                         />
                       </FormControl>
                     </div>
@@ -267,7 +267,7 @@ export default function LoginPage() {
                           placeholder="••••••••"
                           data-testid="input-password"
                           autoComplete="current-password"
-                          className="w-full pl-12 pr-6 h-14 bg-foreground/5 border border-foreground/5 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold text-sm tracking-wide placeholder:text-muted-foreground/20"
+                          className="field !pl-12"
                         />
                       </FormControl>
                     </div>
@@ -292,7 +292,7 @@ export default function LoginPage() {
 
             {/* Only rendered for providers the server actually has keys for. */}
             {!mfaToken && (api.passkeysSupported() || (providers.data?.providers.length ?? 0) > 0) && (
-              <div className="mt-8 pt-8 border-t border-foreground/5">
+              <div className="mt-8 pt-8 border-t border-border">
                 <p className="text-center text-xs text-muted-foreground mb-4">
                   {t("or continue with", "yoki davom eting", "или войдите через")}
                 </p>
@@ -320,7 +320,7 @@ export default function LoginPage() {
                       type="button"
                       onClick={() => api.startOAuth(provider)}
                       data-testid={`button-oauth-${provider}`}
-                      className="h-12 rounded-2xl bg-foreground/5 border border-foreground/5 hover:border-primary/40 hover:bg-foreground/10 transition-all text-sm font-medium text-muted-foreground hover:text-foreground"
+                      className="h-12 rounded-xl bg-card border border-border hover:border-primary/40 hover:bg-primary/5 transition-colors text-sm font-medium text-muted-foreground hover:text-foreground"
                     >
                       {PROVIDER_LABELS[provider] ?? provider}
                     </button>

@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/lib/ThemeContext";
 import { SeoManager } from "@/lib/seo";
 import { loginWithNext } from "@/lib/next-path";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 
 import HomePage from "@/pages/HomePage";
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
@@ -122,7 +123,9 @@ function Router() {
   return (
     <>
       <SeoManager />
-      <Navbar />
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex flex-col">
       {/*
         No AnimatePresence here, deliberately.
 
@@ -291,6 +294,9 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </Suspense>
+        </main>
+      <Footer />
+      </div>
     </>
   );
 }

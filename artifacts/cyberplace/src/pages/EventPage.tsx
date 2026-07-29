@@ -80,16 +80,16 @@ export default function EventPage() {
 
   if (!routeMatches || isLoading) {
     return (
-      <div className="min-h-screen bg-background pt-28 pb-24">
-        <div className="max-w-3xl mx-auto px-4"><Skeleton className="h-96 w-full rounded-2xl bg-foreground/5" /></div>
+      <div className="min-h-screen bg-background page">
+        <div className="shell-narrow"><Skeleton className="h-96 w-full rounded-2xl bg-muted" /></div>
       </div>
     );
   }
 
   if (isError || !c) {
     return (
-      <div className="min-h-screen bg-background pt-28 pb-24">
-        <div className="max-w-3xl mx-auto px-4 text-center py-20">
+      <div className="min-h-screen bg-background page">
+        <div className="shell-narrow text-center py-20">
           <h1 className="text-2xl font-bold mb-3">{t("Event not found", "Tadbir topilmadi", "Событие не найдено")}</h1>
           <Link href="/competitions">
             <button className="cyber-button-outline h-11 px-6">{t("All events", "Barcha tadbirlar", "Все события")}</button>
@@ -111,8 +111,8 @@ export default function EventPage() {
   const categories = [...new Set(c.challenges.map(ch => ch.category))];
 
   return (
-    <div className="min-h-screen bg-background pt-24 pb-24">
-      <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background page">
+      <div className="shell-narrow py-8">
 
         {/* Sponsor first. This is their poster — if it opens with cdCTF's logo
             they will not share it. */}
@@ -139,7 +139,7 @@ export default function EventPage() {
           <statusChip.icon className="w-3.5 h-3.5" /> {statusChip.label}
         </div>
 
-        <h1 className="text-4xl md:text-5xl font-display font-black tracking-tight leading-tight mb-4" data-testid="event-name">
+        <h1 className="mb-4" data-testid="event-name">
           {c.name}
         </h1>
 

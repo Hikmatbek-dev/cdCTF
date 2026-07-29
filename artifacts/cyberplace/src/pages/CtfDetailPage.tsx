@@ -111,13 +111,13 @@ export default function CtfDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pt-32 px-6 relative overflow-hidden">
+      <div className="min-h-screen bg-background page relative overflow-hidden">
         <div className="fixed inset-0 mono-grid opacity-10 pointer-events-none" />
         <div className="max-w-5xl mx-auto space-y-12">
-          <Skeleton className="h-16 w-96 bg-foreground/5 rounded-2xl" />
+          <Skeleton className="h-16 w-96 bg-muted rounded-2xl" />
           <div className="grid lg:grid-cols-3 gap-12">
-            <Skeleton className="lg:col-span-2 h-[400px] bg-foreground/5 rounded-xl" />
-            <Skeleton className="h-[400px] bg-foreground/5 rounded-xl" />
+            <Skeleton className="lg:col-span-2 h-[400px] bg-muted rounded-xl" />
+            <Skeleton className="h-[400px] bg-muted rounded-xl" />
           </div>
         </div>
       </div>
@@ -126,10 +126,10 @@ export default function CtfDetailPage() {
 
   if (!challenge) {
     return (
-      <div className="min-h-screen bg-background pt-32 flex items-center justify-center">
+      <div className="min-h-screen bg-background page flex items-center justify-center">
         <ScaleIn>
           <div className="text-center">
-            <div className="w-20 h-20 bg-foreground/5 border border-foreground/5 rounded-3xl flex items-center justify-center mx-auto mb-8">
+            <div className="w-20 h-20 bg-muted border border-border rounded-3xl flex items-center justify-center mx-auto mb-8">
               <AlertTriangle className="w-10 h-10 text-destructive/50" />
             </div>
             <p className="text-lg font-semibold text-muted-foreground">{t("Challenge not found", "Topshiriq topilmadi", "Задание не найдено")}</p>
@@ -140,7 +140,7 @@ export default function CtfDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-32 pb-32 relative overflow-hidden">
+    <div className="min-h-screen bg-background text-foreground page relative overflow-hidden">
       {/* Background Effects */}
       <div className="fixed inset-0 mono-grid opacity-20 pointer-events-none" />
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -148,13 +148,13 @@ export default function CtfDetailPage() {
         <div className="absolute bottom-[10%] right-[-10%] w-[50%] h-[50%] bg-accent/5 hidden rounded-full animate-pulse delay-1000" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
+      <div className="shell relative z-10">
         {/* Header Section */}
         <div className="mb-20">
           <FadeIn>
             <div className="flex flex-wrap items-center gap-4 mb-10">
-              <DifficultyBadge difficulty={challenge.difficulty} className="rounded-lg px-3 py-1 text-xs font-medium shadow-lg border-foreground/5" />
-              <div className="px-4 py-1.5 bg-foreground/5 border border-foreground/5 rounded-lg text-xs font-medium text-muted-foreground ">{challenge.category}</div>
+              <DifficultyBadge difficulty={challenge.difficulty} className="rounded-lg px-3 py-1 text-xs font-medium shadow-lg border-border" />
+              <div className="px-4 py-1.5 bg-muted border border-border rounded-lg text-xs font-medium text-muted-foreground ">{challenge.category}</div>
               
               {challenge.isSolved && (
                 <div className="flex items-center gap-2 px-4 py-1.5 bg-primary/10 border border-primary/20 text-sm font-medium text-primary shadow-xl shadow-primary/10 rounded-xl">
@@ -168,21 +168,21 @@ export default function CtfDetailPage() {
               )}
             </div>
             
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight mb-8" data-testid="text-challenge-name">
+            <h1 className="mb-8" data-testid="text-challenge-name">
               <span className="gradient-text">{t(challenge.name, challenge.nameUz ?? undefined, challenge.nameRu ?? undefined)}</span>
             </h1>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-10 border-y border-foreground/5">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-10 border-y border-border">
               <div>
                 <span className="text-xs text-muted-foreground mb-2 block">{t("Points", "Ball", "Очки")}</span>
                 <span className="text-4xl font-black text-foreground tabular-nums leading-none tracking-tighter">{challenge.points}</span>
               </div>
-              <div className="hidden md:block w-px h-12 bg-foreground/5 mx-auto" />
+              <div className="hidden md:block w-px h-12 bg-border mx-auto" />
               <div>
                 <span className="text-xs text-muted-foreground mb-2 block">{t("Solved by", "Yechganlar", "Решили")}</span>
                 <span className="text-4xl font-black text-primary tabular-nums leading-none tracking-tighter">{challenge.solvedCount}</span>
               </div>
-              <div className="hidden md:block w-px h-12 bg-foreground/5 mx-auto" />
+              <div className="hidden md:block w-px h-12 bg-border mx-auto" />
             </div>
           </FadeIn>
         </div>
@@ -191,7 +191,7 @@ export default function CtfDetailPage() {
           <div className="lg:col-span-2 space-y-12">
             {/* Briefing */}
             <FadeIn delay={0.2}>
-              <div className="glass-card p-10 rounded-xl relative group overflow-hidden border-foreground/10 shadow-2xl">
+              <div className="glass-card p-10 rounded-xl relative group overflow-hidden border-border shadow-2xl">
                 <div className="absolute top-0 right-0 p-10 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity pointer-events-none">
                   <Cpu className="w-80 h-80 text-primary" />
                 </div>
@@ -212,9 +212,9 @@ export default function CtfDetailPage() {
                   const isUrl = challenge.fileUrl.startsWith("http://") || challenge.fileUrl.startsWith("https://");
                   const Icon = isUrl ? ExternalLink : Download;
                   return (
-                    <div className="glass-card p-8 flex items-center justify-between group hover:border-primary/40 transition-all rounded-xl border-foreground/5">
+                    <div className="glass-card p-8 flex items-center justify-between group hover:border-primary/40 transition-all rounded-xl border-border">
                       <div className="flex items-center gap-8">
-                        <div className="w-16 h-16 bg-foreground/5 border border-foreground/5 rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500 shadow-xl">
+                        <div className="w-16 h-16 bg-muted border border-border rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500 shadow-xl">
                           <Icon className="w-7 h-7" />
                         </div>
                         <div>
@@ -357,7 +357,7 @@ export default function CtfDetailPage() {
                         autoCorrect="off"
                         spellCheck={false}
                         placeholder="flag{...}"
-                        className="w-full h-18 px-8 bg-foreground/5 border border-foreground/5 rounded-2xl font-mono text-sm tracking-wide focus:border-primary focus:ring-8 focus:ring-primary/5 transition-all placeholder:text-muted-foreground/30"
+                        className="field font-mono !min-h-[3.5rem] tracking-wide"
                         data-testid="input-flag"
                       />
                     </div>
@@ -380,9 +380,9 @@ export default function CtfDetailPage() {
                     </button>
                   </form>
                   <div className="mt-8 flex items-center justify-center gap-4">
-                    <div className="h-px flex-1 bg-foreground/5" />
+                    <div className="h-px flex-1 bg-border" />
                     <p className="text-xs text-muted-foreground/60 font-mono">{t("Format:", "Format:", "Формат:")} flag{"{"}...{"}"}</p>
-                    <div className="h-px flex-1 bg-foreground/5" />
+                    <div className="h-px flex-1 bg-border" />
                   </div>
                 </div>
               </FadeIn>
@@ -394,7 +394,7 @@ export default function CtfDetailPage() {
                   <div className="w-24 h-24 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-10 shadow-xl shadow-primary/20 animate-pulse-glow">
                     <CheckCircle2 className="w-12 h-12 text-primary" />
                   </div>
-                  <h2 className="text-3xl font-bold tracking-tight mb-4">{t("Solved!", "Yechildi!", "Решено!")}</h2>
+                  <h2 className="mb-4">{t("Solved!", "Yechildi!", "Решено!")}</h2>
                   <p className="text-muted-foreground">{t("Points added to your score.", "Ballar hisobingizga qo'shildi.", "Очки добавлены к вашему счёту.")}</p>
                 </div>
               </ScaleIn>
@@ -409,7 +409,7 @@ export default function CtfDetailPage() {
                   <div className="w-24 h-24 rounded-3xl bg-destructive/10 border border-destructive/20 flex items-center justify-center mx-auto mb-10 shadow-xl shadow-destructive/20">
                     <Lock className="w-12 h-12 text-destructive" />
                   </div>
-                  <h2 className="text-3xl font-bold tracking-tight mb-4 text-destructive">{t("Locked", "Bloklandi", "Заблокировано")}</h2>
+                  <h2 className="mb-4 text-destructive">{t("Locked", "Bloklandi", "Заблокировано")}</h2>
                   <p className="text-muted-foreground">{t("Too many wrong attempts. Ask on Telegram to unblock.", "Ko'p xato urinish. Blokni ochish uchun Telegramda so'rang.", "Слишком много ошибок. Напишите в Telegram для разблокировки.")}</p>
                 </div>
               </ScaleIn>
@@ -418,7 +418,7 @@ export default function CtfDetailPage() {
 
           <div className="space-y-8">
             <FadeIn delay={0.5}>
-              <div className="glass-card p-10 rounded-xl border-foreground/5 relative overflow-hidden">
+              <div className="glass-card p-10 rounded-xl border-border relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
                 <h3 className="text-sm font-semibold text-muted-foreground mb-6">{t("Details", "Tafsilotlar", "Детали")}</h3>
                 <div className="space-y-10">
@@ -426,15 +426,15 @@ export default function CtfDetailPage() {
                     <span className="text-xs text-muted-foreground group-hover:text-primary/70 transition-colors">{t("Points", "Ball", "Очки")}</span>
                     <span className="text-4xl font-black text-primary tabular-nums tracking-tighter">+{challenge.points}</span>
                   </div>
-                  <div className="h-px bg-foreground/5" />
+                  <div className="h-px bg-border" />
                   <div className="flex justify-between items-center group">
                     <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">{t("Difficulty", "Qiyinlik", "Сложность")}</span>
-                    <span className="text-sm font-medium text-foreground bg-foreground/5 px-3 py-1.5 rounded-xl capitalize">{challenge.difficulty}</span>
+                    <span className="text-sm font-medium text-foreground bg-muted px-3 py-1.5 rounded-xl capitalize">{challenge.difficulty}</span>
                   </div>
-                  <div className="h-px bg-foreground/5" />
+                  <div className="h-px bg-border" />
                   <div className="flex justify-between items-center group">
                     <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">{t("Solved by", "Yechganlar", "Решили")}</span>
-                    <span className="text-xs font-black text-foreground bg-foreground/5 px-4 py-2 rounded-xl tabular-nums">{((challenge.solvedCount / (total || 1)) * 100).toFixed(2)}%</span>
+                    <span className="text-xs font-black text-foreground bg-muted px-4 py-2 rounded-xl tabular-nums">{((challenge.solvedCount / (total || 1)) * 100).toFixed(2)}%</span>
                   </div>
                 </div>
               </div>

@@ -32,16 +32,16 @@ export default function ImpactPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background pt-24 relative overflow-hidden">
+    <div className="min-h-screen bg-background page relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full hidden pointer-events-none" />
 
-      <div className="max-w-5xl mx-auto px-4 py-8 relative z-10">
+      <div className="shell py-8 relative z-10">
         {/* Mission */}
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary mb-6">
             <ShieldCheck className="w-3.5 h-3.5" /> cdCTF · {t("Impact", "Ta'sir", "Влияние")}
           </div>
-          <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight mb-5 leading-tight">
+          <h1 className="mb-5">
             {t("Free cybersecurity education for Uzbekistan",
                "O'zbekiston uchun bepul kiberxavfsizlik ta'limi",
                "Бесплатное обучение кибербезопасности для Узбекистана")}
@@ -55,7 +55,7 @@ export default function ImpactPage() {
 
         {isLoading ? (
           <div className="grid sm:grid-cols-3 gap-6 mb-8">
-            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-xl bg-foreground/5" />)}
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-xl bg-muted" />)}
           </div>
         ) : (
           <>

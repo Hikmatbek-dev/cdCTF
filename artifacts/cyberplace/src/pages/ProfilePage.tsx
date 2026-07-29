@@ -60,7 +60,7 @@ export default function ProfilePage() {
 
   if (isLoading || (isAuthenticated && !id)) {
     return (
-      <div className="min-h-screen bg-background pt-24 px-6">
+      <div className="min-h-screen bg-background page">
         <div className="max-w-5xl mx-auto space-y-8">
           <Skeleton className="h-64 w-full bg-muted rounded-xl" />
           <div className="grid md:grid-cols-2 gap-8">
@@ -76,7 +76,7 @@ export default function ProfilePage() {
 
   if (!profile || isError) {
     return (
-      <div className="min-h-screen bg-background pt-24 flex items-center justify-center">
+      <div className="min-h-screen bg-background page flex items-center justify-center">
         <div className="text-center px-6">
           <p className="text-destructive font-semibold text-lg mb-2">{t("Profile error", "Profil xatosi", "Ошибка профиля")}</p>
           <p className="text-muted-foreground mb-8 max-w-xs mx-auto text-sm">
@@ -120,11 +120,11 @@ export default function ProfilePage() {
   // on a page whose content can exceed the viewport it is a way to lose content
   // rather than a way to tidy it.
   return (
-    <div className="min-h-screen bg-background text-foreground pt-32 pb-24 relative">
+    <div className="min-h-screen bg-background text-foreground page relative">
       {/* Background Grid */}
       <div className="fixed inset-0 mono-grid pointer-events-none" />
 
-      <div className="max-w-5xl mx-auto px-6 relative z-10">
+      <div className="shell relative z-10">
         {/* Profile Dossier Header */}
         <div className="glass-card bg-muted/10 border-border p-10 mb-12 relative overflow-hidden rounded-xl">
           <div className="absolute top-0 right-0 p-8 opacity-5">
@@ -154,8 +154,8 @@ export default function ProfilePage() {
                     {t("Profile", "Profil", "Профиль")}
                   </div>
                   <div className="flex items-center gap-3 mb-2">
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-none">{profile.nickname}</h1>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-primary text-white text-sm font-bold shadow-lg shadow-primary/20 shrink-0" data-testid="profile-level">
+                    <h1>{profile.nickname}</h1>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-lg shadow-primary/20 shrink-0" data-testid="profile-level">
                       {t("Lvl", "Dja", "Ур")} {levelFromPoints(profile.points).level}
                     </span>
                   </div>
@@ -278,7 +278,7 @@ export default function ProfilePage() {
               <div className="grid grid-cols-4 gap-4">
                 {badges.map(b => (
                   <div key={b.id} className="flex flex-col items-center gap-2 text-center" data-testid={`badge-${b.id}`} title={b.label}>
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${b.earned ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-muted/30 text-muted-foreground/40"}`}>
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${b.earned ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "bg-muted/30 text-muted-foreground/40"}`}>
                       <b.icon className="w-5 h-5" />
                     </div>
                     <span className={`text-xs leading-tight ${b.earned ? "text-foreground" : "text-muted-foreground/40"}`}>{b.label}</span>

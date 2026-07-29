@@ -40,15 +40,15 @@ export default function VerifyPage() {
   const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(lang === "en" ? undefined : lang, { year: "numeric", month: "long", day: "numeric" });
 
   return (
-    <div className="min-h-screen bg-background pt-24 relative overflow-hidden">
+    <div className="min-h-screen bg-background page relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-primary/5 rounded-full hidden pointer-events-none" />
 
-      <div className="max-w-2xl mx-auto px-4 py-8 relative z-10">
+      <div className="shell-narrow py-8 relative z-10">
         <div className="text-center mb-10">
           <div className="inline-flex w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 items-center justify-center mb-5">
             <ShieldCheck className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-4xl font-display font-bold tracking-tight mb-3">{t("Verify a credential", "Sertifikatni tekshirish", "Проверка сертификата")}</h1>
+          <h1 className="mb-3">{t("Verify a credential", "Sertifikatni tekshirish", "Проверка сертификата")}</h1>
           <p className="text-muted-foreground max-w-md mx-auto">
             {t("Enter the serial number from a cdCTF certificate or diploma to confirm it is genuine.",
                "Haqiqiyligini tasdiqlash uchun cdCTF sertifikati yoki diplomidagi seriya raqamini kiriting.",

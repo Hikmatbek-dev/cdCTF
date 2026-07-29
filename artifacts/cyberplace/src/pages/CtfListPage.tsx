@@ -67,15 +67,8 @@ export default function CtfListPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-24 sm:pt-32 pb-24 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="fixed inset-0 mono-grid opacity-20 pointer-events-none" />
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-primary/5 hidden rounded-full opacity-30" />
-        <div className="absolute bottom-[20%] left-[-10%] w-[40%] h-[40%] bg-accent/5 hidden rounded-full opacity-30" />
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
+    <div className="min-h-screen bg-background text-foreground page">
+      <div className="shell">
         {/* Header. The old one said MISSION_DATABASE over
             CONNECTION_ENCRYPTED // ACCESS_LEVEL: OPERATIVE, which tells a
             newcomer nothing about what this page is or how to use it. */}
@@ -85,13 +78,11 @@ export default function CtfListPage() {
               <Shield className="w-3.5 h-3.5" />
               {t("cdCTF · Practice", "cdCTF · Amaliyot", "cdCTF · Практика")}
             </div>
-            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight mb-3 sm:mb-4">
-              <span className="gradient-text">{t("CTF challenges", "CTF topshiriqlar", "CTF задания")}</span>
-            </h1>
+            <h1 className="mb-3 sm:mb-4">{t("CTF challenges", "CTF topshiriqlar", "CTF задания")}</h1>
             {/* The full explainer is desktop-only: on a phone it pushed the
                 challenges themselves below the fold. Small screens get the one
                 line that actually matters. */}
-            <p className="hidden sm:block text-muted-foreground max-w-2xl leading-relaxed mb-6">
+            <p className="lead mb-6">
               {t(
                 "Each challenge hides a secret string — the flag. Break in however you can, then submit the flag to score. Points go to the leaderboard.",
                 "Har topshiriqda yashirin satr — flag bor. Uni istalgan yo'l bilan toping va topshiring, ball olasiz. Ballar reytingga qo'shiladi.",
@@ -113,13 +104,13 @@ export default function CtfListPage() {
 
         {/* Filters Panel */}
         <FadeIn delay={0.1}>
-          <div className="glass-card p-4 sm:p-6 flex flex-wrap items-center gap-3 sm:gap-6 mb-8 sm:mb-16 rounded-xl border-foreground/10">
+          <div className="glass-card !p-4 flex flex-wrap items-center gap-3 mb-8 sm:mb-10">
             {/* min-w-[300px] was wider than a 360px phone leaves after the page
                 and card padding, and the parent is overflow-hidden — so the
                 search box was clipped, not scrollable. Full width on mobile,
                 the old floor from sm up. */}
             <div className="relative flex-1 w-full sm:w-auto sm:min-w-[300px]">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" aria-hidden="true" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
               {/* A placeholder is not a label: it vanishes as soon as you type,
                   and screen readers are not required to announce it. */}
               <input
@@ -128,12 +119,12 @@ export default function CtfListPage() {
                 placeholder={t("Search challenges…", "Topshiriqlarni qidirish…", "Поиск заданий…")}
                 value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1); }}
-                className="w-full pl-12 pr-6 h-14 bg-foreground/5 border border-foreground/5 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-sm placeholder:text-muted-foreground/60"
+                className="field !pl-11"
               />
             </div>
             
             <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-3 bg-foreground/5 p-1 rounded-2xl border border-foreground/5 ">
+              <div className="flex items-center gap-1 bg-muted p-1 rounded-xl border border-border">
                 {(["all", "solved", "unsolved"] as const).map(v => (
                   <button
                     key={v}
@@ -141,10 +132,10 @@ export default function CtfListPage() {
                     // The active chip fills with --btn-from, not --primary:
                     // --primary is tuned to be legible *as text* on the page and
                     // is too light to carry white text as a *fill* (3.9:1).
-                    style={solved === v ? { backgroundColor: "hsl(var(--btn-from))" } : undefined}
-                    className={`px-6 h-12 text-sm font-medium transition-all rounded-xl ${
+                    aria-pressed={solved === v}
+                    className={`px-4 h-10 text-sm font-medium transition-colors rounded-lg ${
                       solved === v
-                        ? "text-white shadow-xl shadow-primary/20"
+                        ? "bg-card text-foreground shadow-sm border border-border"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
@@ -158,15 +149,15 @@ export default function CtfListPage() {
               </div>
 
               <Select value={category} onValueChange={(v) => { setCategory(v); setPage(1); }}>
-                <SelectTrigger className="h-14 w-48 bg-foreground/5 border-foreground/5 rounded-2xl text-sm hover:bg-foreground/10 transition-all">
+                <SelectTrigger className="h-11 w-48 bg-card rounded-xl text-sm">
                   <SelectValue placeholder={t("Category", "Kategoriya", "Категория")} />
                 </SelectTrigger>
-                <SelectContent className="bg-card/95 border border-foreground/10 rounded-2xl shadow-2xl p-2">
-                  <SelectItem value="All" className="rounded-xl px-4 py-2.5 text-sm cursor-pointer">
+                <SelectContent className="rounded-xl p-1.5">
+                  <SelectItem value="All" className="rounded-lg px-3 py-2 text-sm cursor-pointer">
                     {t("All categories", "Barcha kategoriyalar", "Все категории")}
                   </SelectItem>
                   {categoryFacets.map(f => (
-                    <SelectItem key={f.value} value={f.value} className="rounded-xl px-4 py-2.5 text-sm cursor-pointer">
+                    <SelectItem key={f.value} value={f.value} className="rounded-lg px-3 py-2 text-sm cursor-pointer">
                       {f.value} <span className="text-muted-foreground">({f.count})</span>
                     </SelectItem>
                   ))}
@@ -174,15 +165,15 @@ export default function CtfListPage() {
               </Select>
 
               <Select value={difficulty} onValueChange={(v) => { setDifficulty(v); setPage(1); }}>
-                <SelectTrigger className="h-14 w-44 bg-foreground/5 border-foreground/5 rounded-2xl text-sm hover:bg-foreground/10 transition-all">
+                <SelectTrigger className="h-11 w-44 bg-card rounded-xl text-sm">
                   <SelectValue placeholder={t("Difficulty", "Qiyinlik", "Сложность")} />
                 </SelectTrigger>
-                <SelectContent className="bg-card/95 border border-foreground/10 rounded-2xl shadow-2xl p-2">
-                  <SelectItem value="All" className="rounded-xl px-4 py-2.5 text-sm cursor-pointer">
+                <SelectContent className="rounded-xl p-1.5">
+                  <SelectItem value="All" className="rounded-lg px-3 py-2 text-sm cursor-pointer">
                     {t("Any difficulty", "Har qanday", "Любая")}
                   </SelectItem>
                   {difficultyFacets.map(f => (
-                    <SelectItem key={f.value} value={f.value} className="rounded-xl px-4 py-2.5 text-sm cursor-pointer capitalize">
+                    <SelectItem key={f.value} value={f.value} className="rounded-lg px-3 py-2 text-sm cursor-pointer capitalize">
                       {f.value} <span className="text-muted-foreground">({f.count})</span>
                     </SelectItem>
                   ))}
@@ -201,13 +192,13 @@ export default function CtfListPage() {
           ) : isLoading ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton key={i} className="h-72 bg-foreground/5 rounded-xl" />
+                <Skeleton key={i} className="h-72 bg-muted rounded-xl" />
               ))}
             </div>
           ) : challenges.length === 0 ? (
-            <div className="glass-card py-40 text-center rounded-xl border-foreground/5">
-              <div className="w-20 h-20 bg-foreground/5 border border-foreground/5 rounded-3xl flex items-center justify-center mx-auto mb-8 animate-float">
-                <Target className="w-10 h-10 text-muted-foreground/30" />
+            <div className="glass-card py-20 text-center">
+              <div className="w-16 h-16 bg-muted border border-border rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Target className="w-7 h-7 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-semibold mb-2">{t("Nothing matches these filters", "Bu filtrlarga mos topshiriq yo'q", "По этим фильтрам ничего нет")}</h3>
               <p className="text-sm text-muted-foreground">{t("Try clearing the search or picking another category.", "Qidiruvni tozalang yoki boshqa kategoriya tanlang.", "Очистите поиск или выберите другую категорию.")}</p>

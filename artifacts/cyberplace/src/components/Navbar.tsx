@@ -24,13 +24,17 @@ import {
 // browsing openings) — sat side by side with nothing to tell them apart. Both
 // now live under Careers, which opens on the job board and offers the employer
 // side there. Impact is a marketing page and moved to the footer.
+//
+// `also` lists the other routes an item owns. Reading a lesson at /learn/12 used
+// to highlight nothing at all, so the one place people spend most of their time
+// was the one place the header stopped telling them where they were.
 const NAV_LINKS = [
-  { href: "/modules", label: { en: "Learn", uz: "O'rganish", ru: "Обучение" } },
-  { href: "/ctf", label: { en: "Practice", uz: "Mashq", ru: "Практика" } },
-  { href: "/labs", label: { en: "Labs", uz: "Laboratoriya", ru: "Лаборатории" } },
-  { href: "/scoreboard", label: { en: "Ranking", uz: "Reyting", ru: "Рейтинг" } },
-  { href: "/competitions", label: { en: "Events", uz: "Tadbirlar", ru: "События" } },
-  { href: "/jobs", label: { en: "Careers", uz: "Karyera", ru: "Карьера" } },
+  { href: "/modules", also: ["/learn"], label: { en: "Learn", uz: "O'rganish", ru: "Обучение" } },
+  { href: "/ctf", also: [], label: { en: "Practice", uz: "Mashq", ru: "Практика" } },
+  { href: "/labs", also: [], label: { en: "Labs", uz: "Laboratoriya", ru: "Лаборатории" } },
+  { href: "/scoreboard", also: [], label: { en: "Ranking", uz: "Reyting", ru: "Рейтинг" } },
+  { href: "/competitions", also: [], label: { en: "Events", uz: "Tadbirlar", ru: "События" } },
+  { href: "/jobs", also: ["/talent"], label: { en: "Careers", uz: "Karyera", ru: "Карьера" } },
 ];
 
 export function Navbar() {
@@ -42,72 +46,71 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
+    const handleScroll = () => setScrolled(window.scrollY > 12);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const isActive = (href: string) => location.startsWith(href);
+  const isActive = (link: { href: string; also: string[] }) =>
+    [link.href, ...link.also].some(path => location === path || location.startsWith(path + "/"));
 
   return (
     /*
-     * A fixed instrument panel, not a floating pill.
+     * A quiet header on paper.
      *
-     * The old bar was a rounded card hovering in the middle of the page with
-     * generous padding — the shape every minimal SaaS template ships. This one
-     * spans the full width, sits on a hairline, and gains a blur and a lit
-     * bottom edge once you scroll past the hero.
+     * It was a dark instrument panel: translucent, blurred, with a violet lit
+     * edge on scroll and monospace uppercase labels. Every one of those choices
+     * said "tool for people who already know". This one is the page's own
+     * background with a hairline under it, and it gains only a shadow when you
+     * scroll — enough to separate, not enough to look at.
      */
     <div className="fixed top-0 left-0 right-0 z-50">
-      <nav className={`transition-all duration-300 border-b ${
-        scrolled
-          ? "bg-background/85 backdrop-blur-xl border-primary/20 shadow-[0_1px_0_0_hsl(var(--primary)/.25),0_18px_40px_-30px_#000]"
-          : "bg-background/40 backdrop-blur-md border-transparent"
-      }`}>
-       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
-        <div className="flex items-center justify-between">
+      <nav
+        className={`border-b transition-shadow duration-300 bg-background/90 backdrop-blur-md ${
+          scrolled ? "border-border shadow-[0_1px_3px_hsl(var(--foreground)/.06)]" : "border-transparent"
+        }`}
+      >
+        <div className="max-w-6xl mx-auto px-5 sm:px-6 h-16 flex items-center justify-between gap-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-cyber-blue flex items-center justify-center shadow-[0_0_20px_-4px_hsl(var(--primary))] group-hover:shadow-[0_0_28px_-2px_hsl(var(--primary))] transition-shadow">
-              <Shield className="w-5 h-5 text-white" />
-              {/* The live dot: this thing is a running system. */}
-              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[hsl(var(--neon))] shadow-[0_0_8px_hsl(var(--neon))]" />
-            </div>
-            <div className="flex items-center font-display text-2xl font-black tracking-tighter">
-              <span className="gradient-text">cd</span>
-              <span className="text-foreground/60 ml-1">CTF</span>
-            </div>
+          <Link href="/" className="flex items-center gap-2.5 shrink-0" aria-label="cdCTF">
+            <span className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
+              <Shield className="w-[18px] h-[18px] text-primary-foreground" aria-hidden="true" />
+            </span>
+            <span className="font-display text-xl font-extrabold tracking-tight">
+              <span className="text-primary">cd</span>
+              <span className="text-foreground">CTF</span>
+            </span>
           </Link>
 
-          {/* Desktop Nav */}
+          {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`relative px-4 py-2 font-mono text-[13px] uppercase tracking-wider transition-colors ${
-                  isActive(link.href)
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {isActive(link.href) && (
-                  <motion.div
-                    layoutId="nav-bg"
-                    className="absolute inset-x-2 -bottom-[13px] h-0.5 bg-[hsl(var(--neon))] shadow-[0_0_10px_hsl(var(--neon))]"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
-                  />
-                )}
-                <span className="relative z-10">{link.label[lang]}</span>
-              </Link>
-            ))}
+            {NAV_LINKS.map(link => {
+              const active = isActive(link);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  aria-current={active ? "page" : undefined}
+                  className={`relative px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="nav-underline"
+                      className="absolute inset-x-3 -bottom-[1px] h-0.5 rounded-full bg-primary"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.45 }}
+                    />
+                  )}
+                  <span className="relative">{link.label[lang]}</span>
+                </Link>
+              );
+            })}
             {isStaff && (
               <Link
                 href="/admin/dashboard"
-                className={`px-4 py-2 font-mono text-[13px] uppercase tracking-wider transition-colors ${
-                  isActive("/admin")
-                    ? "text-accent"
-                    : "text-muted-foreground hover:text-accent"
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  location.startsWith("/admin") ? "text-accent-foreground bg-accent/20" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {t("Admin", "Admin", "Админ")}
@@ -116,17 +119,21 @@ export function Navbar() {
           </div>
 
           {/* Right side */}
-          <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="hidden sm:flex items-center gap-1">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-10 px-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground rounded-xl hover:bg-foreground/5 border border-transparent hover:border-foreground/5 transition-all">
-                    {lang} <ChevronDown className="w-3 h-3 ml-2 opacity-50" />
+                  <Button variant="ghost" size="sm" className="h-10 px-3 text-sm font-medium text-muted-foreground hover:text-foreground rounded-lg uppercase">
+                    {lang} <ChevronDown className="w-3.5 h-3.5 ml-1 opacity-60" aria-hidden="true" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-card/95 border border-foreground/10 rounded-2xl min-w-[140px] p-2 mt-2 shadow-2xl">
+                <DropdownMenuContent align="end" className="min-w-[150px] p-1.5 mt-2 rounded-xl">
                   {(["en", "uz", "ru"] as Language[]).map(l => (
-                    <DropdownMenuItem key={l} onClick={() => setLang(l)} className={`rounded-xl px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-foreground/5 transition-colors ${lang === l ? "text-primary bg-primary/5" : "text-muted-foreground"}`}>
+                    <DropdownMenuItem
+                      key={l}
+                      onClick={() => setLang(l)}
+                      className={`rounded-lg px-3 py-2 text-sm font-medium cursor-pointer ${lang === l ? "text-primary bg-primary/8" : ""}`}
+                    >
                       {l === "en" ? "English" : l === "uz" ? "O'zbek" : "Русский"}
                     </DropdownMenuItem>
                   ))}
@@ -143,69 +150,65 @@ export function Navbar() {
                 aria-label={theme === "dark"
                   ? t("Switch to light mode", "Yorug' rejimga o'tish", "Переключить на светлую тему")
                   : t("Switch to dark mode", "Qorong'i rejimga o'tish", "Переключить на тёмную тему")}
-                className="text-muted-foreground hover:text-primary transition-all h-10 w-10 rounded-xl hover:bg-foreground/5 border border-transparent hover:border-foreground/5"
+                className="h-10 w-10 rounded-lg text-muted-foreground hover:text-foreground"
               >
-                {theme === "dark" ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}
+                {theme === "dark" ? <Sun className="w-[18px] h-[18px]" aria-hidden="true" /> : <Moon className="w-[18px] h-[18px]" aria-hidden="true" />}
               </Button>
             </div>
-
-            <div className="h-6 w-px bg-foreground/5 mx-1 hidden sm:block" />
 
             {/* Auth */}
             {isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-3 hover:opacity-80 transition-all p-1 pr-4 bg-foreground/5 rounded-2xl border border-foreground/5">
-                    <div className="w-9 h-9 bg-primary/10 border border-foreground/10 rounded-xl flex items-center justify-center text-xs font-black text-primary shadow-lg">
+                  <button className="flex items-center gap-2.5 h-11 pl-1.5 pr-3 rounded-xl border border-border bg-card hover:border-primary/40 transition-colors">
+                    <span className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">
                       {user.nickname[0].toUpperCase()}
-                    </div>
-                    <div className="text-left hidden lg:block">
-                      <div className="text-sm font-medium leading-none text-foreground">{user.nickname}</div>
-                      <div className="text-xs text-primary mt-1 tabular-nums">{user.points.toLocaleString()} XP</div>
-                    </div>
+                    </span>
+                    <span className="text-left hidden lg:block">
+                      <span className="block text-sm font-semibold leading-tight text-foreground">{user.nickname}</span>
+                      <span className="block text-xs text-muted-foreground tabular-nums">
+                        {user.points.toLocaleString()} {t("points", "ball", "баллов")}
+                      </span>
+                    </span>
+                    <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-card/95 border border-foreground/10 rounded-xl w-64 p-2 mt-2 shadow-2xl">
-                  <div className="p-4 mb-2 bg-foreground/5 rounded-2xl border border-foreground/5">
-                    <div className="text-xs font-semibold text-muted-foreground/50 uppercase tracking-[0.15em] mb-1">{t("Signed in as", "Kirgan foydalanuvchi", "Вы вошли как")}</div>
+                <DropdownMenuContent align="end" className="w-60 p-1.5 mt-2 rounded-xl">
+                  <div className="px-3 py-2.5 mb-1">
+                    <div className="text-xs text-muted-foreground">{t("Signed in as", "Kirgan foydalanuvchi", "Вы вошли как")}</div>
                     <div className="text-sm font-semibold text-foreground">{user.nickname}</div>
                   </div>
-                  <DropdownMenuItem asChild className="p-2.5 cursor-pointer rounded-xl hover:bg-foreground/5 focus:bg-foreground/5 transition-all mb-1">
-                    <Link href="/dashboard" className="flex items-center gap-3 w-full">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary"><LayoutDashboard className="w-4 h-4" /></div>
-                      <span className="text-sm font-medium text-foreground/90">{t("Dashboard", "Panel", "Панель")}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="p-2.5 cursor-pointer rounded-xl hover:bg-foreground/5 focus:bg-foreground/5 transition-all mb-1">
-                    <Link href="/profile" className="flex items-center gap-3 w-full">
-                      <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center text-accent"><User className="w-4 h-4" /></div>
-                      <span className="text-sm font-medium text-foreground/90">{t("Profile", "Profil", "Профиль")}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="p-2.5 cursor-pointer rounded-xl hover:bg-foreground/5 focus:bg-foreground/5 transition-all mb-1">
-                    <Link href="/settings/security" className="flex items-center gap-3 w-full">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary"><ShieldCheck className="w-4 h-4" /></div>
-                      <span className="text-sm font-medium text-foreground/90">{t("Security", "Xavfsizlik", "Безопасность")}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-foreground/5 mx-2 my-2" />
-                  <DropdownMenuItem onClick={logout} className="p-2.5 cursor-pointer rounded-xl hover:bg-destructive/10 focus:bg-destructive/10 text-destructive transition-all flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center"><LogOut className="w-4 h-4" /></div>
+                  <DropdownMenuSeparator />
+                  {[
+                    { href: "/dashboard", icon: LayoutDashboard, label: t("Dashboard", "Panel", "Панель") },
+                    { href: "/profile", icon: User, label: t("Profile", "Profil", "Профиль") },
+                    { href: "/settings/security", icon: ShieldCheck, label: t("Security", "Xavfsizlik", "Безопасность") },
+                  ].map(item => (
+                    <DropdownMenuItem key={item.href} asChild className="rounded-lg p-2.5 cursor-pointer">
+                      <Link href={item.href} className="flex items-center gap-3 w-full">
+                        <item.icon className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                        <span className="text-sm font-medium">{item.label}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout} className="rounded-lg p-2.5 cursor-pointer text-destructive focus:text-destructive flex items-center gap-3">
+                    <LogOut className="w-4 h-4" aria-hidden="true" />
                     <span className="text-sm font-medium">{t("Logout", "Chiqish", "Выйти")}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="flex items-center gap-3">
-                <Link href="/login">
-                  <Button variant="ghost" size="sm" className="h-10 px-5 rounded-xl text-sm font-medium hidden sm:flex text-muted-foreground hover:text-foreground transition-all">
-                    {t("Login", "Kirish", "Войти")}
-                  </Button>
+              <div className="flex items-center gap-2">
+                <Link href="/login" className="hidden sm:block">
+                  <button className="h-11 px-4 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    {t("Log in", "Kirish", "Войти")}
+                  </button>
                 </Link>
                 <Link href="/register">
-                  <Button size="sm" className="cyber-button h-10 px-8">
-                    {t("Join", "Qo'shilish", "Вступить")}
-                  </Button>
+                  <button className="cyber-button px-5" data-testid="button-nav-join">
+                    {t("Join free", "Bepul qo'shilish", "Бесплатно")}
+                  </button>
                 </Link>
               </div>
             )}
@@ -216,7 +219,7 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden h-10 w-10 text-muted-foreground hover:text-foreground rounded-xl bg-foreground/5 border border-foreground/5"
+              className="md:hidden h-11 w-11 rounded-lg text-muted-foreground hover:text-foreground"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-expanded={mobileOpen}
               aria-controls="mobile-menu"
@@ -228,42 +231,59 @@ export function Navbar() {
             </Button>
           </div>
         </div>
-       </div>
       </nav>
 
       {/* Mobile menu */}
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            exit={{ opacity: 0, y: -12 }}
             id="mobile-menu"
-            className="md:hidden mt-4 bg-card/95 -2xl border border-foreground/10 rounded-xl p-6 shadow-2xl"
+            className="md:hidden mx-4 mt-2 bg-card border border-border rounded-xl p-3 shadow-lg"
           >
-            <div className="space-y-2">
+            <div className="space-y-1">
               {NAV_LINKS.map(link => (
                 <Link
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center h-13 px-6 py-3.5 rounded-2xl text-[15px] font-medium transition-all ${isActive(link.href) ? "bg-primary/10 text-primary border border-primary/20" : "text-muted-foreground hover:bg-foreground/5"}`}
+                  className={`flex items-center min-h-[48px] px-4 rounded-lg text-[15px] font-medium transition-colors ${
+                    isActive(link) ? "bg-primary/8 text-primary" : "text-foreground/80 hover:bg-muted"
+                  }`}
                 >
                   {link.label[lang]}
                 </Link>
               ))}
               {isStaff && (
-                <Link href="/admin/dashboard" onClick={() => setMobileOpen(false)} className="flex items-center h-13 px-6 py-3.5 rounded-2xl text-[15px] font-medium text-accent hover:bg-accent/10 transition-all border border-transparent hover:border-accent/20">
+                <Link
+                  href="/admin/dashboard"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center min-h-[48px] px-4 rounded-lg text-[15px] font-medium text-foreground/80 hover:bg-muted"
+                >
                   {t("Admin", "Admin", "Админ")}
                 </Link>
               )}
+              {!isAuthenticated && (
+                <Link href="/login" onClick={() => setMobileOpen(false)} className="flex items-center min-h-[48px] px-4 rounded-lg text-[15px] font-medium text-foreground/80 hover:bg-muted">
+                  {t("Log in", "Kirish", "Войти")}
+                </Link>
+              )}
             </div>
-            <div className="mt-6 pt-6 border-t border-foreground/5 flex items-center justify-between">
-              <div className="flex gap-4">
+            <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+              <div className="flex gap-1">
                 {(["en", "uz", "ru"] as Language[]).map(l => (
                   // A ~24px tap target for the control that decides whether the
                   // site is readable at all. 44px is the accessible minimum.
-                  <button key={l} onClick={() => setLang(l)} aria-pressed={lang === l} className={`min-h-[44px] min-w-[44px] px-3 py-2 rounded-lg text-sm font-medium uppercase ${lang === l ? "text-primary bg-primary/10" : "text-muted-foreground"}`}>
+                  <button
+                    key={l}
+                    onClick={() => setLang(l)}
+                    aria-pressed={lang === l}
+                    className={`min-h-[44px] min-w-[44px] px-3 rounded-lg text-sm font-semibold uppercase ${
+                      lang === l ? "text-primary bg-primary/8" : "text-muted-foreground"
+                    }`}
+                  >
                     {l}
                   </button>
                 ))}
@@ -275,9 +295,9 @@ export function Navbar() {
                 aria-label={theme === "dark"
                   ? t("Switch to light mode", "Yorug' rejimga o'tish", "Переключить на светлую тему")
                   : t("Switch to dark mode", "Qorong'i rejimga o'tish", "Переключить на тёмную тему")}
-                className="text-muted-foreground hover:text-primary transition-all h-10 w-10 rounded-xl bg-foreground/5 border border-foreground/5"
+                className="h-11 w-11 rounded-lg text-muted-foreground"
               >
-                {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                {theme === "dark" ? <Sun className="w-[18px] h-[18px]" aria-hidden="true" /> : <Moon className="w-[18px] h-[18px]" aria-hidden="true" />}
               </Button>
             </div>
           </motion.div>
@@ -286,4 +306,3 @@ export function Navbar() {
     </div>
   );
 }
-

@@ -10,8 +10,18 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  /**
+   * Light by default.
+   *
+   * It was dark, and dark is what a CTF site is expected to look like — but the
+   * people this platform is for have never used one, and a near-black terminal
+   * page is the single loudest signal that they are in the wrong place. Dark
+   * mode is still one click away, and anyone who chose it keeps it: the stored
+   * preference is read first.
+   */
   const [theme, setTheme] = useState<Theme>(() => {
-    return (localStorage.getItem("cdctf_theme") as Theme) || "dark";
+    const stored = localStorage.getItem("cdctf_theme");
+    return stored === "dark" || stored === "light" ? stored : "light";
   });
 
   useEffect(() => {
@@ -21,6 +31,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } else {
       root.classList.remove("dark");
     }
+    root.style.colorScheme = theme;
     localStorage.setItem("cdctf_theme", theme);
   }, [theme]);
 

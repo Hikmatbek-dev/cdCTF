@@ -30,17 +30,17 @@ export default function CompetitionsPage() {
   const formatDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="min-h-screen bg-background pt-24 relative overflow-hidden">
+    <div className="min-h-screen bg-background page relative overflow-hidden">
       {/* Background Glow */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full hidden pointer-events-none" />
 
-      <div className="max-w-4xl mx-auto px-4 py-8 relative z-10">
+      <div className="shell-mid py-8 relative z-10">
         <div className="flex items-center gap-4 mb-12">
           <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-lg shadow-primary/10">
             <Trophy className="w-7 h-7 text-primary animate-glow" />
           </div>
           <div>
-            <h1 className="text-4xl font-display font-bold tracking-tight">{t("Global Tournaments", "Musobaqalar", "Соревнования")}</h1>
+            <h1>{t("Global Tournaments", "Musobaqalar", "Соревнования")}</h1>
             <p className="text-muted-foreground">{t("Compete in timed events and climb the board", "Vaqtli tadbirlarda bellashing va reytingda ko'tariling", "Участвуйте в событиях и поднимайтесь в рейтинге")}</p>
           </div>
         </div>
@@ -49,13 +49,13 @@ export default function CompetitionsPage() {
           <LoadFailure onRetry={() => refetch()} />
         ) : isLoading ? (
           <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-xl bg-foreground/5" />)}
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-xl bg-muted" />)}
           </div>
         ) : competitionList.length === 0 ? (
           /* An empty page that only says "check back later" is a dead end.
               Send people to the 97 challenges that are live right now, and tell
               a company how to put its name on the first event. */
-          <div className="glass-card rounded-xl py-16 px-8 text-center border-foreground/5">
+          <div className="glass-card rounded-xl py-16 px-8 text-center border-border">
             <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-5">
               <Trophy className="w-7 h-7 text-primary/40" />
             </div>
@@ -84,19 +84,19 @@ export default function CompetitionsPage() {
             {competitionList.map(comp => (
               <Link href={`/competitions/${comp.id}`} key={comp.id}>
                 <div
-                  className="group relative p-8 rounded-xl glass-card border-foreground/5 hover:border-primary/30 transition-all duration-300 cursor-pointer overflow-hidden"
+                  className="group relative p-8 rounded-xl glass-card border-border hover:border-primary/30 transition-all duration-300 cursor-pointer overflow-hidden"
                   data-testid={`card-competition-${comp.id}`}
                 >
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors" />
                   
                   <div className="flex flex-wrap items-center gap-3 mb-6 relative z-10">
                     <span className={`inline-flex items-center px-3 py-1 rounded-lg border text-xs font-medium transition-all ${
-                      comp.status === "active" ? "bg-primary/20 text-primary border-primary/30 neon-text" : "bg-foreground/5 text-muted-foreground border-foreground/10"
+                      comp.status === "active" ? "bg-primary/20 text-primary border-primary/30 neon-text" : "bg-muted text-muted-foreground border-border"
                     }`}>
                       {statusLabel(t, comp.status)}
                     </span>
                     <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg border text-xs font-medium ${
-                      comp.type === "private" ? "bg-orange-500/10 text-orange-500 border-orange-500/20" : "bg-foreground/5 text-muted-foreground border-foreground/10"
+                      comp.type === "private" ? "bg-orange-500/10 text-orange-500 border-orange-500/20" : "bg-muted text-muted-foreground border-border"
                     }`}>
                       {comp.type === "private" && <Lock className="w-3 h-3" />}
                       {comp.type === "public" ? t("Public", "Ochiq", "Публичный") : t("Private", "Yopiq", "Приватный")}
@@ -105,7 +105,7 @@ export default function CompetitionsPage() {
                       <span className="text-xs font-medium text-primary">{t("Joined", "Qatnashyapsiz", "Вы участвуете")}</span>
                     )}
                     {comp.sponsorName && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border border-border bg-foreground/5 text-xs font-medium text-muted-foreground">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border border-border bg-muted text-xs font-medium text-muted-foreground">
                         {t("Powered by", "Homiy", "Спонсор")} <span className="text-foreground font-semibold">{comp.sponsorName}</span>
                       </span>
                     )}
@@ -121,7 +121,7 @@ export default function CompetitionsPage() {
                     <p className="text-sm text-muted-foreground font-medium mb-8 line-clamp-2 max-w-2xl">{comp.description}</p>
                   )}
                   
-                  <div className="flex flex-wrap items-center justify-between gap-6 pt-6 border-t border-foreground/5 relative z-10">
+                  <div className="flex flex-wrap items-center justify-between gap-6 pt-6 border-t border-border relative z-10">
                     <div className="flex items-center gap-8">
                       <div className="flex flex-col">
                         <span className="text-xs text-muted-foreground leading-none mb-1">{t("Timeframe", "Muddat", "Срок")}</span>

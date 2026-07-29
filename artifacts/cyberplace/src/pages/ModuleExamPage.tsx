@@ -142,8 +142,8 @@ export default function ModuleExamPage() {
   // animate.
   if (!routeMatches || isLoading) {
     return (
-      <div className="min-h-screen bg-background pt-28 pb-24">
-        <div className="max-w-2xl mx-auto px-6 space-y-4">
+      <div className="min-h-screen bg-background page">
+        <div className="shell-narrow space-y-4">
           <Skeleton className="h-10 w-2/3" />
           <Skeleton className="h-48 w-full" />
         </div>
@@ -153,7 +153,7 @@ export default function ModuleExamPage() {
 
   if (!mod) {
     return (
-      <div className="min-h-screen bg-background pt-28 pb-24 text-center">
+      <div className="min-h-screen bg-background page text-center">
         <p className="text-muted-foreground mb-6">{t("Module not found.", "Modul topilmadi.", "Модуль не найден.")}</p>
         <Link href="/modules"><Button variant="outline">{t("Back to modules", "Modullarga qaytish", "К модулям")}</Button></Link>
       </div>
@@ -169,8 +169,8 @@ export default function ModuleExamPage() {
   const score = result?.score ?? mod.exam.bestScore;
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-28 pb-24">
-      <div className="max-w-2xl mx-auto px-6">
+    <div className="min-h-screen bg-background text-foreground page">
+      <div className="shell-narrow">
         <Link href={`/modules/${id}`}>
           <button className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors">
             <ArrowLeft className="w-4 h-4" />

@@ -217,7 +217,7 @@ export default function AdminLessonsPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background pt-14">
+    <div className="flex min-h-screen bg-background pt-20">
       <AdminSidebar />
       <main className="flex-1 p-6 overflow-auto">
         <div className="flex items-center justify-between mb-6">

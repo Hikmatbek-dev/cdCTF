@@ -52,8 +52,8 @@ export default function DiplomaPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pt-28 pb-24">
-        <div className="max-w-2xl mx-auto px-6 space-y-4">
+      <div className="min-h-screen bg-background page">
+        <div className="shell-narrow space-y-4">
           <Skeleton className="h-10 w-2/3" />
           <Skeleton className="h-48 w-full" />
         </div>
@@ -67,13 +67,13 @@ export default function DiplomaPage() {
   const percent = total > 0 ? Math.round((passed / total) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-28 pb-24">
-      <div className="max-w-2xl mx-auto px-6">
+    <div className="min-h-screen bg-background text-foreground page">
+      <div className="shell-narrow">
         <div className="eyebrow mb-3 flex items-center gap-2">
           <GraduationCap className="w-3.5 h-3.5" />
           {t("cdCTF · Program Diploma", "cdCTF · Dastur diplomi", "cdCTF · Диплом программы")}
         </div>
-        <h1 className="text-4xl font-bold tracking-tight mb-3">
+        <h1 className="mb-3">
           <span className="gradient-text">{t("Your diploma", "Sizning diplomingiz", "Ваш диплом")}</span>
         </h1>
         <p className="text-muted-foreground mb-10 max-w-xl">

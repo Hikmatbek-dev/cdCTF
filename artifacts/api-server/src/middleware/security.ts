@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import type { CorsOptions } from "cors";
+import type { CorsOptions, CorsOptionsDelegate } from "cors";
 import { pool } from "@workspace/db";
 import { logger } from "../lib/logger";
 
@@ -57,6 +57,33 @@ export const corsOptions: CorsOptions = {
   allowedHeaders: ["Authorization", "Content-Type"],
   credentials: true,
   maxAge: 600,
+};
+
+/**
+ * The one route a lab target is allowed to call, and the reason CORS needs a
+ * per-request decision at all.
+ *
+ * A target is served under `Content-Security-Policy: sandbox`, which puts it in
+ * an opaque origin, so its `fetch` arrives with `Origin: null`. `corsOptions`
+ * refuses that — correctly, because "null" is every sandboxed document on the
+ * web, and combined with `credentials: true` it would let one read
+ * authenticated responses. Here it is safe and nowhere else: credentials are
+ * off, so no cookie is sent or readable, and the route authenticates on a
+ * per-instance secret in the body that a stray sandboxed page cannot have.
+ */
+export const LAB_SOLVE_PATH = "/api/labs/solve";
+
+export const corsDelegate: CorsOptionsDelegate<Request> = (req, callback) => {
+  if (req.path === LAB_SOLVE_PATH) {
+    return callback(null, {
+      origin: true,
+      credentials: false,
+      methods: ["POST", "OPTIONS"],
+      allowedHeaders: ["Content-Type"],
+      maxAge: 600,
+    });
+  }
+  callback(null, corsOptions);
 };
 
 export function securityHeaders(_req: Request, res: Response, next: NextFunction) {

@@ -67,8 +67,8 @@ export default function CompetitionCtfPage() {
 
   if (competitionLoading || challengeLoading) {
     return (
-      <div className="min-h-screen bg-background pt-14">
-        <div className="max-w-3xl mx-auto px-4 py-8 space-y-4">
+      <div className="min-h-screen bg-background page">
+        <div className="shell-narrow py-8 space-y-4">
           <Skeleton className="h-8 w-60" />
           <Skeleton className="h-40 w-full" />
         </div>
@@ -81,8 +81,8 @@ export default function CompetitionCtfPage() {
   const canSubmit = competition.isJoined && competition.status === "active" && !challenge.isSolved && !challenge.isBlocked;
 
   return (
-    <div className="min-h-screen bg-background pt-14">
-      <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background page">
+      <div className="shell-narrow py-8">
         <Link href={`/competitions/${competitionId}`} className="mb-5 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-4 h-4" />
           {t("Back to competition", "Competition ga qaytish", "Назад к соревнованию")}

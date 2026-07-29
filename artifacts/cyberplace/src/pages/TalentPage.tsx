@@ -26,17 +26,17 @@ export default function TalentPage() {
   const total = data?.total ?? entries.length;
 
   return (
-    <div className="min-h-screen bg-background pt-24 relative overflow-hidden">
+    <div className="min-h-screen bg-background page relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-500/5 rounded-full hidden pointer-events-none" />
 
-      <div className="max-w-5xl mx-auto px-4 py-8 relative z-10">
+      <div className="shell py-8 relative z-10">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
             <Briefcase className="w-7 h-7 text-emerald-500" />
           </div>
           <div>
-            <h1 className="text-4xl font-display font-bold tracking-tight">{t("Hire from cdCTF", "cdCTF'dan yollash", "Наём с cdCTF")}</h1>
+            <h1>{t("Hire from cdCTF", "cdCTF'dan yollash", "Наём с cdCTF")}</h1>
             <p className="text-muted-foreground">
               {t("Learners who are open to work, ranked by what they've actually solved.",
                  "Ishga tayyor o'quvchilar — haqiqatan yechgani bo'yicha saralangan.",
@@ -59,12 +59,12 @@ export default function TalentPage() {
           <LoadFailure onRetry={() => refetch()} />
         ) : isLoading ? (
           <div className="grid sm:grid-cols-2 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-xl bg-foreground/5" />)}
+            {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-xl bg-muted" />)}
           </div>
         ) : entries.length === 0 ? (
           /* Tell a learner exactly where the switch is — that is the only way
               this directory ever fills up. */
-          <div className="glass-card rounded-xl py-16 px-8 text-center border-foreground/5">
+          <div className="glass-card rounded-xl py-16 px-8 text-center border-border">
             <div className="w-16 h-16 rounded-full bg-emerald-500/5 flex items-center justify-center mx-auto mb-5">
               <Briefcase className="w-7 h-7 text-emerald-500/40" />
             </div>
@@ -92,7 +92,7 @@ export default function TalentPage() {
               {entries.map(entry => (
                 <Link href={`/profile/${entry.userId}`} key={entry.userId}>
                   <div
-                    className="group h-full p-6 rounded-xl glass-card border-foreground/5 hover:border-emerald-500/30 transition-all cursor-pointer"
+                    className="group h-full p-6 rounded-xl glass-card border-border hover:border-emerald-500/30 transition-all cursor-pointer"
                     data-testid={`card-talent-${entry.userId}`}
                   >
                     <div className="flex items-center gap-4 mb-5">
@@ -122,9 +122,9 @@ export default function TalentPage() {
                     </div>
 
                     {entry.titles.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-5 pt-5 border-t border-foreground/5">
+                      <div className="flex flex-wrap gap-2 mt-5 pt-5 border-t border-border">
                         {entry.titles.slice(0, 3).map(title => (
-                          <span key={title} className="text-xs font-medium text-muted-foreground bg-foreground/5 border border-foreground/5 px-3 py-1 rounded-xl">
+                          <span key={title} className="text-xs font-medium text-muted-foreground bg-muted border border-border px-3 py-1 rounded-xl">
                             {title}
                           </span>
                         ))}

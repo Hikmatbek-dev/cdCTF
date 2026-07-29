@@ -178,8 +178,8 @@ export default function ProfileEditPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background pt-14 pb-12">
-      <div className="max-w-2xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background page">
+      <div className="shell-narrow py-8">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
             <User className="w-5 h-5" />

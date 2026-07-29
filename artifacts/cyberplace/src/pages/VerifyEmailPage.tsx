@@ -61,7 +61,7 @@ export default function VerifyEmailPage() {
     : t("This takes a second.", "Bu bir soniya oladi.", "Это займёт секунду.");
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-background pt-14">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-background pt-24 pb-16">
       <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 text-center">
         <div className="mb-4 flex justify-center">
           {status === "loading" && <LoaderCircle className="w-8 h-8 text-primary animate-spin" aria-hidden="true" />}

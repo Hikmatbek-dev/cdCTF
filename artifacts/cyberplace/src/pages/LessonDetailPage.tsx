@@ -67,22 +67,22 @@ function CodeBlock({ code, lang }: { code: string; lang: string }) {
   };
 
   return (
-    <div className="my-5 rounded-xl overflow-hidden border border-border bg-[hsl(var(--card))]/60 group/code">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-primary/[0.04]">
-        <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+    <div className="my-6 rounded-xl overflow-hidden bg-[#111726] border border-[#243049] group/code">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-[#243049] bg-[#161d30]">
+        <span className="font-mono text-xs uppercase tracking-wider text-slate-400">
           {lang || t("shell", "shell", "shell")}
         </span>
         <button
           onClick={copy}
-          className="inline-flex items-center gap-1.5 min-h-[28px] px-2 -mr-2 rounded-md text-xs font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+          className="inline-flex items-center gap-1.5 min-h-[32px] px-2.5 -mr-1.5 rounded-md text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
           aria-label={t("Copy code", "Nusxa olish", "Копировать")}
         >
           {copied
-            ? <><Check className="w-3.5 h-3.5 text-primary" />{t("Copied", "Nusxa olindi", "Скопировано")}</>
-            : <><Copy className="w-3.5 h-3.5" />{t("Copy", "Nusxa", "Копия")}</>}
+            ? <><Check className="w-3.5 h-3.5 text-emerald-300" aria-hidden="true" />{t("Copied", "Nusxa olindi", "Скопировано")}</>
+            : <><Copy className="w-3.5 h-3.5" aria-hidden="true" />{t("Copy", "Nusxa", "Копия")}</>}
         </button>
       </div>
-      <pre className="p-4 overflow-x-auto text-[13px] font-mono leading-relaxed">
+      <pre className="p-4 overflow-x-auto text-[13px] font-mono leading-relaxed text-slate-200">
         <code>{code}</code>
       </pre>
     </div>
@@ -241,8 +241,8 @@ export default function LessonDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pt-28 pb-24">
-        <div className="max-w-3xl mx-auto px-6 space-y-4">
+      <div className="min-h-screen bg-background page">
+        <div className="shell-narrow space-y-4">
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-10 w-2/3" />
           <Skeleton className="h-80 w-full rounded-2xl" />
@@ -255,8 +255,8 @@ export default function LessonDetailPage() {
   // one grey line — "Lesson not found" — and no link, button or retry.
   if (isError && !isNotFound(error)) {
     return (
-      <div className="min-h-screen bg-background pt-28 pb-24">
-        <div className="max-w-2xl mx-auto px-6">
+      <div className="min-h-screen bg-background page">
+        <div className="shell-narrow">
           <LoadFailure onRetry={() => refetch()} backHref="/modules" backLabel={t("All modules", "Barcha modullar", "Все модули")} />
         </div>
       </div>
@@ -265,8 +265,8 @@ export default function LessonDetailPage() {
 
   if (!lesson) {
     return (
-      <div className="min-h-screen bg-background pt-28 pb-24">
-        <div className="max-w-2xl mx-auto px-6 text-center py-20">
+      <div className="min-h-screen bg-background page">
+        <div className="shell-narrow text-center py-20">
           <p className="text-muted-foreground mb-6">{t("Lesson not found", "Dars topilmadi", "Урок не найден")}</p>
           <Link href="/modules">
             <Button variant="outline">{t("Browse modules", "Modullarni ko'rish", "Смотреть модули")}</Button>
@@ -287,7 +287,7 @@ export default function LessonDetailPage() {
         <div className="h-full bg-primary transition-[width] duration-150" style={{ width: `${readProgress}%` }} />
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 pt-28 pb-24">
+      <div className="shell page">
         <div className="lg:grid lg:grid-cols-[240px_1fr] lg:gap-10">
 
           {/* Lesson stepper — the "where am I" context that ties the module
@@ -383,7 +383,7 @@ export default function LessonDetailPage() {
                 <span className="inline-flex items-center gap-1 text-xs font-medium text-destructive"><Lock className="w-3.5 h-3.5" /> {t("Blocked", "Bloklangan", "Заблокировано")}</span>
               )}
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-8 leading-tight" data-testid="text-lesson-title">{localizedTitle}</h1>
+            <h1 className="mb-8" data-testid="text-lesson-title">{localizedTitle}</h1>
 
             {/* Content, as numbered tasks. The lesson is split at its own `##`
                 headings so its shape is visible before you start and your

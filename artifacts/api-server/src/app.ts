@@ -8,7 +8,7 @@ import router from "./routes";
 import { crawlerRouter, publicSeoRouter } from "./routes/og";
 import { logger } from "./lib/logger";
 import { reportErrorToSentry } from "./lib/integrations";
-import { CorsOriginError, corsOptions, createRateLimiter, securityHeaders } from "./middleware/security";
+import { CorsOriginError, corsDelegate, createRateLimiter, securityHeaders } from "./middleware/security";
 
 const app: Express = express();
 const REQUEST_BODY_LIMIT = process.env.REQUEST_BODY_LIMIT || "10mb";
@@ -37,7 +37,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 app.use(securityHeaders);
-app.use(cors(corsOptions));
+// A delegate, not a fixed policy: one route answers a sandboxed lab target in
+// an opaque origin, and needs a different (credential-free) answer. See
+// corsDelegate.
+app.use(cors(corsDelegate));
 // "instance": this one guards this process against being hammered, and it sits
 // in front of every request including static files — a shared counter here
 // would mean a database write per asset. The limits that are actually security

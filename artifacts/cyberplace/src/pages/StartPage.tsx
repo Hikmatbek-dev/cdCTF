@@ -139,8 +139,8 @@ export default function StartPage() {
   const step = level === null ? 1 : goal === null ? 2 : 3;
 
   return (
-    <div className="min-h-screen bg-background pt-24 pb-24">
-      <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background page">
+      <div className="shell-narrow py-8">
         {justRegistered && (
           <div className="mb-8 rounded-2xl border border-primary/25 bg-primary/5 p-5 flex items-start gap-3" data-testid="start-verify-note">
             <Mail className="w-5 h-5 text-primary shrink-0 mt-0.5" />
@@ -163,7 +163,7 @@ export default function StartPage() {
           ))}
         </div>
 
-        <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight mb-3">
+        <h1 className="mb-3">
           {t("Let's find your first lesson", "Birinchi darsingizni topamiz", "Найдём ваш первый урок")}
         </h1>
         <p className="text-muted-foreground mb-10">
@@ -235,12 +235,12 @@ export default function StartPage() {
                 title={t("Could not load the modules", "Modullarni yuklab bo'lmadi", "Не удалось загрузить модули")}
               />
             ) : isLoading || !chosen ? (
-              <Skeleton className="h-52 w-full rounded-2xl bg-foreground/5" />
+              <Skeleton className="h-52 w-full rounded-2xl bg-muted" />
             ) : (
               <div className="rounded-2xl border border-primary/30 bg-gradient-to-b from-primary/5 to-transparent p-7">
                 <div className="flex items-start gap-4 mb-5">
                   <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shrink-0">
-                    <GraduationCap className="w-6 h-6 text-white" />
+                    <GraduationCap className="w-6 h-6 text-primary-foreground" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-xs uppercase tracking-wide text-primary font-semibold mb-1">

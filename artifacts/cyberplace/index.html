@@ -8,7 +8,26 @@
     <meta name="keywords" content="cdctf, kiberxavfsizlik kurslari o'zbek tilida, ctf uzbekistan, hacking o'rganish, ethical hacking uzbekistan, kiberxavfsizlik sertifikati, linux o'rganish, web security, kriptografiya, penetration testing kurs, обучение кибербезопасности узбекистан" />
     <meta name="author" content="cdCTF" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
-    <meta name="theme-color" content="#8b5cf6" />
+    <meta name="theme-color" content="#f8f6f2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e1219" media="(prefers-color-scheme: dark)" />
+
+    <!--
+      Apply the stored theme before the first paint.
+
+      React sets the class in an effect, which runs after the browser has
+      already painted. That was invisible while dark was both the default and
+      the fallback; now that the page is light by default, someone who chose
+      dark would get a full-brightness flash of the light theme on every
+      navigation. Inline and synchronous is the only place this can go.
+    -->
+    <script>
+      try {
+        if (localStorage.getItem("cdctf_theme") === "dark") {
+          document.documentElement.classList.add("dark");
+          document.documentElement.style.colorScheme = "dark";
+        }
+      } catch (e) { /* storage blocked; the default is fine */ }
+    </script>
 
     <!--
       No hardcoded canonical or hreflang here on purpose.

@@ -24,8 +24,8 @@ export default function DiplomaVerifyPage() {
 
   if (!routeMatches || isLoading) {
     return (
-      <div className="min-h-screen bg-background pt-28 pb-24">
-        <div className="max-w-2xl mx-auto px-6">
+      <div className="min-h-screen bg-background page">
+        <div className="shell-narrow">
           <Skeleton className="h-96 w-full rounded-xl" />
         </div>
       </div>
@@ -34,8 +34,8 @@ export default function DiplomaVerifyPage() {
 
   if (isError || !diploma) {
     return (
-      <div className="min-h-screen bg-background pt-28 pb-24">
-        <div className="max-w-2xl mx-auto px-6 text-center py-20">
+      <div className="min-h-screen bg-background page">
+        <div className="shell-narrow text-center py-20">
           <h1 className="text-2xl font-semibold tracking-tight mb-3">
             {t("Diploma not found", "Diplom topilmadi", "Диплом не найден")}
           </h1>
@@ -60,8 +60,8 @@ export default function DiplomaVerifyPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-28 pb-24">
-      <div className="max-w-5xl mx-auto px-6">
+    <div className="min-h-screen bg-background text-foreground page">
+      <div className="shell">
         <CredentialFrame>
           <ProgrammeDiploma
             d={{

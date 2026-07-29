@@ -138,16 +138,16 @@ export default function JobsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pt-24 relative overflow-hidden">
+    <div className="min-h-screen bg-background page relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full hidden pointer-events-none" />
 
-      <div className="max-w-4xl mx-auto px-4 py-8 relative z-10">
+      <div className="shell-mid py-8 relative z-10">
         <div className="flex items-center gap-4 mb-8">
           <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
             <Briefcase className="w-7 h-7 text-primary" />
           </div>
           <div>
-            <h1 className="text-4xl font-display font-bold tracking-tight">{t("Careers", "Karyera", "Карьера")}</h1>
+            <h1>{t("Careers", "Karyera", "Карьера")}</h1>
             <p className="text-muted-foreground">{t("Cybersecurity roles from companies in the community.", "Hamjamiyatdagi kompaniyalardan kiberxavfsizlik ishlari.", "Роли в кибербезопасности от компаний сообщества.")}</p>
           </div>
           <Link href="/verify" className="ml-auto hidden sm:block">
@@ -261,11 +261,11 @@ export default function JobsPage() {
         {isError ? (
           <LoadFailure onRetry={() => refetch()} />
         ) : isLoading ? (
-          <div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl bg-foreground/5" />)}</div>
+          <div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl bg-muted" />)}</div>
         ) : jobs.length === 0 ? (
           /* Both sides of an empty board get a next step: a candidate goes and
               builds a record worth hiring, a company posts the first role. */
-          <div className="glass-card rounded-xl py-16 px-8 text-center border-foreground/5">
+          <div className="glass-card rounded-xl py-16 px-8 text-center border-border">
             <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-5"><Briefcase className="w-7 h-7 text-primary/40" /></div>
             <h3 className="text-xl font-display font-bold mb-2">{t("No open positions yet", "Hozircha ochiq ish o'rni yo'q", "Пока нет открытых вакансий")}</h3>
             <p className="text-sm text-muted-foreground max-w-md mx-auto mb-7">

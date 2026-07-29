@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { normalizeArray } from "@/lib/api-shapes";
 import { errorToast } from "@/lib/error-toast";
-import { LabBrief, targetUrl } from "@/components/labs/LabBrief";
+import { LabBrief } from "@/components/labs/LabBrief";
 
 type Lab = {
   id: number; slug: string;
@@ -18,7 +18,11 @@ type Lab = {
   difficulty: string; ttlMinutes: number; ctfId: number | null;
   kind: "container" | "browser"; browserScenario: string | null; startable: boolean;
 };
-type Running = { id: number; labId: number; host: string; port: number; startedAt: string; expiresAt: string };
+type Running = {
+  id: number; labId: number; host: string; port: number; startedAt: string; expiresAt: string;
+  /** Server-minted, single-instance URL for the target. Null for container labs. */
+  targetPath: string | null;
+};
 type LabsResponse = { labs: Lab[]; running: Running | null; available: boolean };
 
 /** Minutes:seconds left, recomputed every second. */
@@ -45,12 +49,14 @@ export default function LabsPage() {
   /** Which lab's brief is open. Clicking a card is how you find out what it is. */
   const [openLab, setOpenLab] = useState<number | null>(null);
   /**
-   * The tab the target is running in.
+   * The tab the target is running in — a courtesy now, not the mechanism.
    *
-   * Stopping a lab only ever updated a database row, so the target carried on
-   * working in its own tab and the clock on this page meant nothing. There is
-   * no server to shut down — a browser lab is a document — so the honest way to
-   * stop one is to close the window we opened.
+   * Closing this window used to be the whole of "Stop", which is why copying
+   * the target's URL into a second tab defeated it: the document was served to
+   * anyone who asked. The server holds a per-instance token now and stops
+   * honouring it the moment the instance is stopped or expires, so every copy
+   * of the target dies at once. Closing the window we opened just saves the
+   * learner from finding a dead tab later.
    */
   const targetWindow = useRef<Window | null>(null);
 
@@ -76,19 +82,32 @@ export default function LabsPage() {
   const countdown = useCountdown(running?.expiresAt);
   const runningLab = labs.find(l => l.id === running?.labId) ?? null;
 
-  const act = async (url: string) => {
-    if (busy) return;
+  const act = async (url: string): Promise<Record<string, unknown> | undefined> => {
+    if (busy) return undefined;
     setBusy(true);
     try {
       const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" } });
-      const d = await r.json().catch(() => ({}));
+      const d = await r.json().catch(() => ({})) as Record<string, unknown>;
       if (!r.ok) throw new Error(typeof d?.error === "string" ? d.error : "Failed");
       void qc.invalidateQueries({ queryKey: ["labs"] });
       return d;
     } catch (e) {
       toast(errorToast(t, e));
+      return undefined;
     } finally { setBusy(false); }
   };
+
+  /**
+   * Reopening the target after a reload has to be findable.
+   *
+   * The tab handle does not survive a refresh, and the link that does is inside
+   * the lab's brief — so a learner who reloaded /labs mid-lab saw a running
+   * clock and no way back in. Opening the running lab's card puts it in front
+   * of them.
+   */
+  useEffect(() => {
+    if (running?.labId) setOpenLab(prev => prev ?? running.labId);
+  }, [running?.labId]);
 
   /**
    * The clock has to mean something.
@@ -118,14 +137,14 @@ export default function LabsPage() {
   const blurb = (l: Lab) => t(l.description, l.descriptionUz || l.description, l.descriptionRu || l.description);
 
   return (
-    <div className="min-h-screen bg-background pt-24 sm:pt-32 pb-24">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+    <div className="min-h-screen bg-background page">
+      <div className="shell-mid">
         <div className="flex items-center gap-4 mb-6">
           <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
             <Server className="w-7 h-7 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl sm:text-4xl font-display font-bold tracking-tight">{t("Labs", "Laboratoriya", "Лаборатории")}</h1>
+            <h1>{t("Labs", "Laboratoriya", "Лаборатории")}</h1>
             <p className="text-muted-foreground text-sm sm:text-base">
               {t("Start a real vulnerable machine, break into it, submit the flag.",
                  "Haqiqiy zaif mashinani ishga tushiring, ichiga kiring va flagni topshiring.",
@@ -142,7 +161,19 @@ export default function LabsPage() {
                 <div className="text-sm font-semibold text-emerald-500 mb-1.5">{t("Your machine is running", "Mashinangiz ishlayapti", "Ваша машина запущена")}</div>
                 {runningLab?.kind === "browser" ? (
                   <div className="text-sm text-muted-foreground">
-                    {t("The target is open below.", "Nishon quyida ochiq.", "Цель открыта ниже.")}
+                    {running.targetPath ? (
+                      <a
+                        href={running.targetPath}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-foreground hover:text-primary inline-flex items-center gap-1.5"
+                        data-testid="running-target-link"
+                      >
+                        {t("Open the target", "Nishonni ochish", "Открыть цель")} <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    ) : (
+                      t("The target is open below.", "Nishon quyida ochiq.", "Цель открыта ниже.")
+                    )}
                   </div>
                 ) : (
                   <div className="font-mono text-sm">
@@ -178,9 +209,9 @@ export default function LabsPage() {
         {isError ? (
           <LoadFailure onRetry={() => refetch()} />
         ) : isLoading ? (
-          <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl bg-foreground/5" />)}</div>
+          <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl bg-muted" />)}</div>
         ) : labs.length === 0 ? (
-          <div className="glass-card rounded-xl py-16 px-8 text-center border-foreground/5">
+          <div className="glass-card rounded-xl py-16 px-8 text-center border-border">
             <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-5"><Server className="w-7 h-7 text-primary/40" /></div>
             <h3 className="text-xl font-display font-bold mb-2">{t("No machines yet", "Hozircha mashinalar yo'q", "Пока нет машин")}</h3>
             <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
@@ -228,19 +259,27 @@ export default function LabsPage() {
                     </button>
                     <div className="shrink-0">
                       {isThisRunning ? (
-                        <button onClick={() => { closeTarget(); void act(`/api/labs/instances/${running!.id}/stop`); }} disabled={busy}
+                        <button onClick={() => { closeTarget(); void act(`/api/labs/instances/${running.id}/stop`); }} disabled={busy}
                           className="cyber-button-outline h-11 px-6 gap-2">
                           <Square className="w-4 h-4" /> {t("Stop", "To'xtatish", "Остановить")}
                         </button>
                       ) : lab.kind === "browser" && lab.browserScenario && isAuthenticated && !running ? (
                         <button
                           onClick={() => {
-                            // Opened synchronously, before any await: that is
-                            // what keeps the popup blocker out of it. Holding
-                            // the handle is what lets Stop actually stop it.
-                            targetWindow.current = window.open(targetUrl(lab.browserScenario!), "_blank", "noopener=no");
+                            // Opened blank and synchronously, before any await:
+                            // that is what keeps the popup blocker out of it.
+                            // The URL can only be filled in afterwards — the
+                            // target now needs the instance token, and the
+                            // token does not exist until the server mints it.
+                            const w = window.open("", "_blank", "noopener=no");
+                            targetWindow.current = w;
                             setOpenLab(lab.id);
-                            void act(`/api/labs/${lab.id}/start`);
+                            void (async () => {
+                              const started = await act(`/api/labs/${lab.id}/start`);
+                              const path = typeof started?.targetPath === "string" ? started.targetPath : null;
+                              if (path && w) w.location.href = path;
+                              else w?.close();
+                            })();
                           }}
                           className="cyber-button h-11 px-6 gap-2 inline-flex items-center"
                           data-testid={`start-lab-${lab.id}`}
@@ -264,7 +303,12 @@ export default function LabsPage() {
                     </div>
                   </div>
                   {isOpen && lab.kind === "browser" && lab.browserScenario && (
-                    <LabBrief scenarioSlug={lab.browserScenario} ctfId={lab.ctfId} />
+                    <LabBrief
+                      scenarioSlug={lab.browserScenario}
+                      ctfId={lab.ctfId}
+                      // Only this learner's own running lab has a way back in.
+                      targetPath={isThisRunning ? running?.targetPath ?? null : null}
+                    />
                   )}
                 </div>
               );

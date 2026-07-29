@@ -3,8 +3,11 @@
  *
  * Container labs need a Docker host that does not exist yet, so /labs answered
  * "not available" to every visitor. These run in the learner's own tab — see
- * artifacts/cyberplace/src/components/labs/scenarios.ts — so the page works
- * today, for everyone, at no cost.
+ * lib/lab-scenarios — so the page works today, for everyone, at no cost.
+ *
+ * The flags live on the server (lib/lab-scenarios/src/index.ts) and are handed
+ * over by POST /api/labs/solve once the exploit is verified. If you rotate one
+ * there, run this script so the paired challenge checks the new value.
  *
  * Each lab is paired with a CTF challenge so the flag goes through the normal
  * submit path: same scoring, same rate limit, same hashing. The lab is the
@@ -70,7 +73,7 @@ const LABS: BrowserLab[] = [
       hint: "The password is compared inside the same string as the login. End the login value early and make the rest of the condition always true.",
       hintUz: "Parol login bilan bitta satr ichida solishtiriladi. Login qiymatini erta tugating va shartning qolganini har doim rost qiling.",
       hintRu: "Пароль сравнивается внутри той же строки, что и логин. Закройте значение логина раньше и сделайте остаток условия всегда истинным.",
-      flag: "flag{sql_1nj3ct10n_ch1n0r}",
+      flag: "flag{ch1n0r_qu0t3_br34ks_th3_qu3ry}",
     },
   },
   {
@@ -88,14 +91,14 @@ const LABS: BrowserLab[] = [
       name: "Lab: Registon Market search",
       nameUz: "Lab: Registon bozori qidiruvi",
       nameRu: "Лаб: поиск Registon Market",
-      description: "Solve the **Registon Market: the search box** lab. The page hands the flag to any script that calls `getFlag()`.\n\nOpen it from the [Labs](/labs) page.",
-      descriptionUz: "**Registon bozori: qidiruv maydoni** laboratoriyasini yeching. Sahifa `getFlag()` chaqirgan istalgan skriptga flagni beradi.\n\nUni [Laboratoriya](/labs) sahifasidan oching.",
-      descriptionRu: "Решите лабораторию **Registon Market: строка поиска**. Страница отдаёт флаг любому скрипту, вызвавшему `getFlag()`.\n\nОткройте её на странице [Лаборатории](/labs).",
+      description: "Solve the **Registon Market: the search box** lab. The page shows the flag once a script calls `getFlag()`.\n\nOpen it from the [Labs](/labs) page.",
+      descriptionUz: "**Registon bozori: qidiruv maydoni** laboratoriyasini yeching. Skript `getFlag()` chaqirgach sahifa flagni ko'rsatadi.\n\nUni [Laboratoriya](/labs) sahifasidan oching.",
+      descriptionRu: "Решите лабораторию **Registon Market: строка поиска**. Как только скрипт вызовет `getFlag()`, страница покажет флаг.\n\nОткройте её на странице [Лаборатории](/labs).",
       category: "Web", points: 150,
       hint: "innerHTML does not execute a <script> tag it inserts. It does, however, attach event handlers — and an image with a broken source fires one immediately.",
       hintUz: "innerHTML qo'ygan <script> tegi bajarilmaydi. Lekin u hodisa ishlovchilarini biriktiradi — manbasi buzuq rasm esa darhol bittasini ishga tushiradi.",
       hintRu: "innerHTML не выполняет вставленный <script>. Но обработчики событий он подключает — а картинка с битым src сразу вызывает один из них.",
-      flag: "flag{xss_r3fl3ct3d_r3g1st0n}",
+      flag: "flag{r3g1st0n_0n3rr0r_w1ns_ag41n}",
     },
   },
   {
@@ -120,7 +123,7 @@ const LABS: BrowserLab[] = [
       hint: "Your customer number is in the invoice number. Try the next customer.",
       hintUz: "Mijoz raqamingiz hisob raqami ichida. Keyingi mijozni sinab ko'ring.",
       hintRu: "Ваш номер клиента — часть номера счёта. Попробуйте следующего клиента.",
-      flag: "flag{1d0r_h1sob_1043}",
+      flag: "flag{anh0r_1043_w4s_n0t_y0urs}",
     },
   },
   {
@@ -145,7 +148,7 @@ const LABS: BrowserLab[] = [
       hint: "The page prints the cookie it reads. Nothing signs it, so nothing stops you writing a different value in the developer tools console.",
       hintUz: "Sahifa o'qigan cookie'ni chop etadi. Uni hech kim imzolamaydi, demak konsoldan boshqa qiymat yozishingizga hech nima to'sqinlik qilmaydi.",
       hintRu: "Страница печатает куку, которую читает. Её никто не подписывает, значит ничто не мешает записать другое значение из консоли.",
-      flag: "flag{c00k13_r0l3_s4rd0b4}",
+      flag: "flag{s4rd0b4_c00k13_s4ys_st4ff}",
     },
   },
   {
@@ -170,7 +173,7 @@ const LABS: BrowserLab[] = [
       hint: "`..` climbs one directory. The viewer shows you the path it resolved — use it to check your aim.",
       hintUz: "`..` bir katalog yuqoriga chiqadi. Ko'ruvchi hisoblagan yo'lni ko'rsatadi — nishonni shu bilan tekshiring.",
       hintRu: "`..` поднимает на каталог выше. Просмотрщик показывает вычисленный путь — сверяйтесь по нему.",
-      flag: "flag{tr4v3rs4l_r3g1st0n_env}",
+      flag: "flag{d0td0t_sl4sh_f0und_th3_env}",
     },
   },
 ];
@@ -222,10 +225,17 @@ async function main() {
         challengesAdded++;
       } else {
         ctfId = existingCh[0].id;
+        // The flag is updated too, which it was not before.
+        //
+        // The five original flags shipped inside the public SPA bundle and were
+        // downloadable by anyone, signed in or not; they are burned. Rotating
+        // them in lib/lab-scenarios does nothing until the challenge they are
+        // checked against is rotated with them, and this is where that happens.
+        // Existing solves are kept — the row that records them is untouched.
         await pool.query(
           `update ctf_tasks set description=$2, description_uz=$3, description_ru=$4,
-             hint=$5, hint_uz=$6, hint_ru=$7, points=$8 where id=$1`,
-          [ctfId, c.description, c.descriptionUz, c.descriptionRu, c.hint, c.hintUz, c.hintRu, c.points],
+             hint=$5, hint_uz=$6, hint_ru=$7, points=$8, flag=$9 where id=$1`,
+          [ctfId, c.description, c.descriptionUz, c.descriptionRu, c.hint, c.hintUz, c.hintRu, c.points, hashFlag(c.flag)],
         );
       }
 

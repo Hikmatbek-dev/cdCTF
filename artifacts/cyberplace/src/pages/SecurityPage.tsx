@@ -598,10 +598,10 @@ export default function SecurityPage() {
   const { t } = useLang();
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4">
+    <div className="min-h-screen page">
       <div className="max-w-3xl mx-auto space-y-6">
         <header>
-          <h1 className="text-3xl font-black mb-1">{t("Security", "Xavfsizlik", "Безопасность")}</h1>
+          <h1 className="mb-1">{t("Security", "Xavfsizlik", "Безопасность")}</h1>
           <p className="text-muted-foreground">
             {t("Two-factor, devices, sign-in history and API tokens.", "Ikki bosqichli tasdiq, qurilmalar, kirish tarixi va API tokenlar.", "Двухфакторная защита, устройства, история входов и API-токены.")}
           </p>
