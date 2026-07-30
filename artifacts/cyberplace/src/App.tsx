@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
@@ -8,52 +8,54 @@ import { SeoManager } from "@/lib/seo";
 import { loginWithNext } from "@/lib/next-path";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
 
 import HomePage from "@/pages/HomePage";
-const LoginPage = lazy(() => import("@/pages/LoginPage"));
-const RegisterPage = lazy(() => import("@/pages/RegisterPage"));
-const VerifyEmailPage = lazy(() => import("@/pages/VerifyEmailPage"));
-const StartPage = lazy(() => import("@/pages/StartPage"));
-const CtfListPage = lazy(() => import("@/pages/CtfListPage"));
-const CtfDetailPage = lazy(() => import("@/pages/CtfDetailPage"));
-const LearnPage = lazy(() => import("@/pages/LearnPage"));
-const LessonDetailPage = lazy(() => import("@/pages/LessonDetailPage"));
-const LessonTestPage = lazy(() => import("@/pages/LessonTestPage"));
-const ModulesPage = lazy(() => import("@/pages/ModulesPage"));
-const ModuleDetailPage = lazy(() => import("@/pages/ModuleDetailPage"));
-const ModuleExamPage = lazy(() => import("@/pages/ModuleExamPage"));
-const CertificatePage = lazy(() => import("@/pages/CertificatePage"));
-const DiplomaPage = lazy(() => import("@/pages/DiplomaPage"));
-const DiplomaVerifyPage = lazy(() => import("@/pages/DiplomaVerifyPage"));
-const ScoreboardPage = lazy(() => import("@/pages/ScoreboardPage"));
-const TalentPage = lazy(() => import("@/pages/TalentPage"));
-const JobsPage = lazy(() => import("@/pages/JobsPage"));
-const ImpactPage = lazy(() => import("@/pages/ImpactPage"));
-const VerifyPage = lazy(() => import("@/pages/VerifyPage"));
-const LabsPage = lazy(() => import("@/pages/LabsPage"));
-const CompetitionsPage = lazy(() => import("@/pages/CompetitionsPage"));
-const EventPage = lazy(() => import("@/pages/EventPage"));
-const CompetitionDetailPage = lazy(() => import("@/pages/CompetitionDetailPage"));
-const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
-const ProfileEditPage = lazy(() => import("@/pages/ProfileEditPage"));
-const SecurityPage = lazy(() => import("@/pages/SecurityPage"));
-const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
-const AdminDashboardPage = lazy(() => import("@/pages/admin/AdminDashboardPage"));
-const AdminUsersPage = lazy(() => import("@/pages/admin/AdminUsersPage"));
-const AdminCtfPage = lazy(() => import("@/pages/admin/AdminCtfPage"));
-const AdminCompetitionsPage = lazy(() => import("@/pages/admin/AdminCompetitionsPage"));
-const AdminLessonsPage = lazy(() => import("@/pages/admin/AdminLessonsPage"));
-const AdminAnalyticsPage = lazy(() => import("@/pages/admin/AdminAnalyticsPage"));
-const AdminBlockedPage = lazy(() => import("@/pages/admin/AdminBlockedPage"));
-const AdminAuditPage = lazy(() => import("@/pages/admin/AdminAuditPage"));
-const AdminCurriculumPage = lazy(() => import("@/pages/admin/AdminCurriculumPage"));
-const AdminWriteupsPage = lazy(() => import("@/pages/admin/AdminWriteupsPage"));
-const CompetitionCtfPage = lazy(() => import("@/pages/CompetitionCtfPage"));
-const ResendVerificationPage = lazy(() => import("@/pages/ResendVerificationPage"));
-const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage"));
-const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
-const GlossaryPage = lazy(() => import("@/pages/GlossaryPage"));
-const NotFound = lazy(() => import("@/pages/not-found"));
+const LoginPage = lazyWithRetry(() => import("@/pages/LoginPage"));
+const RegisterPage = lazyWithRetry(() => import("@/pages/RegisterPage"));
+const VerifyEmailPage = lazyWithRetry(() => import("@/pages/VerifyEmailPage"));
+const StartPage = lazyWithRetry(() => import("@/pages/StartPage"));
+const CtfListPage = lazyWithRetry(() => import("@/pages/CtfListPage"));
+const CtfDetailPage = lazyWithRetry(() => import("@/pages/CtfDetailPage"));
+const LearnPage = lazyWithRetry(() => import("@/pages/LearnPage"));
+const LessonDetailPage = lazyWithRetry(() => import("@/pages/LessonDetailPage"));
+const LessonTestPage = lazyWithRetry(() => import("@/pages/LessonTestPage"));
+const ModulesPage = lazyWithRetry(() => import("@/pages/ModulesPage"));
+const ModuleDetailPage = lazyWithRetry(() => import("@/pages/ModuleDetailPage"));
+const ModuleExamPage = lazyWithRetry(() => import("@/pages/ModuleExamPage"));
+const CertificatePage = lazyWithRetry(() => import("@/pages/CertificatePage"));
+const DiplomaPage = lazyWithRetry(() => import("@/pages/DiplomaPage"));
+const DiplomaVerifyPage = lazyWithRetry(() => import("@/pages/DiplomaVerifyPage"));
+const ScoreboardPage = lazyWithRetry(() => import("@/pages/ScoreboardPage"));
+const TalentPage = lazyWithRetry(() => import("@/pages/TalentPage"));
+const JobsPage = lazyWithRetry(() => import("@/pages/JobsPage"));
+const ImpactPage = lazyWithRetry(() => import("@/pages/ImpactPage"));
+const VerifyPage = lazyWithRetry(() => import("@/pages/VerifyPage"));
+const LabsPage = lazyWithRetry(() => import("@/pages/LabsPage"));
+const CompetitionsPage = lazyWithRetry(() => import("@/pages/CompetitionsPage"));
+const EventPage = lazyWithRetry(() => import("@/pages/EventPage"));
+const CompetitionDetailPage = lazyWithRetry(() => import("@/pages/CompetitionDetailPage"));
+const ProfilePage = lazyWithRetry(() => import("@/pages/ProfilePage"));
+const ProfileEditPage = lazyWithRetry(() => import("@/pages/ProfileEditPage"));
+const SecurityPage = lazyWithRetry(() => import("@/pages/SecurityPage"));
+const DashboardPage = lazyWithRetry(() => import("@/pages/DashboardPage"));
+const AdminDashboardPage = lazyWithRetry(() => import("@/pages/admin/AdminDashboardPage"));
+const AdminUsersPage = lazyWithRetry(() => import("@/pages/admin/AdminUsersPage"));
+const AdminCtfPage = lazyWithRetry(() => import("@/pages/admin/AdminCtfPage"));
+const AdminCompetitionsPage = lazyWithRetry(() => import("@/pages/admin/AdminCompetitionsPage"));
+const AdminLessonsPage = lazyWithRetry(() => import("@/pages/admin/AdminLessonsPage"));
+const AdminAnalyticsPage = lazyWithRetry(() => import("@/pages/admin/AdminAnalyticsPage"));
+const AdminBlockedPage = lazyWithRetry(() => import("@/pages/admin/AdminBlockedPage"));
+const AdminAuditPage = lazyWithRetry(() => import("@/pages/admin/AdminAuditPage"));
+const AdminCurriculumPage = lazyWithRetry(() => import("@/pages/admin/AdminCurriculumPage"));
+const AdminWriteupsPage = lazyWithRetry(() => import("@/pages/admin/AdminWriteupsPage"));
+const CompetitionCtfPage = lazyWithRetry(() => import("@/pages/CompetitionCtfPage"));
+const ResendVerificationPage = lazyWithRetry(() => import("@/pages/ResendVerificationPage"));
+const ForgotPasswordPage = lazyWithRetry(() => import("@/pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazyWithRetry(() => import("@/pages/ResetPasswordPage"));
+const GlossaryPage = lazyWithRetry(() => import("@/pages/GlossaryPage"));
+const NotFound = lazyWithRetry(() => import("@/pages/not-found"));
 
 /**
  * Every page except the home page is a lazy chunk.
@@ -146,7 +148,8 @@ function Router() {
         is keyed by location, so the subtree remounts). The exit animation is
         gone, which nobody will miss; a working router is not a trade.
       */}
-      <Suspense fallback={<AuthPending />}>
+      <ErrorBoundary>
+        <Suspense fallback={<AuthPending />}>
         <Switch location={location} key={location}>
           <Route path="/">
             {() => <PageTransition><HomePage /></PageTransition>}
@@ -298,6 +301,7 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </Suspense>
+      </ErrorBoundary>
         </main>
       <Footer />
       </div>
