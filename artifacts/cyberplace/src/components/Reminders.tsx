@@ -39,8 +39,12 @@ export function Reminders() {
   if (reminders.length === 0) return null;
 
   /** Local title of a module, whatever language the reader is in. */
-  const moduleTitle = (d: Record<string, unknown>) =>
-    t(String(d.title ?? ""), (d.titleUz as string) || String(d.title ?? ""), (d.titleRu as string) || String(d.title ?? ""));
+  const moduleTitle = (d: Record<string, unknown>) => {
+    const title = typeof d.title === "string" ? d.title : "";
+    const titleUz = typeof d.titleUz === "string" ? d.titleUz : title;
+    const titleRu = typeof d.titleRu === "string" ? d.titleRu : title;
+    return t(title, titleUz, titleRu);
+  };
 
   const render = (r: Reminder): Rendered | null => {
     const d = r.data;
@@ -105,18 +109,20 @@ export function Reminders() {
           cta: t("Claim it", "Olish", "Забрать"),
           href: `/modules/${d.moduleId}`,
         };
-      case "competition_live":
+      case "competition_live": {
+        const sName = typeof d.sponsorName === "string" ? d.sponsorName : "";
         return {
           icon: Radio, tone: "emerald",
           title: t(`${d.name} is running now`, `${d.name} hozir davom etmoqda`, `«${d.name}» идёт прямо сейчас`),
-          body: d.sponsorName
-            ? t(`Sponsored by ${d.sponsorName}. You have not joined yet.`,
-                `Homiy: ${d.sponsorName}. Siz hali qo'shilmadingiz.`,
-                `Спонсор: ${d.sponsorName}. Вы ещё не участвуете.`)
-            : t("You have not joined yet.", "Siz hali qo'shilmadingiz.", "Вы ещё не участвуете."),
+          body: sName
+            ? t(`Sponsored by ${sName}. You have not joined yet.`,
+                `Homiy: ${sName}. Siz hali qo'shilmadingiz.`,
+                `Спонсор: ${sName}. Вы ещё не участвуете.`)
+            : t("You have not joined yet.", "Siz hali qo'shilmadiumgiz.", "Вы ещё не участвуете."),
           cta: t("Join now", "Hozir qo'shilish", "Присоединиться"),
           href: `/competitions/${d.competitionId}`,
         };
+      }
       case "competition_soon": {
         const days = Math.max(0, Math.ceil((new Date(String(d.startTime)).getTime() - Date.now()) / 86_400_000));
         return {

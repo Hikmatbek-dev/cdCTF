@@ -30,7 +30,8 @@ const defaultImage = (req: Request) => `${siteOrigin(req)}/logo.png`;
 
 /** HTML-escapes a value for safe interpolation into attributes and text. */
 function esc(value: unknown): string {
-  return String(value ?? "")
+  const str = typeof value === "string" ? value : typeof value === "number" || typeof value === "boolean" ? String(value) : "";
+  return str
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")

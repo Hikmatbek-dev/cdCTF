@@ -75,7 +75,7 @@ export default function LoginPage() {
     if (handoff) setMfaToken(handoff);
     if (handoff || params.get("oauth_error")) window.history.replaceState({}, "", "/login");
     // Runs once: this reads the URL the callback landed on.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   function finish(result: { token: string; user: Parameters<typeof login>[0]; suspiciousLogin: { reasons: string[] } | null }) {

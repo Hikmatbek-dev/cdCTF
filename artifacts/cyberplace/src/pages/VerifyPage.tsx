@@ -59,7 +59,7 @@ export default function VerifyPage() {
           <Input
             value={serial}
             onChange={e => setSerial(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") verify(); }}
+            onKeyDown={e => { if (e.key === "Enter") { void verify(); } }}
             placeholder="CDCTF-XXXXXXXXXX"
             className="font-mono uppercase"
             data-testid="verify-input"

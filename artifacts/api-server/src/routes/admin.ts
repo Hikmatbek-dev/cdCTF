@@ -1309,7 +1309,7 @@ function parseExamQuestion(raw: unknown, index: number): { ok: true; value: Exam
 
   const align = (value: unknown): string[] | null => {
     if (!Array.isArray(value)) return null;
-    const cut = options.map((_, i) => (typeof value[i] === "string" ? (value[i] as string).trim() : ""));
+    const cut = options.map((_, i) => (typeof value[i] === "string" ? (value[i]).trim() : ""));
     return cut.some(Boolean) ? cut : null;
   };
 

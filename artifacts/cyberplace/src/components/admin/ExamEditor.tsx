@@ -223,30 +223,42 @@ export function ExamEditor({ moduleId, moduleTitle, onClose }: {
 
                 {openTranslations === i && (
                   <div className="mt-3 space-y-3 border-t border-border pt-3">
-                    {(["Uz", "Ru"] as const).map(suffix => {
-                      const qKey = `question${suffix}` as "questionUz" | "questionRu";
-                      const oKey = `options${suffix}` as "optionsUz" | "optionsRu";
-                      return (
-                        <div key={suffix} className="space-y-2">
+                    <div className="space-y-2">
+                      <Input
+                        value={q.questionUz ?? ""}
+                        onChange={e => edit(i, { questionUz: e.target.value || null })}
+                        placeholder={`${t("Question", "Savol", "Вопрос")} (UZ)`}
+                        data-testid={`exam-q-${i}-uz`}
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        {[0, 1, 2, 3].map(oi => (
                           <Input
-                            value={q[qKey] ?? ""}
-                            onChange={e => edit(i, { [qKey]: e.target.value || null } as Partial<ExamQuestion>)}
-                            placeholder={`${t("Question", "Savol", "Вопрос")} (${suffix.toUpperCase()})`}
-                            data-testid={`exam-q-${i}-${suffix.toLowerCase()}`}
+                            key={oi}
+                            value={q.optionsUz?.[oi] ?? ""}
+                            onChange={e => editOption(i, oi, e.target.value, "optionsUz")}
+                            placeholder={`${t("Option", "Variant", "Вариант")} ${String.fromCharCode(65 + oi)} (UZ)`}
                           />
-                          <div className="grid grid-cols-2 gap-2">
-                            {[0, 1, 2, 3].map(oi => (
-                              <Input
-                                key={oi}
-                                value={q[oKey]?.[oi] ?? ""}
-                                onChange={e => editOption(i, oi, e.target.value, oKey)}
-                                placeholder={`${t("Option", "Variant", "Вариант")} ${String.fromCharCode(65 + oi)} (${suffix.toUpperCase()})`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Input
+                        value={q.questionRu ?? ""}
+                        onChange={e => edit(i, { questionRu: e.target.value || null })}
+                        placeholder={`${t("Question", "Savol", "Вопрос")} (RU)`}
+                        data-testid={`exam-q-${i}-ru`}
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        {[0, 1, 2, 3].map(oi => (
+                          <Input
+                            key={oi}
+                            value={q.optionsRu?.[oi] ?? ""}
+                            onChange={e => editOption(i, oi, e.target.value, "optionsRu")}
+                            placeholder={`${t("Option", "Variant", "Вариант")} ${String.fromCharCode(65 + oi)} (RU)`}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

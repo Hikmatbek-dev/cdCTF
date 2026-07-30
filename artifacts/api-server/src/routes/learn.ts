@@ -167,11 +167,11 @@ async function startLessonTestHandler(req: Request, res: Response) {
 
   const now = new Date();
   const windowOpen = Boolean(attempt?.testStartedAt)
-    && now.getTime() - attempt!.testStartedAt!.getTime() < LESSON_WINDOW_MS;
-  const used = windowOpen ? attempt!.attemptCount : 0;
+    && now.getTime() - attempt.testStartedAt!.getTime() < LESSON_WINDOW_MS;
+  const used = windowOpen ? attempt.attemptCount : 0;
 
   if (used >= LESSON_ATTEMPTS_PER_WINDOW) {
-    const retryAt = new Date(attempt!.testStartedAt!.getTime() + LESSON_WINDOW_MS);
+    const retryAt = new Date(attempt.testStartedAt!.getTime() + LESSON_WINDOW_MS);
     return res.status(429).json({
       error: `Too many attempts. Try again after ${retryAt.toISOString()}`,
       retryAt: retryAt.toISOString(),
@@ -193,7 +193,7 @@ async function startLessonTestHandler(req: Request, res: Response) {
       // `testStartedAt` restarts the window only when the previous one has
       // expired; inside a window it keeps marking the latest attempt, which is
       // what the retry time above is measured from.
-      status: "in_progress", attemptCount: used + 1, testSessionId: sessionId, testStartedAt: windowOpen ? attempt!.testStartedAt! : now, updatedAt: now,
+      status: "in_progress", attemptCount: used + 1, testSessionId: sessionId, testStartedAt: windowOpen ? attempt.testStartedAt! : now, updatedAt: now,
     }).where(eq(userLessonAttemptsTable.id, attempt.id));
   }
 

@@ -123,7 +123,7 @@ export default function AdminLessonsPage() {
   // isPublished. normalizeLessons types them as the public Lesson, which has
   // neither, so the publish state was invisible to the compiler too.
   const lessonList = normalizeArray<AdminLesson>(lessonsData, ["lessons", "data", "items"]);
-  const total = typeof (lessonsData as any)?.total === "number" ? (lessonsData as any).total : lessonList.length;
+  const total = typeof (lessonsData)?.total === "number" ? (lessonsData).total : lessonList.length;
   const categoryList = normalizeLearnCategories(categories);
 
   const createLesson = useAdminCreateLesson();

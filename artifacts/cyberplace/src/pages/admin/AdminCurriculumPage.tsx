@@ -138,7 +138,7 @@ export default function AdminCurriculumPage() {
     m.isPublished
       ? t("Module hidden", "Modul yashirildi", "Модуль скрыт")
       : t("Module is live", "Modul nashr qilindi", "Модуль опубликован"),
-    refreshModules,
+    () => void refreshModules(),
   );
 
   const deleteModule = (m: AdminModule) => {
@@ -148,7 +148,7 @@ export default function AdminCurriculumPage() {
       `Удалить «${m.title}»? Попытки экзамена по нему тоже удалятся.`,
     ))) return;
     void run(() => send(`/api/admin/modules/${m.id}`, "DELETE"),
-      t("Module deleted", "Modul o'chirildi", "Модуль удалён"), refreshModules);
+      t("Module deleted", "Modul o'chirildi", "Модуль удалён"), () => void refreshModules());
   };
 
   const addCategory = () => {
@@ -162,7 +162,7 @@ export default function AdminCurriculumPage() {
   const deleteCategory = (c: AdminCategory) => {
     if (!confirm(t(`Delete "${c.name}"?`, `"${c.name}" o'chirilsinmi?`, `Удалить «${c.name}»?`))) return;
     void run(() => send(`/api/admin/learn-categories/${c.id}`, "DELETE"),
-      t("Category deleted", "Kategoriya o'chirildi", "Категория удалена"), refreshCategories);
+      t("Category deleted", "Kategoriya o'chirildi", "Категория удалена"), () => void refreshCategories());
   };
 
   const field = (key: keyof ModuleForm, label: string, opts: { area?: boolean; type?: string } = {}) => (
