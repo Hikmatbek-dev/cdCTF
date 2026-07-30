@@ -221,10 +221,10 @@ export default function CtfListPage() {
                           of the grid is that you can read it without reading
                           it. */}
                       <div
-                        className={`group cursor-pointer transition-all duration-300 hover:-translate-y-1.5 relative overflow-hidden rounded-xl flex flex-col h-full border bg-card ${
+                        className={`group cursor-pointer transition-all duration-300 hover:-translate-y-1.5 relative overflow-hidden rounded-xl flex flex-col h-full border ${
                           ch.isSolved
-                            ? "border-[hsl(var(--neon)/.45)] shadow-[0_0_0_1px_hsl(var(--neon)/.15)] hover:shadow-[0_18px_40px_-24px_hsl(var(--neon))]"
-                            : "border-border hover:border-primary/50 hover:shadow-[0_18px_40px_-24px_hsl(var(--primary))]"
+                            ? "bg-emerald-950/10 border-[hsl(var(--neon)/.45)] shadow-[0_0_15px_-3px_hsl(var(--neon)/0.2)] hover:shadow-[0_20px_45px_-15px_hsl(var(--neon)/0.35)]"
+                            : "bg-card border-border hover:border-primary/50 hover:shadow-[0_18px_40px_-24px_hsl(var(--primary))]"
                         } ${ch.isBlocked ? "opacity-40 grayscale pointer-events-none" : ""}`}
                       >
                         {/* Status rail — solved reads at a glance, from colour
