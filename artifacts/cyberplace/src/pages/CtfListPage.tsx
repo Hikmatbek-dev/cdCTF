@@ -231,8 +231,8 @@ export default function CtfListPage() {
                             and from position, before any text is parsed. */}
                         <span
                           aria-hidden="true"
-                          className={`absolute left-0 top-0 bottom-0 z-10 transition-all ${
-                            ch.isSolved ? "w-[5px] bg-[hsl(var(--neon))]" : "w-[3px] bg-transparent group-hover:bg-primary/70"
+                          className={`absolute left-0 top-0 bottom-0 z-10 transition-all shadow-[1px_0_10px_hsl(var(--neon)/0.2)] ${
+                            ch.isSolved ? "w-[6px] bg-[hsl(var(--neon))]" : "w-[3px] bg-transparent group-hover:bg-primary/70 shadow-none"
                           }`}
                         />
 
@@ -240,18 +240,27 @@ export default function CtfListPage() {
                           <ChallengeArt name={ch.name} category={ch.category} hue={cat.hue} solved={ch.isSolved} className="w-full h-full transition-transform duration-700 group-hover:scale-110" />
                           {/* Darken toward the title so the type below always
                               has something to sit on. */}
-                          <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-card via-card/25 to-transparent" />
+                          <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent pointer-events-none" />
                           {/* Dark backing, white text: the chip sits over cover
                               art in one of twelve category hues, so it cannot
                               borrow the page's colours and stay readable. */}
-                          <span className="absolute left-3 top-3 chip !bg-black/55 !border-white/25 !text-white backdrop-blur-sm">
+                          <span className="absolute left-3 top-3 chip !bg-black/55 !border-white/25 !text-white backdrop-blur-sm z-20">
                             {ch.category}
                           </span>
+                          
                           {ch.isSolved && (
-                            <span className="absolute right-3 top-3 chip !bg-black/55 !border-[hsl(var(--neon)/.6)] !text-[hsl(var(--neon))] backdrop-blur-sm">
-                              <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
-                              {t("Solved", "Yechilgan", "Решено")}
-                            </span>
+                            <>
+                              {/* Massive center stamp so it's impossible to miss */}
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                                <div className="bg-black/30 p-3 rounded-full backdrop-blur-sm border border-[hsl(var(--neon)/0.3)] shadow-[0_0_30px_hsl(var(--neon)/0.3)] transform -rotate-12 transition-transform group-hover:rotate-0 duration-500">
+                                  <CheckCircle2 className="w-12 h-12 text-[hsl(var(--neon))]" strokeWidth={1.5} />
+                                </div>
+                              </div>
+                              <span className="absolute right-3 top-3 chip !bg-[hsl(var(--neon)/0.15)] !border-[hsl(var(--neon)/.6)] !text-[hsl(var(--neon))] backdrop-blur-md z-20 shadow-[0_0_10px_hsl(var(--neon)/0.2)]">
+                                <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                                {t("Solved", "Yechilgan", "Решено")}
+                              </span>
+                            </>
                           )}
                         </div>
 
