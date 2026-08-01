@@ -4,6 +4,8 @@ import {
   ChevronRight, ChevronDown, BookOpen, Flag, ShieldCheck, Users, Check,
 } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
+import { useAuth } from "@/lib/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 import { useGetScoreboard, useListModules, getListModulesQueryKey, useListCtfChallenges, getListCtfChallengesQueryKey } from "@workspace/api-client-react";
 import { normalizeArray } from "@/lib/api-shapes";
 import { HeroTerminal } from "@/components/HeroTerminal";
@@ -23,6 +25,46 @@ const CURRICULUM = [
   { slug: "forensics-and-incident-response", en: "Forensics & IR", uz: "Forenzika", ru: "Форензика", lvl: 2, h: 45 },
   { slug: "ctf-methodology", en: "CTF Methodology", uz: "CTF metodikasi", ru: "Методология CTF", lvl: 2, h: 40 },
 ] as const;
+
+/**
+ * The one thing a returning learner wants: the page picks up where they left off.
+ *
+ * The funnel numbers are stark — 34 signed up, a handful of lessons ever
+ * finished — and part of that is that a logged-in learner landing on the home
+ * page saw the same "start from zero" pitch as a stranger, with no thread back
+ * into the course. This card is that thread; it renders only when the dashboard
+ * reports an unfinished lesson.
+ */
+function ContinueCard() {
+  const { t, lang } = useLang();
+  const { isAuthenticated } = useAuth();
+  const { data } = useQuery({
+    queryKey: ["home-continue"],
+    enabled: isAuthenticated,
+    queryFn: async () => {
+      const r = await fetch("/api/users/me/dashboard", { credentials: "include" });
+      if (!r.ok) throw new Error("dashboard");
+      return r.json() as Promise<{ nextLesson: { id: number; title: string; titleUz: string | null; titleRu: string | null } | null }>;
+    },
+  });
+  const next = data?.nextLesson;
+  if (!isAuthenticated || !next) return null;
+
+  return (
+    <Link
+      href={`/learn/${next.id}`}
+      className="mb-6 flex items-center gap-3 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3 hover:border-primary/70 transition-colors group/continue"
+      data-testid="home-continue"
+    >
+      <BookOpen className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
+      <div className="min-w-0 text-left">
+        <div className="text-xs text-muted-foreground">{t("Continue where you left off", "Qoldirgan joyingizdan davom eting", "Продолжите с того места, где остановились")}</div>
+        <div className="text-sm font-semibold truncate">{t(next.title, next.titleUz ?? undefined, next.titleRu ?? undefined)}</div>
+      </div>
+      <ArrowRight className="w-4 h-4 text-primary ml-auto shrink-0 group-hover/continue:translate-x-0.5 transition-transform" aria-hidden="true" />
+    </Link>
+  );
+}
 
 export default function HomePage() {
   const { t } = useLang();
@@ -154,6 +196,7 @@ export default function HomePage() {
         <div className="relative shell">
           <section className="pt-24 sm:pt-28 pb-12 grid lg:grid-cols-[1fr_1.05fr] gap-14 lg:gap-12 items-center">
             <div className="text-center lg:text-left">
+              <ContinueCard />
               <div className="eyebrow mb-6 mx-auto lg:mx-0">
                 {t("cdCTF · Cybersecurity Academy", "cdCTF · Kiberxavfsizlik akademiyasi", "cdCTF · Академия кибербезопасности")}
               </div>

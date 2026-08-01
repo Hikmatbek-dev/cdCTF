@@ -143,6 +143,15 @@
       ]
     }
     </script>
+    <!-- Analytics. The CSP has allowed plausible.io — script-src and connect-src
+         — since it was written, but no script was ever loaded, so the launch
+         would have flown blind on who arrives and where they drop. Plausible is
+         cookieless and needs no consent banner. data-domain lists both hosts so
+         it records before and after the cdctf.uz DNS cutover.
+         NOTE (founder): create the free Plausible site for "cdctf.uz" (or
+         self-host) — until the domain is registered there, this loads but has
+         nowhere to report. -->
+    <script defer data-domain="cdctf.uz,cdctf.vercel.app" src="https://plausible.io/js/script.js"></script>
   </head>
   <body>
     <div id="root"></div>

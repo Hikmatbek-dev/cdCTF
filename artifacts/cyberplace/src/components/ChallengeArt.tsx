@@ -1,3 +1,18 @@
+/**
+ * Cover art for a challenge card.
+ *
+ * Nine category illustrations, one per family. They were shipped as 1024×1024
+ * PNGs of ~1 MB each — rendered into a 176px slot, so a full challenge grid
+ * pulled ~9 MB, most of it thrown away on resize. They are WebP now, at 192 and
+ * 384 wide, ~22 KB each; the grid loads a few hundred KB once and caches it.
+ *
+ * The illustrations have English words baked into them ("EXPLOIT", "SECURED")
+ * which cannot be translated and read as AI stock up close. So the image is
+ * treated as *texture*, not label: a heavy vignette and a hue wash push the
+ * baked text down into the background, and the real, translatable category name
+ * is drawn as text by the card that uses this component.
+ */
+
 const ALIAS: Record<string, string> = {
   exploitation: "pwn",
   recon: "osint",
@@ -9,67 +24,56 @@ const ALIAS: Record<string, string> = {
   cloud: "networking",
   mobile: "misc",
   hardware: "misc",
-  ai: "misc"
+  ai: "misc",
 };
 
-function getImageName(category: string): string {
+const AVAILABLE = ["web", "crypto", "forensics", "networking", "reverse", "pwn", "stegano", "osint", "misc"];
+
+function imageName(category: string): string {
   const key = (category || "").toLowerCase().trim();
   const alias = ALIAS[key] ?? key;
-  const available = ["web", "crypto", "forensics", "networking", "reverse", "pwn", "stegano", "osint", "misc"];
-  if (available.includes(alias)) {
-    return alias;
-  }
-  return "misc";
+  return AVAILABLE.includes(alias) ? alias : "misc";
 }
 
 type Props = { name: string; category: string; hue: number; className?: string; solved?: boolean };
 
 export function ChallengeArt({ category, hue, className, solved }: Props) {
-  const imgName = getImageName(category);
-  const src = `/ctf-categories/${imgName}.png`;
+  const base = `/ctf-categories/${imageName(category)}`;
 
   return (
     <div className={`relative ${className} overflow-hidden bg-black/80 select-none`}>
-      {/* Base Image */}
       <img
-        src={src}
-        alt={category}
+        src={`${base}-192.webp`}
+        srcSet={`${base}-192.webp 192w, ${base}-384.webp 384w`}
+        sizes="(max-width: 640px) 100vw, 320px"
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        decoding="async"
         className={`w-full h-full object-cover transition-all duration-700 ease-out ${
           solved
-            ? "grayscale opacity-40 scale-100 contrast-125"
-            : "scale-105 group-hover:scale-110 group-hover:brightness-110"
+            ? "grayscale opacity-35 scale-100"
+            : "scale-105 group-hover:scale-110"
         }`}
       />
 
-      {/* Cyber Grid & Overlay Texture */}
-      <div 
-        className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)] pointer-events-none"
-      />
-      <div 
-        className="absolute inset-0 opacity-25 pointer-events-none mix-blend-overlay"
-        style={{
-          backgroundImage: `linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)`,
-          backgroundSize: '16px 16px'
-        }}
-      />
+      {/* Vignette: darkens the edges so the baked-in text recedes and the
+          card's own title always has something to sit on. */}
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_10%,rgba(0,0,0,0.55)_100%)]" />
 
-      {/* Category Hue Glowing Gradient */}
+      {/* Hue wash: ties every image to its category colour so nine different
+          stock illustrations read as one system rather than a ransom note. */}
       <div
-        className="absolute inset-0 opacity-30 group-hover:opacity-50 transition-opacity duration-500 mix-blend-color-dodge pointer-events-none"
-        style={{
-          background: `radial-gradient(circle at 80% 20%, hsl(${hue} 90% 60% / 0.4), transparent 70%)`
-        }}
+        className="absolute inset-0 pointer-events-none mix-blend-color opacity-45"
+        style={{ background: `hsl(${hue} 70% 45%)` }}
+      />
+      <div
+        className="absolute inset-0 pointer-events-none mix-blend-overlay opacity-30 group-hover:opacity-45 transition-opacity duration-500"
+        style={{ background: `radial-gradient(circle at 75% 20%, hsl(${hue} 90% 60% / 0.55), transparent 70%)` }}
       />
 
-      {/* Solved Visual Overlay Effect */}
-      {solved && (
-        <div className="absolute inset-0 bg-emerald-950/30 backdrop-blur-[1px] flex items-center justify-center">
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.05)_1px,transparent_1px)] bg-[size:100%_4px] pointer-events-none" />
-        </div>
-      )}
-
-      {/* Subtle Scanline Effect on Hover */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.4)_51%)] bg-[size:100%_4px]" />
+      {/* A solved card is drained further, so the grid reads at a glance. */}
+      {solved && <div className="absolute inset-0 pointer-events-none bg-background/40" />}
     </div>
   );
 }

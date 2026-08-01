@@ -76,22 +76,52 @@ check "$(curl -s -X POST $API/labs/instances/$IID/stop -H "Authorization: Bearer
 check "$(q "SELECT status FROM lab_instances WHERE id=$IID")" "stopped" "bazada stopped"
 
 echo
-echo "=== ⭐ Har bir laboratoriyaning flagi juftlangan topshiriq tomonidan qabul qilinadi ==="
-# The flags are the ones the scenario documents actually print. If a scenario
-# and its challenge ever drift apart, the lab becomes unsolvable — and this is
-# what notices.
-try_flag() { # $1 = lab slug, $2 = flag
-  local cid; cid=$(q "SELECT ctf_id FROM labs WHERE slug='$1'")
+echo "=== ⭐ To'liq zanjir: start → tokenli nishon → solve → juftlangan topshiriq ==="
+# The flag is no longer printed in the document. It is held server-side and
+# released by /solve only after the exploit is proven, then submitted to the
+# paired challenge. This drives that whole chain the way a learner does — one
+# lab at a time, because only one instance may run per user.
+#
+# The `proof` for each scenario is exactly what its verify() checks; if a
+# scenario and its challenge (or its engine) ever drift apart, a lab becomes
+# unsolvable and one of these turns red.
+solve_chain() { # $1 = slug, $2 = proof JSON -> prints only "correct" from the paired CTF
+  # Only the final result reaches stdout: this runs inside $(...), so any check
+  # printed here would be captured instead of shown, and any FAILED set here would
+  # be lost with the subshell. The target's own guarantees are asserted in the
+  # dedicated section below.
+  local slug="$1" proof="$2" labid cid start iid tp token flag
+  labid=$(q "SELECT id FROM labs WHERE slug='$slug'")
+  cid=$(q "SELECT ctf_id FROM labs WHERE slug='$slug'")
   resetlimit
-  curl -s -X POST $API/ctf/$cid/submit -H 'Content-Type: application/json' \
-    -H "Authorization: Bearer $TOK" -d "$(python3 -c "
-import json,sys; print(json.dumps({'flag': sys.argv[1]}))" "$2")" | json correct
+  start=$(curl -s -X POST "$API/labs/$labid/start" -H "Authorization: Bearer $TOK")
+  iid=$(echo "$start" | json id)
+  tp=$(echo "$start" | json targetPath)
+  token="${tp#*?t=}"
+  # Drive the exploit through the engine to get the server-held flag.
+  flag=$(curl -s -X POST "$API/labs/solve" -H 'Content-Type: text/plain' \
+    -d "$(python3 -c "import json,sys; print(json.dumps({'t': sys.argv[1], 'proof': json.loads(sys.argv[2])}))" "$token" "$proof")" | json flag)
+  # Submit that flag to the paired challenge.
+  resetlimit
+  curl -s -X POST "$API/ctf/$cid/submit" -H 'Content-Type: application/json' \
+    -H "Authorization: Bearer $TOK" -d "$(python3 -c "import json,sys; print(json.dumps({'flag': sys.argv[1]}))" "$flag")" | json correct
+  curl -s -o /dev/null -X POST "$API/labs/instances/$iid/stop" -H "Authorization: Bearer $TOK"
 }
-check "$(try_flag sql-login-bypass 'flag{sql_1nj3ct10n_ch1n0r}')" "True" "SQL injection"
-check "$(try_flag reflected-xss 'flag{xss_r3fl3ct3d_r3g1st0n}')" "True" "Reflected XSS"
-check "$(try_flag idor-invoice 'flag{1d0r_h1sob_1043}')" "True" "IDOR"
-check "$(try_flag cookie-role 'flag{c00k13_r0l3_s4rd0b4}')" "True" "Cookie roli"
-check "$(try_flag path-traversal 'flag{tr4v3rs4l_r3g1st0n_env}')" "True" "Path traversal"
+check "$(solve_chain sql-login-bypass '{"login":"admin'"'"' -- ","parol":"x"}')" "True" "SQL injection → flag → topshiriq"
+check "$(solve_chain reflected-xss '{"q":"<img src=x onerror=getflag()>"}')" "True" "Reflected XSS → flag → topshiriq"
+check "$(solve_chain idor-invoice '{"n":"1043-01"}')" "True" "IDOR → flag → topshiriq"
+check "$(solve_chain cookie-role '{"role":"staff"}')" "True" "Cookie roli → flag → topshiriq"
+check "$(solve_chain path-traversal '{"name":"../.env"}')" "True" "Path traversal → flag → topshiriq"
+
+echo "--- noto'g'ri proof flag bermaydi ---"
+resetlimit
+BADLAB=$(q "SELECT id FROM labs WHERE slug='cookie-role'")
+BADSTART=$(curl -s -X POST "$API/labs/$BADLAB/start" -H "Authorization: Bearer $TOK")
+BADIID=$(echo "$BADSTART" | json id)
+BADTP=$(echo "$BADSTART" | json targetPath); BADTOKEN="${BADTP#*?t=}"
+check "$(curl -s -X POST "$API/labs/solve" -H 'Content-Type: text/plain' \
+  -d "{\"t\":\"$BADTOKEN\",\"proof\":{\"role\":\"guest\"}}" | json flag)" "" "zaiflik ishlatilmasa flag yo'q"
+curl -s -o /dev/null -X POST "$API/labs/instances/$BADIID/stop" -H "Authorization: Bearer $TOK"
 
 echo
 echo "=== ⭐ Stsenariy fayli va bazadagi flaglar mos ==="
@@ -115,21 +145,29 @@ if bad == 0:
 PY
 
 echo
-echo "=== ⭐ Nishon hujjati o'z siyosati bilan beriladi ==="
+echo "=== ⭐ Nishon hujjati o'z siyosati bilan, faqat tokenga beriladi ==="
 # The documents used to be inlined into an iframe's srcdoc, and a srcdoc document
-# inherits its parent's CSP. cdCTF's policy has no 'unsafe-inline' in script-src
-# and every lab document *is* an inline script, so in production every lab
-# rendered as a dead page. Serving it from the API gives it a policy of its own.
-TARGET_CSP=$(curl -sI $API/labs/target/sql-login-bypass | tr -d '\r' | grep -i '^content-security-policy:')
-check "$(curl -s -o /dev/null -w '%{http_code}' $API/labs/target/sql-login-bypass)" "200" "nishon hujjati beriladi"
+# inherits its parent's CSP — cdCTF's has no 'unsafe-inline' in script-src, so
+# every lab rendered dead. Served from the API the document carries its own
+# policy. And it was unauthenticated: anyone could curl the flag, and "Stop"
+# changed nothing. Now the target answers only to a running instance's token.
+resetlimit
+GS=$(curl -s -X POST "$API/labs/$(q "SELECT id FROM labs WHERE slug='sql-login-bypass'")/start" -H "Authorization: Bearer $TOK")
+GIID=$(echo "$GS" | json id)
+GTP=$(echo "$GS" | json targetPath); GTOKEN="${GTP#*?t=}"
+TARGET_CSP=$(curl -sI "$API/labs/target/sql-login-bypass?t=$GTOKEN" | tr -d '\r' | grep -i '^content-security-policy:')
+check "$(curl -s -o /dev/null -w '%{http_code}' "$API/labs/target/sql-login-bypass?t=$GTOKEN")" "200" "tokenli nishon beriladi"
 echo "$TARGET_CSP" | grep -q "sandbox allow-scripts" \
   && pass "sandbox allow-scripts — hujjat opaque originda" || fail "sandbox direktivi yo'q: $TARGET_CSP"
 echo "$TARGET_CSP" | grep -q "allow-same-origin" \
   && fail "allow-same-origin BERILGAN — hujjat cdCTF originiga kira oladi!" || pass "allow-same-origin yo'q"
 echo "$TARGET_CSP" | grep -q "script-src 'unsafe-inline'" \
   && pass "inline skript ruxsat etilgan (zaiflik shu)" || fail "inline skript bloklanadi — lab jonsiz bo'ladi"
-check "$(curl -s $API/labs/target/sql-login-bypass | grep -c 'flag{sql_1nj3ct10n_ch1n0r}')" "1" "hujjat haqiqiy stsenariy"
-check "$(curl -s -o /dev/null -w '%{http_code}' $API/labs/target/yo-q-bunday)" "404" "noma'lum slug 404"
+echo "--- tokensiz kirib bo'lmaydi (flag oqib chiqmaydi) ---"
+check "$(curl -s -o /dev/null -w '%{http_code}' "$API/labs/target/sql-login-bypass")" "403" "tokensiz nishon 403"
+echo "--- boshqa labning tokeni bilan bu nishon ochilmaydi ---"
+check "$(curl -s -o /dev/null -w '%{http_code}' "$API/labs/target/idor-invoice?t=$GTOKEN")" "403" "token faqat o'z stsenariysiga"
+curl -s -o /dev/null -X POST "$API/labs/instances/$GIID/stop" -H "Authorization: Bearer $TOK"
 
 echo "--- ilova sahifasining CSP'si nishonni freym qilishga ruxsat beradi ---"
 # frame-src must allow 'self' now that the iframe has a src instead of srcdoc.
