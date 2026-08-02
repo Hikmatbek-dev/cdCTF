@@ -6,6 +6,7 @@ import { useLang } from "@/lib/LanguageContext";
 import { useGetUserProfile, getGetUserProfileQueryKey } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
+import { ReferralPanel } from "@/components/ReferralPanel";
 import { Button } from "@/components/ui/button";
 import { normalizeArray } from "@/lib/api-shapes";
 import { useToast } from "@/hooks/use-toast";
@@ -215,6 +216,8 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+
+        {isOwn && <ReferralPanel />}
 
         {/* Tactical Feed */}
         <div className="grid lg:grid-cols-3 gap-12">

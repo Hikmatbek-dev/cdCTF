@@ -48,6 +48,12 @@ export const RegisterBody = zod.object({
     .describe(
       "Cloudflare Turnstile token. Required only when TURNSTILE_ENFORCE is on.",
     ),
+  ref: zod
+    .string()
+    .nullish()
+    .describe(
+      "A referral code from the ?ref= link. Best-effort — an unknown or self code is ignored and never blocks the signup.",
+    ),
 });
 
 /**

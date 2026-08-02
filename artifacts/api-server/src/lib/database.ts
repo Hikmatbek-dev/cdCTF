@@ -327,6 +327,23 @@ async function applySchema() {
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS longest_streak integer NOT NULL DEFAULT 0");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_activity_date text");
 
+  // Referral programme.
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code text");
+  await createIndexSafely("users_referral_code_idx", "CREATE UNIQUE INDEX IF NOT EXISTS users_referral_code_idx ON users(referral_code) WHERE referral_code IS NOT NULL");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS free_hint_credits integer NOT NULL DEFAULT 0");
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS referrals (
+      id serial PRIMARY KEY,
+      referrer_id integer NOT NULL REFERENCES users(id),
+      referee_id integer NOT NULL REFERENCES users(id),
+      status text NOT NULL DEFAULT 'pending',
+      created_at timestamptz NOT NULL DEFAULT now(),
+      activated_at timestamptz
+    )
+  `);
+  await createIndexSafely("referrals_referee_idx", "CREATE UNIQUE INDEX IF NOT EXISTS referrals_referee_idx ON referrals(referee_id)");
+  await pool.query("CREATE INDEX IF NOT EXISTS referrals_referrer_status_idx ON referrals(referrer_id, status)");
+
   // Job board — the paid end of the talent pipeline.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS jobs (

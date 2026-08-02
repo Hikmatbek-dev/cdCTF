@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { Trophy, Clock, Users, Flag, Lock, Gift, UserPlus, Copy, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +22,7 @@ export default function CompetitionDetailPage() {
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
   const qc = useQueryClient();
+  const [, setLocation] = useLocation();
   const [inviteCode, setInviteCode] = useState("");
   const [isJoining, setIsJoining] = useState(false);
   const [teamName, setTeamName] = useState("");
@@ -50,6 +51,22 @@ export default function CompetitionDetailPage() {
         body: JSON.stringify(comp?.type === "private" ? { inviteCode: inviteCode.trim() } : {}),
       });
       const data = await response.json().catch(() => ({}));
+      // The invite gate: the server says how many activated invites you have of
+      // the five required. Point the learner at their referral panel rather than
+      // a dead "Forbidden".
+      if (response.status === 403 && data?.error === "invite_requirement") {
+        toast({
+          variant: "destructive",
+          title: t("Invite 5 friends first", "Avval 5 do'st taklif qiling", "Сначала пригласите 5 друзей"),
+          description: t(
+            `You have ${data.have} of ${data.required} active invites. Share your link from your profile.`,
+            `Sizda ${data.required} tadan ${data.have} ta faol taklif bor. Profilingizdagi havolani ulashing.`,
+            `У вас ${data.have} из ${data.required} активных приглашений. Поделитесь ссылкой в профиле.`,
+          ),
+        });
+        setLocation("/profile");
+        return;
+      }
       if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : "Join failed");
       toast({ title: t("Joined competition!", "Musobaqaga qo'shildingiz!", "Вы присоединились к соревнованию!") });
       void qc.invalidateQueries({ queryKey: getGetCompetitionQueryKey(id) });

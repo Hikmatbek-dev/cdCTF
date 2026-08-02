@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, boolean, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, boolean, timestamp, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -52,6 +52,27 @@ export const usersTable = pgTable("users", {
   currentStreak: integer("current_streak").notNull().default(0),
   longestStreak: integer("longest_streak").notNull().default(0),
   lastActivityDate: text("last_activity_date"),
+  /**
+   * The referral programme.
+   *
+   * `referralCode` is this user's own share code — generated the first time they
+   * open the invite panel, unique, and the thing that goes in `?ref=…`. Null
+   * until then, so the column stays empty for the accounts that never look.
+   *
+   * `freeHintCredits` is a referral reward spent before points: the hint
+   * endpoint draws down a credit if one exists and only charges points
+   * otherwise. One credit is granted per *activated* referral (see the
+   * referrals table) — a signup alone earns nothing, which is what keeps the
+   * five-invite competition gate from being farmed with throwaway accounts.
+   *
+   * Referral rewards deliberately do NOT touch `points`. Points are the skill
+   * leaderboard, and letting an invite climb it would let someone top the board
+   * having solved nothing.
+   */
+  // Uniqueness is a partial index below, not a column constraint — it matches
+  // applySchema, and only the handful of allocated codes sit in the index.
+  referralCode: text("referral_code"),
+  freeHintCredits: integer("free_hint_credits").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, table => [
   // The scoreboard's exact filter and sort: non-blocked users, role 'user',
@@ -66,6 +87,9 @@ export const usersTable = pgTable("users", {
     .where(sql`email_verification_token IS NOT NULL`),
   index("users_password_reset_token_idx").on(table.passwordResetToken)
     .where(sql`password_reset_token IS NOT NULL`),
+  // Unique share code, but only over rows that have one.
+  uniqueIndex("users_referral_code_idx").on(table.referralCode)
+    .where(sql`referral_code IS NOT NULL`),
 ]);
 
 export const insertUserSchema = createInsertSchema(usersTable).omit({

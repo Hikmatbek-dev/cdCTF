@@ -11,6 +11,7 @@ import { createRateLimiter } from "../middleware/security";
 import { validateBody } from "../middleware/validate";
 import { SubmitCtfFlagBody } from "@workspace/api-zod";
 import { logger } from "../lib/logger";
+import { tryActivateReferral } from "../lib/referrals";
 
 const router = Router();
 // "shared": stopping flag grinding is the point, so the budget cannot reset
@@ -201,11 +202,17 @@ router.post("/:id/hint", authenticateToken, async (req, res) => {
     // anything. It also disagreed with recalculateUserPoints, which subtracts the
     // *full* cost for every hintUsed row: a later "recalculate points" run
     // charged people retroactively for hints they were given free.
-    const [user] = await tx.select({ points: usersTable.points }).from(usersTable)
-      .where(eq(usersTable.id, userId)).limit(1).for("update");
+    const [user] = await tx.select({ points: usersTable.points, credits: usersTable.freeHintCredits })
+      .from(usersTable).where(eq(usersTable.id, userId)).limit(1).for("update");
     const points = user?.points ?? 0;
-    if (points < challenge.hintCost) {
-      return { charged: 0, affordable: false, points };
+    const credits = user?.credits ?? 0;
+
+    // A referral reward: spend a free-hint credit before touching points. Each
+    // credit came from activating one invite, so this is where the referral
+    // programme pays out on the challenge page.
+    const useCredit = credits > 0;
+    if (!useCredit && points < challenge.hintCost) {
+      return { charged: 0, affordable: false, points, credits };
     }
 
     if (attempt) {
@@ -215,6 +222,11 @@ router.post("/:id/hint", authenticateToken, async (req, res) => {
       await tx.insert(ctfAttemptsTable).values({ userId, ctfId, hintUsed: true, updatedAt: new Date() });
     }
 
+    if (useCredit) {
+      await tx.update(usersTable).set({ freeHintCredits: credits - 1 })
+        .where(eq(usersTable.id, userId));
+      return { charged: 0, affordable: true, usedCredit: true };
+    }
     await tx.update(usersTable).set({ points: points - challenge.hintCost })
       .where(eq(usersTable.id, userId));
     return { charged: challenge.hintCost, affordable: true };
@@ -315,6 +327,10 @@ async function submitFlagHandler(req: Request, res: Response) {
         return { status: 200, data: { correct: false, blocked: isBlocked, wrongAttempts } };
       }
     });
+
+    // A first solve is one half of what activates the invite that brought this
+    // learner in. After the transaction, and only when they actually solved it.
+    if ((result.data as { correct?: boolean }).correct) void tryActivateReferral(userId);
 
     res.status(result.status).json(result.data);
   } catch (error) {

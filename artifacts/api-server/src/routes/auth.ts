@@ -76,6 +76,7 @@ import {
 } from "../lib/api-tokens";
 import { permissionsForRole } from "../lib/permissions";
 import { logger } from "../lib/logger";
+import { recordSignupReferral, tryActivateReferral } from "../lib/referrals";
 import {
   OAUTH_STATE_COOKIE,
   OAUTH_STATE_TTL_SECONDS,
@@ -248,6 +249,13 @@ router.post("/register", authRateLimit, validateBody(RegisterBody), async (req, 
       .set({ emailVerified: true, emailVerificationToken: null })
       .where(eq(usersTable.id, user.id));
   }
+
+  // Claim the invite now the account is definitely kept. Best-effort — a bad
+  // code records nothing and never blocks the signup. If email delivery was
+  // skipped above (dev/self-host), the account is already verified, so the
+  // invite can also activate the moment they finish their first lesson.
+  await recordSignupReferral(user.id, body.ref);
+  if (!emailResult.ok) await tryActivateReferral(user.id);
 
   res.status(201).json({
     user: {
@@ -1013,6 +1021,10 @@ router.get("/verify-email", async (req, res) => {
   await db.update(usersTable)
     .set({ emailVerified: true, emailVerificationToken: null })
     .where(eq(usersTable.id, user.id));
+
+  // Email is now one half of what activates an invite; the other half (a
+  // finished lesson or solved challenge) may already be done, so try now.
+  await tryActivateReferral(user.id);
 
   res.json({ message: "Email verified" });
 });

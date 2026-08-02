@@ -39,6 +39,14 @@ mkuser() { # $1 = suffix -> "token id"
   tok=$(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' \
     -d "{\"nickname\":\"$n\",\"password\":\"$PASS\"}" | python3 -c 'import sys,json; print(json.load(sys.stdin)["token"])')
   id=$(q "SELECT id FROM users WHERE nickname='$n'")
+  # Competitions now sit behind a five-invite gate. That gate has its own suite
+  # (referrals.sh); this suite is about competitions, so every user it makes is
+  # given five activated invites up front and the gate stays out of the way.
+  for i in 1 2 3 4 5; do
+    local rid
+    rid=$(q "INSERT INTO users (nickname,email,password_hash,email_verified) VALUES ('${n}_inv$i','${n}_inv$i@e.com','x',true) RETURNING id")
+    q "INSERT INTO referrals (referrer_id,referee_id,status,activated_at) VALUES ($id,$rid,'active',now())" > /dev/null
+  done
   echo "$tok $id"
 }
 

@@ -8,15 +8,16 @@ import {
   certificatesTable, programDiplomasTable,
   competitionsTable, competitionUsersTable, competitionSolvesTable, competitionTeamsTable,
   jobsTable, jobApplicationsTable, labInstancesTable,
-  auditLogsTable, userTitlesTable, titlesTable,
+  auditLogsTable, userTitlesTable, titlesTable, referralsTable,
 } from "@workspace/db/schema";
-import { and, asc, eq, gt, inArray, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, ne, or, sql } from "drizzle-orm";
 import { authenticateToken, optionalAuth, requireSession } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import { UpdateUserProfileBody } from "@workspace/api-zod";
 import { uploadBufferToStorage } from "../lib/storage";
 import { logger } from "../lib/logger";
 import { writeAuditLog } from "../lib/audit";
+import { ensureReferralCode, ambassadorTier, activeReferralCount, COMPETITION_INVITE_REQUIREMENT } from "../lib/referrals";
 
 const router = Router();
 
@@ -106,6 +107,52 @@ router.get("/me/dashboard", authenticateToken, async (req, res) => {
  * wording has to exist in three languages and the server has no idea which one
  * the reader has selected.
  */
+/**
+ * The referral panel: this user's code, who they have brought in, and what it
+ * has earned them. One place the profile reads to draw everything.
+ *
+ * `activeCount` is the number that matters — it opens the competition gate and
+ * sets the Ambassador tier. `pending` are signups that have not yet verified
+ * their email and done something real, shown so the inviter knows to nudge
+ * them, but counting toward nothing.
+ */
+router.get("/me/referrals", authenticateToken, async (req, res) => {
+  const userId = req.user!.userId;
+  const code = await ensureReferralCode(userId);
+
+  const rows = await db.select({
+    nickname: usersTable.nickname,
+    status: referralsTable.status,
+    activatedAt: referralsTable.activatedAt,
+    createdAt: referralsTable.createdAt,
+  })
+    .from(referralsTable)
+    .innerJoin(usersTable, eq(referralsTable.refereeId, usersTable.id))
+    .where(eq(referralsTable.referrerId, userId))
+    .orderBy(desc(referralsTable.createdAt));
+
+  const active = rows.filter(r => r.status === "active").length;
+  const [me] = await db.select({ credits: usersTable.freeHintCredits })
+    .from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+
+  res.json({
+    code,
+    activeCount: active,
+    pendingCount: rows.length - active,
+    freeHintCredits: me?.credits ?? 0,
+    tier: ambassadorTier(active),
+    competitionRequirement: COMPETITION_INVITE_REQUIREMENT,
+    eligibleForCompetitions: active >= COMPETITION_INVITE_REQUIREMENT,
+    invitees: rows.map(r => ({
+      nickname: r.nickname,
+      status: r.status,
+      // Only the day, and only the inviter sees it — enough to recognise a
+      // recruit without exposing another learner's activity clock.
+      joinedAt: r.createdAt.toISOString().slice(0, 10),
+    })),
+  });
+});
+
 type Reminder = { kind: string; priority: number; data: Record<string, unknown> };
 
 router.get("/me/reminders", authenticateToken, async (req, res) => {

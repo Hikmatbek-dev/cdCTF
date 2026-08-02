@@ -10,6 +10,7 @@ import { eq, and, inArray, asc, sql } from "drizzle-orm";
 import { randomBytes, createHash } from "node:crypto";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
+import { tryActivateReferral } from "../lib/referrals";
 import { SubmitLessonTestBody } from "@workspace/api-zod";
 import { awardPoints } from "../lib/scoring";
 import { touchStreak } from "../lib/streaks";
@@ -297,8 +298,13 @@ async function submitLessonTestHandler(req: Request, res: Response) {
         .where(eq(userLessonAttemptsTable.id, attempt.id));
     }
 
-    return { status: 200, data: { passed, score, correctCount: correct, totalCount: questions.length, pointsEarned } };
+    return { status: 200, data: { passed, score, correctCount: correct, totalCount: questions.length, pointsEarned }, completed: passed && !attempt.completedAt };
   });
+
+  // Finishing a lesson is one half of what activates the invite that brought
+  // this learner in. Fire-and-forget, after the transaction, only on a real
+  // first completion.
+  if ((outcome as { completed?: boolean }).completed) void tryActivateReferral(userId);
 
   res.status(outcome.status).json(outcome.data);
 }

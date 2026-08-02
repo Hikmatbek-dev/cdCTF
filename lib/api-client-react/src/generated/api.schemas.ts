@@ -35,6 +35,8 @@ export interface RegisterBody {
   password: string;
   /** Cloudflare Turnstile token. Required only when TURNSTILE_ENFORCE is on. */
   captchaToken?: string;
+  /** A referral code from the ?ref= link. Best-effort — an unknown or self code is ignored and never blocks the signup. */
+  ref?: string | null;
 }
 
 export interface LoginBody {

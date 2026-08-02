@@ -55,10 +55,17 @@ export default function RegisterPage() {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
+      // The invite code from ?ref=… — read at submit time so it survives the
+      // captcha round trip and any validation retry. An absent or bad code is
+      // simply omitted; the server ignores unknown codes anyway.
+      const ref = new URLSearchParams(window.location.search).get("ref")?.trim() || undefined;
+      const body: Record<string, unknown> = { ...data };
+      if (captchaToken) body.captchaToken = captchaToken;
+      if (ref) body.ref = ref;
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(captchaToken ? { ...data, captchaToken } : data),
+        body: JSON.stringify(body),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
