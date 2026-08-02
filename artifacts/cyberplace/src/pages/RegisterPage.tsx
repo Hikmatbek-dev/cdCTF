@@ -93,18 +93,34 @@ export default function RegisterPage() {
         }
         throw new Error(typeof payload?.error === "string" ? payload.error : "Registration failed");
       }
-      toast({
-        title: t("Account created!", "Hisob yaratildi!", "Аккаунт создан!"),
-        description: t(
-          "Check your email and verify your account before signing in.",
-          "Emailingizni tekshirib, kirishdan oldin hisobingizni tasdiqlang.",
-          "Проверьте почту и подтвердите аккаунт перед входом."
-        ),
-      });
-      // Not /login: a brand-new account cannot sign in until the email is
-      // verified, and dropping someone on a form they cannot use is where most
-      // of them left. /start explains the verification *and* opens a lesson.
-      setLocation("/start?new=1");
+      // Whether a verification email was actually sent. When email delivery is
+      // not configured on the server, the account is created already-verified,
+      // and telling the learner to "check your email" for a message that will
+      // never arrive is exactly the confusion users reported. Trust the server.
+      const needsVerification = payload?.requiresEmailVerification === true;
+      if (needsVerification) {
+        toast({
+          title: t("Account created!", "Hisob yaratildi!", "Аккаунт создан!"),
+          description: t(
+            "Check your email and verify your account before signing in.",
+            "Emailingizni tekshirib, kirishdan oldin hisobingizni tasdiqlang.",
+            "Проверьте почту и подтвердите аккаунт перед входом."
+          ),
+        });
+        // /start explains the verification *and* opens a lesson, rather than a
+        // sign-in form they cannot use yet.
+        setLocation("/start?new=1");
+      } else {
+        toast({
+          title: t("Account ready!", "Hisob tayyor!", "Аккаунт готов!"),
+          description: t(
+            "You can sign in now.",
+            "Endi tizimga kirishingiz mumkin.",
+            "Теперь вы можете войти."
+          ),
+        });
+        setLocation("/login");
+      }
     } catch (error) {
       toast({
         title: t("Error", "Xato", "Ошибка"),
