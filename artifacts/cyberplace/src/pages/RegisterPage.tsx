@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -51,6 +51,21 @@ export default function RegisterPage() {
     if (token) setCaptchaFailed(false);
   }, []);
   const handleCaptchaError = useCallback(() => setCaptchaFailed(true), []);
+
+  // The captcha must never trap a real person out of signing up. A Turnstile key
+  // is bound to specific hostnames, so a key set up for cdctf.uz simply fails to
+  // render on cdctf.vercel.app — the widget shows a broken box and never
+  // produces a token, and the submit button, if it waited for that token, would
+  // stay disabled forever. That is exactly what users reported.
+  //
+  // So: give the widget a few seconds, and if no token has arrived, treat it as
+  // failed. That frees the button. The token is still sent when it does arrive,
+  // and the server remains the real gate (it enforces only when configured to).
+  useEffect(() => {
+    if (!captchaConfigured || captchaToken || captchaFailed) return;
+    const timer = setTimeout(() => setCaptchaFailed(true), 6000);
+    return () => clearTimeout(timer);
+  }, [captchaToken, captchaFailed]);
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
@@ -144,17 +159,24 @@ export default function RegisterPage() {
               )} />
               {captchaConfigured && (
                 <div className="space-y-2">
-                  <TurnstileWidget
-                    key={captchaRound}
-                    onTokenChange={handleTokenChange}
-                    onError={handleCaptchaError}
-                  />
+                  {/* Hidden once it has failed: the failed state is a broken
+                      white box that also overflowed the card on narrow phones.
+                      overflow-hidden keeps the ~300px widget inside the card. */}
+                  {!captchaFailed && (
+                    <div className="overflow-hidden">
+                      <TurnstileWidget
+                        key={captchaRound}
+                        onTokenChange={handleTokenChange}
+                        onError={handleCaptchaError}
+                      />
+                    </div>
+                  )}
                   {captchaFailed && (
-                    <p className="text-sm text-destructive" data-testid="text-captcha-error">
+                    <p className="text-xs text-muted-foreground" data-testid="text-captcha-error">
                       {t(
-                        "Could not load the verification challenge. Refresh the page and try again.",
-                        "Tekshiruvni yuklab bo'lmadi. Sahifani yangilab, qayta urinib ko'ring.",
-                        "Не удалось загрузить проверку. Обновите страницу и попробуйте снова."
+                        "Verification is unavailable — you can still create your account.",
+                        "Tekshiruv ishlamayapti — baribir hisob yaratishingiz mumkin.",
+                        "Проверка недоступна — вы всё равно можете создать аккаунт."
                       )}
                     </p>
                   )}
@@ -163,7 +185,10 @@ export default function RegisterPage() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isSubmitting || (captchaConfigured && !captchaToken)}
+                // Never gated by a captcha that failed to load. Only wait for a
+                // token while the widget is still trying (configured, no token,
+                // not yet failed).
+                disabled={isSubmitting || (captchaConfigured && !captchaToken && !captchaFailed)}
                 data-testid="button-submit-register"
               >
                 {isSubmitting ? t("Creating...", "Yaratilmoqda...", "Создание...") : t("Create Account", "Hisob Yaratish", "Создать аккаунт")}
