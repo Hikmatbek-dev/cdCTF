@@ -46,7 +46,7 @@ async function main() {
         category: "web",
         difficulty: "easy",
         points: 10,
-        flagHash: "dummy",
+        flag: "dummy",
         description: "dummy"
     }).returning();
 
