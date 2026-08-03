@@ -15,6 +15,7 @@ export interface User {
   isEmployer?: boolean;
   companyName?: string | null;
   createdAt: string;
+  isPendingReferee?: boolean;
 }
 
 interface SessionResponse {
@@ -36,6 +37,7 @@ interface AuthContextType {
   /** Anyone who may see the admin panel at all: author, moderator or admin. */
   isStaff: boolean;
   updateUser: (user: User) => void;
+  refetchSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -122,6 +124,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const can = (permission: string) => permissions.includes(permission);
 
+  const refetchSession = async () => {
+    try {
+      const response = await fetch("/api/auth/session", { credentials: "include" });
+      if (response.ok) {
+        const session = await response.json();
+        if (session.user) {
+          setUser(session.user);
+          setPermissions(session.permissions ?? []);
+          localStorage.setItem("cdctf_user", JSON.stringify(session.user));
+        }
+      }
+    } catch {
+      // Ignore
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -133,6 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         updateUser,
+        refetchSession,
         isAuthenticated: !!user,
         isAdmin: user?.role === "admin",
         isStaff: can("admin.panel"),

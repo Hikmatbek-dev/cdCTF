@@ -70,10 +70,11 @@ export default function RegisterPage() {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
-      // The invite code from ?ref=… — read at submit time so it survives the
-      // captcha round trip and any validation retry. An absent or bad code is
-      // simply omitted; the server ignores unknown codes anyway.
-      const ref = new URLSearchParams(window.location.search).get("ref")?.trim() || undefined;
+      // The invite code from ?ref=… or sessionStorage (if they navigated around before signing up)
+      const urlRef = new URLSearchParams(window.location.search).get("ref")?.trim();
+      const sessionRef = sessionStorage.getItem("cdctf_ref")?.trim();
+      const ref = urlRef || sessionRef || undefined;
+      
       const body: Record<string, unknown> = { ...data };
       if (captchaToken) body.captchaToken = captchaToken;
       if (ref) body.ref = ref;

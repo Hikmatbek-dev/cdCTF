@@ -80,9 +80,9 @@ export async function recordSignupReferral(refereeId: number, code: string | nul
 
 /**
  * Flip a pending invite to active once the invited learner is real —
- * email verified AND at least one lesson finished or challenge solved.
+ * at least one lesson finished or challenge solved.
  *
- * Called from the email-verify, lesson-complete and challenge-solve paths;
+ * Called from the lesson-complete and challenge-solve paths;
  * whichever happens last is the one that activates. Idempotent, and cheap for
  * the common case (no pending row → one indexed read and return).
  */
@@ -91,10 +91,6 @@ export async function tryActivateReferral(refereeId: number): Promise<void> {
     const [ref] = await db.select().from(referralsTable)
       .where(and(eq(referralsTable.refereeId, refereeId), eq(referralsTable.status, "pending"))).limit(1);
     if (!ref) return;
-
-    const [user] = await db.select({ verified: usersTable.emailVerified })
-      .from(usersTable).where(eq(usersTable.id, refereeId)).limit(1);
-    if (!user?.verified) return;
 
     const [{ n: lessons }] = await db.select({ n: sql<number>`count(*)::int` })
       .from(userLessonAttemptsTable)

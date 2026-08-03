@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import { usersTable, userBackupCodesTable, apiTokensTable, oauthAccountsTable, passkeysTable } from "@workspace/db/schema";
+import { usersTable, userBackupCodesTable, apiTokensTable, oauthAccountsTable, passkeysTable, referralsTable } from "@workspace/db/schema";
 import { and, eq, isNull, or, sql } from "drizzle-orm";
 import {
   AUTH_COOKIE_NAME,
@@ -203,9 +203,12 @@ async function issueSession(res: Response, user: typeof usersTable.$inferSelect,
   });
 
   res.cookie(AUTH_COOKIE_NAME, token, authCookieOptions());
+  
+  const [pendingRef] = await db.select().from(referralsTable).where(and(eq(referralsTable.refereeId, user.id), eq(referralsTable.status, "pending"))).limit(1);
+
   return res.json({
     token,
-    user: publicUser(user),
+    user: { ...publicUser(user), isPendingReferee: !!pendingRef },
     suspiciousLogin: suspicious.length > 0 ? { reasons: suspicious } : null,
   });
 }
@@ -257,12 +260,15 @@ router.post("/register", authRateLimit, validateBody(RegisterBody), async (req, 
   await recordSignupReferral(user.id, body.ref);
   if (!emailResult.ok) await tryActivateReferral(user.id);
 
+  const [pendingRef] = await db.select().from(referralsTable).where(and(eq(referralsTable.refereeId, user.id), eq(referralsTable.status, "pending"))).limit(1);
+
   res.status(201).json({
     user: {
       id: user.id, nickname: user.nickname, email: user.email, avatarUrl: user.avatarUrl,
       points: user.points, role: user.role, emailVerified: emailResult.ok ? user.emailVerified : true,
       isBlocked: user.isBlocked, openToWork: user.openToWork,
       isEmployer: user.isEmployer, companyName: user.companyName, createdAt: user.createdAt,
+      isPendingReferee: !!pendingRef,
     },
     requiresEmailVerification: emailResult.ok,
   });
@@ -997,8 +1003,10 @@ router.get("/session", optionalAuth, async (req, res) => {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.user.userId)).limit(1);
   if (!user || user.isBlocked) return res.json({ user: null });
 
+  const [pendingRef] = await db.select().from(referralsTable).where(and(eq(referralsTable.refereeId, user.id), eq(referralsTable.status, "pending"))).limit(1);
+
   res.json({
-    user: publicUser(user),
+    user: { ...publicUser(user), isPendingReferee: !!pendingRef },
     // Derived server-side so the client never has to keep its own copy of the
     // permission table — it would drift the first time one changes.
     permissions: permissionsForRole(normalizeRole(user.role)),

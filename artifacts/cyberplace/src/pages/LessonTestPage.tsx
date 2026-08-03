@@ -15,12 +15,15 @@ type TestQuestion = {
   options: string[]; optionsUz?: string[] | null; optionsRu?: string[] | null;
 };
 
+import { useAuth } from "@/lib/AuthContext";
+
 export default function LessonTestPage() {
   const [, params] = useRoute("/learn/:id/test");
   const id = Number(params?.id);
   const { t, lang } = useLang();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { refetchSession } = useAuth();
 
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [questions, setQuestions] = useState<TestQuestion[]>([]);
@@ -113,6 +116,7 @@ export default function LessonTestPage() {
       {
         onSuccess: (res) => {
           setResult(res);
+          void refetchSession();
         },
         onError: () => toast({ title: t("Error submitting test", "Testni yuborishda xatolik", "Ошибка при отправке теста"), variant: "destructive" }),
       }

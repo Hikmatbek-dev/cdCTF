@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
@@ -119,14 +119,24 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 }
 
 import { PageTransition } from "@/components/PageTransition";
+import { ReferralBanner } from "@/components/ReferralBanner";
 
 function Router() {
   const [location] = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref && ref.trim()) {
+      sessionStorage.setItem("cdctf_ref", ref.trim());
+    }
+  }, []);
 
   return (
     <>
       <SeoManager />
       <div className="min-h-screen flex flex-col">
+        <ReferralBanner />
         <Navbar />
         <main className="flex-1 flex flex-col">
       {/*

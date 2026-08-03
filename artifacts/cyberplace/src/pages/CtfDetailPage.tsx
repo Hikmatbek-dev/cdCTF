@@ -44,7 +44,7 @@ export default function CtfDetailPage() {
   const { t } = useLang();
   const { toast } = useToast();
   const qc = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, refetchSession } = useAuth();
   const [flag, setFlag] = useState("");
   const [revealedHint, setRevealedHint] = useState<string | null>(null);
   const [hintLoading, setHintLoading] = useState(false);
@@ -65,6 +65,7 @@ export default function CtfDetailPage() {
         toast({ title: t(`Hint revealed — ${d.pointsSpent} points spent`, `Maslahat ochildi — ${d.pointsSpent} ball sarflandi`, `Подсказка открыта — потрачено ${d.pointsSpent} очк.`) });
       }
       void qc.invalidateQueries({ queryKey: getGetCtfChallengeQueryKey(id) });
+      void refetchSession();
     } catch (e) {
       toast(errorToast(t, e));
     } finally {
@@ -96,6 +97,7 @@ export default function CtfDetailPage() {
           if (res.correct) {
             toast({ title: t("Correct! Flag accepted!", "To'g'ri! Flag qabul qilindi!", "Верно! Флаг принят!"), description: `+${res.pointsEarned ?? challenge?.points} points` });
             void qc.invalidateQueries({ queryKey: getGetCtfChallengeQueryKey(id) });
+            void refetchSession();
           } else if (res.blocked) {
             toast({ title: t("You are blocked!", "Bloklandingiz!", "Вы заблокированы!"), description: t("3 wrong attempts. Contact admin.", "3 marta xato. Adminga murojaat qiling.", "3 ошибки. Обратитесь к администратору."), variant: "destructive" });
             void qc.invalidateQueries({ queryKey: getGetCtfChallengeQueryKey(id) });
