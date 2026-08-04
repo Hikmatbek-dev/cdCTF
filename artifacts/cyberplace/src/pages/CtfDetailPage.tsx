@@ -106,7 +106,21 @@ export default function CtfDetailPage() {
           }
           setFlag("");
         },
-        onError: (err) => toast({ title: (err as { message?: string })?.message || t("Error", "Xato", "Ошибка"), variant: "destructive" }),
+        onError: (err) => {
+          // A 401 here means the session lapsed between loading the page and
+          // pressing Submit. Show a plain "sign in again" instead of the raw
+          // "HTTP 401: Unauthorized" that users were seeing.
+          const status = (err as { status?: number })?.status;
+          if (status === 401) {
+            toast({
+              title: t("Session expired", "Sessiya tugadi", "Сессия истекла"),
+              description: t("Please sign in again to submit.", "Topshirish uchun qaytadan tizimga kiring.", "Войдите снова, чтобы отправить."),
+              variant: "destructive",
+            });
+            return;
+          }
+          toast({ title: (err as { message?: string })?.message || t("Error", "Xato", "Ошибка"), variant: "destructive" });
+        },
       }
     );
   };
@@ -346,49 +360,74 @@ export default function CtfDetailPage() {
                     </motion.div>
                   )}
 
-                  <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-6">
-                    <div className="relative flex-1">
-                      {/* No `uppercase`: the CSS was uppercasing the display
-                          while the submitted value kept its case, so a learner
-                          checking a case-sensitive flag against the screen was
-                          reading something that did not match what they would
-                          send. The placeholder now shows the real shape, and
-                          the field has a name for screen readers. */}
-                      <input
-                        value={flag}
-                        onChange={e => setFlag(e.target.value)}
-                        aria-label={t("Flag", "Flag", "Флаг")}
-                        autoCapitalize="none"
-                        autoCorrect="off"
-                        spellCheck={false}
-                        placeholder="flag{...}"
-                        className="field font-mono !min-h-[3.5rem] tracking-wide"
-                        data-testid="input-flag"
-                      />
+                  {/* The submit path is session-gated on the server, so an
+                      anonymous visitor pressing Submit got a raw "HTTP 401:
+                      Unauthorized" toast — the exact confusion users reported.
+                      Show a sign-in call to action instead of a form that
+                      cannot succeed. */}
+                  {!isAuthenticated ? (
+                    <div className="flex flex-col items-center text-center gap-5 py-4">
+                      <p className="text-sm text-muted-foreground max-w-sm">
+                        {t("Sign in to submit your flag and earn points.",
+                           "Flagni topshirish va ball to'plash uchun tizimga kiring.",
+                           "Войдите, чтобы отправить флаг и заработать очки.")}
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <Link href="/login" className="cyber-button h-14 px-10 flex items-center justify-center" data-testid="link-login-to-submit">
+                          {t("Sign in", "Kirish", "Войти")}
+                        </Link>
+                        <Link href="/register" className="h-14 px-10 flex items-center justify-center rounded-xl border border-border text-sm font-medium hover:border-primary/40 hover:text-primary transition-colors" data-testid="link-register-to-submit">
+                          {t("Create account", "Hisob yaratish", "Создать аккаунт")}
+                        </Link>
+                      </div>
                     </div>
-                    <button 
-                      type="submit" 
-                      disabled={submitFlag.isPending || !flag.trim()} 
-                      className="cyber-button h-18 px-12 group"
-                      data-testid="button-submit-flag"
-                    >
-                      {/* The button says what it does. It used to read
-                          "TRANSMIT" / "SYNCING…", which is set dressing, not a
-                          label — and it was the only untranslated control on
-                          the page a learner has to press to score. */}
-                      <span className="flex items-center gap-3">
-                        {submitFlag.isPending
-                          ? t("Checking…", "Tekshirilmoqda…", "Проверяем…")
-                          : t("Submit", "Topshirish", "Отправить")}
-                        <Zap className="w-4 h-4 group-hover:scale-125 transition-transform" />
-                      </span>
-                    </button>
-                  </form>
-                  <div className="mt-8 flex items-center justify-center gap-4">
-                    <div className="h-px flex-1 bg-border" />
-                    <p className="text-xs text-muted-foreground/60 font-mono">{t("Format:", "Format:", "Формат:")} flag{"{"}...{"}"}</p>
-                    <div className="h-px flex-1 bg-border" />
-                  </div>
+                  ) : (
+                    <>
+                      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-6">
+                        <div className="relative flex-1">
+                          {/* No `uppercase`: the CSS was uppercasing the display
+                              while the submitted value kept its case, so a learner
+                              checking a case-sensitive flag against the screen was
+                              reading something that did not match what they would
+                              send. The placeholder now shows the real shape, and
+                              the field has a name for screen readers. */}
+                          <input
+                            value={flag}
+                            onChange={e => setFlag(e.target.value)}
+                            aria-label={t("Flag", "Flag", "Флаг")}
+                            autoCapitalize="none"
+                            autoCorrect="off"
+                            spellCheck={false}
+                            placeholder="flag{...}"
+                            className="field font-mono !min-h-[3.5rem] tracking-wide"
+                            data-testid="input-flag"
+                          />
+                        </div>
+                        <button
+                          type="submit"
+                          disabled={submitFlag.isPending || !flag.trim()}
+                          className="cyber-button h-18 px-12 group"
+                          data-testid="button-submit-flag"
+                        >
+                          {/* The button says what it does. It used to read
+                              "TRANSMIT" / "SYNCING…", which is set dressing, not a
+                              label — and it was the only untranslated control on
+                              the page a learner has to press to score. */}
+                          <span className="flex items-center gap-3">
+                            {submitFlag.isPending
+                              ? t("Checking…", "Tekshirilmoqda…", "Проверяем…")
+                              : t("Submit", "Topshirish", "Отправить")}
+                            <Zap className="w-4 h-4 group-hover:scale-125 transition-transform" />
+                          </span>
+                        </button>
+                      </form>
+                      <div className="mt-8 flex items-center justify-center gap-4">
+                        <div className="h-px flex-1 bg-border" />
+                        <p className="text-xs text-muted-foreground/60 font-mono">{t("Format:", "Format:", "Формат:")} flag{"{"}...{"}"}</p>
+                        <div className="h-px flex-1 bg-border" />
+                      </div>
+                    </>
+                  )}
                 </div>
               </FadeIn>
             )}
