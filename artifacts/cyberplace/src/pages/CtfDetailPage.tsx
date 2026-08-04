@@ -367,17 +367,20 @@ export default function CtfDetailPage() {
                       cannot succeed. */}
                   {!isAuthenticated ? (
                     <div className="flex flex-col items-center text-center gap-5 py-4">
-                      <p className="text-sm text-muted-foreground max-w-sm">
-                        {t("Sign in to submit your flag and earn points.",
-                           "Flagni topshirish va ball to'plash uchun tizimga kiring.",
-                           "Войдите, чтобы отправить флаг и заработать очки.")}
+                      <p className="text-base font-medium max-w-sm">
+                        {t("Create a free account to solve challenges and earn points.",
+                           "Topshiriqlarni yechish va ball to'plash uchun bepul hisob yarating.",
+                           "Создайте бесплатный аккаунт, чтобы решать задания и зарабатывать очки.")}
                       </p>
                       <div className="flex flex-col sm:flex-row gap-4">
-                        <Link href="/login" className="cyber-button h-14 px-10 flex items-center justify-center" data-testid="link-login-to-submit">
-                          {t("Sign in", "Kirish", "Войти")}
+                        {/* Register is the primary action: a first-time visitor
+                            reaching a challenge has no account yet, so the fast
+                            path is to sign up, not to sign in. */}
+                        <Link href="/register" className="cyber-button h-14 px-10 flex items-center justify-center" data-testid="link-register-to-submit">
+                          {t("Create free account", "Bepul hisob yaratish", "Создать аккаунт")}
                         </Link>
-                        <Link href="/register" className="h-14 px-10 flex items-center justify-center rounded-xl border border-border text-sm font-medium hover:border-primary/40 hover:text-primary transition-colors" data-testid="link-register-to-submit">
-                          {t("Create account", "Hisob yaratish", "Создать аккаунт")}
+                        <Link href="/login" className="h-14 px-10 flex items-center justify-center rounded-xl border border-border text-sm font-medium hover:border-primary/40 hover:text-primary transition-colors" data-testid="link-login-to-submit">
+                          {t("I already have one", "Hisobim bor", "У меня есть аккаунт")}
                         </Link>
                       </div>
                     </div>
