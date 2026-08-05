@@ -130,6 +130,14 @@ router.get("/:id", optionalAuth, requireScope("ctf:read"), async (req, res) => {
     [userAttempt] = await db.select().from(ctfAttemptsTable).where(and(eq(ctfAttemptsTable.userId, userId), eq(ctfAttemptsTable.ctfId, ctfId))).limit(1);
   }
 
+  // How many people have solved this. The schema declares `solvedCount` as a
+  // required field of the detail response, but this handler never sent it — so
+  // the client read `undefined`, printed a blank solve count, and rendered
+  // `solvedCount / total` as "NaN%". One indexed aggregate fills the contract.
+  const [{ n: solvedCount }] = await db.select({ n: sql<number>`count(*)::int` })
+    .from(ctfAttemptsTable)
+    .where(and(eq(ctfAttemptsTable.ctfId, ctfId), eq(ctfAttemptsTable.solved, true)));
+
   // The module that teaches this. Somebody stuck on a Crypto challenge was
   // never shown that there are eight lessons here about exactly that — the two
   // halves of the platform did not point at each other.
@@ -157,6 +165,7 @@ router.get("/:id", optionalAuth, requireScope("ctf:read"), async (req, res) => {
     category: challenge.category,
     difficulty: challenge.difficulty,
     points: challenge.points,
+    solvedCount,
     fileUrl: challenge.fileUrl,
     isSolved: userAttempt?.solved ?? false,
     isBlocked: userAttempt?.blocked ?? false,

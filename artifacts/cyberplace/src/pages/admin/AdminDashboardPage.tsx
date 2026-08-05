@@ -24,7 +24,7 @@ export default function AdminDashboardPage() {
     { icon: Flag, label: t("CTF Challenges", "CTF Topshiriqlari", "CTF Заданий"), value: data.totalCtf },
     { icon: BookOpen, label: t("Lessons", "Darslar", "Уроков"), value: data.totalLessons },
     { icon: Trophy, label: t("Competitions", "Musobaqalar", "Соревнований"), value: data.totalCompetitions },
-    { icon: TrendingUp, label: t("Lessons finished", "Tugatilgan darslar", "Уроков пройдено"), value: `${Math.round(data.averageTestResult * 100)}%` },
+    { icon: TrendingUp, label: t("Lessons finished", "Tugatilgan darslar", "Уроков пройдено"), value: `${Math.round((data.averageTestResult ?? 0) * 100)}%` },
     { icon: AlertTriangle, label: t("Blocked Tasks", "Bloklangan", "Заблокировано"), value: data.blockedTasksCount, danger: true },
   ] : [];
 

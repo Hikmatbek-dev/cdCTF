@@ -481,7 +481,15 @@ export default function CtfDetailPage() {
                   <div className="h-px bg-border" />
                   <div className="flex justify-between items-center group">
                     <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">{t("Solved by", "Yechganlar", "Решили")}</span>
-                    <span className="text-xs font-black text-foreground bg-muted px-4 py-2 rounded-xl tabular-nums">{((challenge.solvedCount / (total || 1)) * 100).toFixed(2)}%</span>
+                    {/* A solve *rate* only means something once the player total
+                        has loaded and is positive; before that (or if either
+                        number is missing) it rendered "NaN%". Fall back to the
+                        raw solver count, and clamp the rate to 100. */}
+                    <span className="text-xs font-black text-foreground bg-muted px-4 py-2 rounded-xl tabular-nums">
+                      {Number.isFinite(challenge.solvedCount) && total > 0
+                        ? `${Math.min(100, Math.round((challenge.solvedCount / total) * 100))}%`
+                        : `${challenge.solvedCount ?? 0}`}
+                    </span>
                   </div>
                 </div>
               </div>
