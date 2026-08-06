@@ -3716,6 +3716,10 @@ components:
         prize:
           type: string
           nullable: true
+        inviteRequirement:
+          type: integer
+          nullable: true
+          description: Per-event invite override; null means the global default applies.
         ctfIds:
           type: array
           items:
@@ -3767,6 +3771,11 @@ components:
           type: string
           nullable: true
           description: The prize on offer, shown to participants (free text).
+        inviteRequirement:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Activated invites a learner needs to self-join this event. Null uses the global default; 0 opens the event to anyone.
       required:
       - name
       - startTime
@@ -4577,6 +4586,11 @@ components:
         prize:
           type: string
           nullable: true
+        inviteRequirement:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Activated invites needed to self-join this event. Null uses the global default; 0 opens it to anyone.
 
     SetRoleBody:
       type: object

@@ -3,8 +3,28 @@ import { usersTable, referralsTable, userLessonAttemptsTable, ctfAttemptsTable }
 import { and, eq, sql } from "drizzle-orm";
 import { logger } from "./logger";
 
-/** Active invites needed before a learner may join any competition. */
-export const COMPETITION_INVITE_REQUIREMENT = 5;
+/**
+ * Active invites needed before a learner may join a competition that carries no
+ * override of its own.
+ *
+ * Configurable via COMPETITION_INVITE_REQUIREMENT so the launch events can open
+ * the gate (set it to 0) while there is nobody to recruit from, and raise it
+ * once a user base exists. Individual competitions can still override this in
+ * either direction via their `inviteRequirement` column.
+ */
+function readGlobalRequirement(): number {
+  const raw = Number(process.env.COMPETITION_INVITE_REQUIREMENT);
+  return Number.isInteger(raw) && raw >= 0 ? raw : 5;
+}
+export const COMPETITION_INVITE_REQUIREMENT = readGlobalRequirement();
+
+/**
+ * The gate for one competition: its own override when it sets one, otherwise the
+ * global default. A value of 0 means the competition is open to anyone.
+ */
+export function inviteRequirementFor(perCompetition: number | null | undefined): number {
+  return perCompetition ?? COMPETITION_INVITE_REQUIREMENT;
+}
 
 /** Ambassador tiers, by activated-invite count. Derived, never stored. */
 const TIERS = [
@@ -91,6 +111,16 @@ export async function tryActivateReferral(refereeId: number): Promise<void> {
     const [ref] = await db.select().from(referralsTable)
       .where(and(eq(referralsTable.refereeId, refereeId), eq(referralsTable.status, "pending"))).limit(1);
     if (!ref) return;
+
+    // An invite only counts once the invited learner is real, which is two
+    // halves: a confirmed email AND at least one lesson finished or challenge
+    // solved. The email half is what stops five throwaway addresses from
+    // minting five "activated" invites — without it the anti-farm guarantee the
+    // competition gate leans on is hollow. (Verifying an email also calls this,
+    // so whichever half lands last is the one that activates.)
+    const [account] = await db.select({ emailVerified: usersTable.emailVerified })
+      .from(usersTable).where(eq(usersTable.id, refereeId)).limit(1);
+    if (!account?.emailVerified) return;
 
     const [{ n: lessons }] = await db.select({ n: sql<number>`count(*)::int` })
       .from(userLessonAttemptsTable)

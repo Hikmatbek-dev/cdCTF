@@ -553,6 +553,7 @@ router.get("/competitions", requirePermission("competitions.manage"), async (_re
       sponsorLogoUrl: comp.sponsorLogoUrl,
       sponsorUrl: comp.sponsorUrl,
       prize: comp.prize,
+      inviteRequirement: comp.inviteRequirement,
       ctfIds: tasks.filter(t => t.competitionId === comp.id).map(t => t.ctfId),
       ctfCount: tasks.filter(t => t.competitionId === comp.id).length,
       participantCount: members.filter(m => m.competitionId === comp.id).length,
@@ -562,7 +563,7 @@ router.get("/competitions", requirePermission("competitions.manage"), async (_re
 
 // POST /api/admin/competitions
 router.post("/competitions", requirePermission("competitions.manage"), validateBody(AdminCreateCompetitionBody), async (req, res) => {
-  const { name, description, type, startTime, endTime, ctfIds, inviteCode, sponsorName, sponsorLogoUrl, sponsorUrl, prize } = req.body;
+  const { name, description, type, startTime, endTime, ctfIds, inviteCode, sponsorName, sponsorLogoUrl, sponsorUrl, prize, inviteRequirement } = req.body;
   if (!name || !startTime || !endTime) return res.status(400).json({ error: "Missing fields" });
   const start = new Date(startTime);
   const end = new Date(endTime);
@@ -579,6 +580,7 @@ router.post("/competitions", requirePermission("competitions.manage"), validateB
     startTime: start, endTime: end,
     sponsorName: cleanText(sponsorName), sponsorLogoUrl: cleanText(sponsorLogoUrl),
     sponsorUrl: cleanText(sponsorUrl), prize: cleanText(prize),
+    inviteRequirement: cleanRequirement(inviteRequirement),
   }).returning();
 
   if (ctfIds && Array.isArray(ctfIds)) {
@@ -598,6 +600,15 @@ function cleanText(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+/** Normalises the per-competition invite override to a stored value: a
+ * non-negative integer, or null to fall back to the global default. Anything
+ * absent, blank, negative, or non-numeric becomes null (use the default). */
+function cleanRequirement(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 0 ? n : null;
 }
 
 // PATCH /api/admin/competitions/:id
@@ -658,6 +669,10 @@ async function updateCompetitionHandler(req: Request, res: Response) {
   // Sponsor fields: a blank string clears the field rather than storing "".
   for (const field of ["sponsorName", "sponsorLogoUrl", "sponsorUrl", "prize"] as const) {
     if (updates[field] !== undefined) updates[field] = cleanText(updates[field]);
+  }
+  // The invite override: normalise to a non-negative int or null (use default).
+  if (updates.inviteRequirement !== undefined) {
+    updates.inviteRequirement = cleanRequirement(updates.inviteRequirement);
   }
 
   // The challenge set is not a column, so filterAllowedUpdates drops it — which

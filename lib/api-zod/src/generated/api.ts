@@ -1290,6 +1290,12 @@ export const AdminListCompetitionsResponse = zod.object({
         sponsorLogoUrl: zod.string().nullish(),
         sponsorUrl: zod.string().nullish(),
         prize: zod.string().nullish(),
+        inviteRequirement: zod
+          .number()
+          .nullish()
+          .describe(
+            "Per-event invite override; null means the global default applies.",
+          ),
         ctfIds: zod.array(zod.number()),
         ctfCount: zod.number(),
         participantCount: zod.number(),
@@ -1303,6 +1309,8 @@ export const AdminListCompetitionsResponse = zod.object({
 /**
  * @summary Create a competition
  */
+export const adminCreateCompetitionBodyInviteRequirementMin = 0;
+
 export const AdminCreateCompetitionBody = zod.object({
   name: zod.string(),
   description: zod.string().nullish(),
@@ -1334,6 +1342,13 @@ export const AdminCreateCompetitionBody = zod.object({
     .string()
     .nullish()
     .describe("The prize on offer, shown to participants (free text)."),
+  inviteRequirement: zod
+    .number()
+    .min(adminCreateCompetitionBodyInviteRequirementMin)
+    .nullish()
+    .describe(
+      "Activated invites a learner needs to self-join this event. Null uses the global default; 0 opens the event to anyone.",
+    ),
 });
 
 /**
@@ -1342,6 +1357,8 @@ export const AdminCreateCompetitionBody = zod.object({
 export const AdminUpdateCompetitionParams = zod.object({
   id: zod.coerce.number(),
 });
+
+export const adminUpdateCompetitionBodyInviteRequirementMin = 0;
 
 export const AdminUpdateCompetitionBody = zod.object({
   ctfIds: zod
@@ -1360,6 +1377,13 @@ export const AdminUpdateCompetitionBody = zod.object({
   sponsorLogoUrl: zod.string().nullish(),
   sponsorUrl: zod.string().nullish(),
   prize: zod.string().nullish(),
+  inviteRequirement: zod
+    .number()
+    .min(adminUpdateCompetitionBodyInviteRequirementMin)
+    .nullish()
+    .describe(
+      "Activated invites needed to self-join this event. Null uses the global default; 0 opens it to anyone.",
+    ),
 });
 
 export const AdminUpdateCompetitionResponse = zod.object({
@@ -1384,6 +1408,8 @@ export const UpdateCompetitionParams = zod.object({
   id: zod.coerce.number(),
 });
 
+export const updateCompetitionBodyInviteRequirementMin = 0;
+
 export const UpdateCompetitionBody = zod.object({
   ctfIds: zod
     .array(zod.number())
@@ -1401,6 +1427,13 @@ export const UpdateCompetitionBody = zod.object({
   sponsorLogoUrl: zod.string().nullish(),
   sponsorUrl: zod.string().nullish(),
   prize: zod.string().nullish(),
+  inviteRequirement: zod
+    .number()
+    .min(updateCompetitionBodyInviteRequirementMin)
+    .nullish()
+    .describe(
+      "Activated invites needed to self-join this event. Null uses the global default; 0 opens it to anyone.",
+    ),
 });
 
 export const UpdateCompetitionResponse = zod.object({

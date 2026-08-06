@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { activeReferralCount, COMPETITION_INVITE_REQUIREMENT } from "../lib/referrals";
+import { activeReferralCount, inviteRequirementFor } from "../lib/referrals";
 import {
   competitionsTable, competitionTasksTable, competitionUsersTable,
   competitionSolvesTable, competitionTeamsTable, ctfTasksTable, ctfAttemptsTable, usersTable,
@@ -132,18 +132,23 @@ router.post("/:id/join", authenticateToken, async (req, res) => {
 
   if (existing) return res.json({ joined: true, message: "Already joined" });
 
-  // The invite gate: every competition needs five *activated* invites behind
-  // it. Checked only on self-join — an admin adding someone (addCompetitionUser)
-  // is a deliberate exception, and a learner already in stays in. "Activated"
-  // is what makes this worth anything: throwaway signups do not count, so the
-  // gate cannot be farmed. The count is returned so the UI can say "3 / 5".
-  const invites = await activeReferralCount(userId);
-  if (invites < COMPETITION_INVITE_REQUIREMENT) {
-    return res.status(403).json({
-      error: "invite_requirement",
-      required: COMPETITION_INVITE_REQUIREMENT,
-      have: invites,
-    });
+  // The invite gate: a competition needs some number of *activated* invites
+  // behind a self-join. The number is the event's own override when it sets one,
+  // else the global default; 0 opens the event to anyone (the launch case).
+  // Checked only on self-join — an admin adding someone (addCompetitionUser) is a
+  // deliberate exception, and a learner already in stays in. "Activated" is what
+  // makes this worth anything: throwaway signups do not count, so the gate cannot
+  // be farmed. The count is returned so the UI can say "3 / 5".
+  const required = inviteRequirementFor(comp.inviteRequirement);
+  if (required > 0) {
+    const invites = await activeReferralCount(userId);
+    if (invites < required) {
+      return res.status(403).json({
+        error: "invite_requirement",
+        required,
+        have: invites,
+      });
+    }
   }
 
   await db.insert(competitionUsersTable).values({ competitionId: compId, userId });

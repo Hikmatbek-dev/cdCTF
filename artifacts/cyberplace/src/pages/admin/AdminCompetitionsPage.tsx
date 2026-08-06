@@ -34,13 +34,15 @@ const schema = z.object({
   sponsorLogoUrl: z.string().url().optional().or(z.literal("")),
   sponsorUrl: z.string().url().optional().or(z.literal("")),
   prize: z.string().optional(),
+  // Blank = use the global default; a number overrides it (0 opens the event).
+  inviteRequirement: z.string().regex(/^\d*$/, "Numbers only").optional(),
 });
 
 type FormData = z.infer<typeof schema>;
 
 const EMPTY: FormData = {
   name: "", description: "", type: "public", inviteCode: "", startTime: "", endTime: "",
-  ctfIds: [], sponsorName: "", sponsorLogoUrl: "", sponsorUrl: "", prize: "",
+  ctfIds: [], sponsorName: "", sponsorLogoUrl: "", sponsorUrl: "", prize: "", inviteRequirement: "",
 };
 
 /** `datetime-local` wants "YYYY-MM-DDTHH:mm" in local time; the API returns UTC ISO. */
@@ -154,6 +156,7 @@ export default function AdminCompetitionsPage() {
       sponsorLogoUrl: comp.sponsorLogoUrl ?? "",
       sponsorUrl: comp.sponsorUrl ?? "",
       prize: comp.prize ?? "",
+      inviteRequirement: comp.inviteRequirement == null ? "" : String(comp.inviteRequirement),
     });
     setShowForm(true);
   };
@@ -179,6 +182,8 @@ export default function AdminCompetitionsPage() {
       sponsorLogoUrl: values.sponsorLogoUrl || null,
       sponsorUrl: values.sponsorUrl || null,
       prize: values.prize || null,
+      // Blank field → null → the event falls back to the global default.
+      inviteRequirement: values.inviteRequirement ? Number(values.inviteRequirement) : null,
     };
 
     const done = (title: string) => () => {
@@ -277,6 +282,17 @@ export default function AdminCompetitionsPage() {
                 )} />
                 <FormField control={form.control} name="endTime" render={({ field }) => (
                   <FormItem><FormLabel>{t("End Time", "Tugash vaqti", "Время окончания")}</FormLabel><FormControl><Input {...field} type="datetime-local" data-testid="input-comp-end" /></FormControl><FormMessage /></FormItem>
+                )} />
+                {/* The join gate. Blank uses the global default; 0 opens the event
+                    to anyone — the right choice for the first, bootstrap events. */}
+                <FormField control={form.control} name="inviteRequirement" render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>{t("Required activated invites", "Kerakli faol takliflar", "Требуется активных приглашений")}</FormLabel>
+                    <FormControl>
+                      <Input {...field} inputMode="numeric" placeholder={t("Blank = default (5). 0 = open to all", "Bo'sh = standart (5). 0 = hammaga ochiq", "Пусто = по умолчанию (5). 0 = для всех")} data-testid="input-comp-invite-requirement" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )} />
                 {/* Sponsorship — optional. Filled in when a competition is sold
                     to a sponsor; leaving them blank keeps the event unbranded. */}

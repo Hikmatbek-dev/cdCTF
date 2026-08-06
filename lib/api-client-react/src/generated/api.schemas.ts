@@ -735,6 +735,8 @@ export interface AdminCompetition {
   sponsorLogoUrl?: string | null;
   sponsorUrl?: string | null;
   prize?: string | null;
+  /** Per-event invite override; null means the global default applies. */
+  inviteRequirement?: number | null;
   ctfIds: number[];
   ctfCount: number;
   participantCount: number;
@@ -765,6 +767,11 @@ export interface CreateCompetitionBody {
   sponsorUrl?: string | null;
   /** The prize on offer, shown to participants (free text). */
   prize?: string | null;
+  /**
+   * Activated invites a learner needs to self-join this event. Null uses the global default; 0 opens the event to anyone.
+   * @minimum 0
+   */
+  inviteRequirement?: number | null;
 }
 
 export type CreateLessonBodyQuestionsItem = {
@@ -1235,6 +1242,11 @@ export interface UpdateCompetitionBody {
   sponsorLogoUrl?: string | null;
   sponsorUrl?: string | null;
   prize?: string | null;
+  /**
+   * Activated invites needed to self-join this event. Null uses the global default; 0 opens it to anyone.
+   * @minimum 0
+   */
+  inviteRequirement?: number | null;
 }
 
 export type SetRoleBodyRole =

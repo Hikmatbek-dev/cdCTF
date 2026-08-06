@@ -19,6 +19,11 @@ export const competitionsTable = pgTable("competitions", {
   sponsorLogoUrl: text("sponsor_logo_url"),
   sponsorUrl: text("sponsor_url"),
   prize: text("prize"),
+  // How many activated invites a learner needs before self-joining THIS event.
+  // Null means "use the global default" (COMPETITION_INVITE_REQUIREMENT); 0 opens
+  // the event to anyone. Lets the launch events run with an open gate while later,
+  // higher-stakes events keep the recruit-five requirement.
+  inviteRequirement: integer("invite_requirement"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, table => [
   // Declared here at last. ensureDatabaseShape() created this index while the
