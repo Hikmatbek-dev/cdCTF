@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
 
@@ -67,6 +67,28 @@ export function LessonTasks({ lessonId, tasks, renderBody }: Props) {
   const [done, setDone] = useState<Set<number>>(new Set());
   const [open, setOpen] = useState<number | null>(0);
 
+  // Opening a task collapses the one above it, which shifts the layout up and
+  // can leave the task the learner just opened scrolled off the top of the
+  // screen. When a task is opened by a click (not the initial restore), bring
+  // its header back into view under the sticky navbar.
+  const taskRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const scrollOnOpen = useRef(false);
+  const NAV_OFFSET = 88;
+
+  useEffect(() => {
+    if (!scrollOnOpen.current || open === null) return;
+    scrollOnOpen.current = false;
+    const el = taskRefs.current[open];
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY - NAV_OFFSET;
+    window.scrollTo({ top, behavior: "smooth" });
+  }, [open]);
+
+  const openTask = (i: number | null) => {
+    scrollOnOpen.current = i !== null;
+    setOpen(i);
+  };
+
   // Restore progress, and open the first task that is still outstanding.
   useEffect(() => {
     let saved: number[] = [];
@@ -89,6 +111,7 @@ export function LessonTasks({ lessonId, tasks, renderBody }: Props) {
     set.add(i);
     persist(set);
     const next = tasks.findIndex((_, j) => !set.has(j));
+    scrollOnOpen.current = next !== -1;
     setOpen(next === -1 ? null : next);
   };
 
@@ -134,10 +157,10 @@ export function LessonTasks({ lessonId, tasks, renderBody }: Props) {
           const isOpen = open === i;
           const isDone = done.has(i);
           return (
-            <div key={i} className={`rounded-xl border overflow-hidden transition-colors ${isDone ? "border-emerald-500/30" : "border-border"}`} data-testid={`lesson-task-${i}`}>
+            <div ref={el => { taskRefs.current[i] = el; }} className={`rounded-xl border overflow-hidden transition-colors scroll-mt-24 ${isDone ? "border-emerald-500/30" : "border-border"}`} data-testid={`lesson-task-${i}`} key={i}>
               <button
                 type="button"
-                onClick={() => setOpen(isOpen ? null : i)}
+                onClick={() => openTask(isOpen ? null : i)}
                 aria-expanded={isOpen}
                 className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-muted/30 transition-colors"
               >
