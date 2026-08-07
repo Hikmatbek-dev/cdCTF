@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { DonateButton } from "@/components/DonateButton";
 
 // One learning entry in the primary nav — Modules, the structured curriculum.
 // The standalone-lessons library (/learn) stays reachable from the footer and
@@ -156,6 +157,9 @@ export function Navbar() {
               </Button>
             </div>
 
+            {/* Donate — signed-in users can support the project. */}
+            {isAuthenticated && <DonateButton />}
+
             {/* Auth */}
             {isAuthenticated && user ? (
               <DropdownMenu>
@@ -265,6 +269,7 @@ export function Navbar() {
                   {t("Admin", "Admin", "Админ")}
                 </Link>
               )}
+              {isAuthenticated && <DonateButton variant="block" />}
               {!isAuthenticated && (
                 <Link href="/login" onClick={() => setMobileOpen(false)} className="flex items-center min-h-[48px] px-4 rounded-lg text-[15px] font-medium text-foreground/80 hover:bg-muted">
                   {t("Log in", "Kirish", "Войти")}
