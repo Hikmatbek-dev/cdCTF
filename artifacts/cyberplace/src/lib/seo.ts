@@ -81,19 +81,19 @@ const publicRoutes: Array<{ match: (path: string) => boolean; config: SeoConfig 
     match: (path) => path === "/",
     config: {
       title: text(
-        "cdCTF | Best CTF Platform and Cybersecurity Training in Uzbekistan",
-        "cdCTF | O'zbekistondagi eng yaxshi CTF platformasi va kiberxavfsizlik kurslari",
+        "cdCTF | Best CTF Platform and Cybersecurity Training in Uzbekistan (Uzbekistan hacker)",
+        "cdCTF | Kiberxavfsizlik va Hakkerlik Akademiyasi Uzbekistan | CTF Platform",
         "cdCTF | Лучшая платформа CTF и обучение кибербезопасности в Узбекистане"
       ),
       description: text(
-        "A hands-on, six-month cybersecurity program in Uzbek, Russian and English — real terminal commands, CTF challenges, and a cdCTF certificate at the end. Learn Linux, networking, web security, cryptography, recon and exploitation.",
-        "Amaliy, 6 oylik kiberxavfsizlik dasturi — o'zbek, rus va ingliz tilida. Real terminal buyruqlar, CTF topshiriqlar va oxirida cdCTF sertifikati. Linux, tarmoq, veb xavfsizlik, kriptografiya, razvedka va ekspluatatsiyani o'rganing.",
-        "Практическая шестимесячная программа по кибербезопасности на узбекском, русском и английском — реальные команды, CTF-задания и сертификат cdCTF. Изучайте Linux, сети, веб-безопасность, криптографию, разведку и эксплуатацию."
+        "cdCTF.uz - The premier platform for Learning CyberSecurity. Become an Uzbekistan hacker with our CTF challenges, Linux, Web Security, and penetration testing courses.",
+        "cdCTF.uz - O'zbekistondagi birinchi raqamli kiberxavfsizlik va hakkerlik akademiyasi. CTF, Learning CyberSecurity, Uzbekistan hacker bo'lish sirlari, Kiberxavfsizlikka oid va Hakkerlikka oid eng zo'r platforma.",
+        "cdCTF.uz - Практическая платформа для CTF и Learning CyberSecurity в Узбекистане. Станьте Uzbekistan hacker, изучая кибербезопасность и хакинг."
       ),
       keywords: text(
-        "ctf uzbekistan, cyber security training uzbekistan, learn hacking uzbekistan, ethical hacking uzbekistan, ctf challenges web, osint labs, crypto challenges, digital forensics training",
-        "ctf uzbekistan, kiberxavfsizlik o'rganish, hacking darslari, kiberxavfsizlik kurslari, web xavfsizlik, osint o'zbek tilida, kriptografiya darslari, forensics topshiriqlari",
-        "ctf узбекистан, обучение кибербезопасности, курсы хакинга, этичный хакинг, веб-безопасность, осинт, криптография, форензика"
+        "cdctf, cdctf uz, cdctf.uz, ctf, ctf uzbekistan, learning cybersecurity, uzbekistan hacker, cyber security training uzbekistan, learn hacking uzbekistan",
+        "cdctf, cdctf uz, cdctf.uz, ctf, ctf uzbekistan, learning cybersecurity, uzbekistan hacker, kiberxavfsizlik, hakkerlik o'rganish, ethical hacker uz, hacking sirlari, kiberxavfsizlikka oid, hakkerlikka oid",
+        "cdctf, cdctf uz, cdctf.uz, ctf узбекистан, обучение кибербезопасности, узбекистан хакер, курсы хакинга, этичный хакинг"
       ),
       structuredData: [
         {
@@ -124,16 +124,16 @@ const publicRoutes: Array<{ match: (path: string) => boolean; config: SeoConfig 
   {
     match: (path) => path === "/ctf",
     config: {
-      title: text("CTF Missions & Cybersecurity Labs | cdCTF", "CTF Topshiriqlari va Hacking Lablar | cdCTF", "CTF Миссии и Лаборатории | cdCTF"),
+      title: text("CTF Missions & Cybersecurity Labs | cdCTF (Uzbekistan hacker)", "CTF Topshiriqlari va Hacking Lablar | cdCTF Uz", "CTF Миссии и Лаборатории | cdCTF.uz"),
       description: text(
-        "Access 100+ CTF challenges across Web, Crypto, Reverse, and Forensics. Level up your hacking skills with our mission control.",
-        "Web, Crypto, Reverse va Forensics bo'yicha 100+ CTF topshiriqlarini yeching. Mission control orqali hacking mahoratingizni oshiring.",
-        "Доступ к 100+ CTF заданиям по веб-безопасности, криптографии, реверс-инжинирингу и форензике."
+        "Access 100+ CTF challenges on cdCTF. Level up your hacking skills with our mission control and become an Uzbekistan hacker.",
+        "cdCTF.uz orqali 100+ CTF topshiriqlarini yeching. Mission control yordamida hakkerlik mahoratingizni oshiring va kuchli kiberxavfsizlik mutaxassisi bo'ling.",
+        "Доступ к 100+ CTF заданиям на cdCTF. Повышайте свои навыки хакинга и станьте специалистом по кибербезопасности."
       ),
       keywords: text(
-        "ctf labs, hacking missions, web vulnerability labs, cryptographic puzzles, reverse engineering challenges, pwnable labs",
-        "ctf lablar, hacking topshiriqlari, web zaifliklar, kriptografik jumboqlar, reverse engineering, pwn topshiriqlari",
-        "ctf лаборатории, хакинг миссии, веб уязвимости, криптографические задачи, реверс инжиниринг"
+        "cdctf, cdctf uz, ctf, ctf labs, hacking missions, web vulnerability labs, cryptographic puzzles, uzbekistan hacker, learning cybersecurity",
+        "cdctf, cdctf uz, ctf, ctf lablar, hacking topshiriqlari, hakkerlikka oid, kiberxavfsizlikka oid, web zaifliklar, kriptografik jumboqlar, uzbekistan hacker",
+        "cdctf, cdctf uz, ctf лаборатории, хакинг миссии, веб уязвимости, криптографические задачи, узбекистан хакер"
       ),
       structuredData: [
         getBreadcrumbs([
@@ -147,14 +147,19 @@ const publicRoutes: Array<{ match: (path: string) => boolean; config: SeoConfig 
     match: (path) => path === "/modules",
     config: {
       title: text(
-        "Cybersecurity Curriculum — Six-Month Program | cdCTF",
-        "Kiberxavfsizlik dasturi — 6 oylik o'quv reja | cdCTF",
-        "Программа по кибербезопасности — 6 месяцев | cdCTF",
+        "Learning CyberSecurity Curriculum | cdCTF (Uzbekistan hacker)",
+        "Kiberxavfsizlikka oid va Hakkerlikka oid 6 oylik o'quv reja | cdCTF Uz",
+        "Программа по кибербезопасности и хакингу | cdCTF.uz",
       ),
       description: text(
-        "A structured six-month cybersecurity program: Linux, networking, web security, cryptography, recon and exploitation. Real terminal commands, a final exam per module, and a certificate. In Uzbek, Russian and English.",
-        "Tuzilgan 6 oylik kiberxavfsizlik dasturi: Linux, tarmoq, veb xavfsizlik, kriptografiya, razvedka va ekspluatatsiya. Real terminal buyruqlar, har modulda yakuniy imtihon va sertifikat. O'zbek, rus va ingliz tilida.",
-        "Структурированная шестимесячная программа: Linux, сети, веб-безопасность, криптография, разведка и эксплуатация. Реальные команды, итоговый экзамен по каждому модулю и сертификат. На узбекском, русском и английском.",
+        "Learn CyberSecurity on cdCTF.uz. A structured six-month program for the ultimate Uzbekistan hacker: Linux, networking, web security, cryptography, recon and exploitation.",
+        "cdCTF bilan noldan hakkerlikka oid va kiberxavfsizlikka oid bilimlarni o'rganing. 6 oylik kiberxavfsizlik dasturi: Linux, tarmoq, veb xavfsizlik va CTF. cdctf uz da sertifikat oling.",
+        "Обучение кибербезопасности на cdCTF.uz. Структурированная шестимесячная программа для хакеров Узбекистана.",
+      ),
+      keywords: text(
+        "cdctf, cdctf uz, learning cybersecurity, uzbekistan hacker, ctf, cybersecurity curriculum, ethical hacking",
+        "cdctf, cdctf uz, hakkerlikka oid, kiberxavfsizlikka oid, kiberxavfsizlik o'rganish, hacking sirlari, ctf uzbekistan, uzbekistan hacker",
+        "cdctf, cdctf uz, обучение кибербезопасности, узбекистан хакер, курсы хакинга, ctf"
       ),
       structuredData: [
         getBreadcrumbs([
@@ -168,11 +173,16 @@ const publicRoutes: Array<{ match: (path: string) => boolean; config: SeoConfig 
   {
     match: (path) => path === "/learn",
     config: {
-      title: text("Cybersecurity Lessons Library | cdCTF", "Kiberxavfsizlik darslari kutubxonasi | cdCTF", "Библиотека уроков по кибербезопасности | cdCTF"),
+      title: text("Learning CyberSecurity Lessons Library | cdCTF", "Hakkerlikka oid darslar kutubxonasi | cdCTF Uz", "Библиотека уроков хакинга | cdCTF.uz"),
       description: text(
-        "Standalone cybersecurity lessons across every domain — Linux, networking, web, crypto, forensics and more. For the structured path, follow the six-month Modules.",
-        "Har bir yo'nalish bo'yicha alohida kiberxavfsizlik darslari — Linux, tarmoq, veb, kriptografiya, forenzika va boshqalar. Tuzilgan yo'l uchun 6 oylik Modullarni kuzating.",
-        "Отдельные уроки по кибербезопасности по всем направлениям — Linux, сети, веб, крипто, форензика и другое. Для структурированного пути смотрите шестимесячные Модули."
+        "Learn CyberSecurity with standalone lessons across every domain — Linux, networking, web, crypto. Become an Uzbekistan hacker with cdCTF.",
+        "Kiberxavfsizlikka oid va hakkerlikka oid barcha darslar — Linux, tarmoq, veb, kriptografiya. cdCTF bilan kuchli xaker bo'ling.",
+        "Уроки по кибербезопасности на cdCTF. Изучайте Linux, сети, веб, крипто и станьте Uzbekistan hacker."
+      ),
+      keywords: text(
+        "cdctf, cdctf uz, learning cybersecurity, cybersecurity lessons, uzbekistan hacker, ctf",
+        "cdctf, cdctf uz, hakkerlik darslari, kiberxavfsizlikka oid, hakkerlikka oid, uzbekistan hacker, ctf",
+        "cdctf, cdctf uz, уроки кибербезопасности, узбекистан хакер, ctf"
       ),
       structuredData: [
         getBreadcrumbs([
@@ -185,11 +195,16 @@ const publicRoutes: Array<{ match: (path: string) => boolean; config: SeoConfig 
   {
     match: (path) => path === "/scoreboard",
     config: {
-      title: text("Global Leaderboard & Rankings | cdCTF", "Global Reyting va Top O'yinchilar | cdCTF", "Глобальный Рейтинг и Топ Игроков | cdCTF"),
+      title: text("Global Leaderboard & Uzbekistan Hackers | cdCTF", "Global Reyting va O'zbekiston Hackerlari | cdCTF Uz", "Глобальный Рейтинг Хакеров Узбекистана | cdCTF.uz"),
       description: text(
-        "Track your progress against the best hackers in Uzbekistan. See the global cdCTF scoreboard and earned titles.",
-        "O'zbekistondagi eng kuchli hackerlar bilan bellashing. Global cdCTF reytingi va unvonlarni ko'ring.",
-        "Следите за своим прогрессом среди лучших хакеров Узбекистана. Глобальный рейтинг cdCTF и полученные титулы."
+        "Track your progress against the best Uzbekistan hackers. See the global cdCTF scoreboard and earned titles.",
+        "O'zbekistondagi eng kuchli hackerlar bilan bellashing. cdctf.uz reytingi va unvonlarni ko'ring. Kiberxavfsizlikka oid eng kuchli mutaxassislar shu yerda.",
+        "Следите за своим прогрессом среди лучших хакеров Узбекистана. Глобальный рейтинг cdCTF.uz."
+      ),
+      keywords: text(
+        "cdctf, cdctf uz, uzbekistan hacker, cybersecurity leaderboard, ctf rankings, learning cybersecurity",
+        "cdctf, cdctf uz, uzbekistan hacker, hackerlar reytingi, kiberxavfsizlikka oid, hakkerlikka oid, ctf reyting",
+        "cdctf, cdctf uz, узбекистан хакер, рейтинг хакеров, ctf"
       ),
       structuredData: [
         getBreadcrumbs([
@@ -286,44 +301,64 @@ const publicRoutes: Array<{ match: (path: string) => boolean; config: SeoConfig 
   {
     match: (path) => path === "/competitions" || /^\/competitions\/\d+/.test(path),
     config: {
-      title: text("CTF competitions | cdCTF", "CTF musobaqalari | cdCTF", "CTF-соревнования | cdCTF"),
+      title: text("CTF Competitions & Hackathons | cdCTF (Uzbekistan hacker)", "CTF Musobaqalari va Hackathonlar | cdCTF Uz", "CTF-соревнования | cdCTF.uz"),
       description: text(
-        "Timed CTF events, team registration and live scoreboards — free to enter.",
-        "Vaqtli CTF tadbirlari, jamoaviy ro'yxat va jonli reyting — kirish bepul.",
-        "CTF-события на время, командная регистрация и живой рейтинг — вход бесплатный."
+        "Join timed CTF events on cdCTF.uz. Test your Learning CyberSecurity skills, team registration, and live scoreboards.",
+        "cdctf.uz dagi CTF musobaqalariga qo'shiling. Kiberxavfsizlikka oid va hakkerlikka oid bilimlaringizni sinab ko'ring. Uz hacker jamoalari uchun.",
+        "CTF-события на время, командная регистрация и живой рейтинг — станьте лучшим хакером Узбекистана на cdCTF.uz."
+      ),
+      keywords: text(
+        "cdctf, cdctf uz, ctf competitions, hackathons, uzbekistan hacker, learning cybersecurity, cybersecurity events",
+        "cdctf, cdctf uz, ctf musobaqalari, hackathon uzbekistan, uzbekistan hacker, hakkerlikka oid, kiberxavfsizlikka oid",
+        "cdctf, cdctf uz, ctf соревнования, хакатоны, узбекистан хакер, обучение кибербезопасности"
       )
     }
   },
   {
     match: (path) => /^\/ctf\/\d+/.test(path),
     config: {
-      title: text("CTF challenge | cdCTF", "CTF topshirig'i | cdCTF", "CTF-задание | cdCTF"),
+      title: text("CTF Challenge & Solution | cdCTF (Uzbekistan hacker)", "CTF Topshirig'i va Yechimi | cdCTF Uz", "CTF-задание | cdCTF.uz"),
       description: text(
-        "A hands-on security challenge with hints, a writeup section, and the lesson that teaches it.",
-        "Maslahat, writeup bo'limi va uni o'rgatadigan dars bilan amaliy topshiriq.",
-        "Практическое задание с подсказками, разделом writeup и уроком по теме."
+        "A hands-on security challenge on cdCTF. Master Learning CyberSecurity and become an Uzbekistan hacker with detailed writeups.",
+        "cdCTF.uz da amaliy hakkerlikka oid va kiberxavfsizlikka oid topshiriq. Writeup va maslahatlar orqali hacking sirlarini o'rganing.",
+        "Практическое задание по кибербезопасности на cdCTF.uz с подсказками и решениями для хакеров Узбекистана."
+      ),
+      keywords: text(
+        "cdctf, cdctf uz, ctf challenge, ctf writeups, uzbekistan hacker, learning cybersecurity",
+        "cdctf, cdctf uz, ctf topshiriq, ctf writeup, uzbekistan hacker, kiberxavfsizlikka oid, hakkerlikka oid",
+        "cdctf, cdctf uz, ctf задание, ctf writeup, узбекистан хакер, кибербезопасность"
       )
     }
   },
   {
     match: (path) => /^\/modules\/\d+/.test(path),
     config: {
-      title: text("Module | cdCTF", "Modul | cdCTF", "Модуль | cdCTF"),
+      title: text("CyberSecurity Module | cdCTF (Uzbekistan hacker)", "Kiberxavfsizlik Moduli | cdCTF Uz", "Модуль Кибербезопасности | cdCTF.uz"),
       description: text(
-        "Lessons, a final exam and the practice challenges that drill what the module teaches.",
-        "Darslar, yakuniy imtihon va modul o'rgatgan narsani mashq qiladigan topshiriqlar.",
-        "Уроки, итоговый экзамен и задания, закрепляющие материал модуля."
+        "Deep dive into Learning CyberSecurity on cdCTF.uz. Lessons, exams and practice challenges to build your Uzbekistan hacker skills.",
+        "cdCTF bilan kiberxavfsizlikka oid va hakkerlikka oid modullarni o'rganing. Darslar, imtihon va amaliy hacking mashqlari.",
+        "Уроки, итоговый экзамен и задания для развития навыков узбекистан хакер на cdCTF.uz."
+      ),
+      keywords: text(
+        "cdctf, cdctf uz, cybersecurity module, learning cybersecurity, uzbekistan hacker, ctf",
+        "cdctf, cdctf uz, kiberxavfsizlik moduli, kiberxavfsizlikka oid, hakkerlikka oid, uzbekistan hacker, ctf",
+        "cdctf, cdctf uz, модуль кибербезопасности, обучение кибербезопасности, узбекистан хакер, ctf"
       )
     }
   },
   {
     match: (path) => /^\/learn\/\d+/.test(path),
     config: {
-      title: text("Lesson | cdCTF", "Dars | cdCTF", "Урок | cdCTF"),
+      title: text("CyberSecurity Lesson | cdCTF (Uzbekistan hacker)", "Kiberxavfsizlik Darsi | cdCTF Uz", "Урок по Кибербезопасности | cdCTF.uz"),
       description: text(
-        "A short lesson that ends with a practical task and hands you the challenges that use it.",
-        "Amaliy topshiriq bilan tugaydigan va uni ishlatadigan topshiriqlarni beradigan qisqa dars.",
-        "Короткий урок, который заканчивается практикой и ведёт к заданиям по теме."
+        "A practical lesson on cdCTF.uz. Start Learning CyberSecurity today and get closer to becoming a top Uzbekistan hacker.",
+        "cdCTF.uz dagi amaliy dars. Hozirdan hakkerlikka oid va kiberxavfsizlikka oid bilimlarni o'zlashtiring.",
+        "Короткий урок по кибербезопасности на cdCTF.uz. Начните обучение и станьте узбекистан хакер."
+      ),
+      keywords: text(
+        "cdctf, cdctf uz, cybersecurity lesson, learning cybersecurity, uzbekistan hacker",
+        "cdctf, cdctf uz, kiberxavfsizlik darsi, hakkerlikka oid, kiberxavfsizlikka oid, uzbekistan hacker",
+        "cdctf, cdctf uz, урок кибербезопасности, обучение кибербезопасности, узбекистан хакер"
       )
     }
   },

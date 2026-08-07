@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /settings
+Disallow: /profile/edit
+
+Sitemap: https://cdctf.uz/sitemap.xml
