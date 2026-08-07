@@ -401,7 +401,7 @@ export default function CtfDetailPage() {
                             autoCapitalize="none"
                             autoCorrect="off"
                             spellCheck={false}
-                            placeholder="flag{...}"
+                            placeholder="Flag{...}"
                             className="field font-mono !min-h-[3.5rem] tracking-wide"
                             data-testid="input-flag"
                           />
@@ -426,7 +426,7 @@ export default function CtfDetailPage() {
                       </form>
                       <div className="mt-8 flex items-center justify-center gap-4">
                         <div className="h-px flex-1 bg-border" />
-                        <p className="text-xs text-muted-foreground/60 font-mono">{t("Format:", "Format:", "Формат:")} flag{"{"}...{"}"}</p>
+                        <p className="text-xs text-muted-foreground/60 font-mono">{t("Format:", "Format:", "Формат:")} Flag{"{"}...{"}"}</p>
                         <div className="h-px flex-1 bg-border" />
                       </div>
                     </>

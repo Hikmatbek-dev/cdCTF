@@ -143,7 +143,7 @@ export default function CompetitionCtfPage() {
             <Input
               value={flag}
               onChange={(event) => setFlag(event.target.value)}
-              placeholder="flag{...}"
+              placeholder="Flag{...}"
               className="font-mono"
             />
             <Button type="submit" disabled={!canSubmit || isSubmitting || !flag.trim()}>

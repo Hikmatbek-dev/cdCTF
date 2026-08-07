@@ -146,6 +146,17 @@ check "$(curl -s $API/ctf/$HCTF -H "Authorization: Bearer $HU2_TOK" | json hint)
 check "$(curl -s $API/ctf/$HCTF -H "Authorization: Bearer $HU2_TOK" | json hasHint)" "True" "lekin maslahat borligi bilinadi"
 
 echo
+echo "=== ⭐ Flag 'wrapper' registriga bardoshli, kontent aniq ==="
+# Stored as Flag{CaseA}. Submitting flag{CaseA} / FLAG{CaseA} must be accepted
+# (keyword case forgiven), but Flag{casea} must NOT (content case matters).
+FC1=$(psql "$DATABASE_URL" -tAqc "INSERT INTO ctf_tasks (name,description,category,difficulty,points,flag,is_published) VALUES ('${TAG}_fc1','d','Web','easy',100,'sha256\$$(printf 'Flag{CaseA}' | sha256sum | cut -d' ' -f1)',true) RETURNING id")
+FCU=$(mkuser user); FCU_TOK=$(tokenOf "$FCU")
+check "$(curl -s -X POST $API/ctf/$FC1/submit -H 'Content-Type: application/json' -H "Authorization: Bearer $FCU_TOK" -d '{"flag":"flag{CaseA}"}' | json correct)" "True" "kichik 'flag{...}' qabul qilindi"
+FC2=$(psql "$DATABASE_URL" -tAqc "INSERT INTO ctf_tasks (name,description,category,difficulty,points,flag,is_published) VALUES ('${TAG}_fc2','d','Web','easy',100,'sha256\$$(printf 'Flag{CaseB}' | sha256sum | cut -d' ' -f1)',true) RETURNING id")
+FCU2=$(mkuser user); FCU2_TOK=$(tokenOf "$FCU2")
+check "$(curl -s -X POST $API/ctf/$FC2/submit -H 'Content-Type: application/json' -H "Authorization: Bearer $FCU2_TOK" -d '{"flag":"Flag{caseb}"}' | json correct)" "False" "kontent registri o'zgarsa rad etildi"
+
+echo
 echo "=== ⭐ Sovg'a (gift) achko qo'shadi va qayta hisoblashda saqlanadi ==="
 # The recipient is created directly, so this stays independent of the auth rate
 # limiter that a long suite would otherwise trip on one more register.
