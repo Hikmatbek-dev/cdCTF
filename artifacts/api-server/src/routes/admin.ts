@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import { usersTable, ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionTeamsTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleQuestionsTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable } from "@workspace/db/schema";
+import { usersTable, ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionTeamsTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleQuestionsTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable, supportTicketsTable } from "@workspace/db/schema";
 import { eq, and, or, desc, inArray, isNotNull, asc, not, count, ilike } from "drizzle-orm";
 import { authenticateToken } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
@@ -1188,6 +1188,60 @@ router.post("/settings/telegram/test", requireSuperAdmin, async (_req, res) => {
     return res.status(result.error === "not_configured" ? 400 : 502).json({ ok: false, error: result.error });
   }
   res.json({ ok: true });
+});
+
+// ---------------------------------------------------------------------------
+// Support tickets — the Support section of the panel.
+// ---------------------------------------------------------------------------
+
+// GET /api/admin/support — list tickets, open first, newest first.
+router.get("/support", requirePermission("support.manage"), async (req, res) => {
+  const { limit, offset } = pageWindow(req);
+  const status = req.query.status === "open" || req.query.status === "resolved" ? req.query.status : undefined;
+  const filter = status ? eq(supportTicketsTable.status, status) : undefined;
+
+  const [{ total }] = await db.select({ total: count() }).from(supportTicketsTable).where(filter);
+  const [{ open }] = await db.select({ open: count() }).from(supportTicketsTable).where(eq(supportTicketsTable.status, "open"));
+  const rows = await db.select({
+    id: supportTicketsTable.id,
+    userId: supportTicketsTable.userId,
+    nickname: usersTable.nickname,
+    email: supportTicketsTable.email,
+    category: supportTicketsTable.category,
+    message: supportTicketsTable.message,
+    pageUrl: supportTicketsTable.pageUrl,
+    status: supportTicketsTable.status,
+    createdAt: supportTicketsTable.createdAt,
+    resolvedAt: supportTicketsTable.resolvedAt,
+  })
+    .from(supportTicketsTable)
+    .leftJoin(usersTable, eq(supportTicketsTable.userId, usersTable.id))
+    .where(filter)
+    // Open before resolved, then newest first.
+    .orderBy(asc(supportTicketsTable.status), desc(supportTicketsTable.createdAt))
+    .limit(limit).offset(offset);
+
+  res.json({
+    total, open, limit, offset,
+    tickets: rows.map(t => ({ ...t, createdAt: t.createdAt.toISOString(), resolvedAt: t.resolvedAt?.toISOString() ?? null })),
+  });
+});
+
+// PATCH /api/admin/support/:id — move a ticket open ⇄ resolved.
+router.patch("/support/:id", requirePermission("support.manage"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid ticket id" });
+  if (req.body?.status !== "open" && req.body?.status !== "resolved") {
+    return res.status(400).json({ error: "status must be 'open' or 'resolved'" });
+  }
+  const resolved = req.body.status === "resolved";
+  const [updated] = await db.update(supportTicketsTable)
+    .set({ status: req.body.status, resolvedAt: resolved ? new Date() : null, resolvedBy: resolved ? req.user!.userId : null })
+    .where(eq(supportTicketsTable.id, id)).returning({ id: supportTicketsTable.id, status: supportTicketsTable.status });
+  if (!updated) return res.status(404).json({ error: "Ticket not found" });
+
+  await writeAuditLog(req, "support.update", "support", id, { status: updated.status });
+  res.json({ success: true, status: updated.status });
 });
 
 // DELETE /api/admin/lessons/:id

@@ -10,4 +10,5 @@ export * from "./audit";
 export * from "./rate-limits";
 export * from "./referrals";
 export * from "./settings";
+export * from "./support";
 export * from "./schema-state";

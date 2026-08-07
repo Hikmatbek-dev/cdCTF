@@ -50,6 +50,7 @@ export function Footer() {
               <li><Link href="/talent" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Hire from cdCTF", "cdCTF'dan yollash", "Наём с cdCTF")}</Link></li>
               <li><Link href="/verify" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Verify a credential", "Sertifikatni tekshirish", "Проверить сертификат")}</Link></li>
               <li><Link href="/impact" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Impact", "Ta'sir", "Влияние")}</Link></li>
+              <li><Link href="/support" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Support / report a bug", "Yordam / xatolik", "Поддержка / баг")}</Link></li>
             </ul>
           </div>
         </div>

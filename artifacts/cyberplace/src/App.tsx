@@ -50,6 +50,8 @@ const AdminBlockedPage = lazyWithRetry(() => import("@/pages/admin/AdminBlockedP
 const AdminAuditPage = lazyWithRetry(() => import("@/pages/admin/AdminAuditPage"));
 const AdminCurriculumPage = lazyWithRetry(() => import("@/pages/admin/AdminCurriculumPage"));
 const AdminWriteupsPage = lazyWithRetry(() => import("@/pages/admin/AdminWriteupsPage"));
+const AdminSupportPage = lazyWithRetry(() => import("@/pages/admin/AdminSupportPage"));
+const SupportPage = lazyWithRetry(() => import("@/pages/SupportPage"));
 const CompetitionCtfPage = lazyWithRetry(() => import("@/pages/CompetitionCtfPage"));
 const ResendVerificationPage = lazyWithRetry(() => import("@/pages/ResendVerificationPage"));
 const ForgotPasswordPage = lazyWithRetry(() => import("@/pages/ForgotPasswordPage"));
@@ -241,6 +243,9 @@ function Router() {
           <Route path="/labs">
             {() => <PageTransition><LabsPage /></PageTransition>}
           </Route>
+          <Route path="/support">
+            {() => <PageTransition><SupportPage /></PageTransition>}
+          </Route>
           <Route path="/verify">
             {() => <PageTransition><VerifyPage /></PageTransition>}
           </Route>
@@ -307,6 +312,9 @@ function Router() {
           </Route>
           <Route path="/admin/audit">
             {() => <PageTransition><PermissionRoute component={AdminAuditPage} permission="audit.read" /></PageTransition>}
+          </Route>
+          <Route path="/admin/support">
+            {() => <PageTransition><PermissionRoute component={AdminSupportPage} permission="support.manage" /></PageTransition>}
           </Route>
           <Route component={NotFound} />
         </Switch>

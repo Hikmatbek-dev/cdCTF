@@ -33,6 +33,7 @@ export const PERMISSIONS = [
   "lessons.publish",
   "competitions.manage",
   "writeups.moderate",
+  "support.manage",
   "system.maintenance",
 ] as const;
 

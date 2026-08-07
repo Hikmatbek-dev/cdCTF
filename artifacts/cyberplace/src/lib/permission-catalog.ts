@@ -39,6 +39,8 @@ export const PERMISSION_CATALOG: PermissionEntry[] = [
 
   { key: "competitions.manage", group: "Competitions", en: "Manage competitions", uz: "Musobaqalarni boshqarish", ru: "Управление соревнованиями" },
   { key: "writeups.moderate", group: "Competitions", en: "Moderate writeups", uz: "Writeup'larni moderatsiya qilish", ru: "Модерация разборов" },
+
+  { key: "support.manage", group: "Support", en: "Read & resolve support tickets", uz: "Support murojaatlarini ko'rish/hal qilish", ru: "Просмотр и решение обращений" },
 ];
 
 /** The distinct groups, in catalog order. */

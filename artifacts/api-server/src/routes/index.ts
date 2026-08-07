@@ -13,6 +13,7 @@ import ogRouter from "./og";
 import usersRouter from "./users";
 import adminRouter from "./admin";
 import uploadsRouter from "./uploads";
+import supportRouter from "./support";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use("/og", ogRouter);
 router.use("/users", usersRouter);
 router.use("/admin", adminRouter);
 router.use("/uploads", uploadsRouter);
+router.use("/support", supportRouter);
 
 export default router;

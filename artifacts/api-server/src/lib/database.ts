@@ -395,6 +395,23 @@ async function applySchema() {
     )
   `);
 
+  // Support / bug reports from learners.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS support_tickets (
+      id serial PRIMARY KEY,
+      user_id integer REFERENCES users(id),
+      email text,
+      category text NOT NULL DEFAULT 'bug',
+      message text NOT NULL,
+      page_url text,
+      status text NOT NULL DEFAULT 'open',
+      created_at timestamptz NOT NULL DEFAULT now(),
+      resolved_at timestamptz,
+      resolved_by integer REFERENCES users(id)
+    )
+  `);
+  await pool.query("CREATE INDEX IF NOT EXISTS support_tickets_status_idx ON support_tickets(status, created_at)");
+
   // Job board — the paid end of the talent pipeline.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS jobs (
