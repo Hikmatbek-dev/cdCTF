@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useRoute, Link, useLocation } from "wouter";
-import { Trophy, BookOpen, Target, Calendar, Share2, Shield, Briefcase, Flame, Flag, Star, Award, Mail, Hexagon } from "lucide-react";
+import { Trophy, BookOpen, Target, Calendar, Share2, Shield, Briefcase, Flame, Flag, Star, Award, Mail, Hexagon, Gift } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
 import { useGetUserProfile, getGetUserProfileQueryKey } from "@workspace/api-client-react";
@@ -105,6 +105,7 @@ export default function ProfilePage() {
   const titles = normalizeArray<any>(profile.titles, ["titles", "data", "items"]);
   const solvedCtf = normalizeArray<any>(profile.solvedCtf, ["solvedCtf", "data", "items"]);
   const completedLessons = normalizeArray<any>(profile.completedLessons, ["completedLessons", "data", "items"]);
+  const gifts = normalizeArray<any>((profile as any).gifts, ["gifts", "data", "items"]);
   const competitionHistory = normalizeArray<any>(profile.competitionHistory, ["competitionHistory", "competitions", "data", "items"]);
   const skills = normalizeArray<{ category: string; solved: number; total: number; progress: number }>(skillsData?.skills, ["skills", "data", "items"]);
 
@@ -307,7 +308,38 @@ export default function ProfilePage() {
 
           {/* RIGHT COLUMN: Activity & History */}
           <div className="lg:col-span-2 space-y-8">
-            
+
+            {/* Contribution rewards — points a super-admin granted for helping. */}
+            {gifts.length > 0 && (
+              <section className="glass-card bg-card/40 p-6 md:p-8 border border-amber-500/30 rounded-3xl">
+                <h2 className="text-base font-semibold mb-6 flex items-center gap-2">
+                  <Gift className="w-5 h-5 text-amber-500" />
+                  {t("Contributions", "Hissa qo'shgani uchun", "Вклад")}
+                  <span className="text-xs font-normal text-muted-foreground">
+                    · +{gifts.reduce((s: number, g: any) => s + (g.points || 0), 0)} {t("points", "achko", "очков")}
+                  </span>
+                </h2>
+                <ul className="space-y-2">
+                  {gifts.map((g: any) => {
+                    const gl = g.category === "bug" ? t("Reported a bug", "Xatolik haqida xabar berdi", "Сообщил об ошибке")
+                      : g.category === "suggestion" ? t("Suggestion", "Taklif", "Предложение")
+                      : g.category === "help" ? t("Helped others", "Yordam berdi", "Помог другим")
+                      : g.category === "question" ? t("Good question", "Savol", "Вопрос")
+                      : t("Contribution", "Hissa", "Вклад");
+                    return (
+                      <li key={g.id} className="flex items-center gap-3 rounded-xl border border-border/50 bg-background/40 px-4 py-2.5">
+                        <span className="text-amber-500 font-bold tabular-nums w-12 shrink-0">+{g.points}</span>
+                        <span className="text-sm flex-1 min-w-0">
+                          <span className="font-medium">{gl}</span>
+                          {g.note && <span className="text-muted-foreground"> — {g.note}</span>}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            )}
+
             {/* CTFs */}
             <section className="glass-card bg-card/40 p-6 md:p-8 border border-border/50 rounded-3xl">
               <div className="flex items-center justify-between mb-8">

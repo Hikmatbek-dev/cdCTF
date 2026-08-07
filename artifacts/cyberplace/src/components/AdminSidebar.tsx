@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, Flag, Trophy, BookOpen, GraduationCap, FileText, AlertTriangle, ChevronLeft, ShieldCheck, Terminal, LineChart, Menu, LifeBuoy } from "lucide-react";
+import { LayoutDashboard, Users, Flag, Trophy, BookOpen, GraduationCap, FileText, AlertTriangle, ChevronLeft, ShieldCheck, Terminal, LineChart, Menu, LifeBuoy, Gift } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -16,6 +16,7 @@ const ADMIN_LINKS = [
   { href: "/admin/curriculum", permission: "lessons.read.all", icon: GraduationCap, label: { en: "Curriculum", uz: "O'quv dasturi", ru: "Программа" } },
   { href: "/admin/writeups", permission: "writeups.moderate", icon: FileText, label: { en: "Writeups", uz: "Writeuplar", ru: "Разборы" } },
   { href: "/admin/support", permission: "support.manage", icon: LifeBuoy, label: { en: "Support", uz: "Support", ru: "Поддержка" } },
+  { href: "/admin/gift", permission: "admin.panel", superAdmin: true, icon: Gift, label: { en: "Gift", uz: "Sovg'a", ru: "Награда" } },
   { href: "/admin/analytics", permission: "lessons.read.all", icon: LineChart, label: { en: "Learning Analytics", uz: "Analitika", ru: "Аналитика" } },
   { href: "/admin/blocked", permission: "blocks.manage", icon: AlertTriangle, label: { en: "Blocked", uz: "Bloklanganlar", ru: "Заблокированные" } },
   { href: "/admin/audit", permission: "audit.read", icon: ShieldCheck, label: { en: "Audit log", uz: "Audit", ru: "Аудит" } },
@@ -60,9 +61,9 @@ function NavList({ links, location, lang, onNavigate }: {
 export function AdminSidebar() {
   const [location] = useLocation();
   const { lang, t } = useLang();
-  const { can } = useAuth();
+  const { can, isSuperAdmin } = useAuth();
   const [open, setOpen] = useState(false);
-  const links = ADMIN_LINKS.filter(link => can(link.permission));
+  const links = ADMIN_LINKS.filter(link => ("superAdmin" in link && link.superAdmin) ? isSuperAdmin : can(link.permission));
 
   const current = links.find(l => location.startsWith(l.href));
 

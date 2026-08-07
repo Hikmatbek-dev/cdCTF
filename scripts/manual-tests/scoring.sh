@@ -146,4 +146,18 @@ check "$(curl -s $API/ctf/$HCTF -H "Authorization: Bearer $HU2_TOK" | json hint)
 check "$(curl -s $API/ctf/$HCTF -H "Authorization: Bearer $HU2_TOK" | json hasHint)" "True" "lekin maslahat borligi bilinadi"
 
 echo
+echo "=== ⭐ Sovg'a (gift) achko qo'shadi va qayta hisoblashda saqlanadi ==="
+# The recipient is created directly, so this stays independent of the auth rate
+# limiter that a long suite would otherwise trip on one more register.
+GN="scgift$RANDOM$RANDOM"
+GID=$(psql "$DATABASE_URL" -tAqc "INSERT INTO users (nickname,email,password_hash,email_verified) VALUES ('$GN','$GN@e.com','x',true) RETURNING id")
+psql "$DATABASE_URL" -q -c "INSERT INTO gifts (user_id, category, points) VALUES ($GID, 'bug', 40)"
+curl -s -o /dev/null -X POST $API/admin/users/recalculate-points -H "Authorization: Bearer $A_TOK"
+check "$(pointsOf "$GN")" "40" "sovg'a 40 achko qo'shildi"
+# A second gift stacks, and both survive the next recalculation.
+psql "$DATABASE_URL" -q -c "INSERT INTO gifts (user_id, category, points) VALUES ($GID, 'suggestion', 40)"
+curl -s -o /dev/null -X POST $API/admin/users/recalculate-points -H "Authorization: Bearer $A_TOK"
+check "$(pointsOf "$GN")" "80" "ikkinchi sovg'a bilan 80 (qayta hisoblashda saqlandi)"
+
+echo
 [ -z "$FAILED" ] && echo "🎉 BALL TIZIMI IZCHIL" || echo "⚠️  BA'ZI SINOVLAR YIQILDI"

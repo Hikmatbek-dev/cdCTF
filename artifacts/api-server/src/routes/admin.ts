@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import { usersTable, ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionTeamsTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleQuestionsTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable, supportTicketsTable } from "@workspace/db/schema";
+import { usersTable, ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionTeamsTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleQuestionsTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable, supportTicketsTable, giftsTable } from "@workspace/db/schema";
 import { eq, and, or, desc, inArray, isNotNull, asc, not, count, ilike } from "drizzle-orm";
 import { authenticateToken } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
@@ -41,7 +41,7 @@ import {
   type UserRole,
 } from "../lib/permissions";
 import bcrypt from "bcryptjs";
-import { getTelegramConfig, setTelegramToken, setTelegramChatId, sendTelegram } from "../lib/telegram";
+import { getTelegramConfig, setTelegramToken, setTelegramChatId, sendTelegram, sendTelegramLog, tgEscape } from "../lib/telegram";
 
 const router = Router();
 // Staff-only floor. Every route below additionally declares the specific
@@ -1242,6 +1242,67 @@ router.patch("/support/:id", requirePermission("support.manage"), async (req, re
 
   await writeAuditLog(req, "support.update", "support", id, { status: updated.status });
   res.json({ success: true, status: updated.status });
+});
+
+// ---------------------------------------------------------------------------
+// Gifts — a super-admin rewards a helpful learner with points. Bug reports and
+// suggestions are worth the most; everything is capped at GIFT_MAX.
+// ---------------------------------------------------------------------------
+
+const GIFT_MAX = 40;
+const GIFT_DEFAULTS: Record<string, number> = {
+  bug: 40,          // Xatolik haqida xabar berdi
+  suggestion: 40,   // Taklif
+  help: 20,         // Yordam berdi
+  question: 10,     // Savol
+  other: 15,        // Boshqa
+};
+
+// GET /api/admin/gifts — the most recent awards, for the Gift page's history.
+router.get("/gifts", requireSuperAdmin, async (_req, res) => {
+  const rows = await db.select({
+    id: giftsTable.id,
+    userId: giftsTable.userId,
+    nickname: usersTable.nickname,
+    category: giftsTable.category,
+    points: giftsTable.points,
+    note: giftsTable.note,
+    createdAt: giftsTable.createdAt,
+  })
+    .from(giftsTable)
+    .leftJoin(usersTable, eq(giftsTable.userId, usersTable.id))
+    .orderBy(desc(giftsTable.createdAt))
+    .limit(50);
+  res.json({ gifts: rows.map(g => ({ ...g, createdAt: g.createdAt.toISOString() })), defaults: GIFT_DEFAULTS, max: GIFT_MAX });
+});
+
+// POST /api/admin/gifts — award points to a user.
+router.post("/gifts", requireSuperAdmin, async (req, res) => {
+  const userId = Number(req.body?.userId);
+  if (!Number.isInteger(userId) || userId <= 0) return res.status(400).json({ error: "Invalid user id" });
+
+  const category = String(req.body?.category ?? "");
+  if (!(category in GIFT_DEFAULTS)) return res.status(400).json({ error: "Unknown category" });
+
+  // Points come from the category by default; a super-admin may adjust within
+  // the cap. Never above GIFT_MAX, never below 1.
+  const requested = req.body?.points === undefined ? GIFT_DEFAULTS[category] : Number(req.body.points);
+  if (!Number.isInteger(requested) || requested < 1) return res.status(400).json({ error: "Points must be a positive integer" });
+  const points = Math.min(GIFT_MAX, requested);
+
+  const note = typeof req.body?.note === "string" ? req.body.note.trim().slice(0, 500) || null : null;
+
+  const [target] = await db.select({ id: usersTable.id, nickname: usersTable.nickname }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+  if (!target) return res.status(404).json({ error: "User not found" });
+
+  // Record the gift, then rebuild the recipient's points so the total includes
+  // it and stays correct through any later recalculation.
+  await db.insert(giftsTable).values({ userId, category, points, note, awardedBy: req.user!.userId });
+  await recalculateUsers([userId]);
+
+  await writeAuditLog(req, "gift.award", "user", userId, { category, points });
+  sendTelegramLog(`🎁 <b>Gift +${points}</b> → ${tgEscape(target.nickname)}\n📌 ${tgEscape(category)}${note ? "\n💬 " + tgEscape(note) : ""}`);
+  res.status(201).json({ success: true, points });
 });
 
 // DELETE /api/admin/lessons/:id

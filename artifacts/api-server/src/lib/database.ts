@@ -412,6 +412,20 @@ async function applySchema() {
   `);
   await pool.query("CREATE INDEX IF NOT EXISTS support_tickets_status_idx ON support_tickets(status, created_at)");
 
+  // Points rewards a super-admin gives to helpful learners.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS gifts (
+      id serial PRIMARY KEY,
+      user_id integer NOT NULL REFERENCES users(id),
+      category text NOT NULL,
+      points integer NOT NULL,
+      note text,
+      awarded_by integer REFERENCES users(id),
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query("CREATE INDEX IF NOT EXISTS gifts_user_idx ON gifts(user_id)");
+
   // Job board — the paid end of the talent pipeline.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS jobs (

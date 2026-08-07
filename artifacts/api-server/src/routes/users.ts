@@ -8,7 +8,7 @@ import {
   certificatesTable, programDiplomasTable,
   competitionsTable, competitionUsersTable, competitionSolvesTable, competitionTeamsTable,
   jobsTable, jobApplicationsTable, labInstancesTable,
-  auditLogsTable, userTitlesTable, titlesTable, referralsTable,
+  auditLogsTable, userTitlesTable, titlesTable, referralsTable, giftsTable,
 } from "@workspace/db/schema";
 import { and, asc, desc, eq, gt, inArray, ne, or, sql } from "drizzle-orm";
 import { authenticateToken, optionalAuth, requireSession } from "../middleware/auth";
@@ -391,6 +391,16 @@ async function getProfileData(id: number, requestingUserId?: number, requestingU
     rankOf(user),
   ]);
 
+  // Contribution rewards a super-admin granted (bug reports, suggestions…),
+  // shown on the profile as recognition.
+  const gifts = await db.select({
+    id: giftsTable.id,
+    category: giftsTable.category,
+    points: giftsTable.points,
+    note: giftsTable.note,
+    createdAt: giftsTable.createdAt,
+  }).from(giftsTable).where(eq(giftsTable.userId, id)).orderBy(desc(giftsTable.createdAt));
+
   const canViewPrivate = requestingUserId === id || requestingUserRole === "admin";
 
   return {
@@ -402,6 +412,7 @@ async function getProfileData(id: number, requestingUserId?: number, requestingU
     createdAt: user.createdAt, rank,
     titles: userTitles.map(t => ({ id: t.id, name: t.name, category: t.category, points: t.points, earnedAt: t.earnedAt })),
     solvedCtf, completedLessons, competitionHistory,
+    gifts: gifts.map(g => ({ id: g.id, category: g.category, points: g.points, note: g.note, createdAt: g.createdAt })),
   };
 }
 

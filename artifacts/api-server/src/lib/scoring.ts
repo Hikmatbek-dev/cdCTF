@@ -7,6 +7,7 @@ import {
   userLessonAttemptsTable,
   titlesTable,
   userTitlesTable,
+  giftsTable,
 } from "@workspace/db/schema";
 import { and, eq, sql } from "drizzle-orm";
 
@@ -138,10 +139,15 @@ export async function recalculateUserPoints(tx: Executor, userId: number): Promi
     .where(and(eq(ctfAttemptsTable.userId, userId), eq(ctfAttemptsTable.hintUsed, true)));
   const hintPenalty = hints.reduce((sum, hint) => sum + hint.cost, 0);
 
+  // Gift points — a super-admin's reward for helping (bug reports, suggestions…).
+  // Summed here so a recalculation folds them back in rather than wiping them.
+  const [{ giftPoints }] = await tx.select({ giftPoints: sql<number>`coalesce(sum(${giftsTable.points}), 0)::int` })
+    .from(giftsTable).where(eq(giftsTable.userId, userId));
+
   const ctfPoints = solves.reduce((sum, solve) => sum + solve.points, 0);
   const lessonPoints = lessons.reduce((sum, lesson) => sum + lesson.points, 0);
   const total = earnsPoints(user)
-    ? Math.max(0, ctfPoints + lessonPoints + titlePoints - hintPenalty)
+    ? Math.max(0, ctfPoints + lessonPoints + titlePoints + giftPoints - hintPenalty)
     : 0;
 
   await tx.update(usersTable).set({ points: total }).where(eq(usersTable.id, userId));

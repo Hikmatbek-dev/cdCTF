@@ -51,6 +51,7 @@ const AdminAuditPage = lazyWithRetry(() => import("@/pages/admin/AdminAuditPage"
 const AdminCurriculumPage = lazyWithRetry(() => import("@/pages/admin/AdminCurriculumPage"));
 const AdminWriteupsPage = lazyWithRetry(() => import("@/pages/admin/AdminWriteupsPage"));
 const AdminSupportPage = lazyWithRetry(() => import("@/pages/admin/AdminSupportPage"));
+const AdminGiftPage = lazyWithRetry(() => import("@/pages/admin/AdminGiftPage"));
 const SupportPage = lazyWithRetry(() => import("@/pages/SupportPage"));
 const CompetitionCtfPage = lazyWithRetry(() => import("@/pages/CompetitionCtfPage"));
 const ResendVerificationPage = lazyWithRetry(() => import("@/pages/ResendVerificationPage"));
@@ -103,6 +104,16 @@ function PermissionRoute({ component: Component, permission }: { component: Reac
   if (isLoading) return <AuthPending />;
   if (!isAuthenticated) return <Redirect to={loginWithNext(location)} />;
   if (!can(permission)) return <Redirect to="/admin/dashboard" />;
+  return <Component />;
+}
+
+/** For pages only a super-admin should reach. */
+function SuperAdminRoute({ component: Component }: { component: React.ComponentType }) {
+  const { isAuthenticated, isSuperAdmin, isLoading } = useAuth();
+  const [location] = useLocation();
+  if (isLoading) return <AuthPending />;
+  if (!isAuthenticated) return <Redirect to={loginWithNext(location)} />;
+  if (!isSuperAdmin) return <Redirect to="/admin/dashboard" />;
   return <Component />;
 }
 
@@ -315,6 +326,9 @@ function Router() {
           </Route>
           <Route path="/admin/support">
             {() => <PageTransition><PermissionRoute component={AdminSupportPage} permission="support.manage" /></PageTransition>}
+          </Route>
+          <Route path="/admin/gift">
+            {() => <PageTransition><SuperAdminRoute component={AdminGiftPage} /></PageTransition>}
           </Route>
           <Route component={NotFound} />
         </Switch>
