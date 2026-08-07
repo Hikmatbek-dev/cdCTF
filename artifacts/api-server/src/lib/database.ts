@@ -367,6 +367,7 @@ async function applySchema() {
   // Super-admin flag and per-user permission override (granular admin control).
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin boolean NOT NULL DEFAULT false");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions text[]");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS admin_earns_points boolean NOT NULL DEFAULT false");
 
   // Referral programme.
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code text");
@@ -384,6 +385,15 @@ async function applySchema() {
   `);
   await createIndexSafely("referrals_referee_idx", "CREATE UNIQUE INDEX IF NOT EXISTS referrals_referee_idx ON referrals(referee_id)");
   await pool.query("CREATE INDEX IF NOT EXISTS referrals_referrer_status_idx ON referrals(referrer_id, status)");
+
+  // Runtime settings a super-admin sets from the panel (Telegram log forwarding).
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key text PRIMARY KEY,
+      value text,
+      updated_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
 
   // Job board — the paid end of the talent pipeline.
   await pool.query(`

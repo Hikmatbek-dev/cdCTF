@@ -41,6 +41,7 @@ import {
   type UserRole,
 } from "../lib/permissions";
 import bcrypt from "bcryptjs";
+import { getTelegramConfig, setTelegramToken, setTelegramChatId, sendTelegram } from "../lib/telegram";
 
 const router = Router();
 // Staff-only floor. Every route below additionally declares the specific
@@ -153,6 +154,7 @@ router.get("/users", requirePermission("users.read"), async (req, res) => {
     id: usersTable.id, nickname: usersTable.nickname, email: usersTable.email,
     points: usersTable.points, role: usersTable.role, isBlocked: usersTable.isBlocked,
     isSuperAdmin: usersTable.isSuperAdmin, permissions: usersTable.permissions,
+    adminEarnsPoints: usersTable.adminEarnsPoints,
     createdAt: usersTable.createdAt,
   }).from(usersTable).where(filter)
     .orderBy(asc(usersTable.createdAt))
@@ -1073,6 +1075,9 @@ router.post("/staff", requireSuperAdmin, async (req, res) => {
   if (existing) return res.status(409).json({ error: "A user with that nickname or email already exists" });
 
   const passwordHash = await bcrypt.hash(password as string, 12);
+  // Admins are unscored by default; the super-admin opts a new one into scoring
+  // explicitly (e.g. a content author who should also compete for real).
+  const adminEarnsPoints = req.body?.earnsPoints === true;
   const [created] = await db.insert(usersTable).values({
     nickname, email, passwordHash,
     role: "admin",
@@ -1080,10 +1085,11 @@ router.post("/staff", requireSuperAdmin, async (req, res) => {
     // (no verification email is sent for this path).
     emailVerified: true,
     permissions,
+    adminEarnsPoints,
   }).returning({ id: usersTable.id, nickname: usersTable.nickname, email: usersTable.email, role: usersTable.role });
 
-  await writeAuditLog(req, "admin.create", "user", created.id, { nickname: created.nickname, permissionCount: permissions.length });
-  res.status(201).json({ ...created, permissions, isSuperAdmin: false });
+  await writeAuditLog(req, "admin.create", "user", created.id, { nickname: created.nickname, permissionCount: permissions.length, earnsPoints: adminEarnsPoints });
+  res.status(201).json({ ...created, permissions, isSuperAdmin: false, adminEarnsPoints });
 });
 
 // PATCH /api/admin/staff/:id/permissions — set an admin's exact permission set.
@@ -1101,10 +1107,14 @@ router.patch("/staff/:id/permissions", requireSuperAdmin, async (req, res) => {
   // editing it here would only mislead.
   if (target.isSuperAdmin) return res.status(400).json({ error: "A super-admin already holds every permission" });
 
-  await db.update(usersTable).set({ permissions }).where(eq(usersTable.id, id));
+  // The scoring opt-in rides along on the same save, when the caller sends it.
+  const updates: { permissions: string[]; adminEarnsPoints?: boolean } = { permissions };
+  if (typeof req.body?.earnsPoints === "boolean") updates.adminEarnsPoints = req.body.earnsPoints;
+
+  await db.update(usersTable).set(updates).where(eq(usersTable.id, id));
   // Effect is immediate: permissions are resolved from the DB on every request.
-  await writeAuditLog(req, "admin.permissions", "user", id, { permissions });
-  res.json({ success: true, permissions });
+  await writeAuditLog(req, "admin.permissions", "user", id, { permissions, earnsPoints: updates.adminEarnsPoints });
+  res.json({ success: true, permissions, adminEarnsPoints: updates.adminEarnsPoints });
 });
 
 // POST /api/admin/staff/:id/password — reset an admin's password.
@@ -1124,6 +1134,53 @@ router.post("/staff/:id/password", requireSuperAdmin, async (req, res) => {
   const revokedCount = await revokeAllSessions(id, "password_changed");
   await writeAuditLog(req, "admin.password_reset", "user", id, { revokedSessionCount: revokedCount });
   res.json({ success: true, revokedSessionCount: revokedCount });
+});
+
+// ---------------------------------------------------------------------------
+// Telegram log forwarding — super-admin only. The bot token is a secret: it is
+// stored in app_settings and NEVER returned to the client (only whether one is
+// set). The chat id is not sensitive and is returned so the field can be shown.
+// ---------------------------------------------------------------------------
+
+// GET /api/admin/settings/telegram
+router.get("/settings/telegram", requireSuperAdmin, async (_req, res) => {
+  const { token, chatId } = await getTelegramConfig();
+  res.json({ hasToken: Boolean(token), chatId: chatId ?? "" });
+});
+
+// PUT /api/admin/settings/telegram — set/clear the bot token and/or chat id.
+router.put("/settings/telegram", requireSuperAdmin, async (req, res) => {
+  // A key sent as undefined is left untouched; sent as "" it is cleared. This
+  // lets the UI save a chat-id change without resending (and re-exposing) the
+  // token it never received back.
+  if (req.body?.botToken !== undefined) {
+    if (req.body.botToken !== null && typeof req.body.botToken !== "string") {
+      return res.status(400).json({ error: "botToken must be a string" });
+    }
+    await setTelegramToken(req.body.botToken);
+  }
+  if (req.body?.chatId !== undefined) {
+    if (req.body.chatId !== null && typeof req.body.chatId !== "string") {
+      return res.status(400).json({ error: "chatId must be a string" });
+    }
+    await setTelegramChatId(req.body.chatId);
+  }
+  // Never log the token itself.
+  await writeAuditLog(req, "settings.telegram", "settings", "telegram", {
+    tokenChanged: req.body?.botToken !== undefined,
+    chatIdChanged: req.body?.chatId !== undefined,
+  });
+  const { token, chatId } = await getTelegramConfig();
+  res.json({ hasToken: Boolean(token), chatId: chatId ?? "" });
+});
+
+// POST /api/admin/settings/telegram/test — send a test message right now.
+router.post("/settings/telegram/test", requireSuperAdmin, async (_req, res) => {
+  const result = await sendTelegram("✅ cdCTF test message — logging is wired up.");
+  if (!result.ok) {
+    return res.status(result.error === "not_configured" ? 400 : 502).json({ ok: false, error: result.error });
+  }
+  res.json({ ok: true });
 });
 
 // DELETE /api/admin/lessons/:id

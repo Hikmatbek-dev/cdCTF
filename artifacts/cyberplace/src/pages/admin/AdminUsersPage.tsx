@@ -1,6 +1,6 @@
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { Link } from "wouter";
-import { Search, Shield, ShieldOff, KeyRound, SlidersHorizontal, UserPlus, Crown } from "lucide-react";
+import { Search, Shield, ShieldOff, KeyRound, SlidersHorizontal, UserPlus, Crown, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -94,6 +94,7 @@ export default function AdminUsersPage() {
 
   // --- Super-admin: staff management -----------------------------------------
   const [showCreate, setShowCreate] = useState(false);
+  const [showTelegram, setShowTelegram] = useState(false);
   const [permsFor, setPermsFor] = useState<any>(null);
   const [pwFor, setPwFor] = useState<any>(null);
   const afterStaffChange = () => void qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey(params) });
@@ -146,6 +147,11 @@ export default function AdminUsersPage() {
             {isSuperAdmin && (
               <Button size="sm" onClick={() => setShowCreate(true)} className="text-xs h-8 gap-1.5" data-testid="button-create-admin">
                 <UserPlus className="w-3.5 h-3.5" /> {t("Create admin", "Admin yaratish", "Создать админа")}
+              </Button>
+            )}
+            {isSuperAdmin && (
+              <Button size="sm" variant="outline" onClick={() => setShowTelegram(true)} className="text-xs h-8 gap-1.5" data-testid="button-telegram-settings">
+                <Send className="w-3.5 h-3.5" /> {t("Telegram logs", "Telegram loglar", "Telegram-логи")}
               </Button>
             )}
           </div>
@@ -263,6 +269,9 @@ export default function AdminUsersPage() {
         {isSuperAdmin && showCreate && (
           <CreateAdminModal onClose={() => setShowCreate(false)} onDone={() => { afterStaffChange(); setShowCreate(false); }} />
         )}
+        {isSuperAdmin && showTelegram && (
+          <TelegramModal onClose={() => setShowTelegram(false)} />
+        )}
         {isSuperAdmin && permsFor && (
           <PermissionsModal user={permsFor} onClose={() => setPermsFor(null)} onDone={() => { afterStaffChange(); setPermsFor(null); }} />
         )}
@@ -324,6 +333,7 @@ function CreateAdminModal({ onClose, onDone }: { onClose: () => void; onDone: ()
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [perms, setPerms] = useState<Set<string>>(new Set());
+  const [earnsPoints, setEarnsPoints] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const toggle = (key: string) => setPerms(prev => {
@@ -339,7 +349,7 @@ function CreateAdminModal({ onClose, onDone }: { onClose: () => void; onDone: ()
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nickname, email, password, permissions: [...perms] }),
+        body: JSON.stringify({ nickname, email, password, permissions: [...perms], earnsPoints }),
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof payload?.error === "string" ? payload.error : "failed");
@@ -370,6 +380,12 @@ function CreateAdminModal({ onClose, onDone }: { onClose: () => void; onDone: ()
           <Input value={password} onChange={e => setPassword(e.target.value)} type="text" placeholder={t("Min 10 chars, mixed case, number, symbol", "Kamida 10 belgi, katta-kichik, raqam, belgi", "Мин. 10 симв., регистр, цифра, символ")} data-testid="input-new-admin-password" />
           <p className="text-[11px] text-muted-foreground mt-1">{t("Share this with the new admin so they can sign in.", "Yangi admin kirishi uchun buni unga bering.", "Передайте новому админу для входа.")}</p>
         </div>
+        <label className="flex items-center gap-2 text-sm rounded-lg border border-border px-3 py-2.5 cursor-pointer">
+          <input type="checkbox" checked={earnsPoints} onChange={e => setEarnsPoints(e.target.checked)} className="accent-primary w-4 h-4" data-testid="check-earns-points" />
+          <span>{t("This admin earns points on solves (appears on the scoreboard)",
+                   "Bu admin topshiriq yechsa ball oladi (reytingda ko'rinadi)",
+                   "Этот админ получает очки за решения (виден в рейтинге)")}</span>
+        </label>
         <div>
           <div className="text-xs font-medium text-muted-foreground mb-2">{t("Permissions (all off by default)", "Ruxsatlar (standart: hammasi o'chiq)", "Права (по умолчанию всё выключено)")}</div>
           <PermissionMatrix selected={perms} onToggle={toggle} />
@@ -389,6 +405,7 @@ function PermissionsModal({ user, onClose, onDone }: { user: any; onClose: () =>
   const { t } = useLang();
   const { toast } = useToast();
   const [perms, setPerms] = useState<Set<string>>(new Set(Array.isArray(user.permissions) ? user.permissions : []));
+  const [earnsPoints, setEarnsPoints] = useState(Boolean(user.adminEarnsPoints));
   const [busy, setBusy] = useState(false);
 
   const toggle = (key: string) => setPerms(prev => {
@@ -404,7 +421,7 @@ function PermissionsModal({ user, onClose, onDone }: { user: any; onClose: () =>
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ permissions: [...perms] }),
+        body: JSON.stringify({ permissions: [...perms], earnsPoints }),
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof payload?.error === "string" ? payload.error : "failed");
@@ -420,12 +437,117 @@ function PermissionsModal({ user, onClose, onDone }: { user: any; onClose: () =>
   return (
     <Modal title={t(`Permissions — ${user.nickname}`, `Ruxsatlar — ${user.nickname}`, `Права — ${user.nickname}`)} onClose={onClose}>
       <div className="space-y-4">
+        <label className="flex items-center gap-2 text-sm rounded-lg border border-border px-3 py-2.5 cursor-pointer">
+          <input type="checkbox" checked={earnsPoints} onChange={e => setEarnsPoints(e.target.checked)} className="accent-primary w-4 h-4" data-testid="check-earns-points-edit" />
+          <span>{t("Earns points on solves (appears on the scoreboard)",
+                   "Topshiriq yechsa ball oladi (reytingda ko'rinadi)",
+                   "Получает очки за решения (виден в рейтинге)")}</span>
+        </label>
         <PermissionMatrix selected={perms} onToggle={toggle} />
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="outline" onClick={onClose}>{t("Cancel", "Bekor qilish", "Отмена")}</Button>
           <Button onClick={submit} disabled={busy} data-testid="button-save-perms">
             {busy ? t("Saving...", "Saqlanmoqda...", "Сохранение...") : t("Save", "Saqlash", "Сохранить")}
           </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function TelegramModal({ onClose }: { onClose: () => void }) {
+  const { t } = useLang();
+  const { toast } = useToast();
+  const [chatId, setChatId] = useState("");
+  const [hasToken, setHasToken] = useState(false);
+  const [botToken, setBotToken] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin/settings/telegram", { credentials: "include" })
+      .then(r => r.ok ? r.json() : { chatId: "", hasToken: false })
+      .then(d => { if (!cancelled) { setChatId(d.chatId ?? ""); setHasToken(Boolean(d.hasToken)); setLoaded(true); } })
+      .catch(() => { if (!cancelled) setLoaded(true); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      // Only send the token when the field was actually typed into — an empty
+      // field leaves the stored token untouched (it was never sent back to us).
+      const body: Record<string, string> = { chatId };
+      if (botToken.trim()) body.botToken = botToken.trim();
+      const res = await fetch("/api/admin/settings/telegram", {
+        method: "PUT", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof d?.error === "string" ? d.error : "failed");
+      setHasToken(Boolean(d.hasToken));
+      setBotToken("");
+      toast({ title: t("Saved", "Saqlandi", "Сохранено") });
+    } catch (e) {
+      toast({ title: e instanceof Error ? e.message : t("Error", "Xato", "Ошибка"), variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const test = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/settings/telegram/test", { method: "POST", credentials: "include" });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof d?.error === "string" ? d.error : "failed");
+      toast({ title: t("Test message sent", "Test xabar yuborildi", "Тестовое сообщение отправлено") });
+    } catch (e) {
+      toast({ title: e instanceof Error ? e.message : t("Error", "Xato", "Ошибка"), variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal title={t("Telegram logs", "Telegram loglar", "Telegram-логи")} onClose={onClose}>
+      <div className="space-y-4">
+        <p className="text-xs text-muted-foreground">
+          {t("Events (new users, blocks, admin changes, competitions…) are forwarded to a Telegram chat. Create a bot with @BotFather, add it to your group/channel, and paste the token and chat id here.",
+             "Hodisalar (yangi foydalanuvchilar, bloklashlar, admin o'zgarishlari, musobaqalar…) Telegram chatga yuboriladi. @BotFather orqali bot yarating, uni guruh/kanalga qo'shing va token bilan chat id ni shu yerga qo'ying.",
+             "События (новые пользователи, блокировки, изменения админов, соревнования…) пересылаются в Telegram-чат. Создайте бота через @BotFather, добавьте его в группу/канал и вставьте токен и chat id.")}
+        </p>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground">{t("Bot token", "Bot token", "Токен бота")}</label>
+          <Input
+            value={botToken}
+            onChange={e => setBotToken(e.target.value)}
+            type="password"
+            placeholder={hasToken ? t("Saved — type to replace", "Saqlangan — almashtirish uchun yozing", "Сохранён — введите для замены") : "123456:ABC-DEF..."}
+            data-testid="input-telegram-token"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground">{t("Chat ID", "Chat ID", "Chat ID")}</label>
+          <Input value={chatId} onChange={e => setChatId(e.target.value)} placeholder="-1001234567890" data-testid="input-telegram-chat" />
+          <p className="text-[11px] text-muted-foreground mt-1">
+            {t("A group/channel id (often starts with -100). Add the bot as an admin of that channel.",
+               "Guruh/kanal id si (ko'pincha -100 bilan boshlanadi). Botni o'sha kanalga admin qilib qo'shing.",
+               "ID группы/канала (часто начинается с -100). Добавьте бота админом канала.")}
+          </p>
+        </div>
+        <div className="flex justify-between gap-2 pt-2">
+          <Button variant="outline" onClick={test} disabled={busy || !loaded} data-testid="button-telegram-test">
+            {t("Send test", "Test yuborish", "Отправить тест")}
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose}>{t("Close", "Yopish", "Закрыть")}</Button>
+            <Button onClick={save} disabled={busy || !loaded} data-testid="button-telegram-save">
+              {busy ? t("Saving...", "Saqlanmoqda...", "Сохранение...") : t("Save", "Saqlash", "Сохранить")}
+            </Button>
+          </div>
         </div>
       </div>
     </Modal>

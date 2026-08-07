@@ -606,8 +606,8 @@ details:not([open]) > summary .chev-open { display: none; }
   50% { transform: translateY(-6px); }
 }
 @keyframes cd-pulse-glow {
-  0%, 100% { box-shadow: none; }
-  50% { box-shadow: none; }
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0); }
+  50% { box-shadow: 0 0 16px 2px hsl(var(--primary) / 0.2); }
 }
 .animate-float { animation: cd-float 6s ease-in-out infinite; }
 .animate-pulse-glow { animation: cd-pulse-glow 3.5s ease-in-out infinite; }

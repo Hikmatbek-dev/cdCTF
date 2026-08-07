@@ -70,6 +70,17 @@ check "$(echo "$R" | json correct)" "True" "admin flagni yechdi"
 check "$(pointsOf "$ADMIN")" "0" "lekin ball berilmadi"
 
 echo
+echo "=== ⭐ Ruxsat berilgan admin ball OLADI (admin_earns_points) ==="
+# A super-admin can opt a specific admin into scoring; then their solves pay.
+psql "$DATABASE_URL" -q -c "UPDATE users SET admin_earns_points = true WHERE nickname='$ADMIN';"
+AID2=$(psql "$DATABASE_URL" -tAqc "INSERT INTO ctf_tasks (name, description, category, difficulty, points, flag, is_published) VALUES ('${TAG}_Admin2','d','Crypto','easy',100,'sha256\$$(printf 'Flag{adm2}' | sha256sum | cut -d' ' -f1)', true) RETURNING id;")
+R=$(curl -s -X POST $API/ctf/$AID2/submit -H 'Content-Type: application/json' -H "Authorization: Bearer $A_TOK" -d '{"flag":"Flag{adm2}"}')
+check "$(echo "$R" | json pointsEarned)" "100" "ruxsat berilgan admin 100 ball oldi"
+check "$(pointsOf "$ADMIN")" "100" "admin bali 100 bo'ldi"
+# Put it back so the recalculation checks below still expect 0.
+psql "$DATABASE_URL" -q -c "UPDATE users SET admin_earns_points = false, points = 0 WHERE nickname='$ADMIN';"
+
+echo
 echo "=== ⭐ excludedFromScoring bayrog'i ishlaydi (nickname emas) ==="
 X=$(mkuser user); X_TOK=$(tokenOf "$X")
 psql "$DATABASE_URL" -q -c "UPDATE users SET excluded_from_scoring = true WHERE nickname='$X';"

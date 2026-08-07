@@ -46,6 +46,15 @@ export const usersTable = pgTable("users", {
    */
   excludedFromScoring: boolean("excluded_from_scoring").notNull().default(false),
   /**
+   * Whether an admin's solves count toward points and the scoreboard.
+   *
+   * Admins are unscored by default so staff testing content never tops the
+   * board. A super-admin can flip this on for a specific admin who should
+   * compete for real. It only matters for the admin role — a normal learner
+   * always earns (unless `excludedFromScoring`).
+   */
+  adminEarnsPoints: boolean("admin_earns_points").notNull().default(false),
+  /**
    * The seed of the talent pipeline: a learner who flips this on is telling
    * recruiters they are available. It surfaces as a badge on their profile and
    * scoreboard row, turning the leaderboard into a hiring signal — the thing an

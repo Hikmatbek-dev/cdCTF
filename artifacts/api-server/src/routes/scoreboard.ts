@@ -57,7 +57,8 @@ router.get("/weekly", optionalAuth, requireScope("scoreboard:read"), async (req,
            rank() over (order by t.points desc, u.id asc)::int as rank
       from totals t
       join users u on u.id = t.user_id
-     where u.is_blocked = false and u.role = 'user' and u.excluded_from_scoring = false
+     where u.is_blocked = false and u.excluded_from_scoring = false
+       and (u.role = 'user' or u.admin_earns_points = true)
      order by t.points desc, u.id asc
   `);
 
@@ -94,7 +95,10 @@ router.get("/", optionalAuth, requireScope("scoreboard:read"), async (req, res) 
   // way to ask "is this address registered?" — the address never appears in the
   // response, but a hit answers the question.
   const nameFilter = search ? ilike(usersTable.nickname, `%${escapeLikePattern(search)}%`) : undefined;
-  const filter = and(eq(usersTable.isBlocked, false), eq(usersTable.role, "user"), nameFilter);
+  // Scored users: learners, plus any admin a super-admin opted into scoring;
+  // never anyone flagged out of scoring.
+  const scoredFilter = and(eq(usersTable.isBlocked, false), eq(usersTable.excludedFromScoring, false), or(eq(usersTable.role, "user"), eq(usersTable.adminEarnsPoints, true)));
+  const filter = and(scoredFilter, nameFilter);
 
   /**
    * Ranks every eligible user, then filters — so a searched-for user shows the
@@ -115,7 +119,7 @@ router.get("/", optionalAuth, requireScope("scoreboard:read"), async (req, res) 
       rank: sql<number>`row_number() over (order by ${usersTable.points} desc, ${usersTable.id} asc)::int`.as("rank"),
     })
       .from(usersTable)
-      .where(and(eq(usersTable.isBlocked, false), eq(usersTable.role, "user"))),
+      .where(scoredFilter),
   );
 
   // Ordered, limited and counted by Postgres. This used to read every matching

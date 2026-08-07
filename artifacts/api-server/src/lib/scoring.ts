@@ -17,25 +17,29 @@ type Db = typeof db;
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 type Executor = Db | Tx;
 
-type ScoringUser = { role: string; excludedFromScoring: boolean };
+type ScoringUser = { role: string; excludedFromScoring: boolean; adminEarnsPoints: boolean };
 
 /**
  * Whether a user's solves count toward their score.
  *
- * Admins are excluded so staff testing content does not top the board, and
- * `excludedFromScoring` covers everyone else who should not appear. This was
- * previously `role !== "admin" && nickname !== "bozkurtshadow"`, copied into six
- * files — so a rename would have silently started paying that account, and any
- * new such account meant finding all six.
+ * Admins are unscored by default so staff testing content does not top the
+ * board — but a super-admin can grant a specific admin `adminEarnsPoints`, and
+ * then that admin competes for real. `excludedFromScoring` still hides anyone
+ * (admin or not) who should never appear, and always wins. This was previously
+ * `role !== "admin" && nickname !== "bozkurtshadow"`, copied into six files — so
+ * a rename would have silently started paying that account.
  */
 export function earnsPoints(user: ScoringUser): boolean {
-  return user.role !== "admin" && !user.excludedFromScoring;
+  if (user.excludedFromScoring) return false;
+  if (user.role === "admin") return user.adminEarnsPoints;
+  return true;
 }
 
 async function loadScoringUser(tx: Executor, userId: number): Promise<ScoringUser | null> {
   const [user] = await tx.select({
     role: usersTable.role,
     excludedFromScoring: usersTable.excludedFromScoring,
+    adminEarnsPoints: usersTable.adminEarnsPoints,
   }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
   return user ?? null;
 }

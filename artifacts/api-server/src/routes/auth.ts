@@ -77,6 +77,7 @@ import {
 import { effectivePermissions } from "../lib/permissions";
 import { logger } from "../lib/logger";
 import { recordSignupReferral, tryActivateReferral } from "../lib/referrals";
+import { sendTelegramLog, tgEscape } from "../lib/telegram";
 import {
   OAUTH_STATE_COOKIE,
   OAUTH_STATE_TTL_SECONDS,
@@ -259,6 +260,10 @@ router.post("/register", authRateLimit, validateBody(RegisterBody), async (req, 
   // invite can also activate the moment they finish their first lesson.
   await recordSignupReferral(user.id, body.ref);
   if (!emailResult.ok) await tryActivateReferral(user.id);
+
+  // New signups are not audit-log events, but the founder wants to see them in
+  // the Telegram feed, so notify directly (fire-and-forget).
+  sendTelegramLog(`🆕 <b>New user</b>\n👤 ${tgEscape(user.nickname)} (${tgEscape(user.email)})`);
 
   const [pendingRef] = await db.select().from(referralsTable).where(and(eq(referralsTable.refereeId, user.id), eq(referralsTable.status, "pending"))).limit(1);
 

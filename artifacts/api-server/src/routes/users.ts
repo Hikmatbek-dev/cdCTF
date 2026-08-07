@@ -282,14 +282,17 @@ router.get("/me/reminders", authenticateToken, async (req, res) => {
 });
 
 /** Counts who is ahead instead of loading and sorting the whole user table. */
-async function rankOf(user: { id: number; role: string; points: number; excludedFromScoring: boolean }) {
+async function rankOf(user: { id: number; role: string; points: number; excludedFromScoring: boolean; adminEarnsPoints: boolean }) {
   if (!earnsPoints(user)) return 0;
 
+  // Rank is over everyone who is actually scored: learners, plus any admin a
+  // super-admin has opted into scoring. Mirrors the scoreboard's own filter.
   const [{ ahead }] = await db.select({ ahead: sql<number>`count(*)::int` })
     .from(usersTable)
     .where(and(
       eq(usersTable.isBlocked, false),
-      eq(usersTable.role, "user"),
+      eq(usersTable.excludedFromScoring, false),
+      or(eq(usersTable.role, "user"), eq(usersTable.adminEarnsPoints, true)),
       or(
         sql`${usersTable.points} > ${user.points}`,
         and(eq(usersTable.points, user.points), sql`${usersTable.id} < ${user.id}`),
