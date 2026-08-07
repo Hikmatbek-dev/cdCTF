@@ -16,6 +16,7 @@ export interface User {
   companyName?: string | null;
   createdAt: string;
   isPendingReferee?: boolean;
+  isSuperAdmin?: boolean;
 }
 
 interface SessionResponse {
@@ -34,6 +35,8 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  /** May create and manage other admins (the founder-designated accounts). */
+  isSuperAdmin: boolean;
   /** Anyone who may see the admin panel at all: author, moderator or admin. */
   isStaff: boolean;
   updateUser: (user: User) => void;
@@ -154,6 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refetchSession,
         isAuthenticated: !!user,
         isAdmin: user?.role === "admin",
+        isSuperAdmin: !!user?.isSuperAdmin,
         isStaff: can("admin.panel"),
       }}
     >

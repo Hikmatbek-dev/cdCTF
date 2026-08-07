@@ -11,6 +11,22 @@ export const usersTable = pgTable("users", {
   avatarUrl: text("avatar_url"),
   points: integer("points").notNull().default(0),
   role: text("role").notNull().default("user"),
+  /**
+   * The super-admin flag. A super-admin is a normal `admin` that may also create
+   * other admins and toggle each of their permissions on and off. It always has
+   * every permission and cannot be locked out by an override. There is no UI to
+   * set this — it is granted at boot from SUPER_ADMIN_EMAILS, so the crown can
+   * never be handed out through the admin panel itself.
+   */
+  isSuperAdmin: boolean("is_super_admin").notNull().default(false),
+  /**
+   * Per-user permission override. Null means "use this role's defaults"; a
+   * non-null array (including an empty one) is the exact set this user holds,
+   * ignoring the role defaults. Set only by a super-admin through the dedicated
+   * endpoint — never a mass-assignable column — so a normal update cannot be used
+   * to self-elevate. A super-admin ignores this entirely and holds everything.
+   */
+  permissions: text("permissions").array(),
   emailVerified: boolean("email_verified").notNull().default(false),
   emailVerificationToken: text("email_verification_token"),
   isBlocked: boolean("is_blocked").notNull().default(false),

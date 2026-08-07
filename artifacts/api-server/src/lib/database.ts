@@ -49,32 +49,66 @@ async function createIndexSafely(name: string, statement: string) {
 export async function ensureDatabaseShape() {
   const version = createHash("sha256").update(applySchema.toString(), "utf8").digest("hex").slice(0, 32);
 
+  let alreadyCurrent = false;
   try {
     const { rows } = await pool.query<{ version: string }>(
       "SELECT version FROM schema_state WHERE id = 1",
     );
-    if (rows[0]?.version === version) return;
+    alreadyCurrent = rows[0]?.version === version;
   } catch {
     // The table does not exist yet — first boot, or an older deployment. Fall
     // through and apply everything, which creates it.
   }
 
-  await applySchema();
+  if (!alreadyCurrent) {
+    await applySchema();
 
-  // Recorded last, so a failure part-way through leaves the old version (or
-  // none) in place and the next cold start retries rather than skipping.
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS schema_state (
-      id integer PRIMARY KEY,
-      version text NOT NULL,
-      applied_at timestamptz NOT NULL DEFAULT now()
-    )
-  `);
-  await pool.query(
-    `INSERT INTO schema_state (id, version) VALUES (1, $1)
-     ON CONFLICT (id) DO UPDATE SET version = excluded.version, applied_at = now()`,
-    [version],
-  );
+    // Recorded last, so a failure part-way through leaves the old version (or
+    // none) in place and the next cold start retries rather than skipping.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS schema_state (
+        id integer PRIMARY KEY,
+        version text NOT NULL,
+        applied_at timestamptz NOT NULL DEFAULT now()
+      )
+    `);
+    await pool.query(
+      `INSERT INTO schema_state (id, version) VALUES (1, $1)
+       ON CONFLICT (id) DO UPDATE SET version = excluded.version, applied_at = now()`,
+      [version],
+    );
+  }
+
+  // Runs on every boot, not gated by the schema-version hash: the super-admin
+  // list can change (a new founder email) without any DDL edit to bust the hash,
+  // and this must pick that up. Cheap and idempotent.
+  await promoteSuperAdmins();
+}
+
+/**
+ * Grants the super-admin flag to the accounts listed in SUPER_ADMIN_EMAILS.
+ *
+ * This is the ONLY way the flag is set — there is deliberately no admin-panel
+ * control for it, so the crown cannot be handed out through the UI it guards. It
+ * only ever grants; revoking is a manual DB action, so a fat-fingered env edit
+ * can't silently strip the founder mid-launch.
+ */
+async function promoteSuperAdmins() {
+  const emails = (process.env.SUPER_ADMIN_EMAILS || "")
+    .split(",")
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean);
+  if (emails.length === 0) return;
+  try {
+    await pool.query(
+      "UPDATE users SET is_super_admin = true WHERE lower(email) = ANY($1) AND is_super_admin = false",
+      [emails],
+    );
+  } catch (err) {
+    // On the very first boot the users table may not exist yet; the next boot
+    // applies the schema first and this succeeds. Never fatal to startup.
+    logger.warn({ err }, "promoteSuperAdmins skipped");
+  }
 }
 
 async function applySchema() {
@@ -327,6 +361,10 @@ async function applySchema() {
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS current_streak integer NOT NULL DEFAULT 0");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS longest_streak integer NOT NULL DEFAULT 0");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_activity_date text");
+
+  // Super-admin flag and per-user permission override (granular admin control).
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin boolean NOT NULL DEFAULT false");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions text[]");
 
   // Referral programme.
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code text");

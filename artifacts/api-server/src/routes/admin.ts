@@ -27,14 +27,20 @@ import { logger } from "../lib/logger";
 import { filterAllowedUpdates } from "../lib/rbac";
 import {
   canEditResource,
-  hasPermission,
+  reqHasPermission,
   isUserRole,
+  isPermission,
+  effectivePermissions,
+  normalizeRole,
+  PERMISSIONS,
   requireAnyPermission,
   requirePermission,
   requireStaff,
+  requireSuperAdmin,
   USER_ROLES,
   type UserRole,
 } from "../lib/permissions";
+import bcrypt from "bcryptjs";
 
 const router = Router();
 // Staff-only floor. Every route below additionally declares the specific
@@ -143,13 +149,24 @@ router.get("/users", requirePermission("users.read"), async (req, res) => {
     : undefined;
 
   const [{ total }] = await db.select({ total: count() }).from(usersTable).where(filter);
-  const users = await db.select({
+  const rows = await db.select({
     id: usersTable.id, nickname: usersTable.nickname, email: usersTable.email,
     points: usersTable.points, role: usersTable.role, isBlocked: usersTable.isBlocked,
+    isSuperAdmin: usersTable.isSuperAdmin, permissions: usersTable.permissions,
     createdAt: usersTable.createdAt,
   }).from(usersTable).where(filter)
     .orderBy(asc(usersTable.createdAt))
     .limit(limit).offset(offset);
+
+  // `permissions` here is the EFFECTIVE set (override, or role defaults, or all
+  // for a super-admin) so the admin UI can render the checkbox matrix directly.
+  // `hasPermissionOverride` tells the UI whether that set is a bespoke override
+  // or just the role's defaults.
+  const users = rows.map(u => ({
+    ...u,
+    permissions: effectivePermissions({ role: normalizeRole(u.role), isSuperAdmin: u.isSuperAdmin, permissions: u.permissions }),
+    hasPermissionOverride: u.permissions != null,
+  }));
 
   res.json({ users, total, limit, offset });
 });
@@ -330,7 +347,7 @@ router.post("/ctf", requirePermission("ctf.create"), validateBody(AdminCreateCtf
   if (!Number.isFinite(parsedPoints) || parsedPoints < 0) return res.status(400).json({ error: "Points must be a non-negative number" });
 
   // Authors submit drafts; only someone with `ctf.publish` makes them live.
-  const canPublish = hasPermission(req.user!.role, "ctf.publish");
+  const canPublish = reqHasPermission(req, "ctf.publish");
 
   const [task] = await db.insert(ctfTasksTable).values({
     name, nameUz: nameUz || null, nameRu: nameRu || null,
@@ -355,7 +372,7 @@ async function updateCtfHandler(req: Request, res: Response) {
   const [existing] = await db.select({ authorId: ctfTasksTable.authorId })
     .from(ctfTasksTable).where(eq(ctfTasksTable.id, id)).limit(1);
   if (!existing) return res.status(404).json({ error: "CTF not found" });
-  if (!canEditResource(userRole, "ctf", existing.authorId, req.user!.userId)) {
+  if (!canEditResource(req, "ctf", existing.authorId, req.user!.userId)) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
@@ -843,7 +860,7 @@ router.post("/lessons", requirePermission("lessons.create"), validateBody(AdminC
     points: Number(points) || 50,
     authorId: req.user!.userId,
     // Authors submit drafts; only someone with `lessons.publish` makes them live.
-    isPublished: hasPermission(req.user!.role, "lessons.publish"),
+    isPublished: reqHasPermission(req, "lessons.publish"),
   }).returning();
 
   if (questions && Array.isArray(questions)) {
@@ -870,7 +887,7 @@ async function updateLessonHandler(req: Request, res: Response) {
   const [existing] = await db.select({ authorId: lessonsTable.authorId })
     .from(lessonsTable).where(eq(lessonsTable.id, id)).limit(1);
   if (!existing) return res.status(404).json({ error: "Lesson not found" });
-  if (!canEditResource(userRole, "lessons", existing.authorId, req.user!.userId)) {
+  if (!canEditResource(req, "lessons", existing.authorId, req.user!.userId)) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
@@ -977,6 +994,114 @@ router.patch("/users/:id/role", requirePermission("users.role"), validateBody(Se
   const revokedCount = await revokeAllSessions(id, "role_changed");
   await writeAuditLog(req, "user.role_change", "user", id, { role, revokedSessionCount: revokedCount });
   res.json({ success: true, role: updated.role, revokedSessionCount: revokedCount });
+});
+
+// ---------------------------------------------------------------------------
+// Staff management — super-admin only.
+//
+// A super-admin creates ordinary admins with a chosen login + password and
+// toggles each permission on and off. requireStaff already gates the router; the
+// extra requireSuperAdmin here is the flag check that the permission matrix can
+// never grant, so only the founder-designated accounts reach these.
+// ---------------------------------------------------------------------------
+
+/** Same rules as public registration, kept in step with routes/auth.ts. */
+function passwordProblem(password: unknown): string | null {
+  if (typeof password !== "string" || password.length < 10) return "Password must be at least 10 characters";
+  if (!/[a-z]/.test(password)) return "Password needs a lowercase letter";
+  if (!/[A-Z]/.test(password)) return "Password needs an uppercase letter";
+  if (!/\d/.test(password)) return "Password needs a number";
+  if (!/[^A-Za-z0-9]/.test(password)) return "Password needs a symbol";
+  return null;
+}
+
+/** Validates a permissions payload to a clean, de-duplicated set of real keys. */
+function cleanPermissions(value: unknown): string[] | null {
+  if (!Array.isArray(value)) return null;
+  const set = new Set<string>();
+  for (const p of value) {
+    if (!isPermission(p)) return null;   // reject unknown keys rather than dropping them
+    set.add(p);
+  }
+  return [...set];
+}
+
+// POST /api/admin/staff — create an ordinary admin.
+router.post("/staff", requireSuperAdmin, async (req, res) => {
+  const nickname = String(req.body?.nickname ?? "").trim();
+  const email = String(req.body?.email ?? "").trim().toLowerCase();
+  const password = req.body?.password;
+
+  if (!/^[A-Za-z0-9_]{3,32}$/.test(nickname)) {
+    return res.status(400).json({ error: "Nickname must be 3–32 letters, numbers, or underscores" });
+  }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return res.status(400).json({ error: "Invalid email" });
+  }
+  const pwProblem = passwordProblem(password);
+  if (pwProblem) return res.status(400).json({ error: pwProblem });
+
+  // Default all-off (least privilege): a new admin holds exactly the permissions
+  // ticked at creation, nothing more.
+  const permissions = req.body?.permissions === undefined ? [] : cleanPermissions(req.body.permissions);
+  if (permissions === null) return res.status(400).json({ error: "permissions must be an array of known permission keys" });
+
+  const [existing] = await db.select({ id: usersTable.id }).from(usersTable)
+    .where(or(eq(usersTable.nickname, nickname), eq(usersTable.email, email))).limit(1);
+  if (existing) return res.status(409).json({ error: "A user with that nickname or email already exists" });
+
+  const passwordHash = await bcrypt.hash(password as string, 12);
+  const [created] = await db.insert(usersTable).values({
+    nickname, email, passwordHash,
+    role: "admin",
+    // Admin-created, so trusted: verified immediately, or they could never log in
+    // (no verification email is sent for this path).
+    emailVerified: true,
+    permissions,
+  }).returning({ id: usersTable.id, nickname: usersTable.nickname, email: usersTable.email, role: usersTable.role });
+
+  await writeAuditLog(req, "admin.create", "user", created.id, { nickname: created.nickname, permissionCount: permissions.length });
+  res.status(201).json({ ...created, permissions, isSuperAdmin: false });
+});
+
+// PATCH /api/admin/staff/:id/permissions — set an admin's exact permission set.
+router.patch("/staff/:id/permissions", requireSuperAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid user id" });
+
+  const permissions = cleanPermissions(req.body?.permissions);
+  if (permissions === null) return res.status(400).json({ error: "permissions must be an array of known permission keys" });
+
+  const [target] = await db.select({ id: usersTable.id, isSuperAdmin: usersTable.isSuperAdmin })
+    .from(usersTable).where(eq(usersTable.id, id)).limit(1);
+  if (!target) return res.status(404).json({ error: "User not found" });
+  // A super-admin always holds everything; an override on them is meaningless and
+  // editing it here would only mislead.
+  if (target.isSuperAdmin) return res.status(400).json({ error: "A super-admin already holds every permission" });
+
+  await db.update(usersTable).set({ permissions }).where(eq(usersTable.id, id));
+  // Effect is immediate: permissions are resolved from the DB on every request.
+  await writeAuditLog(req, "admin.permissions", "user", id, { permissions });
+  res.json({ success: true, permissions });
+});
+
+// POST /api/admin/staff/:id/password — reset an admin's password.
+router.post("/staff/:id/password", requireSuperAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid user id" });
+
+  const pwProblem = passwordProblem(req.body?.password);
+  if (pwProblem) return res.status(400).json({ error: pwProblem });
+
+  const [target] = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.id, id)).limit(1);
+  if (!target) return res.status(404).json({ error: "User not found" });
+
+  const passwordHash = await bcrypt.hash(req.body.password as string, 12);
+  await db.update(usersTable).set({ passwordHash }).where(eq(usersTable.id, id));
+  // Drop every session so the old password stops working everywhere at once.
+  const revokedCount = await revokeAllSessions(id, "password_changed");
+  await writeAuditLog(req, "admin.password_reset", "user", id, { revokedSessionCount: revokedCount });
+  res.json({ success: true, revokedSessionCount: revokedCount });
 });
 
 // DELETE /api/admin/lessons/:id

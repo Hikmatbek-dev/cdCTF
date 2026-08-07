@@ -80,6 +80,43 @@ export function isStaff(role: UserRole): boolean {
   return hasPermission(role, "admin.panel");
 }
 
+export function isPermission(value: unknown): value is Permission {
+  return typeof value === "string" && (PERMISSIONS as readonly string[]).includes(value);
+}
+
+/**
+ * The permissions a caller actually holds.
+ *
+ * A super-admin holds everything and cannot be locked out. A user with a
+ * non-null override holds exactly that set — the role defaults are ignored, so an
+ * override can grant fewer permissions than the role would (least privilege) or a
+ * bespoke mix. Otherwise the role's static defaults apply.
+ */
+export function effectivePermissions(input: {
+  role: UserRole;
+  isSuperAdmin?: boolean | null;
+  permissions?: readonly string[] | null;
+}): Permission[] {
+  if (input.isSuperAdmin) return [...PERMISSIONS];
+  if (input.permissions != null) return input.permissions.filter(isPermission);
+  return [...permissionsForRole(input.role)];
+}
+
+/**
+ * Effective permission check for the authenticated caller on this request.
+ *
+ * A session carries its resolved effective permissions (role defaults, a
+ * per-user override, or everything for a super-admin), computed once when the
+ * request was authenticated. An API token never passes a staff gate, so falling
+ * back to its role defaults is safe and keeps this total.
+ */
+export function reqHasPermission(req: Request, permission: Permission): boolean {
+  const u = req.user;
+  if (!u) return false;
+  if (u.tokenType === "session") return u.permissions.includes(permission);
+  return hasPermission(u.role, permission);
+}
+
 const API_TOKEN_REFUSED = "This endpoint requires an interactive session";
 
 /**
@@ -95,7 +132,7 @@ export function requirePermission(permission: Permission) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) return res.status(401).json({ error: "Unauthorized" });
     if (!staffCapable(req)) return res.status(403).json({ error: API_TOKEN_REFUSED });
-    if (!hasPermission(req.user.role, permission)) return res.status(403).json({ error: "Forbidden" });
+    if (!reqHasPermission(req, permission)) return res.status(403).json({ error: "Forbidden" });
     next();
   };
 }
@@ -105,7 +142,7 @@ export function requireAnyPermission(...permissions: Permission[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) return res.status(401).json({ error: "Unauthorized" });
     if (!staffCapable(req)) return res.status(403).json({ error: API_TOKEN_REFUSED });
-    if (!permissions.some(permission => hasPermission(req.user!.role, permission))) {
+    if (!permissions.some(permission => reqHasPermission(req, permission))) {
       return res.status(403).json({ error: "Forbidden" });
     }
     next();
@@ -115,7 +152,20 @@ export function requireAnyPermission(...permissions: Permission[]) {
 export function requireStaff(req: Request, res: Response, next: NextFunction) {
   if (!req.user) return res.status(401).json({ error: "Unauthorized" });
   if (!staffCapable(req)) return res.status(403).json({ error: API_TOKEN_REFUSED });
-  if (!isStaff(req.user.role)) return res.status(403).json({ error: "Forbidden" });
+  if (!reqHasPermission(req, "admin.panel")) return res.status(403).json({ error: "Forbidden" });
+  next();
+}
+
+/**
+ * The gate for managing other admins: creating them, resetting their password,
+ * toggling their permissions. Only a super-admin passes — this is deliberately a
+ * flag check, not a permission, so it can never be granted through the very
+ * permission matrix it guards.
+ */
+export function requireSuperAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+  if (req.user.tokenType !== "session") return res.status(403).json({ error: API_TOKEN_REFUSED });
+  if (!req.user.isSuperAdmin) return res.status(403).json({ error: "Forbidden" });
   next();
 }
 
@@ -125,12 +175,12 @@ export function requireStaff(req: Request, res: Response, next: NextFunction) {
  * (everything created before authorship existed) are editable only by `.any`.
  */
 export function canEditResource(
-  role: UserRole,
+  req: Request,
   resource: "ctf" | "lessons",
   authorId: number | null,
   userId: number,
 ): boolean {
-  if (hasPermission(role, `${resource}.update.any` as Permission)) return true;
-  if (!hasPermission(role, `${resource}.update.own` as Permission)) return false;
+  if (reqHasPermission(req, `${resource}.update.any` as Permission)) return true;
+  if (!reqHasPermission(req, `${resource}.update.own` as Permission)) return false;
   return authorId !== null && authorId === userId;
 }

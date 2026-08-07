@@ -11,7 +11,7 @@ import {
   touchApiToken,
   type ApiScope,
 } from "../lib/api-tokens";
-import { isUserRole, normalizeRole, type UserRole } from "../lib/permissions";
+import { isUserRole, normalizeRole, effectivePermissions, type UserRole, type Permission } from "../lib/permissions";
 import { logger } from "../lib/logger";
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -55,6 +55,11 @@ export interface SessionAuth {
   tokenType: "session";
   userId: number;
   role: UserRole;
+  /** Effective permissions, resolved once at authentication: role defaults, a
+   * per-user override, or everything for a super-admin. */
+  permissions: Permission[];
+  /** May create and manage other admins. */
+  isSuperAdmin: boolean;
   /** `jti` of the backing row in `user_sessions`. */
   tokenId: string;
   sessionId: number;
@@ -127,10 +132,13 @@ async function resolveSession(token: string): Promise<SessionAuth | null> {
 
   await touchSession(session);
 
+  const role = normalizeRole(user.role);
   return {
     tokenType: "session",
     userId: user.id,
-    role: normalizeRole(user.role),
+    role,
+    permissions: effectivePermissions({ role, isSuperAdmin: user.isSuperAdmin, permissions: user.permissions }),
+    isSuperAdmin: user.isSuperAdmin,
     tokenId: session.tokenId,
     sessionId: session.id,
   };
@@ -154,12 +162,16 @@ async function resolveApiToken(token: string): Promise<ApiTokenAuth | null> {
   };
 }
 
-/** The role and blocked flag always come from the database, never the token. */
+/** The role and blocked flag always come from the database, never the token.
+ * The super-admin flag and permission override ride along so a session's
+ * effective permissions can be resolved the same way, fresh on every request. */
 async function loadLiveUser(userId: number) {
   const [user] = await db.select({
     id: usersTable.id,
     role: usersTable.role,
     isBlocked: usersTable.isBlocked,
+    isSuperAdmin: usersTable.isSuperAdmin,
+    permissions: usersTable.permissions,
   }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 
   return user && !user.isBlocked ? user : null;

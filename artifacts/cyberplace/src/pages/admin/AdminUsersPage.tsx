@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Link } from "wouter";
-import { Search, Shield, ShieldOff } from "lucide-react";
+import { Search, Shield, ShieldOff, KeyRound, SlidersHorizontal, UserPlus, Crown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +14,7 @@ import { Pager, PAGE_SIZE } from "@/components/Pager";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { normalizeArray } from "@/lib/api-shapes";
+import { PERMISSION_CATALOG, PERMISSION_GROUPS } from "@/lib/permission-catalog";
 
 export default function AdminUsersPage() {
   const { t } = useLang();
@@ -23,7 +24,7 @@ export default function AdminUsersPage() {
   const [offset, setOffset] = useState(0);
   const params = { search: search || undefined, limit: PAGE_SIZE, offset };
 
-  const { user: me, can } = useAuth();
+  const { user: me, can, isSuperAdmin } = useAuth();
   const { data, isLoading, isError, refetch } = useAdminListUsers(
     params,
     { query: { queryKey: getAdminListUsersQueryKey(params) } }
@@ -91,6 +92,12 @@ export default function AdminUsersPage() {
     });
   };
 
+  // --- Super-admin: staff management -----------------------------------------
+  const [showCreate, setShowCreate] = useState(false);
+  const [permsFor, setPermsFor] = useState<any>(null);
+  const [pwFor, setPwFor] = useState<any>(null);
+  const afterStaffChange = () => void qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey(params) });
+
   const [isRecalculating, setIsRecalculating] = useState(false);
   const handleRecalculate = async () => {
     if (!confirm(t("Recalculate all user points? This will sync points with current solve data.", "Barcha ballarni qayta hisoblash? Bu ballarni joriy ma'lumotlar bilan sinxronlashtiradi.", "Пересчитать все баллы? Это синхронизирует баллы с текущими данными."))) return;
@@ -135,6 +142,12 @@ export default function AdminUsersPage() {
                 {isRecalculating ? t("Recalculating...", "Hisoblanmoqda...", "Пересчет...") : t("Recalculate Points", "Ballarni qayta hisoblash", "Пересчитать баллы")}
               </Button>
             )}
+            {/* Only a super-admin creates admins and edits their permissions. */}
+            {isSuperAdmin && (
+              <Button size="sm" onClick={() => setShowCreate(true)} className="text-xs h-8 gap-1.5" data-testid="button-create-admin">
+                <UserPlus className="w-3.5 h-3.5" /> {t("Create admin", "Admin yaratish", "Создать админа")}
+              </Button>
+            )}
           </div>
           <span className="text-sm text-muted-foreground">{data ? `${total} ${t("total", "jami", "всего")}` : ""}</span>
         </div>
@@ -172,9 +185,16 @@ export default function AdminUsersPage() {
                   <tr key={user.id} className="hover:bg-muted/20 transition-colors" data-testid={`row-user-${user.id}`}>
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{idx + 1}</td>
                     <td className="px-4 py-3 font-medium">
-                      <Link href={`/profile/${user.id}`} className="hover:text-primary transition-colors">
-                        {user.nickname}
-                      </Link>
+                      <span className="inline-flex items-center gap-1.5">
+                        <Link href={`/profile/${user.id}`} className="hover:text-primary transition-colors">
+                          {user.nickname}
+                        </Link>
+                        {user.isSuperAdmin && (
+                          <span title={t("Super-admin", "Super-admin", "Супер-админ")}>
+                            <Crown className="w-3.5 h-3.5 text-amber-500" aria-label={t("Super-admin", "Super-admin", "Супер-админ")} />
+                          </span>
+                        )}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{user.email}</td>
                     <td className="px-4 py-3 font-mono text-primary font-bold">{user.points}</td>
@@ -203,18 +223,33 @@ export default function AdminUsersPage() {
                         {user.isBlocked ? t("Blocked", "Bloklangan", "Заблокирован") : t("Active", "Faol", "Активен")}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      {user.role !== "admin" && (
-                        user.isBlocked ? (
-                          <Button size="sm" variant="outline" onClick={() => handleUnblock(user.id)} className="h-7 text-xs gap-1" data-testid={`button-unblock-${user.id}`}>
-                            <Shield className="w-3 h-3" /> {t("Unblock", "Blokdan chiqarish", "Разблокировать")}
-                          </Button>
-                        ) : (
-                          <Button size="sm" variant="outline" onClick={() => handleBlock(user.id, user.nickname)} className="h-7 text-xs gap-1 border-destructive/30 text-destructive hover:bg-destructive/10" data-testid={`button-block-${user.id}`}>
-                            <ShieldOff className="w-3 h-3" /> {t("Block", "Bloklash", "Заблокировать")}
-                          </Button>
-                        )
-                      )}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-2">
+                        {/* Super-admin: manage another admin's permissions and
+                            password. Never offered for a super-admin target (they
+                            hold everything) or your own row. */}
+                        {isSuperAdmin && !user.isSuperAdmin && user.id !== me?.id && (
+                          <>
+                            <Button size="sm" variant="outline" onClick={() => setPermsFor(user)} className="h-7 text-xs gap-1" data-testid={`button-perms-${user.id}`}>
+                              <SlidersHorizontal className="w-3 h-3" /> {t("Permissions", "Ruxsatlar", "Права")}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setPwFor(user)} className="h-7 text-xs gap-1" data-testid={`button-password-${user.id}`}>
+                              <KeyRound className="w-3 h-3" /> {t("Password", "Parol", "Пароль")}
+                            </Button>
+                          </>
+                        )}
+                        {user.role !== "admin" && (
+                          user.isBlocked ? (
+                            <Button size="sm" variant="outline" onClick={() => handleUnblock(user.id)} className="h-7 text-xs gap-1" data-testid={`button-unblock-${user.id}`}>
+                              <Shield className="w-3 h-3" /> {t("Unblock", "Blokdan chiqarish", "Разблокировать")}
+                            </Button>
+                          ) : (
+                            <Button size="sm" variant="outline" onClick={() => handleBlock(user.id, user.nickname)} className="h-7 text-xs gap-1 border-destructive/30 text-destructive hover:bg-destructive/10" data-testid={`button-block-${user.id}`}>
+                              <ShieldOff className="w-3 h-3" /> {t("Block", "Bloklash", "Заблокировать")}
+                            </Button>
+                          )
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -224,7 +259,219 @@ export default function AdminUsersPage() {
           <Pager total={total} offset={offset} limit={PAGE_SIZE} onChange={setOffset} />
           </>
         )}
+
+        {isSuperAdmin && showCreate && (
+          <CreateAdminModal onClose={() => setShowCreate(false)} onDone={() => { afterStaffChange(); setShowCreate(false); }} />
+        )}
+        {isSuperAdmin && permsFor && (
+          <PermissionsModal user={permsFor} onClose={() => setPermsFor(null)} onDone={() => { afterStaffChange(); setPermsFor(null); }} />
+        )}
+        {isSuperAdmin && pwFor && (
+          <PasswordModal user={pwFor} onClose={() => setPwFor(null)} onDone={() => { afterStaffChange(); setPwFor(null); }} />
+        )}
       </main>
     </div>
+  );
+}
+
+/** A centred modal shell shared by the staff dialogs. */
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div className="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="px-6 py-4 border-b border-border sticky top-0 bg-card">
+          <h2 className="text-base font-bold">{title}</h2>
+        </div>
+        <div className="p-6">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+/** A grouped checkbox matrix over every toggleable permission. */
+function PermissionMatrix({ selected, onToggle }: { selected: Set<string>; onToggle: (key: string) => void }) {
+  const { lang } = useLang();
+  const label = (p: typeof PERMISSION_CATALOG[number]) => (lang === "uz" ? p.uz : lang === "ru" ? p.ru : p.en);
+  return (
+    <div className="space-y-4">
+      {PERMISSION_GROUPS.map(group => (
+        <div key={group}>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">{group}</div>
+          <div className="grid sm:grid-cols-2 gap-1.5">
+            {PERMISSION_CATALOG.filter(p => p.group === group).map(p => (
+              <label key={p.key} className="flex items-center gap-2 text-sm rounded-lg px-2 py-1.5 hover:bg-muted/40 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selected.has(p.key)}
+                  onChange={() => onToggle(p.key)}
+                  className="accent-primary w-4 h-4 shrink-0"
+                  data-testid={`perm-${p.key}`}
+                />
+                <span>{label(p)}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CreateAdminModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+  const { t } = useLang();
+  const { toast } = useToast();
+  const [nickname, setNickname] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [perms, setPerms] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState(false);
+
+  const toggle = (key: string) => setPerms(prev => {
+    const next = new Set(prev);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    return next;
+  });
+
+  const submit = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/staff", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nickname, email, password, permissions: [...perms] }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof payload?.error === "string" ? payload.error : "failed");
+      toast({ title: t("Admin created", "Admin yaratildi", "Админ создан") });
+      onDone();
+    } catch (e) {
+      toast({ title: e instanceof Error ? e.message : t("Error", "Xato", "Ошибка"), variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal title={t("Create admin", "Admin yaratish", "Создать админа")} onClose={onClose}>
+      <div className="space-y-4">
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">{t("Nickname", "Taxallus", "Никнейм")}</label>
+            <Input value={nickname} onChange={e => setNickname(e.target.value)} placeholder="admin_name" data-testid="input-new-admin-nickname" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Email</label>
+            <Input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="admin@cdctf.uz" data-testid="input-new-admin-email" />
+          </div>
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground">{t("Password", "Parol", "Пароль")}</label>
+          <Input value={password} onChange={e => setPassword(e.target.value)} type="text" placeholder={t("Min 10 chars, mixed case, number, symbol", "Kamida 10 belgi, katta-kichik, raqam, belgi", "Мин. 10 симв., регистр, цифра, символ")} data-testid="input-new-admin-password" />
+          <p className="text-[11px] text-muted-foreground mt-1">{t("Share this with the new admin so they can sign in.", "Yangi admin kirishi uchun buni unga bering.", "Передайте новому админу для входа.")}</p>
+        </div>
+        <div>
+          <div className="text-xs font-medium text-muted-foreground mb-2">{t("Permissions (all off by default)", "Ruxsatlar (standart: hammasi o'chiq)", "Права (по умолчанию всё выключено)")}</div>
+          <PermissionMatrix selected={perms} onToggle={toggle} />
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" onClick={onClose}>{t("Cancel", "Bekor qilish", "Отмена")}</Button>
+          <Button onClick={submit} disabled={busy} data-testid="button-submit-create-admin">
+            {busy ? t("Creating...", "Yaratilmoqda...", "Создание...") : t("Create", "Yaratish", "Создать")}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function PermissionsModal({ user, onClose, onDone }: { user: any; onClose: () => void; onDone: () => void }) {
+  const { t } = useLang();
+  const { toast } = useToast();
+  const [perms, setPerms] = useState<Set<string>>(new Set(Array.isArray(user.permissions) ? user.permissions : []));
+  const [busy, setBusy] = useState(false);
+
+  const toggle = (key: string) => setPerms(prev => {
+    const next = new Set(prev);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    return next;
+  });
+
+  const submit = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/staff/${user.id}/permissions`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ permissions: [...perms] }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof payload?.error === "string" ? payload.error : "failed");
+      toast({ title: t("Permissions saved", "Ruxsatlar saqlandi", "Права сохранены") });
+      onDone();
+    } catch (e) {
+      toast({ title: e instanceof Error ? e.message : t("Error", "Xato", "Ошибка"), variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal title={t(`Permissions — ${user.nickname}`, `Ruxsatlar — ${user.nickname}`, `Права — ${user.nickname}`)} onClose={onClose}>
+      <div className="space-y-4">
+        <PermissionMatrix selected={perms} onToggle={toggle} />
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" onClick={onClose}>{t("Cancel", "Bekor qilish", "Отмена")}</Button>
+          <Button onClick={submit} disabled={busy} data-testid="button-save-perms">
+            {busy ? t("Saving...", "Saqlanmoqda...", "Сохранение...") : t("Save", "Saqlash", "Сохранить")}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function PasswordModal({ user, onClose, onDone }: { user: any; onClose: () => void; onDone: () => void }) {
+  const { t } = useLang();
+  const { toast } = useToast();
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/staff/${user.id}/password`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof payload?.error === "string" ? payload.error : "failed");
+      toast({ title: t("Password reset", "Parol tiklandi", "Пароль сброшен"), description: t("They are signed out of every device.", "U barcha qurilmalardan chiqarildi.", "Он вышел со всех устройств.") });
+      onDone();
+    } catch (e) {
+      toast({ title: e instanceof Error ? e.message : t("Error", "Xato", "Ошибка"), variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal title={t(`Reset password — ${user.nickname}`, `Parolni tiklash — ${user.nickname}`, `Сброс пароля — ${user.nickname}`)} onClose={onClose}>
+      <div className="space-y-4">
+        <div>
+          <label className="text-xs font-medium text-muted-foreground">{t("New password", "Yangi parol", "Новый пароль")}</label>
+          <Input value={password} onChange={e => setPassword(e.target.value)} type="text" placeholder={t("Min 10 chars, mixed case, number, symbol", "Kamida 10 belgi, katta-kichik, raqam, belgi", "Мин. 10 симв., регистр, цифра, символ")} data-testid="input-reset-password" />
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" onClick={onClose}>{t("Cancel", "Bekor qilish", "Отмена")}</Button>
+          <Button onClick={submit} disabled={busy} data-testid="button-submit-reset-password">
+            {busy ? t("Saving...", "Saqlanmoqda...", "Сохранение...") : t("Reset password", "Parolni tiklash", "Сбросить пароль")}
+          </Button>
+        </div>
+      </div>
+    </Modal>
   );
 }

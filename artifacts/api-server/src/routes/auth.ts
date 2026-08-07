@@ -74,7 +74,7 @@ import {
   revokeApiToken,
   type ApiScope,
 } from "../lib/api-tokens";
-import { permissionsForRole } from "../lib/permissions";
+import { effectivePermissions } from "../lib/permissions";
 import { logger } from "../lib/logger";
 import { recordSignupReferral, tryActivateReferral } from "../lib/referrals";
 import {
@@ -1006,10 +1006,16 @@ router.get("/session", optionalAuth, async (req, res) => {
   const [pendingRef] = await db.select().from(referralsTable).where(and(eq(referralsTable.refereeId, user.id), eq(referralsTable.status, "pending"))).limit(1);
 
   res.json({
-    user: { ...publicUser(user), isPendingReferee: !!pendingRef },
+    user: { ...publicUser(user), isPendingReferee: !!pendingRef, isSuperAdmin: user.isSuperAdmin },
     // Derived server-side so the client never has to keep its own copy of the
-    // permission table — it would drift the first time one changes.
-    permissions: permissionsForRole(normalizeRole(user.role)),
+    // permission table — it would drift the first time one changes. This is the
+    // user's EFFECTIVE set: role defaults, a per-user override, or everything for
+    // a super-admin. The admin UI gates itself off exactly this array.
+    permissions: effectivePermissions({
+      role: normalizeRole(user.role),
+      isSuperAdmin: user.isSuperAdmin,
+      permissions: user.permissions,
+    }),
   });
 });
 
