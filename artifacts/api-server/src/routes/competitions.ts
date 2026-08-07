@@ -40,6 +40,7 @@ router.get("/", optionalAuth, async (req, res) => {
     name: comp.name,
     description: comp.description,
     type: comp.type,
+    format: comp.format,
     startTime: comp.startTime.toISOString(),
     endTime: comp.endTime.toISOString(),
     status: getStatus(comp.startTime, comp.endTime),
@@ -96,6 +97,8 @@ router.get("/:id", optionalAuth, async (req, res) => {
     name: comp.name,
     description: comp.description,
     type: comp.type,
+    format: comp.format,
+    maxTeamSize: comp.maxTeamSize,
     startTime: comp.startTime.toISOString(),
     endTime: comp.endTime.toISOString(),
     status: getStatus(comp.startTime, comp.endTime),
@@ -120,6 +123,11 @@ router.post("/:id/join", authenticateToken, async (req, res) => {
   const [comp] = await db.select().from(competitionsTable).where(eq(competitionsTable.id, compId)).limit(1);
   if (!comp) return res.status(404).json({ error: "Not found" });
   if (getStatus(comp.startTime, comp.endTime) === "ended") return res.status(400).json({ error: "Competition already ended" });
+  // Solo join is only for individual events. A team event is entered by creating
+  // or joining a team, so that its scoreboard and shared solves are coherent —
+  // letting someone solo-join a team event was the mode confusion at the root of
+  // this whole feature.
+  if (comp.format === "team") return res.status(400).json({ error: "team_only" });
   if (comp.type === "private") {
     const inviteCode = String(req.body?.inviteCode ?? req.query.inviteCode ?? "").trim();
     if (!comp.inviteCode || inviteCode !== comp.inviteCode) {
@@ -132,28 +140,31 @@ router.post("/:id/join", authenticateToken, async (req, res) => {
 
   if (existing) return res.json({ joined: true, message: "Already joined" });
 
-  // The invite gate: a competition needs some number of *activated* invites
-  // behind a self-join. The number is the event's own override when it sets one,
-  // else the global default; 0 opens the event to anyone (the launch case).
-  // Checked only on self-join — an admin adding someone (addCompetitionUser) is a
-  // deliberate exception, and a learner already in stays in. "Activated" is what
-  // makes this worth anything: throwaway signups do not count, so the gate cannot
-  // be farmed. The count is returned so the UI can say "3 / 5".
-  const required = inviteRequirementFor(comp.inviteRequirement);
-  if (required > 0) {
-    const invites = await activeReferralCount(userId);
-    if (invites < required) {
-      return res.status(403).json({
-        error: "invite_requirement",
-        required,
-        have: invites,
-      });
-    }
-  }
+  const gate = await inviteGate(comp, userId);
+  if (gate) return res.status(403).json({ error: "invite_requirement", ...gate });
 
   await db.insert(competitionUsersTable).values({ competitionId: compId, userId });
   res.status(201).json({ joined: true });
 });
+
+/**
+ * The invite gate, shared by every self-entry path (solo join, team create, team
+ * join). A competition needs some number of *activated* invites behind entry —
+ * the event's own override when it sets one, else the global default; 0 opens it
+ * to anyone. "Activated" is what makes this worth anything: throwaway signups do
+ * not count, so it cannot be farmed. Returns the {required, have} pair to refuse
+ * with, or null when the caller is clear. Applying it to the team paths too is
+ * what stops the gate being bypassed by simply forming a team.
+ */
+async function inviteGate(
+  comp: { inviteRequirement: number | null },
+  userId: number,
+): Promise<{ required: number; have: number } | null> {
+  const required = inviteRequirementFor(comp.inviteRequirement);
+  if (required <= 0) return null;
+  const have = await activeReferralCount(userId);
+  return have < required ? { required, have } : null;
+}
 
 /** Postgres unique-violation SQLSTATE — a name or code collision, not a bug.
  * Drizzle wraps the driver error in a DrizzleQueryError, so the real pg error
@@ -178,12 +189,17 @@ router.post("/:id/teams", authenticateToken, async (req, res) => {
   const [comp] = await db.select().from(competitionsTable).where(eq(competitionsTable.id, compId)).limit(1);
   if (!comp) return res.status(404).json({ error: "Not found" });
   if (getStatus(comp.startTime, comp.endTime) === "ended") return res.status(400).json({ error: "Competition already ended" });
+  // Teams exist only in team events.
+  if (comp.format !== "team") return res.status(400).json({ error: "individual_only" });
   // A private competition still gates on its own invite code: the captain must
   // be entitled to be in the competition before they can form a team in it.
   if (comp.type === "private") {
     const inviteCode = String(req.body?.inviteCode ?? "").trim();
     if (!comp.inviteCode || inviteCode !== comp.inviteCode) return res.status(403).json({ error: "Invalid invite code" });
   }
+  // Same invite gate as solo join — forming a team must not be a way around it.
+  const gate = await inviteGate(comp, userId);
+  if (gate) return res.status(403).json({ error: "invite_requirement", ...gate });
 
   const [membership] = await db.select().from(competitionUsersTable)
     .where(and(eq(competitionUsersTable.competitionId, compId), eq(competitionUsersTable.userId, userId))).limit(1);
@@ -219,6 +235,10 @@ router.post("/:id/teams/join", authenticateToken, async (req, res) => {
   const [comp] = await db.select().from(competitionsTable).where(eq(competitionsTable.id, compId)).limit(1);
   if (!comp) return res.status(404).json({ error: "Not found" });
   if (getStatus(comp.startTime, comp.endTime) === "ended") return res.status(400).json({ error: "Competition already ended" });
+  if (comp.format !== "team") return res.status(400).json({ error: "individual_only" });
+  // Same invite gate as solo join — joining a team must not be a way around it.
+  const gate = await inviteGate(comp, userId);
+  if (gate) return res.status(403).json({ error: "invite_requirement", ...gate });
 
   const [team] = await db.select().from(competitionTeamsTable)
     .where(and(eq(competitionTeamsTable.competitionId, compId), eq(competitionTeamsTable.inviteCode, teamCode))).limit(1);
@@ -228,6 +248,14 @@ router.post("/:id/teams/join", authenticateToken, async (req, res) => {
     .where(and(eq(competitionUsersTable.competitionId, compId), eq(competitionUsersTable.userId, userId))).limit(1);
   if (membership?.teamId === team.id) return res.json({ joined: true, teamId: team.id, name: team.name });
   if (membership?.teamId) return res.status(409).json({ error: "You are already in another team" });
+
+  // Team size cap, when the event sets one. Counted at join time; null = no cap.
+  if (comp.maxTeamSize != null) {
+    const [{ n: members }] = await db.select({ n: sql<number>`count(*)::int` })
+      .from(competitionUsersTable)
+      .where(and(eq(competitionUsersTable.competitionId, compId), eq(competitionUsersTable.teamId, team.id)));
+    if (members >= comp.maxTeamSize) return res.status(409).json({ error: "team_full", max: comp.maxTeamSize });
+  }
 
   // The team code doubles as competition access — the captain vouched for them.
   // Any solo solves made before joining stay individual (they carry no team_id);
@@ -371,6 +399,13 @@ router.post("/:id/ctf/:ctfId/submit", authenticateToken, flagRateLimit, validate
     const pointsEarned = alreadyCountedGlobally ? 0 : await awardPoints(tx, userId, challenge.points);
 
     return { status: 200, data: { correct: true, alreadySolved: false, pointsEarned } };
+  }).catch((err: unknown) => {
+    // Two submits raced past the "already solved?" check (this user twice, or two
+    // teammates on the same challenge) and the second lost the unique index —
+    // exactly what that index is the backstop for. Report it as already solved
+    // rather than letting a 23505 surface as a 500.
+    if (isUniqueViolation(err)) return { status: 200, data: { correct: true, alreadySolved: true, pointsEarned: 0 } };
+    throw err;
   });
 
   res.status(outcome.status).json(outcome.data);

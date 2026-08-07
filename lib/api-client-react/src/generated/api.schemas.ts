@@ -456,6 +456,14 @@ export const CompetitionType = {
   private: "private",
 } as const;
 
+export type CompetitionFormat =
+  (typeof CompetitionFormat)[keyof typeof CompetitionFormat];
+
+export const CompetitionFormat = {
+  individual: "individual",
+  team: "team",
+} as const;
+
 export type CompetitionStatus =
   (typeof CompetitionStatus)[keyof typeof CompetitionStatus];
 
@@ -470,6 +478,7 @@ export interface Competition {
   name: string;
   description?: string | null;
   type: CompetitionType;
+  format?: CompetitionFormat;
   startTime: string;
   endTime: string;
   status: CompetitionStatus;
@@ -486,6 +495,14 @@ export type CompetitionDetailType =
 export const CompetitionDetailType = {
   public: "public",
   private: "private",
+} as const;
+
+export type CompetitionDetailFormat =
+  (typeof CompetitionDetailFormat)[keyof typeof CompetitionDetailFormat];
+
+export const CompetitionDetailFormat = {
+  individual: "individual",
+  team: "team",
 } as const;
 
 export type CompetitionDetailStatus =
@@ -509,6 +526,8 @@ export interface CompetitionDetail {
   name: string;
   description?: string | null;
   type: CompetitionDetailType;
+  format?: CompetitionDetailFormat;
+  maxTeamSize?: number | null;
   startTime: string;
   endTime: string;
   status: CompetitionDetailStatus;
@@ -720,6 +739,14 @@ export const AdminCompetitionType = {
   private: "private",
 } as const;
 
+export type AdminCompetitionFormat =
+  (typeof AdminCompetitionFormat)[keyof typeof AdminCompetitionFormat];
+
+export const AdminCompetitionFormat = {
+  individual: "individual",
+  team: "team",
+} as const;
+
 /**
  * A competition as staff see it, including the private join code.
  */
@@ -737,6 +764,8 @@ export interface AdminCompetition {
   prize?: string | null;
   /** Per-event invite override; null means the global default applies. */
   inviteRequirement?: number | null;
+  format?: AdminCompetitionFormat;
+  maxTeamSize?: number | null;
   ctfIds: number[];
   ctfCount: number;
   participantCount: number;
@@ -748,6 +777,17 @@ export type CreateCompetitionBodyType =
 export const CreateCompetitionBodyType = {
   public: "public",
   private: "private",
+} as const;
+
+/**
+ * Play mode. "individual" (each learner solo) or "team" (learners play in teams that share solves). Defaults to individual.
+ */
+export type CreateCompetitionBodyFormat =
+  (typeof CreateCompetitionBodyFormat)[keyof typeof CreateCompetitionBodyFormat];
+
+export const CreateCompetitionBodyFormat = {
+  individual: "individual",
+  team: "team",
 } as const;
 
 export interface CreateCompetitionBody {
@@ -772,6 +812,13 @@ export interface CreateCompetitionBody {
    * @minimum 0
    */
   inviteRequirement?: number | null;
+  /** Play mode. "individual" (each learner solo) or "team" (learners play in teams that share solves). Defaults to individual. */
+  format?: CreateCompetitionBodyFormat;
+  /**
+   * Max members per team, for team events. Null means no cap. Ignored for individual events.
+   * @minimum 1
+   */
+  maxTeamSize?: number | null;
 }
 
 export type CreateLessonBodyQuestionsItem = {
@@ -1229,6 +1276,17 @@ export const UpdateCompetitionBodyType = {
   private: "private",
 } as const;
 
+/**
+ * Play mode — individual or team.
+ */
+export type UpdateCompetitionBodyFormat =
+  (typeof UpdateCompetitionBodyFormat)[keyof typeof UpdateCompetitionBodyFormat];
+
+export const UpdateCompetitionBodyFormat = {
+  individual: "individual",
+  team: "team",
+} as const;
+
 export interface UpdateCompetitionBody {
   /** Replaces the competition's challenge set. Omit to leave it unchanged. */
   ctfIds?: number[];
@@ -1247,6 +1305,13 @@ export interface UpdateCompetitionBody {
    * @minimum 0
    */
   inviteRequirement?: number | null;
+  /** Play mode — individual or team. */
+  format?: UpdateCompetitionBodyFormat;
+  /**
+   * Max members per team, for team events. Null means no cap.
+   * @minimum 1
+   */
+  maxTeamSize?: number | null;
 }
 
 export type SetRoleBodyRole =

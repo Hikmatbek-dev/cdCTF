@@ -262,6 +262,8 @@ async function applySchema() {
   await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS sponsor_url text");
   await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS prize text");
   await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS invite_requirement integer");
+  await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS format text NOT NULL DEFAULT 'individual'");
+  await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS max_team_size integer");
 
   // Team play: teams register within a competition, and members join under one.
   await pool.query(`

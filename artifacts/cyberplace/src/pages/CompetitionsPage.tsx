@@ -90,6 +90,10 @@ export default function CompetitionsPage() {
                       {comp.type === "private" && <Lock className="w-3 h-3" />}
                       {comp.type === "public" ? t("Public", "Ochiq", "Публичный") : t("Private", "Yopiq", "Приватный")}
                     </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border border-primary/20 bg-primary/10 text-primary text-xs font-medium">
+                      <Users className="w-3 h-3" />
+                      {(comp as any).format === "team" ? t("Team", "Jamoa", "Командный") : t("Individual", "Yakka", "Индивидуальный")}
+                    </span>
                     {comp.isJoined && (
                       <span className="text-xs font-medium text-primary">{t("Joined", "Qatnashyapsiz", "Вы участвуете")}</span>
                     )}

@@ -58,10 +58,11 @@ mkctf() { # $1 = name suffix, $2 = flag, $3 = points -> id
      VALUES ('${TAG}_$1','d','Web','easy',$3,'$(hashflag "$2")', true) RETURNING id"
 }
 
-mkcomp() { # $1 = suffix, $2 = type, $3 = invite|NULL, $4 = start offset, $5 = end offset -> id
+mkcomp() { # $1 = suffix, $2 = type, $3 = invite|NULL, $4 = start offset, $5 = end offset, [$6 = format] -> id
   local code="NULL"; [ "$3" != "NULL" ] && code="'$3'"
-  q "INSERT INTO competitions (name, type, invite_code, start_time, end_time)
-     VALUES ('${TAG}_$1','$2',$code, now() + interval '$4', now() + interval '$5') RETURNING id"
+  local fmt="${6:-individual}"
+  q "INSERT INTO competitions (name, type, invite_code, start_time, end_time, format)
+     VALUES ('${TAG}_$1','$2',$code, now() + interval '$4', now() + interval '$5', '$fmt') RETURNING id"
 }
 
 # Not UID: bash makes that readonly (it is the OS user id), so the assignment
@@ -227,7 +228,7 @@ echo "=== ⭐ JAMOA — umumiy yechim (bir yechim butun jamoaga bir marta) ==="
 read -r TT1 T1ID <<< "$(mkuser tu1)"
 read -r TT2 T2ID <<< "$(mkuser tu2)"
 read -r TT3 T3ID <<< "$(mkuser tu3team)"
-TCOMP=$(mkcomp tactive public NULL '-1 hour' '+1 hour')
+TCOMP=$(mkcomp tactive public NULL '-1 hour' '+1 hour' team)
 TC1=$(mkctf tc1 'Flag{team1}' 150)
 TC2=$(mkctf tc2 'Flag{team2}' 250)
 q "INSERT INTO competition_tasks (competition_id, ctf_id) VALUES ($TCOMP,$TC1),($TCOMP,$TC2)" > /dev/null
@@ -249,6 +250,13 @@ check "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/competitions/$TCOMP
 # A user already in a team cannot create another.
 check "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/competitions/$TCOMP/teams -H "Authorization: Bearer $TT1" \
   -H 'Content-Type: application/json' -d '{"name":"Beta"}')" "409" "jamoadagi odam ikkinchisini yarata olmaydi"
+
+# Mode is a hard boundary. Solo-joining a TEAM event is refused; creating a team
+# in an INDIVIDUAL event is refused. TT3 is not on a team, so it is the prober.
+check "$(curl -s -X POST $API/competitions/$TCOMP/join -H "Authorization: Bearer $TT3" \
+  -H 'Content-Type: application/json' -d '{}' | python3 -c 'import sys,json;print(json.load(sys.stdin).get("error"))')" "team_only" "jamoa musobaqasiga yakka qo'shilib bo'lmaydi"
+check "$(curl -s -X POST $API/competitions/$COMP/teams -H "Authorization: Bearer $TT3" \
+  -H 'Content-Type: application/json' -d '{"name":"Nope"}' | python3 -c 'import sys,json;print(json.load(sys.stdin).get("error"))')" "individual_only" "yakka musobaqada jamoa tuzib bo'lmaydi"
 
 resetlimit
 # Captain solves tc1 → team earns 150.

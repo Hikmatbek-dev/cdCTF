@@ -26,6 +26,8 @@ const schema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
   type: z.enum(["public", "private"]),
+  format: z.enum(["individual", "team"]),
+  maxTeamSize: z.string().regex(/^\d*$/, "Numbers only").optional(),
   inviteCode: z.string().optional(),
   startTime: z.string().min(1),
   endTime: z.string().min(1),
@@ -41,7 +43,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 const EMPTY: FormData = {
-  name: "", description: "", type: "public", inviteCode: "", startTime: "", endTime: "",
+  name: "", description: "", type: "public", format: "individual", maxTeamSize: "", inviteCode: "", startTime: "", endTime: "",
   ctfIds: [], sponsorName: "", sponsorLogoUrl: "", sponsorUrl: "", prize: "", inviteRequirement: "",
 };
 
@@ -131,6 +133,7 @@ export default function AdminCompetitionsPage() {
 
   const form = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: EMPTY });
   const isPrivate = form.watch("type") === "private";
+  const isTeam = form.watch("format") === "team";
 
   const refresh = () => qc.invalidateQueries({ queryKey: getAdminListCompetitionsQueryKey() });
 
@@ -157,6 +160,8 @@ export default function AdminCompetitionsPage() {
       sponsorUrl: comp.sponsorUrl ?? "",
       prize: comp.prize ?? "",
       inviteRequirement: comp.inviteRequirement == null ? "" : String(comp.inviteRequirement),
+      format: comp.format === "team" ? "team" : "individual",
+      maxTeamSize: comp.maxTeamSize == null ? "" : String(comp.maxTeamSize),
     });
     setShowForm(true);
   };
@@ -184,6 +189,9 @@ export default function AdminCompetitionsPage() {
       prize: values.prize || null,
       // Blank field → null → the event falls back to the global default.
       inviteRequirement: values.inviteRequirement ? Number(values.inviteRequirement) : null,
+      format: values.format,
+      // Only meaningful for a team event; sent as null otherwise.
+      maxTeamSize: values.format === "team" && values.maxTeamSize ? Number(values.maxTeamSize) : null,
     };
 
     const done = (title: string) => () => {
@@ -261,6 +269,26 @@ export default function AdminCompetitionsPage() {
                     </Select>
                   </FormItem>
                 )} />
+                <FormField control={form.control} name="format" render={({ field }) => (
+                  <FormItem><FormLabel>{t("Play mode", "O'yin turi", "Режим")}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger data-testid="select-comp-format"><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="individual">{t("Individual", "Yakka", "Индивидуальный")}</SelectItem>
+                        <SelectItem value="team">{t("Team", "Jamoa", "Командный")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )} />
+                {isTeam && (
+                  <FormField control={form.control} name="maxTeamSize" render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>{t("Max team size", "Jamoadagi maks. a'zo", "Макс. размер команды")}</FormLabel>
+                      <FormControl><Input {...field} inputMode="numeric" placeholder={t("Blank = no limit", "Bo'sh = cheksiz", "Пусто = без лимита")} data-testid="input-comp-max-team-size" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                )}
                 {isPrivate && (
                   <FormField control={form.control} name="inviteCode" render={({ field }) => (
                     <FormItem className="col-span-2">

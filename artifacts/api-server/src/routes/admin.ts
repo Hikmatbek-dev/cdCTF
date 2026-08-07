@@ -571,6 +571,8 @@ router.get("/competitions", requirePermission("competitions.manage"), async (_re
       sponsorUrl: comp.sponsorUrl,
       prize: comp.prize,
       inviteRequirement: comp.inviteRequirement,
+      format: comp.format,
+      maxTeamSize: comp.maxTeamSize,
       ctfIds: tasks.filter(t => t.competitionId === comp.id).map(t => t.ctfId),
       ctfCount: tasks.filter(t => t.competitionId === comp.id).length,
       participantCount: members.filter(m => m.competitionId === comp.id).length,
@@ -580,7 +582,7 @@ router.get("/competitions", requirePermission("competitions.manage"), async (_re
 
 // POST /api/admin/competitions
 router.post("/competitions", requirePermission("competitions.manage"), validateBody(AdminCreateCompetitionBody), async (req, res) => {
-  const { name, description, type, startTime, endTime, ctfIds, inviteCode, sponsorName, sponsorLogoUrl, sponsorUrl, prize, inviteRequirement } = req.body;
+  const { name, description, type, format, maxTeamSize, startTime, endTime, ctfIds, inviteCode, sponsorName, sponsorLogoUrl, sponsorUrl, prize, inviteRequirement } = req.body;
   if (!name || !startTime || !endTime) return res.status(400).json({ error: "Missing fields" });
   const start = new Date(startTime);
   const end = new Date(endTime);
@@ -592,8 +594,12 @@ router.post("/competitions", requirePermission("competitions.manage"), validateB
     ? String(inviteCode || randomUUID().slice(0, 8)).trim()
     : null;
 
+  const normalizedFormat = format === "team" ? "team" : "individual";
   const [comp] = await db.insert(competitionsTable).values({
     name, description: description || null, type: normalizedType, inviteCode: normalizedInviteCode,
+    format: normalizedFormat,
+    // A cap only means anything for a team event; store null for individual.
+    maxTeamSize: normalizedFormat === "team" ? cleanTeamSize(maxTeamSize) : null,
     startTime: start, endTime: end,
     sponsorName: cleanText(sponsorName), sponsorLogoUrl: cleanText(sponsorLogoUrl),
     sponsorUrl: cleanText(sponsorUrl), prize: cleanText(prize),
@@ -626,6 +632,13 @@ function cleanRequirement(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
   const n = Number(value);
   return Number.isInteger(n) && n >= 0 ? n : null;
+}
+
+/** Normalises a team-size cap to a positive integer, or null for "no cap". */
+function cleanTeamSize(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 1 ? n : null;
 }
 
 // PATCH /api/admin/competitions/:id
@@ -690,6 +703,15 @@ async function updateCompetitionHandler(req: Request, res: Response) {
   // The invite override: normalise to a non-negative int or null (use default).
   if (updates.inviteRequirement !== undefined) {
     updates.inviteRequirement = cleanRequirement(updates.inviteRequirement);
+  }
+  // Play mode: only the two known values; anything else falls back to individual.
+  if (updates.format !== undefined) {
+    updates.format = updates.format === "team" ? "team" : "individual";
+  }
+  // Team-size cap: a positive int or null. Cleared when the event isn't (being
+  // set to) a team event, so an individual event never carries a stray cap.
+  if (updates.maxTeamSize !== undefined || updates.format === "individual") {
+    updates.maxTeamSize = updates.format === "individual" ? null : cleanTeamSize(updates.maxTeamSize);
   }
 
   // The challenge set is not a column, so filterAllowedUpdates drops it — which

@@ -644,6 +644,7 @@ export const ListCompetitionsResponseItem = zod.object({
   name: zod.string(),
   description: zod.string().nullish(),
   type: zod.enum(["public", "private"]),
+  format: zod.enum(["individual", "team"]).optional(),
   startTime: zod.coerce.date(),
   endTime: zod.coerce.date(),
   status: zod.enum(["upcoming", "active", "ended"]),
@@ -667,6 +668,8 @@ export const GetCompetitionResponse = zod.object({
   name: zod.string(),
   description: zod.string().nullish(),
   type: zod.enum(["public", "private"]),
+  format: zod.enum(["individual", "team"]).optional(),
+  maxTeamSize: zod.number().nullish(),
   startTime: zod.coerce.date(),
   endTime: zod.coerce.date(),
   status: zod.enum(["upcoming", "active", "ended"]),
@@ -1296,6 +1299,8 @@ export const AdminListCompetitionsResponse = zod.object({
           .describe(
             "Per-event invite override; null means the global default applies.",
           ),
+        format: zod.enum(["individual", "team"]).optional(),
+        maxTeamSize: zod.number().nullish(),
         ctfIds: zod.array(zod.number()),
         ctfCount: zod.number(),
         participantCount: zod.number(),
@@ -1349,6 +1354,19 @@ export const AdminCreateCompetitionBody = zod.object({
     .describe(
       "Activated invites a learner needs to self-join this event. Null uses the global default; 0 opens the event to anyone.",
     ),
+  format: zod
+    .enum(["individual", "team"])
+    .optional()
+    .describe(
+      'Play mode. \"individual\" (each learner solo) or \"team\" (learners play in teams that share solves). Defaults to individual.',
+    ),
+  maxTeamSize: zod
+    .number()
+    .min(1)
+    .nullish()
+    .describe(
+      "Max members per team, for team events. Null means no cap. Ignored for individual events.",
+    ),
 });
 
 /**
@@ -1384,6 +1402,15 @@ export const AdminUpdateCompetitionBody = zod.object({
     .describe(
       "Activated invites needed to self-join this event. Null uses the global default; 0 opens it to anyone.",
     ),
+  format: zod
+    .enum(["individual", "team"])
+    .optional()
+    .describe("Play mode — individual or team."),
+  maxTeamSize: zod
+    .number()
+    .min(1)
+    .nullish()
+    .describe("Max members per team, for team events. Null means no cap."),
 });
 
 export const AdminUpdateCompetitionResponse = zod.object({
@@ -1391,6 +1418,7 @@ export const AdminUpdateCompetitionResponse = zod.object({
   name: zod.string(),
   description: zod.string().nullish(),
   type: zod.enum(["public", "private"]),
+  format: zod.enum(["individual", "team"]).optional(),
   startTime: zod.coerce.date(),
   endTime: zod.coerce.date(),
   status: zod.enum(["upcoming", "active", "ended"]),
@@ -1434,6 +1462,15 @@ export const UpdateCompetitionBody = zod.object({
     .describe(
       "Activated invites needed to self-join this event. Null uses the global default; 0 opens it to anyone.",
     ),
+  format: zod
+    .enum(["individual", "team"])
+    .optional()
+    .describe("Play mode — individual or team."),
+  maxTeamSize: zod
+    .number()
+    .min(1)
+    .nullish()
+    .describe("Max members per team, for team events. Null means no cap."),
 });
 
 export const UpdateCompetitionResponse = zod.object({
@@ -1441,6 +1478,7 @@ export const UpdateCompetitionResponse = zod.object({
   name: zod.string(),
   description: zod.string().nullish(),
   type: zod.enum(["public", "private"]),
+  format: zod.enum(["individual", "team"]).optional(),
   startTime: zod.coerce.date(),
   endTime: zod.coerce.date(),
   status: zod.enum(["upcoming", "active", "ended"]),

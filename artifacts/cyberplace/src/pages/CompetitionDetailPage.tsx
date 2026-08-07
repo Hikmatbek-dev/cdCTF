@@ -82,6 +82,33 @@ export default function CompetitionDetailPage() {
     void qc.invalidateQueries({ queryKey: getGetCompetitionTeamsQueryKey(id) });
   };
 
+  /** The friendly toasts the team endpoints can return. Returns true when it has
+   * handled the response, so the caller stops. */
+  const handleTeamError = (response: Response, data: any): boolean => {
+    if (response.status === 403 && data?.error === "invite_requirement") {
+      toast({
+        variant: "destructive",
+        title: t("Invite friends first", "Avval do'st taklif qiling", "Сначала пригласите друзей"),
+        description: t(
+          `You have ${data.have} of ${data.required} active invites. Share your link from your profile.`,
+          `Sizda ${data.required} tadan ${data.have} ta faol taklif bor. Profilingizdagi havolani ulashing.`,
+          `У вас ${data.have} из ${data.required} активных приглашений. Поделитесь ссылкой в профиле.`,
+        ),
+      });
+      setLocation("/profile");
+      return true;
+    }
+    if (response.status === 409 && data?.error === "team_full") {
+      toast({
+        variant: "destructive",
+        title: t("Team is full", "Jamoa to'la", "Команда заполнена"),
+        description: t(`This team already has ${data.max} members.`, `Bu jamoada allaqachon ${data.max} a'zo bor.`, `В этой команде уже ${data.max} участников.`),
+      });
+      return true;
+    }
+    return false;
+  };
+
   const handleCreateTeam = async () => {
     if (!isAuthenticated || teamBusy) return;
     setTeamBusy(true);
@@ -94,6 +121,7 @@ export default function CompetitionDetailPage() {
         body: JSON.stringify(body),
       });
       const data = await response.json().catch(() => ({}));
+      if (handleTeamError(response, data)) return;
       if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : t("Something went wrong", "Xatolik yuz berdi", "Что-то пошло не так"));
       toast({ title: t("Team created!", "Jamoa yaratildi!", "Команда создана!") });
       setTeamName("");
@@ -115,6 +143,7 @@ export default function CompetitionDetailPage() {
         body: JSON.stringify({ inviteCode: teamCode.trim() }),
       });
       const data = await response.json().catch(() => ({}));
+      if (handleTeamError(response, data)) return;
       if (!response.ok) throw new Error(typeof data?.error === "string" ? data.error : t("Something went wrong", "Xatolik yuz berdi", "Что-то пошло не так"));
       toast({ title: t("Joined the team!", "Jamoaga qo'shildingiz!", "Вы вступили в команду!") });
       setTeamCode("");
@@ -158,7 +187,11 @@ export default function CompetitionDetailPage() {
   const scoreboard = normalizeArray<any>(scoreboardData, ["scoreboard", "entries", "data", "items"]);
   const teams = normalizeArray<any>(teamsData, ["teams", "data", "items"]);
   const myTeam = (comp as any).myTeam as { id: number; name: string; inviteCode: string; isCaptain: boolean } | null | undefined;
-  const canManageTeam = isAuthenticated && comp.status !== "ended";
+  // Team vs individual is a hard mode, set by the admin. Each view below shows
+  // only what belongs to the event's mode, so a team event is never played solo
+  // and an individual event never sprouts teams.
+  const isTeamMode = (comp as any).format === "team";
+  const canManageTeam = isAuthenticated && comp.status !== "ended" && isTeamMode;
 
   return (
     <div className="min-h-screen bg-background page">
@@ -172,6 +205,9 @@ export default function CompetitionDetailPage() {
             {comp.type === "private" && (
               <span className="flex items-center gap-1 text-xs text-orange-500"><Lock className="w-3 h-3" /> {t("Private", "Yopiq", "Приватный")}</span>
             )}
+            <span className="flex items-center gap-1 rounded border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+              <Users className="w-3 h-3" /> {isTeamMode ? t("Team", "Jamoa", "Командный") : t("Individual", "Yakka", "Индивидуальный")}
+            </span>
           </div>
           <h1 className="text-2xl font-bold mb-2" data-testid="text-competition-name">{comp.name}</h1>
           {comp.description && <p className="text-muted-foreground text-sm mb-4">{comp.description}</p>}
@@ -229,7 +265,9 @@ export default function CompetitionDetailPage() {
             <span className="flex items-center gap-1.5"><Users className="w-4 h-4" /> {comp.participantCount} {t("participants", "qatnashchi", "участников")}</span>
           </div>
 
-          {isAuthenticated && !comp.isJoined && comp.status !== "ended" && (
+          {/* Individual events join here. Team events are joined by creating or
+              joining a team below, so this solo path is hidden for them. */}
+          {!isTeamMode && isAuthenticated && !comp.isJoined && comp.status !== "ended" && (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               {comp.type === "private" && (
                 <input
@@ -284,7 +322,19 @@ export default function CompetitionDetailPage() {
                   {t("A challenge solved by one member counts for the whole team.",
                      "Bir a'zo yechgan topshiriq butun jamoa uchun hisoblanadi.",
                      "Задание, решённое одним участником, засчитывается всей команде.")}
+                  {comp.maxTeamSize ? " " + t(`Max ${comp.maxTeamSize} per team.`, `Jamoada eng ko'pi ${comp.maxTeamSize} kishi.`, `Макс. ${comp.maxTeamSize} в команде.`) : ""}
                 </p>
+                {/* A private team event still needs its competition code to enter;
+                    it rides along with team create/join. */}
+                {comp.type === "private" && (
+                  <input
+                    value={inviteCode}
+                    onChange={(event) => setInviteCode(event.target.value)}
+                    placeholder={t("Competition invite code", "Musobaqa taklif kodi", "Код приглашения соревнования")}
+                    className="mb-3 h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                    data-testid="input-comp-invite-for-team"
+                  />
+                )}
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="flex gap-2">
                     <input
@@ -319,30 +369,40 @@ export default function CompetitionDetailPage() {
         {/* Winners — the payoff of a sponsored event. Once it has ended, the top
             three finishers get a podium the sponsor (and the winners) can share.
             Only shown when there is a result to show. */}
-        {comp.status === "ended" && scoreboard.length > 0 && (
-          <div className="mb-8 rounded-2xl border border-amber-500/20 bg-gradient-to-b from-amber-500/5 to-transparent p-6" data-testid="competition-winners">
-            <h2 className="text-base font-semibold mb-5 flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-amber-500" /> {t("Winners", "G'oliblar", "Победители")}
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {scoreboard.slice(0, 3).map((entry, i) => {
-                const medal = ["ring-amber-400/50 bg-amber-400/10", "ring-slate-300/40 bg-slate-300/10", "ring-orange-500/40 bg-orange-500/10"][i];
-                return (
-                  <Link href={`/profile/${entry.userId}`} key={entry.userId}>
-                    <div className={`flex items-center gap-3 rounded-xl border border-transparent ring-1 ${medal} p-4 hover:border-amber-500/30 transition-colors cursor-pointer`} data-testid={`winner-${i + 1}`}>
+        {(() => {
+          // The podium is drawn from the authoritative board for the mode: teams
+          // for a team event, individuals for an individual one. Drawing it from
+          // the individual board in a team event crowned the member who happened
+          // to submit, not the winning team.
+          const winners = isTeamMode
+            ? teams.slice(0, 3).map(tm => ({ key: `team-${tm.teamId}`, name: tm.name, points: tm.points, href: null as string | null }))
+            : scoreboard.slice(0, 3).map(e => ({ key: `user-${e.userId}`, name: e.nickname, points: e.points, href: `/profile/${e.userId}` }));
+          if (comp.status !== "ended" || winners.length === 0) return null;
+          return (
+            <div className="mb-8 rounded-2xl border border-amber-500/20 bg-gradient-to-b from-amber-500/5 to-transparent p-6" data-testid="competition-winners">
+              <h2 className="text-base font-semibold mb-5 flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-amber-500" /> {t("Winners", "G'oliblar", "Победители")}
+                <span className="text-xs font-normal text-muted-foreground">· {isTeamMode ? t("Teams", "Jamoalar", "Команды") : t("Individual", "Yakka", "Индивидуальный")}</span>
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {winners.map((w, i) => {
+                  const medal = ["ring-amber-400/50 bg-amber-400/10", "ring-slate-300/40 bg-slate-300/10", "ring-orange-500/40 bg-orange-500/10"][i];
+                  const card = (
+                    <div className={`flex items-center gap-3 rounded-xl border border-transparent ring-1 ${medal} p-4 ${w.href ? "hover:border-amber-500/30 transition-colors cursor-pointer" : ""}`} data-testid={`winner-${i + 1}`}>
                       <span className="text-2xl font-black tabular-nums w-8 text-center">{i + 1}</span>
                       <div className="min-w-0 flex-1">
-                        <div className="font-semibold truncate">{entry.nickname}</div>
-                        <div className="text-xs text-muted-foreground tabular-nums">{entry.points} {t("points", "ball", "очки")}</div>
+                        <div className="font-semibold truncate">{w.name}</div>
+                        <div className="text-xs text-muted-foreground tabular-nums">{w.points} {t("points", "ball", "очки")}</div>
                       </div>
                       {i === 0 && <Trophy className="w-5 h-5 text-amber-500 shrink-0" />}
                     </div>
-                  </Link>
-                );
-              })}
+                  );
+                  return w.href ? <Link href={w.href} key={w.key}>{card}</Link> : <div key={w.key}>{card}</div>;
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* The sponsor's report. Shown once the event has ended and only when
             it carried a sponsor — before that the numbers are still moving and
@@ -351,9 +411,8 @@ export default function CompetitionDetailPage() {
           <SponsorReport competitionId={id} sponsorName={comp.sponsorName} />
         )}
 
-        {/* Team leaderboard — only when teams have registered. Ranks teams by
-            their shared score. */}
-        {teams.length > 0 && (
+        {/* Team leaderboard — team events only, once teams have registered. */}
+        {isTeamMode && teams.length > 0 && (
           <div className="mb-8" data-testid="team-leaderboard">
             <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
               <Users className="w-4 h-4 text-primary" /> {t("Teams", "Jamoalar", "Команды")} ({teams.length})
@@ -401,8 +460,9 @@ export default function CompetitionDetailPage() {
             </div>
           </div>
 
-          {/* Scoreboard */}
-          {comp.status !== "upcoming" && scoreboard.length > 0 && (
+          {/* Individual scoreboard — individual events only. Team events rank by
+              team above, so a per-person board here would just confuse. */}
+          {!isTeamMode && comp.status !== "upcoming" && scoreboard.length > 0 && (
             <div>
               <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-primary" /> {t("Scoreboard", "Reyting", "Рейтинг")}

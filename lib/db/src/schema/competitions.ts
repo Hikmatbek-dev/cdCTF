@@ -10,7 +10,16 @@ export const competitionsTable = pgTable("competitions", {
   name: text("name").notNull(),
   description: text("description"),
   type: text("type").notNull().default("public"),
+  // Access model — orthogonal to `format`. "public" is open, "private" needs the
+  // invite code.
   inviteCode: text("invite_code"),
+  // Play model. "individual" (yakka): each learner plays solo. "team" (jamoa):
+  // learners play in teams that share solves and a team scoreboard. The two are
+  // mutually exclusive per event — the endpoints refuse the wrong path — so a
+  // team event can't be played solo and vice-versa.
+  format: text("format").notNull().default("individual"),
+  // Max members per team, for team events. Null = no cap. Ignored for individual.
+  maxTeamSize: integer("max_team_size"),
   startTime: timestamp("start_time", { withTimezone: true }).notNull(),
   endTime: timestamp("end_time", { withTimezone: true }).notNull(),
   // Sponsorship: the fields that turn a competition into a paid, branded event —

@@ -3278,6 +3278,9 @@ components:
         type:
           type: string
           enum: [public, private]
+        format:
+          type: string
+          enum: [individual, team]
         startTime:
           type: string
           format: date-time
@@ -3314,6 +3317,12 @@ components:
         type:
           type: string
           enum: [public, private]
+        format:
+          type: string
+          enum: [individual, team]
+        maxTeamSize:
+          type: integer
+          nullable: true
         startTime:
           type: string
           format: date-time
@@ -3720,6 +3729,12 @@ components:
           type: integer
           nullable: true
           description: Per-event invite override; null means the global default applies.
+        format:
+          type: string
+          enum: [individual, team]
+        maxTeamSize:
+          type: integer
+          nullable: true
         ctfIds:
           type: array
           items:
@@ -3776,6 +3791,15 @@ components:
           minimum: 0
           nullable: true
           description: Activated invites a learner needs to self-join this event. Null uses the global default; 0 opens the event to anyone.
+        format:
+          type: string
+          enum: [individual, team]
+          description: Play mode. "individual" (each learner solo) or "team" (learners play in teams that share solves). Defaults to individual.
+        maxTeamSize:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Max members per team, for team events. Null means no cap. Ignored for individual events.
       required:
       - name
       - startTime
@@ -4591,6 +4615,15 @@ components:
           minimum: 0
           nullable: true
           description: Activated invites needed to self-join this event. Null uses the global default; 0 opens it to anyone.
+        format:
+          type: string
+          enum: [individual, team]
+          description: Play mode — individual or team.
+        maxTeamSize:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Max members per team, for team events. Null means no cap.
 
     SetRoleBody:
       type: object
