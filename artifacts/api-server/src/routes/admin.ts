@@ -1109,9 +1109,16 @@ router.patch("/staff/:id/permissions", requireSuperAdmin, async (req, res) => {
 
   // The scoring opt-in rides along on the same save, when the caller sends it.
   const updates: { permissions: string[]; adminEarnsPoints?: boolean } = { permissions };
-  if (typeof req.body?.earnsPoints === "boolean") updates.adminEarnsPoints = req.body.earnsPoints;
+  const earnsPointsChanged = typeof req.body?.earnsPoints === "boolean";
+  if (earnsPointsChanged) updates.adminEarnsPoints = req.body.earnsPoints;
 
   await db.update(usersTable).set(updates).where(eq(usersTable.id, id));
+
+  // If scoring was just toggled, rebuild this admin's points from the solves
+  // they already have — turning it on credits every past solve, turning it off
+  // zeroes them. recalculateUserPoints honours the flag we just wrote.
+  if (earnsPointsChanged) await recalculateUsers([id]);
+
   // Effect is immediate: permissions are resolved from the DB on every request.
   await writeAuditLog(req, "admin.permissions", "user", id, { permissions, earnsPoints: updates.adminEarnsPoints });
   res.json({ success: true, permissions, adminEarnsPoints: updates.adminEarnsPoints });

@@ -70,15 +70,22 @@ check "$(echo "$R" | json correct)" "True" "admin flagni yechdi"
 check "$(pointsOf "$ADMIN")" "0" "lekin ball berilmadi"
 
 echo
-echo "=== ⭐ Ruxsat berilgan admin ball OLADI (admin_earns_points) ==="
-# A super-admin can opt a specific admin into scoring; then their solves pay.
+echo "=== ⭐ Ruxsat berilgan admin ball OLADI + o'tgan yechimlar qo'shiladi ==="
+# The admin already solved AID above while unscored (points stayed 0). A
+# super-admin now opts them into scoring, and recalculation credits that PAST
+# solve — the exact ask: a previously-earned solve should count once enabled.
 psql "$DATABASE_URL" -q -c "UPDATE users SET admin_earns_points = true WHERE nickname='$ADMIN';"
+check "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/admin/users/recalculate-points -H "Authorization: Bearer $A_TOK")" "200" "recalculate ishladi"
+check "$(pointsOf "$ADMIN")" "100" "o'tgan yechim (100) qo'shib berildi"
+# A fresh solve now pays live too.
 AID2=$(psql "$DATABASE_URL" -tAqc "INSERT INTO ctf_tasks (name, description, category, difficulty, points, flag, is_published) VALUES ('${TAG}_Admin2','d','Crypto','easy',100,'sha256\$$(printf 'Flag{adm2}' | sha256sum | cut -d' ' -f1)', true) RETURNING id;")
 R=$(curl -s -X POST $API/ctf/$AID2/submit -H 'Content-Type: application/json' -H "Authorization: Bearer $A_TOK" -d '{"flag":"Flag{adm2}"}')
-check "$(echo "$R" | json pointsEarned)" "100" "ruxsat berilgan admin 100 ball oldi"
-check "$(pointsOf "$ADMIN")" "100" "admin bali 100 bo'ldi"
-# Put it back so the recalculation checks below still expect 0.
-psql "$DATABASE_URL" -q -c "UPDATE users SET admin_earns_points = false, points = 0 WHERE nickname='$ADMIN';"
+check "$(echo "$R" | json pointsEarned)" "100" "yangi yechim ham 100 ball berdi"
+check "$(pointsOf "$ADMIN")" "200" "jami 200 (o'tgan + yangi)"
+# Turning it back off zeroes them again — and the recalc checks below expect 0.
+psql "$DATABASE_URL" -q -c "UPDATE users SET admin_earns_points = false WHERE nickname='$ADMIN';"
+curl -s -o /dev/null -X POST $API/admin/users/recalculate-points -H "Authorization: Bearer $A_TOK"
+check "$(pointsOf "$ADMIN")" "0" "o'chirilganda yana 0 bo'ldi"
 
 echo
 echo "=== ⭐ excludedFromScoring bayrog'i ishlaydi (nickname emas) ==="
