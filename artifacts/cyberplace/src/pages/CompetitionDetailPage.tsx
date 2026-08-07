@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
-import { Trophy, Clock, Users, Flag, Lock, Gift, UserPlus, Copy, Share2 } from "lucide-react";
+import { Trophy, Clock, Users, Flag, Lock, Gift, UserPlus, Copy, Share2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
@@ -212,14 +212,29 @@ export default function CompetitionDetailPage() {
           <h1 className="text-2xl font-bold mb-2" data-testid="text-competition-name">{comp.name}</h1>
           {comp.description && <p className="text-muted-foreground text-sm mb-4">{comp.description}</p>}
 
-          {/* This page assumes you already have an account and know what cdCTF
-              is. /e/:id assumes neither — it is the link to hand a sponsor. */}
-          <Link href={`/e/${id}`}>
-            <button className="mb-4 inline-flex items-center gap-2 text-sm text-primary hover:underline" data-testid="link-event-poster">
-              <Share2 className="w-4 h-4" />
-              {t("Open the shareable page for this event", "Bu tadbirning ulashiladigan sahifasini ochish", "Открыть страницу события для репоста")}
-            </button>
-          </Link>
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            {/* This page assumes you already have an account and know what cdCTF
+                is. /e/:id assumes neither — it is the link to hand a sponsor. */}
+            <Link href={`/e/${id}`}>
+              <button className="inline-flex items-center gap-2 text-sm text-primary hover:underline" data-testid="link-event-poster">
+                <Share2 className="w-4 h-4" />
+                {t("Open the shareable page for this event", "Bu tadbirning ulashiladigan sahifasini ochish", "Открыть страницу события для репоста")}
+              </button>
+            </Link>
+            {/* The event's own Telegram channel — announcements, hints, Q&A. */}
+            {(comp as any).telegramUrl && (
+              <a
+                href={(comp as any).telegramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-sm font-medium text-sky-500 hover:bg-sky-500/20 transition-colors"
+                data-testid="link-competition-telegram"
+              >
+                <Send className="w-4 h-4" />
+                {t("Telegram channel", "Telegram kanal", "Telegram-канал")}
+              </a>
+            )}
+          </div>
 
           {/* Prize on offer — the reason a sponsored event pulls a crowd. Shown
               prominently so participants see what they are competing for. */}

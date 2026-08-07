@@ -49,6 +49,7 @@ router.get("/", optionalAuth, async (req, res) => {
     isJoined: userId ? allUsers.some(u => u.competitionId === comp.id && u.userId === userId) : false,
     sponsorName: comp.sponsorName,
     prize: comp.prize,
+    telegramUrl: comp.telegramUrl,
   }));
 
   res.json(result);
@@ -111,6 +112,7 @@ router.get("/:id", optionalAuth, async (req, res) => {
     sponsorLogoUrl: comp.sponsorLogoUrl,
     sponsorUrl: comp.sponsorUrl,
     prize: comp.prize,
+    telegramUrl: comp.telegramUrl,
     myTeam,
   });
 });

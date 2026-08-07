@@ -653,6 +653,7 @@ export const ListCompetitionsResponseItem = zod.object({
   isJoined: zod.boolean(),
   sponsorName: zod.string().nullish(),
   prize: zod.string().nullish(),
+  telegramUrl: zod.string().nullish(),
 });
 export const ListCompetitionsResponse = zod.array(ListCompetitionsResponseItem);
 
@@ -694,6 +695,7 @@ export const GetCompetitionResponse = zod.object({
   sponsorLogoUrl: zod.string().nullish(),
   sponsorUrl: zod.string().nullish(),
   prize: zod.string().nullish(),
+  telegramUrl: zod.string().nullish(),
   myTeam: zod
     .object({
       id: zod.number(),
@@ -1301,6 +1303,7 @@ export const AdminListCompetitionsResponse = zod.object({
           ),
         format: zod.enum(["individual", "team"]).optional(),
         maxTeamSize: zod.number().nullish(),
+        telegramUrl: zod.string().nullish(),
         ctfIds: zod.array(zod.number()),
         ctfCount: zod.number(),
         participantCount: zod.number(),
@@ -1367,6 +1370,10 @@ export const AdminCreateCompetitionBody = zod.object({
     .describe(
       "Max members per team, for team events. Null means no cap. Ignored for individual events.",
     ),
+  telegramUrl: zod
+    .string()
+    .nullish()
+    .describe("Telegram channel\/group link for this event."),
 });
 
 /**
@@ -1411,6 +1418,10 @@ export const AdminUpdateCompetitionBody = zod.object({
     .min(1)
     .nullish()
     .describe("Max members per team, for team events. Null means no cap."),
+  telegramUrl: zod
+    .string()
+    .nullish()
+    .describe("Telegram channel\/group link for this event."),
 });
 
 export const AdminUpdateCompetitionResponse = zod.object({
@@ -1427,6 +1438,7 @@ export const AdminUpdateCompetitionResponse = zod.object({
   isJoined: zod.boolean(),
   sponsorName: zod.string().nullish(),
   prize: zod.string().nullish(),
+  telegramUrl: zod.string().nullish(),
 });
 
 /**
@@ -1471,6 +1483,10 @@ export const UpdateCompetitionBody = zod.object({
     .min(1)
     .nullish()
     .describe("Max members per team, for team events. Null means no cap."),
+  telegramUrl: zod
+    .string()
+    .nullish()
+    .describe("Telegram channel\/group link for this event."),
 });
 
 export const UpdateCompetitionResponse = zod.object({
@@ -1487,6 +1503,7 @@ export const UpdateCompetitionResponse = zod.object({
   isJoined: zod.boolean(),
   sponsorName: zod.string().nullish(),
   prize: zod.string().nullish(),
+  telegramUrl: zod.string().nullish(),
 });
 
 /**

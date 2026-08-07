@@ -487,6 +487,7 @@ export interface Competition {
   isJoined: boolean;
   sponsorName?: string | null;
   prize?: string | null;
+  telegramUrl?: string | null;
 }
 
 export type CompetitionDetailType =
@@ -539,6 +540,7 @@ export interface CompetitionDetail {
   sponsorLogoUrl?: string | null;
   sponsorUrl?: string | null;
   prize?: string | null;
+  telegramUrl?: string | null;
   myTeam?: CompetitionDetailMyTeam;
 }
 
@@ -766,6 +768,7 @@ export interface AdminCompetition {
   inviteRequirement?: number | null;
   format?: AdminCompetitionFormat;
   maxTeamSize?: number | null;
+  telegramUrl?: string | null;
   ctfIds: number[];
   ctfCount: number;
   participantCount: number;
@@ -819,6 +822,8 @@ export interface CreateCompetitionBody {
    * @minimum 1
    */
   maxTeamSize?: number | null;
+  /** Telegram channel/group link for this event. */
+  telegramUrl?: string | null;
 }
 
 export type CreateLessonBodyQuestionsItem = {
@@ -1312,6 +1317,8 @@ export interface UpdateCompetitionBody {
    * @minimum 1
    */
   maxTeamSize?: number | null;
+  /** Telegram channel/group link for this event. */
+  telegramUrl?: string | null;
 }
 
 export type SetRoleBodyRole =

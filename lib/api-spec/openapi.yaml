@@ -3302,6 +3302,9 @@ components:
         prize:
           type: string
           nullable: true
+        telegramUrl:
+          type: string
+          nullable: true
       required: [id, name, type, startTime, endTime, status, participantCount, ctfCount, isJoined]
 
     CompetitionDetail:
@@ -3353,6 +3356,9 @@ components:
           type: string
           nullable: true
         prize:
+          type: string
+          nullable: true
+        telegramUrl:
           type: string
           nullable: true
         myTeam:
@@ -3735,6 +3741,9 @@ components:
         maxTeamSize:
           type: integer
           nullable: true
+        telegramUrl:
+          type: string
+          nullable: true
         ctfIds:
           type: array
           items:
@@ -3800,6 +3809,10 @@ components:
           minimum: 1
           nullable: true
           description: Max members per team, for team events. Null means no cap. Ignored for individual events.
+        telegramUrl:
+          type: string
+          nullable: true
+          description: Telegram channel/group link for this event.
       required:
       - name
       - startTime
@@ -4624,6 +4637,10 @@ components:
           minimum: 1
           nullable: true
           description: Max members per team, for team events. Null means no cap.
+        telegramUrl:
+          type: string
+          nullable: true
+          description: Telegram channel/group link for this event.
 
     SetRoleBody:
       type: object

@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Trophy, Clock, Users, Lock, Gift } from "lucide-react";
+import { Trophy, Clock, Users, Lock, Gift, Send } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LoadFailure } from "@/components/LoadFailure";
 import { useLang } from "@/lib/LanguageContext";
@@ -94,6 +94,16 @@ export default function CompetitionsPage() {
                       <Users className="w-3 h-3" />
                       {(comp as any).format === "team" ? t("Team", "Jamoa", "Командный") : t("Individual", "Yakka", "Индивидуальный")}
                     </span>
+                    {(comp as any).telegramUrl && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open((comp as any).telegramUrl, "_blank", "noopener,noreferrer"); }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border border-sky-500/30 bg-sky-500/10 text-sky-500 text-xs font-medium hover:bg-sky-500/20 transition-colors"
+                        data-testid={`competition-telegram-${comp.id}`}
+                      >
+                        <Send className="w-3 h-3" /> Telegram
+                      </button>
+                    )}
                     {comp.isJoined && (
                       <span className="text-xs font-medium text-primary">{t("Joined", "Qatnashyapsiz", "Вы участвуете")}</span>
                     )}

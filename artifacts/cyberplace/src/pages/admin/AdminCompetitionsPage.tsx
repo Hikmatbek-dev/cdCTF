@@ -35,6 +35,7 @@ const schema = z.object({
   sponsorName: z.string().optional(),
   sponsorLogoUrl: z.string().url().optional().or(z.literal("")),
   sponsorUrl: z.string().url().optional().or(z.literal("")),
+  telegramUrl: z.string().url().optional().or(z.literal("")),
   prize: z.string().optional(),
   // Blank = use the global default; a number overrides it (0 opens the event).
   inviteRequirement: z.string().regex(/^\d*$/, "Numbers only").optional(),
@@ -44,7 +45,7 @@ type FormData = z.infer<typeof schema>;
 
 const EMPTY: FormData = {
   name: "", description: "", type: "public", format: "individual", maxTeamSize: "", inviteCode: "", startTime: "", endTime: "",
-  ctfIds: [], sponsorName: "", sponsorLogoUrl: "", sponsorUrl: "", prize: "", inviteRequirement: "",
+  ctfIds: [], sponsorName: "", sponsorLogoUrl: "", sponsorUrl: "", telegramUrl: "", prize: "", inviteRequirement: "",
 };
 
 /** `datetime-local` wants "YYYY-MM-DDTHH:mm" in local time; the API returns UTC ISO. */
@@ -158,6 +159,7 @@ export default function AdminCompetitionsPage() {
       sponsorName: comp.sponsorName ?? "",
       sponsorLogoUrl: comp.sponsorLogoUrl ?? "",
       sponsorUrl: comp.sponsorUrl ?? "",
+      telegramUrl: (comp as any).telegramUrl ?? "",
       prize: comp.prize ?? "",
       inviteRequirement: comp.inviteRequirement == null ? "" : String(comp.inviteRequirement),
       format: comp.format === "team" ? "team" : "individual",
@@ -186,6 +188,7 @@ export default function AdminCompetitionsPage() {
       sponsorName: values.sponsorName || null,
       sponsorLogoUrl: values.sponsorLogoUrl || null,
       sponsorUrl: values.sponsorUrl || null,
+      telegramUrl: values.telegramUrl || null,
       prize: values.prize || null,
       // Blank field → null → the event falls back to the global default.
       inviteRequirement: values.inviteRequirement ? Number(values.inviteRequirement) : null,
@@ -318,6 +321,15 @@ export default function AdminCompetitionsPage() {
                     <FormLabel>{t("Required activated invites", "Kerakli faol takliflar", "Требуется активных приглашений")}</FormLabel>
                     <FormControl>
                       <Input {...field} inputMode="numeric" placeholder={t("Blank = default (5). 0 = open to all", "Bo'sh = standart (5). 0 = hammaga ochiq", "Пусто = по умолчанию (5). 0 = для всех")} data-testid="input-comp-invite-requirement" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="telegramUrl" render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>{t("Telegram channel (optional)", "Telegram kanal (ixtiyoriy)", "Telegram-канал (необязательно)")}</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="https://t.me/your_channel" data-testid="input-comp-telegram" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

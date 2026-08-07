@@ -575,6 +575,7 @@ router.get("/competitions", requirePermission("competitions.manage"), async (_re
       inviteRequirement: comp.inviteRequirement,
       format: comp.format,
       maxTeamSize: comp.maxTeamSize,
+      telegramUrl: comp.telegramUrl,
       ctfIds: tasks.filter(t => t.competitionId === comp.id).map(t => t.ctfId),
       ctfCount: tasks.filter(t => t.competitionId === comp.id).length,
       participantCount: members.filter(m => m.competitionId === comp.id).length,
@@ -584,7 +585,7 @@ router.get("/competitions", requirePermission("competitions.manage"), async (_re
 
 // POST /api/admin/competitions
 router.post("/competitions", requirePermission("competitions.manage"), validateBody(AdminCreateCompetitionBody), async (req, res) => {
-  const { name, description, type, format, maxTeamSize, startTime, endTime, ctfIds, inviteCode, sponsorName, sponsorLogoUrl, sponsorUrl, prize, inviteRequirement } = req.body;
+  const { name, description, type, format, maxTeamSize, startTime, endTime, ctfIds, inviteCode, sponsorName, sponsorLogoUrl, sponsorUrl, prize, inviteRequirement, telegramUrl } = req.body;
   if (!name || !startTime || !endTime) return res.status(400).json({ error: "Missing fields" });
   const start = new Date(startTime);
   const end = new Date(endTime);
@@ -606,6 +607,7 @@ router.post("/competitions", requirePermission("competitions.manage"), validateB
     sponsorName: cleanText(sponsorName), sponsorLogoUrl: cleanText(sponsorLogoUrl),
     sponsorUrl: cleanText(sponsorUrl), prize: cleanText(prize),
     inviteRequirement: cleanRequirement(inviteRequirement),
+    telegramUrl: cleanText(telegramUrl),
   }).returning();
 
   if (ctfIds && Array.isArray(ctfIds)) {
@@ -699,7 +701,7 @@ async function updateCompetitionHandler(req: Request, res: Response) {
     updates.inviteCode = updates.inviteCode.trim() || null;
   }
   // Sponsor fields: a blank string clears the field rather than storing "".
-  for (const field of ["sponsorName", "sponsorLogoUrl", "sponsorUrl", "prize"] as const) {
+  for (const field of ["sponsorName", "sponsorLogoUrl", "sponsorUrl", "prize", "telegramUrl"] as const) {
     if (updates[field] !== undefined) updates[field] = cleanText(updates[field]);
   }
   // The invite override: normalise to a non-negative int or null (use default).

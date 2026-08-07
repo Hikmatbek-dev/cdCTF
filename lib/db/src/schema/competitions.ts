@@ -28,6 +28,9 @@ export const competitionsTable = pgTable("competitions", {
   sponsorLogoUrl: text("sponsor_logo_url"),
   sponsorUrl: text("sponsor_url"),
   prize: text("prize"),
+  // A Telegram channel/group for this event — announcements, Q&A, hints. Shown
+  // as a "Telegram" button on the competition.
+  telegramUrl: text("telegram_url"),
   // How many activated invites a learner needs before self-joining THIS event.
   // Null means "use the global default" (COMPETITION_INVITE_REQUIREMENT); 0 opens
   // the event to anyone. Lets the launch events run with an open gate while later,
