@@ -393,7 +393,7 @@ async function moduleProgressFor(userId: number | undefined, moduleIds: number[]
 // GET /api/learn/spotlights?section=threats|ai|live — curated hub cards.
 router.get("/spotlights", async (req, res) => {
   const section = typeof req.query.section === "string" ? req.query.section : "";
-  if (!["threats", "ai", "live"].includes(section)) return res.status(400).json({ error: "Unknown section" });
+  if (!["threats", "ai", "live", "networks", "walkthroughs"].includes(section)) return res.status(400).json({ error: "Unknown section" });
   const rows = await db.select().from(spotlightsTable)
     .where(and(eq(spotlightsTable.section, section), eq(spotlightsTable.isPublished, true)))
     .orderBy(asc(spotlightsTable.orderIndex), desc(spotlightsTable.createdAt));

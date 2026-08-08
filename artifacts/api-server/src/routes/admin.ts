@@ -1431,7 +1431,7 @@ router.delete("/paths/:id", requirePermission("lessons.publish"), async (req, re
 // Live Classes tabs.
 // ---------------------------------------------------------------------------
 
-const SPOTLIGHT_SECTIONS = ["threats", "ai", "live"];
+const SPOTLIGHT_SECTIONS = ["threats", "ai", "live", "networks", "walkthroughs"];
 
 function parseStartsAt(value: unknown): Date | null {
   if (value === null || value === undefined || value === "") return null;

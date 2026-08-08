@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Sparkles, ShieldAlert, Radio, Plus, Trash2, X } from "lucide-react";
+import { Sparkles, ShieldAlert, Radio, Network, FileText, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +16,8 @@ type Spotlight = {
 const SECTIONS = [
   { key: "threats", icon: ShieldAlert, label: { en: "Recent Threats", uz: "So'nggi tahdidlar", ru: "Угрозы" } },
   { key: "ai", icon: Sparkles, label: { en: "AI Upskilling", uz: "AI ko'nikma", ru: "AI-навыки" } },
+  { key: "networks", icon: Network, label: { en: "Networks", uz: "Tarmoqlar", ru: "Сети" } },
+  { key: "walkthroughs", icon: FileText, label: { en: "Walkthroughs", uz: "Yechimlar", ru: "Разборы" } },
   { key: "live", icon: Radio, label: { en: "Live Classes", uz: "Jonli darslar", ru: "Живые уроки" } },
 ] as const;
 

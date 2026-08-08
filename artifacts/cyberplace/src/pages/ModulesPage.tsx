@@ -78,7 +78,7 @@ export default function ModulesPage() {
     enabled: tab === "walkthroughs",
   });
 
-  const spotlightSection = tab === "threats" ? "threats" : tab === "ai" ? "ai" : tab === "live" ? "live" : null;
+  const spotlightSection = tab === "threats" ? "threats" : tab === "ai" ? "ai" : tab === "live" ? "live" : tab === "networks" ? "networks" : null;
   const { data: spotlights, isLoading: sLoading } = useQuery({
     queryKey: ["spotlights", spotlightSection],
     queryFn: async () => {
@@ -87,6 +87,17 @@ export default function ModulesPage() {
       return r.json() as Promise<Spotlight[]>;
     },
     enabled: !!spotlightSection,
+  });
+
+  // Curated walkthrough guides, shown above the community write-ups.
+  const { data: guideCards } = useQuery({
+    queryKey: ["spotlights", "walkthroughs"],
+    queryFn: async () => {
+      const r = await fetch("/api/learn/spotlights?section=walkthroughs");
+      if (!r.ok) throw new Error("guides");
+      return r.json() as Promise<Spotlight[]>;
+    },
+    enabled: tab === "walkthroughs",
   });
 
   const loc = (en: string, uz?: string | null, ru?: string | null) => (lang === "uz" ? uz : lang === "ru" ? ru : en) || en;
@@ -207,11 +218,32 @@ export default function ModulesPage() {
           )
         )}
 
-        {/* WALKTHROUGHS */}
+        {/* WALKTHROUGHS — curated guides + community write-ups */}
         {tab === "walkthroughs" && (
-          wLoading ? <div className="space-y-2">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
-          : !writeups || writeups.length === 0 ? <Empty text={t("No published walkthroughs yet. Solve a challenge and share yours.", "Hali chop etilgan yechimlar yo'q. Topshiriq yeching va o'zingiznikini ulashing.", "Пока нет разборов. Решите задание и поделитесь своим.")} />
-          : (
+          <div className="space-y-8">
+            {guideCards && guideCards.length > 0 && (
+              <div>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">{t("Guides & methodology", "Qo'llanma va metodologiya", "Гайды и методология")}</h2>
+                <Grid>
+                  {guideCards.map(s => {
+                    const inner = (
+                      <div className="group h-full rounded-2xl border border-border bg-card p-5 hover:border-primary/40 transition-colors flex flex-col" data-testid={`guide-${s.id}`}>
+                        <div className="flex items-center gap-2 mb-2"><FileText className="w-4 h-4 text-primary" />{s.tag && <span className="text-[10px] font-bold uppercase tracking-wider bg-muted px-2 py-0.5 rounded">{s.tag}</span>}</div>
+                        <h3 className="font-bold text-base mb-1.5 group-hover:text-primary transition-colors">{loc(s.title, s.titleUz, s.titleRu)}</h3>
+                        {s.description && <p className="text-sm text-muted-foreground line-clamp-3 flex-1">{loc(s.description, s.descriptionUz, s.descriptionRu)}</p>}
+                        {s.url && <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary">{t("Open", "Ochish", "Открыть")} <ChevronRight className="w-4 h-4" /></span>}
+                      </div>
+                    );
+                    return s.url ? <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer">{inner}</a> : <div key={s.id}>{inner}</div>;
+                  })}
+                </Grid>
+              </div>
+            )}
+            <div>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">{t("Community write-ups", "Jamoa yechimlari", "Разборы сообщества")}</h2>
+              {wLoading ? <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
+              : !writeups || writeups.length === 0 ? <p className="text-sm text-muted-foreground">{t("No community write-ups yet. Solve a challenge and share yours.", "Hali jamoa yechimlari yo'q. Topshiriq yeching va o'zingiznikini ulashing.", "Пока нет разборов. Решите задание и поделитесь.")}</p>
+              : (
             <div className="space-y-2">
               {writeups.map(w => (
                 <Link key={w.id} href={`/ctf/${w.ctfId}`}>
@@ -226,20 +258,12 @@ export default function ModulesPage() {
                 </Link>
               ))}
             </div>
-          )
+              )}
+            </div>
+          </div>
         )}
 
-        {/* NETWORKS → labs */}
-        {tab === "networks" && (
-          <Soon
-            icon={Network}
-            title={t("Networks & labs", "Tarmoqlar va laboratoriyalar", "Сети и лаборатории")}
-            text={t("Hands-on machines you attack in the browser.", "Brauzerda hujum qiladigan amaliy mashinalar.", "Практические машины прямо в браузере.")}
-            cta={{ href: "/labs", label: t("Open Labs", "Laboratoriyaga o'tish", "Открыть лаборатории") }}
-          />
-        )}
-
-        {/* Curated tabs — Recent Threats / AI Upskilling / Live Classes */}
+        {/* Curated tabs — Networks / Recent Threats / AI Upskilling / Live Classes */}
         {spotlightSection && (
           sLoading ? <Grid><CardsSkeleton n={3} /></Grid>
           : spotlights && spotlights.length > 0 ? (
@@ -279,6 +303,7 @@ export default function ModulesPage() {
           ) : (
             spotlightSection === "ai" ? <Soon icon={Sparkles} title={t("AI Upskilling", "AI ko'nikma", "AI-навыки")} text={t("Attack and defend AI systems. Content is on the way.", "AI tizimlariga hujum va himoya. Kontent tez orada.", "Атака и защита ИИ. Контент скоро.")} />
             : spotlightSection === "threats" ? <Soon icon={ShieldAlert} title={t("Recent Threats", "So'nggi tahdidlar", "Недавние угрозы")} text={t("Rooms based on real, recent CVEs. Content is on the way.", "Haqiqiy, so'nggi CVE'lar asosidagi xonalar. Kontent tez orada.", "Комнаты на основе свежих CVE. Скоро.")} />
+            : spotlightSection === "networks" ? <Soon icon={Network} title={t("Networks & labs", "Tarmoqlar va laboratoriyalar", "Сети и лаборатории")} text={t("Hands-on machines you attack in the browser.", "Brauzerda hujum qiladigan amaliy mashinalar.", "Практические машины в браузере.")} cta={{ href: "/labs", label: t("Open Labs", "Laboratoriyaga o'tish", "Открыть лаборатории") }} />
             : <Soon icon={Radio} title={t("Live Classes", "Jonli darslar", "Живые уроки")} text={t("Instructor-led sessions. None scheduled right now.", "Ustoz bilan jonli darslar. Hozircha rejalashtirilmagan.", "Занятия с преподавателем. Пока не запланированы.")} />
           )
         )}
