@@ -460,7 +460,7 @@ export default function CompetitionDetailPage() {
           {/* CTF List */}
           <div>
             <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
-              <Flag className="w-4 h-4 text-primary" /> {t("Challenges", "Topshiriqlar", "Задания")} ({challenges.length})
+              <Flag className="w-4 h-4 text-primary" /> {t("Challenges", "Topshiriqlar", "Задания")} ({(comp as any).challengesLocked ? (comp as any).ctfCount : challenges.length})
             </h2>
             <div className="space-y-2">
               {challenges.map(ch => (
@@ -472,7 +472,13 @@ export default function CompetitionDetailPage() {
                   </div>
                 </Link>
               ))}
-              {challenges.length === 0 && (
+              {(comp as any).challengesLocked ? (
+                <div className="flex flex-col items-center text-center gap-2 rounded-xl border border-dashed border-border py-8 px-4" data-testid="challenges-locked">
+                  <Lock className="w-6 h-6 text-muted-foreground" />
+                  <p className="text-sm font-medium">{t(`${(comp as any).ctfCount} challenges — revealed when the competition starts`, `${(comp as any).ctfCount} ta topshiriq — musobaqa boshlanganda ochiladi`, `${(comp as any).ctfCount} заданий — откроются в начале соревнования`)}</p>
+                  <p className="text-xs text-muted-foreground">{t("Join now so you're ready.", "Tayyor turish uchun hoziroq qo'shiling.", "Присоединяйтесь, чтобы быть готовым.")}</p>
+                </div>
+              ) : challenges.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">{t("No challenges added yet", "Topshiriqlar qo'shilmagan", "Задания ещё не добавлены")}</p>
               )}
             </div>

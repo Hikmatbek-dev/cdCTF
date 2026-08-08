@@ -78,14 +78,19 @@ router.get("/:id", optionalAuth, async (req, res) => {
     }
   }
 
-  // One query for every challenge in the event.
-  //
-  // This was a loop issuing one round trip per challenge — a forty-challenge
-  // event opened with forty sequential queries — plus, just above it, a full-row
-  // fetch of `challengeIds[0]` assigned to a variable nothing ever read. The
-  // analytics endpoint in this same file already used inArray correctly.
+  const status = getStatus(comp.startTime, comp.endTime);
+  const isJoined = userId ? participants.some(u => u.userId === userId) : false;
+
+  // The challenge set is a secret until the event starts. Revealing which tasks
+  // it contains beforehand lets people pre-solve or leak them, which is unfair.
+  // Names appear only to a joined participant once the event is active, to anyone
+  // after it has ended (review), or to staff who manage it. Everyone else sees
+  // the count (ctfCount) but not the list.
+  const isStaff = req.user?.tokenType === "session" && req.user.role !== "user";
+  const revealChallenges = status === "ended" || isStaff || (isJoined && status === "active");
+
   const challengeIds = tasks.map(t => t.ctfId);
-  const allChallenges = challengeIds.length === 0 ? [] : await db.select({
+  const allChallenges = (!revealChallenges || challengeIds.length === 0) ? [] : await db.select({
     id: ctfTasksTable.id,
     name: ctfTasksTable.name,
     category: ctfTasksTable.category,
@@ -102,10 +107,11 @@ router.get("/:id", optionalAuth, async (req, res) => {
     maxTeamSize: comp.maxTeamSize,
     startTime: comp.startTime.toISOString(),
     endTime: comp.endTime.toISOString(),
-    status: getStatus(comp.startTime, comp.endTime),
+    status,
     participantCount: participants.length,
     ctfCount: tasks.length,
-    isJoined: userId ? participants.some(u => u.userId === userId) : false,
+    isJoined,
+    challengesLocked: !revealChallenges && tasks.length > 0,
     challenges: allChallenges,
     certificateUrl: null,
     sponsorName: comp.sponsorName,

@@ -83,6 +83,13 @@ subcode() { # same -> http code
     -H "Authorization: Bearer $1" -H 'Content-Type: application/json' -d "{\"flag\":\"$4\"}"
 }
 
+echo "=== Topshiriqlar qo'shilmaguncha oshkor qilinmaydi ==="
+DET=$(curl -s $API/competitions/$COMP)
+check "$(echo "$DET" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("challengesLocked"))')" "True" "qo'shilmaganga topshiriqlar yashirin"
+check "$(echo "$DET" | python3 -c 'import sys,json;print(len(json.load(sys.stdin).get("challenges",[])))')" "0" "ro'yxat bo'sh keladi"
+check "$(echo "$DET" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("ctfCount"))')" "1" "lekin soni ko'rinadi"
+
+echo
 echo "=== A'zo bo'lmasdan flag yuborib bo'lmaydi ==="
 check "$(subcode $TOK $COMP $CTF 'Flag{comp}')" "403" "qo'shilmagan foydalanuvchi rad etildi"
 check "$(q "SELECT count(*) FROM competition_solves WHERE competition_id=$COMP")" "0" "yechim yozilmadi"
@@ -90,6 +97,8 @@ check "$(q "SELECT count(*) FROM competition_solves WHERE competition_id=$COMP")
 echo
 echo "=== Ochiq musobaqaga qo'shilish ==="
 check "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/competitions/$COMP/join -H "Authorization: Bearer $TOK")" "201" "qo'shildi"
+# Joined + active → the set is now visible to this participant.
+check "$(curl -s $API/competitions/$COMP -H "Authorization: Bearer $TOK" | python3 -c 'import sys,json;print(len(json.load(sys.stdin).get("challenges",[])))')" "1" "qo'shilgach topshiriqlar ko'rinadi"
 
 echo
 echo "=== Noto'g'ri flag ball bermaydi ==="
