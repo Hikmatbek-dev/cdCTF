@@ -53,6 +53,7 @@ const AdminWriteupsPage = lazyWithRetry(() => import("@/pages/admin/AdminWriteup
 const AdminSupportPage = lazyWithRetry(() => import("@/pages/admin/AdminSupportPage"));
 const AdminGiftPage = lazyWithRetry(() => import("@/pages/admin/AdminGiftPage"));
 const SupportPage = lazyWithRetry(() => import("@/pages/SupportPage"));
+const PathDetailPage = lazyWithRetry(() => import("@/pages/PathDetailPage"));
 const CompetitionCtfPage = lazyWithRetry(() => import("@/pages/CompetitionCtfPage"));
 const ResendVerificationPage = lazyWithRetry(() => import("@/pages/ResendVerificationPage"));
 const ForgotPasswordPage = lazyWithRetry(() => import("@/pages/ForgotPasswordPage"));
@@ -256,6 +257,9 @@ function Router() {
           </Route>
           <Route path="/support">
             {() => <PageTransition><SupportPage /></PageTransition>}
+          </Route>
+          <Route path="/paths/:slug">
+            {() => <PageTransition><PathDetailPage /></PageTransition>}
           </Route>
           <Route path="/verify">
             {() => <PageTransition><VerifyPage /></PageTransition>}

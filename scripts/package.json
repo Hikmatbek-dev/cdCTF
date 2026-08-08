@@ -6,6 +6,7 @@
   "scripts": {
     "hello": "tsx ./src/hello.ts",
     "seed": "tsx ./src/seed.ts",
+    "seed-paths": "tsx ./src/seed-paths.ts",
     "seed-demo": "tsx ./src/seed-demo.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "fix-content": "tsx ./src/fix-challenge-content.ts",

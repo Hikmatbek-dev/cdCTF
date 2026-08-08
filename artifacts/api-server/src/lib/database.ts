@@ -427,6 +427,38 @@ async function applySchema() {
   `);
   await pool.query("CREATE INDEX IF NOT EXISTS gifts_user_idx ON gifts(user_id)");
 
+  // Learning paths — ordered tracks that group modules (TryHackMe-style).
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS learn_paths (
+      id serial PRIMARY KEY,
+      slug text NOT NULL UNIQUE,
+      title text NOT NULL,
+      title_uz text,
+      title_ru text,
+      description text NOT NULL,
+      description_uz text,
+      description_ru text,
+      difficulty text NOT NULL DEFAULT 'beginner',
+      hue integer NOT NULL DEFAULT 210,
+      badge text,
+      order_index integer NOT NULL DEFAULT 0,
+      is_published boolean NOT NULL DEFAULT true,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query("CREATE INDEX IF NOT EXISTS learn_paths_published_idx ON learn_paths(is_published)");
+  await pool.query("CREATE INDEX IF NOT EXISTS learn_paths_order_idx ON learn_paths(order_index)");
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS learn_path_modules (
+      id serial PRIMARY KEY,
+      path_id integer NOT NULL REFERENCES learn_paths(id),
+      module_id integer NOT NULL REFERENCES modules(id),
+      order_index integer NOT NULL DEFAULT 0
+    )
+  `);
+  await createIndexSafely("learn_path_modules_unique_idx", "CREATE UNIQUE INDEX IF NOT EXISTS learn_path_modules_unique_idx ON learn_path_modules(path_id, module_id)");
+  await pool.query("CREATE INDEX IF NOT EXISTS learn_path_modules_path_idx ON learn_path_modules(path_id)");
+
   // Job board — the paid end of the talent pipeline.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS jobs (

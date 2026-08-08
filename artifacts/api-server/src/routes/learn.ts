@@ -4,6 +4,7 @@ import { db } from "@workspace/db";
 import {
   learnCategoriesTable, lessonsTable, lessonQuestionsTable, userLessonAttemptsTable,
   modulesTable, moduleQuestionsTable, moduleExamAttemptsTable, certificatesTable,
+  pathsTable, pathModulesTable,
   programDiplomasTable, ctfTasksTable, ctfAttemptsTable,
 } from "@workspace/db/schema";
 import { eq, and, inArray, asc, sql } from "drizzle-orm";
@@ -388,6 +389,87 @@ async function moduleProgressFor(userId: number | undefined, moduleIds: number[]
   }
   return { lessonsByModule, completedByModule, examByModule, certByModule };
 }
+
+// GET /api/learn/paths — learning tracks that group modules.
+router.get("/paths", optionalAuth, async (req, res) => {
+  const paths = await db.select().from(pathsTable)
+    .where(eq(pathsTable.isPublished, true))
+    .orderBy(asc(pathsTable.orderIndex));
+  if (paths.length === 0) return res.json([]);
+
+  const links = await db.select({ pathId: pathModulesTable.pathId, moduleId: pathModulesTable.moduleId, orderIndex: pathModulesTable.orderIndex })
+    .from(pathModulesTable)
+    .innerJoin(modulesTable, eq(pathModulesTable.moduleId, modulesTable.id))
+    .where(eq(modulesTable.isPublished, true));
+
+  const moduleIds = [...new Set(links.map(l => l.moduleId))];
+  // A module counts as "completed" for a path once its exam is passed.
+  const { examByModule } = await moduleProgressFor(req.user?.userId, moduleIds);
+
+  const byPath = new Map<number, number[]>();
+  for (const l of links) {
+    const list = byPath.get(l.pathId) ?? [];
+    list.push(l.moduleId);
+    byPath.set(l.pathId, list);
+  }
+
+  res.json(paths.map(p => {
+    const mods = byPath.get(p.id) ?? [];
+    return {
+      id: p.id, slug: p.slug,
+      title: p.title, titleUz: p.titleUz, titleRu: p.titleRu,
+      description: p.description, descriptionUz: p.descriptionUz, descriptionRu: p.descriptionRu,
+      difficulty: p.difficulty, hue: p.hue, badge: p.badge,
+      moduleCount: mods.length,
+      completedModules: mods.filter(id => examByModule.get(id)?.passed).length,
+    };
+  }));
+});
+
+// GET /api/learn/paths/:slug — one track and its ordered modules with progress.
+router.get("/paths/:slug", optionalAuth, async (req, res) => {
+  const [path] = await db.select().from(pathsTable)
+    .where(and(eq(pathsTable.slug, String(req.params.slug)), eq(pathsTable.isPublished, true))).limit(1);
+  if (!path) return res.status(404).json({ error: "Path not found" });
+
+  const links = await db.select({ moduleId: pathModulesTable.moduleId, orderIndex: pathModulesTable.orderIndex })
+    .from(pathModulesTable)
+    .where(eq(pathModulesTable.pathId, path.id))
+    .orderBy(asc(pathModulesTable.orderIndex));
+
+  const orderedIds = links.map(l => l.moduleId);
+  const modules = orderedIds.length === 0 ? [] : await db.select().from(modulesTable)
+    .where(and(inArray(modulesTable.id, orderedIds), eq(modulesTable.isPublished, true)));
+  const modById = new Map(modules.map(m => [m.id, m]));
+
+  const { lessonsByModule, completedByModule, examByModule, certByModule } =
+    await moduleProgressFor(req.user?.userId, modules.map(m => m.id));
+
+  // Preserve the path's own ordering, dropping any unpublished module.
+  const orderedModules = orderedIds
+    .map(id => modById.get(id))
+    .filter((m): m is NonNullable<typeof m> => Boolean(m))
+    .map(m => ({
+      id: m.id, slug: m.slug,
+      title: m.title, titleUz: m.titleUz, titleRu: m.titleRu,
+      description: m.description, descriptionUz: m.descriptionUz, descriptionRu: m.descriptionRu,
+      difficulty: m.difficulty, estimatedHours: m.estimatedHours,
+      lessonCount: lessonsByModule.get(m.id)?.length ?? 0,
+      completedCount: completedByModule.get(m.id) ?? 0,
+      examPassed: examByModule.get(m.id)?.passed ?? false,
+      certificateSerial: certByModule.get(m.id) ?? null,
+    }));
+
+  res.json({
+    id: path.id, slug: path.slug,
+    title: path.title, titleUz: path.titleUz, titleRu: path.titleRu,
+    description: path.description, descriptionUz: path.descriptionUz, descriptionRu: path.descriptionRu,
+    difficulty: path.difficulty, hue: path.hue, badge: path.badge,
+    modules: orderedModules,
+    moduleCount: orderedModules.length,
+    completedModules: orderedModules.filter(m => m.examPassed).length,
+  });
+});
 
 // GET /api/learn/modules
 router.get("/modules", optionalAuth, async (req, res) => {

@@ -113,6 +113,30 @@ router.get("/", optionalAuth, requireScope("ctf:read"), async (req, res) => {
   });
 });
 
+// GET /api/ctf/writeups — a public browse of published write-ups (the
+// Walkthroughs tab). Metadata only: title/author/challenge, never the body —
+// the write-up text still opens only after the reader solves the challenge, so
+// this discovers walkthroughs without spoiling them. Registered before "/:id"
+// so the literal path wins over the id matcher.
+router.get("/writeups", optionalAuth, requireScope("ctf:read"), async (_req, res) => {
+  const rows = await db.select({
+    id: ctfWriteupsTable.id,
+    ctfId: ctfWriteupsTable.ctfId,
+    ctfName: ctfTasksTable.name,
+    category: ctfTasksTable.category,
+    difficulty: ctfTasksTable.difficulty,
+    authorNickname: usersTable.nickname,
+    createdAt: ctfWriteupsTable.createdAt,
+  })
+    .from(ctfWriteupsTable)
+    .innerJoin(ctfTasksTable, eq(ctfWriteupsTable.ctfId, ctfTasksTable.id))
+    .innerJoin(usersTable, eq(ctfWriteupsTable.userId, usersTable.id))
+    .where(and(eq(ctfWriteupsTable.isPublished, true), eq(ctfTasksTable.isPublished, true)))
+    .orderBy(desc(ctfWriteupsTable.createdAt))
+    .limit(60);
+  res.json(rows.map(w => ({ ...w, createdAt: w.createdAt.toISOString() })));
+});
+
 // GET /api/ctf/:id
 router.get("/:id", optionalAuth, requireScope("ctf:read"), async (req, res) => {
   const ctfId = Number(req.params.id);

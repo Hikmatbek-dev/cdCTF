@@ -43,6 +43,45 @@ export const modulesTable = pgTable("modules", {
   index("modules_order_idx").on(table.orderIndex),
 ]);
 
+/**
+ * A path is a track: an ordered set of modules that takes a learner from a
+ * starting point to a goal (e.g. "Pre-Security", "Web Fundamentals", "Blue
+ * Team"). Paths group modules the way modules group lessons — the TryHackMe
+ * shape, and the top of the learning funnel.
+ */
+export const pathsTable = pgTable("learn_paths", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  titleUz: text("title_uz"),
+  titleRu: text("title_ru"),
+  description: text("description").notNull(),
+  descriptionUz: text("description_uz"),
+  descriptionRu: text("description_ru"),
+  difficulty: text("difficulty").notNull().default("beginner"),
+  // A hue (0-360) for the card's gradient, so paths read as a system.
+  hue: integer("hue").notNull().default(210),
+  // Optional "NEW"/badge and a short tag line shown on the card.
+  badge: text("badge"),
+  orderIndex: integer("order_index").notNull().default(0),
+  isPublished: boolean("is_published").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  index("learn_paths_published_idx").on(table.isPublished),
+  index("learn_paths_order_idx").on(table.orderIndex),
+]);
+
+/** The ordered modules inside a path. A module may appear in several paths. */
+export const pathModulesTable = pgTable("learn_path_modules", {
+  id: serial("id").primaryKey(),
+  pathId: integer("path_id").notNull().references(() => pathsTable.id),
+  moduleId: integer("module_id").notNull().references(() => modulesTable.id),
+  orderIndex: integer("order_index").notNull().default(0),
+}, table => [
+  uniqueIndex("learn_path_modules_unique_idx").on(table.pathId, table.moduleId),
+  index("learn_path_modules_path_idx").on(table.pathId),
+]);
+
 export const lessonsTable = pgTable("lessons", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
