@@ -5,6 +5,7 @@ import { logger } from "./logger";
 
 const TOKEN_KEY = "telegram_bot_token";
 const CHAT_KEY = "telegram_chat_id";
+const CHANNEL_KEY = "telegram_channel_url";
 
 // A short in-memory cache so a burst of audit events does not read app_settings
 // once per event. Per serverless instance, which is fine — a stale token for a
@@ -40,6 +41,26 @@ export async function setTelegramToken(token: string | null): Promise<void> {
 
 export async function setTelegramChatId(chatId: string | null): Promise<void> {
   await putSetting(CHAT_KEY, chatId && chatId.trim() ? chatId.trim() : null);
+}
+
+/** The public official channel link, shown site-wide. Not a secret. */
+export async function setTelegramChannelUrl(url: string | null): Promise<void> {
+  await putSetting(CHANNEL_KEY, url && url.trim() ? url.trim() : null);
+  channelCache = null;
+}
+
+let channelCache: { url: string | null; at: number } | null = null;
+export async function getTelegramChannelUrl(): Promise<string | null> {
+  if (channelCache && Date.now() - channelCache.at < CACHE_MS) return channelCache.url;
+  try {
+    const [row] = await db.select().from(appSettingsTable).where(inArray(appSettingsTable.key, [CHANNEL_KEY]));
+    const url = row?.value ?? null;
+    channelCache = { url, at: Date.now() };
+    return url;
+  } catch (err) {
+    logger.warn({ err }, "getTelegramChannelUrl failed");
+    return null;
+  }
 }
 
 /**

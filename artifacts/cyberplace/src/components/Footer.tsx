@@ -1,9 +1,11 @@
 import { Link } from "wouter";
 import { Send, Languages } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
+import { useSiteConfig } from "@/lib/useSiteConfig";
 
 export function Footer() {
   const { t } = useLang();
+  const { telegramChannelUrl } = useSiteConfig();
 
   return (
     <footer className="border-t border-border py-14 relative mt-auto">
@@ -51,6 +53,13 @@ export function Footer() {
               <li><Link href="/verify" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Verify a credential", "Sertifikatni tekshirish", "Проверить сертификат")}</Link></li>
               <li><Link href="/impact" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Impact", "Ta'sir", "Влияние")}</Link></li>
               <li><Link href="/support" className="inline-flex items-center min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors">{t("Support / report a bug", "Yordam / xatolik", "Поддержка / баг")}</Link></li>
+              {telegramChannelUrl && (
+                <li>
+                  <a href={telegramChannelUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 min-h-[40px] py-2 text-muted-foreground hover:text-primary transition-colors" data-testid="footer-telegram">
+                    <Send className="w-4 h-4" /> {t("Telegram channel", "Telegram kanal", "Telegram-канал")}
+                  </a>
+                </li>
+              )}
             </ul>
           </div>
         </div>

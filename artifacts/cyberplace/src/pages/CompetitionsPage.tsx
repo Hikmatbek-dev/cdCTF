@@ -3,6 +3,7 @@ import { Trophy, Clock, Users, Lock, Gift, Send } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LoadFailure } from "@/components/LoadFailure";
 import { useLang } from "@/lib/LanguageContext";
+import { useSiteConfig } from "@/lib/useSiteConfig";
 import { normalizeCompetitions } from "@/lib/api-shapes";
 import { useListCompetitions, getListCompetitionsQueryKey } from "@workspace/api-client-react";
 import { statusLabel } from "@/lib/status-label";
@@ -13,6 +14,7 @@ import { statusLabel } from "@/lib/status-label";
 
 export default function CompetitionsPage() {
   const { t } = useLang();
+  const { telegramChannelUrl } = useSiteConfig();
   const { data: competitions, isLoading, isError, refetch } = useListCompetitions({
     query: { queryKey: getListCompetitionsQueryKey() },
   });
@@ -94,10 +96,10 @@ export default function CompetitionsPage() {
                       <Users className="w-3 h-3" />
                       {(comp as any).format === "team" ? t("Team", "Jamoa", "Командный") : t("Individual", "Yakka", "Индивидуальный")}
                     </span>
-                    {(comp as any).telegramUrl && (
+                    {((comp as any).telegramUrl || telegramChannelUrl) && (
                       <button
                         type="button"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open((comp as any).telegramUrl, "_blank", "noopener,noreferrer"); }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open((comp as any).telegramUrl || telegramChannelUrl, "_blank", "noopener,noreferrer"); }}
                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border border-sky-500/30 bg-sky-500/10 text-sky-500 text-xs font-medium hover:bg-sky-500/20 transition-colors"
                         data-testid={`competition-telegram-${comp.id}`}
                       >

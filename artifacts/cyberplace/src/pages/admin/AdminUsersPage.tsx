@@ -461,14 +461,15 @@ function TelegramModal({ onClose }: { onClose: () => void }) {
   const [chatId, setChatId] = useState("");
   const [hasToken, setHasToken] = useState(false);
   const [botToken, setBotToken] = useState("");
+  const [channelUrl, setChannelUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     fetch("/api/admin/settings/telegram", { credentials: "include" })
-      .then(r => r.ok ? r.json() : { chatId: "", hasToken: false })
-      .then(d => { if (!cancelled) { setChatId(d.chatId ?? ""); setHasToken(Boolean(d.hasToken)); setLoaded(true); } })
+      .then(r => r.ok ? r.json() : { chatId: "", hasToken: false, channelUrl: "" })
+      .then(d => { if (!cancelled) { setChatId(d.chatId ?? ""); setHasToken(Boolean(d.hasToken)); setChannelUrl(d.channelUrl ?? ""); setLoaded(true); } })
       .catch(() => { if (!cancelled) setLoaded(true); });
     return () => { cancelled = true; };
   }, []);
@@ -478,7 +479,7 @@ function TelegramModal({ onClose }: { onClose: () => void }) {
     try {
       // Only send the token when the field was actually typed into — an empty
       // field leaves the stored token untouched (it was never sent back to us).
-      const body: Record<string, string> = { chatId };
+      const body: Record<string, string> = { chatId, channelUrl };
       if (botToken.trim()) body.botToken = botToken.trim();
       const res = await fetch("/api/admin/settings/telegram", {
         method: "PUT", credentials: "include",
@@ -536,6 +537,15 @@ function TelegramModal({ onClose }: { onClose: () => void }) {
             {t("A group/channel id (often starts with -100). Add the bot as an admin of that channel.",
                "Guruh/kanal id si (ko'pincha -100 bilan boshlanadi). Botni o'sha kanalga admin qilib qo'shing.",
                "ID группы/канала (часто начинается с -100). Добавьте бота админом канала.")}
+          </p>
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground">{t("Public channel link", "Ommaviy kanal havolasi", "Публичная ссылка канала")}</label>
+          <Input value={channelUrl} onChange={e => setChannelUrl(e.target.value)} placeholder="https://t.me/cdctf" data-testid="input-telegram-channel" />
+          <p className="text-[11px] text-muted-foreground mt-1">
+            {t("Shown to everyone in the footer and on competitions. Leave blank to hide.",
+               "Hammaga footerda va musobaqalarda ko'rinadi. Yashirish uchun bo'sh qoldiring.",
+               "Показывается всем в футере и на соревнованиях. Пусто — скрыть.")}
           </p>
         </div>
         <div className="flex justify-between gap-2 pt-2">

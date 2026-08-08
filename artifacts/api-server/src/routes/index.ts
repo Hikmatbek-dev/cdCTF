@@ -14,6 +14,7 @@ import usersRouter from "./users";
 import adminRouter from "./admin";
 import uploadsRouter from "./uploads";
 import supportRouter from "./support";
+import configRouter from "./config";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use("/users", usersRouter);
 router.use("/admin", adminRouter);
 router.use("/uploads", uploadsRouter);
 router.use("/support", supportRouter);
+router.use("/config", configRouter);
 
 export default router;

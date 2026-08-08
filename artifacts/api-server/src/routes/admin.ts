@@ -41,7 +41,7 @@ import {
   type UserRole,
 } from "../lib/permissions";
 import bcrypt from "bcryptjs";
-import { getTelegramConfig, setTelegramToken, setTelegramChatId, sendTelegram, sendTelegramLog, tgEscape } from "../lib/telegram";
+import { getTelegramConfig, setTelegramToken, setTelegramChatId, setTelegramChannelUrl, getTelegramChannelUrl, sendTelegram, sendTelegramLog, tgEscape } from "../lib/telegram";
 
 const router = Router();
 // Staff-only floor. Every route below additionally declares the specific
@@ -1154,7 +1154,8 @@ router.post("/staff/:id/password", requireSuperAdmin, async (req, res) => {
 // GET /api/admin/settings/telegram
 router.get("/settings/telegram", requireSuperAdmin, async (_req, res) => {
   const { token, chatId } = await getTelegramConfig();
-  res.json({ hasToken: Boolean(token), chatId: chatId ?? "" });
+  const channelUrl = await getTelegramChannelUrl();
+  res.json({ hasToken: Boolean(token), chatId: chatId ?? "", channelUrl: channelUrl ?? "" });
 });
 
 // PUT /api/admin/settings/telegram — set/clear the bot token and/or chat id.
@@ -1174,13 +1175,21 @@ router.put("/settings/telegram", requireSuperAdmin, async (req, res) => {
     }
     await setTelegramChatId(req.body.chatId);
   }
+  if (req.body?.channelUrl !== undefined) {
+    if (req.body.channelUrl !== null && typeof req.body.channelUrl !== "string") {
+      return res.status(400).json({ error: "channelUrl must be a string" });
+    }
+    await setTelegramChannelUrl(req.body.channelUrl);
+  }
   // Never log the token itself.
   await writeAuditLog(req, "settings.telegram", "settings", "telegram", {
     tokenChanged: req.body?.botToken !== undefined,
     chatIdChanged: req.body?.chatId !== undefined,
+    channelChanged: req.body?.channelUrl !== undefined,
   });
   const { token, chatId } = await getTelegramConfig();
-  res.json({ hasToken: Boolean(token), chatId: chatId ?? "" });
+  const channelUrl = await getTelegramChannelUrl();
+  res.json({ hasToken: Boolean(token), chatId: chatId ?? "", channelUrl: channelUrl ?? "" });
 });
 
 // POST /api/admin/settings/telegram/test — send a test message right now.

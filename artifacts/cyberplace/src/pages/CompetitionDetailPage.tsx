@@ -14,6 +14,7 @@ import { normalizeArray } from "@/lib/api-shapes";
 import { SponsorReport } from "@/components/SponsorReport";
 import { errorToast } from "@/lib/error-toast";
 import { statusLabel } from "@/lib/status-label";
+import { useSiteConfig } from "@/lib/useSiteConfig";
 
 export default function CompetitionDetailPage() {
   const [, params] = useRoute("/competitions/:id");
@@ -21,6 +22,7 @@ export default function CompetitionDetailPage() {
   const { t } = useLang();
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
+  const { telegramChannelUrl } = useSiteConfig();
   const qc = useQueryClient();
   const [, setLocation] = useLocation();
   const [inviteCode, setInviteCode] = useState("");
@@ -221,10 +223,11 @@ export default function CompetitionDetailPage() {
                 {t("Open the shareable page for this event", "Bu tadbirning ulashiladigan sahifasini ochish", "Открыть страницу события для репоста")}
               </button>
             </Link>
-            {/* The event's own Telegram channel — announcements, hints, Q&A. */}
-            {(comp as any).telegramUrl && (
+            {/* The event's own Telegram channel if it set one, otherwise the
+                official site-wide channel — announcements, hints, Q&A. */}
+            {((comp as any).telegramUrl || telegramChannelUrl) && (
               <a
-                href={(comp as any).telegramUrl}
+                href={(comp as any).telegramUrl || telegramChannelUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-lg border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-sm font-medium text-sky-500 hover:bg-sky-500/20 transition-colors"
