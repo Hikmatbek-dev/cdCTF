@@ -82,6 +82,34 @@ export const pathModulesTable = pgTable("learn_path_modules", {
   index("learn_path_modules_path_idx").on(table.pathId),
 ]);
 
+/**
+ * Curated cards that fill the hub's non-course tabs: recent threats (CVE
+ * write-ups), AI-upskilling resources, and live classes. One table, a `section`
+ * telling them apart. `startsAt` + `url` are used by the "live" section (when and
+ * where to join); the others use `url`/`tag` as an external link and a label.
+ */
+export const spotlightsTable = pgTable("learn_spotlights", {
+  id: serial("id").primaryKey(),
+  section: text("section").notNull(), // threats | ai | live
+  title: text("title").notNull(),
+  titleUz: text("title_uz"),
+  titleRu: text("title_ru"),
+  description: text("description"),
+  descriptionUz: text("description_uz"),
+  descriptionRu: text("description_ru"),
+  // A short label: a CVE id, a difficulty, or the host of a live class.
+  tag: text("tag"),
+  // External link (write-up, resource) or the join link for a live class.
+  url: text("url"),
+  // Only for live classes: when it starts.
+  startsAt: timestamp("starts_at", { withTimezone: true }),
+  orderIndex: integer("order_index").notNull().default(0),
+  isPublished: boolean("is_published").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  index("learn_spotlights_section_idx").on(table.section, table.isPublished),
+]);
+
 export const lessonsTable = pgTable("lessons", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),

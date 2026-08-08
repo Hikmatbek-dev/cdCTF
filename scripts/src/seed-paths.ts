@@ -108,6 +108,42 @@ const MODULES: Module[] = [
       { question: "What matters most for password strength?", questionUz: "Parol kuchi uchun eng muhimi nima?", questionRu: "Что важнее всего для силы пароля?", options: ["Length", "Special characters only", "Changing it daily", "Using your name"], optionsUz: ["Uzunlik", "Faqat maxsus belgilar", "Har kuni o'zgartirish", "Ismdan foydalanish"], optionsRu: ["Длина", "Только спецсимволы", "Менять ежедневно", "Использовать имя"], correctOption: 0 },
     ],
   },
+  {
+    slug: "recon-basics", title: "Reconnaissance basics", titleUz: "Razvedka asoslari", titleRu: "Основы разведки",
+    description: "Before any attack comes information gathering — do it the right way.", descriptionUz: "Har qanday hujumdan oldin ma'lumot yig'ish keladi — buni to'g'ri qiling.", descriptionRu: "Перед любой атакой — сбор информации.",
+    difficulty: "beginner", estimatedHours: 1,
+    lessons: [
+      { title: "Passive vs active recon", titleUz: "Passiv va aktiv razvedka", titleRu: "Пассивная и активная разведка",
+        content: "## Two kinds\n**Passive** recon reads public sources (a website, DNS records, search engines) without touching the target — invisible.\n**Active** recon interacts with the target (scanning ports) — faster, but noisy and often logged. Always stay within scope and permission.",
+        contentUz: "## Ikki turi\n**Passiv** razvedka ochiq manbalarni o'qiydi (sayt, DNS yozuvlari, qidiruv tizimlari) — nishonga tegmaydi, ko'rinmas.\n**Aktiv** razvedka nishon bilan aloqa qiladi (portlarni skanerlash) — tezroq, lekin shovqinli va ko'pincha loglanadi. Doim ruxsat va doira ichida ishlang." },
+      { title: "Scanning with nmap", titleUz: "nmap bilan skanerlash", titleRu: "Сканирование nmap",
+        content: "## Finding open ports\n`nmap` reports which ports are open and what runs on them.\n\n```\n$ nmap -sV 10.10.10.5\n22/tcp open  ssh   OpenSSH 8.2\n80/tcp open  http  nginx 1.18\n```\n\n`-sV` also guesses the service version — the first clue for finding a known vulnerability. Only scan systems you are allowed to.",
+        contentUz: "## Ochiq portlarni topish\n`nmap` qaysi portlar ochiq va ularda nima ishlayotganini ko'rsatadi.\n\n```\n$ nmap -sV 10.10.10.5\n22/tcp open  ssh   OpenSSH 8.2\n80/tcp open  http  nginx 1.18\n```\n\n`-sV` xizmat versiyasini ham taxmin qiladi — ma'lum zaiflikni topishning birinchi ipi. Faqat ruxsat berilgan tizimlarni skanerlang." },
+    ],
+    exam: [
+      { question: "Which recon type never touches the target?", questionUz: "Qaysi razvedka nishonga tegmaydi?", questionRu: "Какая разведка не трогает цель?", options: ["Passive", "Active", "Port scanning", "Brute force"], optionsUz: ["Passiv", "Aktiv", "Port skanerlash", "Brute force"], optionsRu: ["Пассивная", "Активная", "Скан портов", "Перебор"], correctOption: 0 },
+      { question: "What does nmap -sV add?", questionUz: "nmap -sV nima qo'shadi?", questionRu: "Что добавляет nmap -sV?", options: ["Service version", "A password", "A firewall", "A backdoor"], optionsUz: ["Xizmat versiyasi", "Parol", "Firewall", "Backdoor"], optionsRu: ["Версию сервиса", "Пароль", "Файрвол", "Бэкдор"], correctOption: 0 },
+      { question: "Before scanning a system you must have…", questionUz: "Tizimni skanerlashdan oldin sizda… bo'lishi kerak", questionRu: "Перед сканированием нужно иметь…", options: ["Permission", "A fast laptop", "A VPN only", "Nothing"], optionsUz: ["Ruxsat", "Tez noutbuk", "Faqat VPN", "Hech narsa"], optionsRu: ["Разрешение", "Быстрый ноутбук", "Только VPN", "Ничего"], correctOption: 0 },
+    ],
+  },
+  {
+    slug: "sql-injection-101", title: "SQL injection 101", titleUz: "SQL injection 101", titleRu: "SQL-инъекции 101",
+    description: "Understand the classic web flaw that leaks whole databases.", descriptionUz: "Butun bazalarni sizdiradigan klassik veb-kamchilikni tushuning.", descriptionRu: "Классическая уязвимость, сливающая базы.",
+    difficulty: "intermediate", estimatedHours: 1,
+    lessons: [
+      { title: "What is SQL injection", titleUz: "SQL injection nima", titleRu: "Что такое SQL-инъекция",
+        content: "## The bug\nWhen an app builds a database query by pasting user input straight into it, an attacker can change the query's meaning.\n\n```\nSELECT * FROM users WHERE name = 'alice' AND pass = '' OR '1'='1'\n```\n\nThe `' OR '1'='1` turns the check always-true. The fix is **parameterised queries**, which keep data and code separate.",
+        contentUz: "## Kamchilik\nIlova foydalanuvchi kiritmasini to'g'ridan-to'g'ri so'rovga yopishtirib qursa, hujumchi so'rov ma'nosini o'zgartira oladi.\n\n```\nSELECT * FROM users WHERE name = 'alice' AND pass = '' OR '1'='1'\n```\n\n`' OR '1'='1` tekshiruvni doim rost qiladi. Yechim — **parametrlangan so'rovlar**: ular ma'lumot va kodni ajratadi." },
+      { title: "Finding and preventing it", titleUz: "Topish va oldini olish", titleRu: "Поиск и защита",
+        content: "## Spotting it\nA single quote `'` that breaks the page, or input that changes results, is a hint. Automated tools like `sqlmap` confirm it (only with permission).\n\n## Preventing it\n- Parameterised queries / prepared statements\n- Least-privilege database users\n- Input validation as a second layer.",
+        contentUz: "## Topish\nSahifani buzadigan bitta qo'shtirnoq `'` yoki natijani o'zgartiruvchi kiritma — ip. `sqlmap` kabi vositalar tasdiqlaydi (faqat ruxsat bilan).\n\n## Oldini olish\n- Parametrlangan so'rovlar / prepared statement\n- Kam-imtiyozli baza foydalanuvchilari\n- Ikkinchi qatlam sifatida kiritmani tekshirish." },
+    ],
+    exam: [
+      { question: "The main fix for SQL injection is…", questionUz: "SQL injection'ning asosiy yechimi…", questionRu: "Главная защита от SQL-инъекций…", options: ["Parameterised queries", "A longer password", "Hiding the URL", "A faster server"], optionsUz: ["Parametrlangan so'rovlar", "Uzunroq parol", "URL'ni yashirish", "Tezroq server"], optionsRu: ["Параметризованные запросы", "Длинный пароль", "Скрыть URL", "Быстрый сервер"], correctOption: 0 },
+      { question: "`' OR '1'='1` typically makes a check…", questionUz: "`' OR '1'='1` odatda tekshiruvni…", questionRu: "`' OR '1'='1` обычно делает проверку…", options: ["Always true", "Always false", "Slower", "Encrypted"], optionsUz: ["Doim rost", "Doim yolg'on", "Sekinroq", "Shifrlangan"], optionsRu: ["Всегда истинной", "Всегда ложной", "Медленнее", "Шифрованной"], correctOption: 0 },
+      { question: "A database user should have…", questionUz: "Baza foydalanuvchisida… bo'lishi kerak", questionRu: "У пользователя БД должно быть…", options: ["Least privilege", "All privileges", "No password", "Admin always"], optionsUz: ["Kam imtiyoz", "Barcha imtiyozlar", "Parolsiz", "Doim admin"], optionsRu: ["Минимум прав", "Все права", "Без пароля", "Всегда админ"], correctOption: 0 },
+    ],
+  },
 ];
 
 const PATHS: Path[] = [
@@ -121,14 +157,23 @@ const PATHS: Path[] = [
     slug: "web-fundamentals", title: "Web fundamentals", titleUz: "Veb asoslari", titleRu: "Основы веба",
     description: "Understand the web deeply enough to find its flaws.", descriptionUz: "Vebni kamchiliklarini topa oladigan darajada chuqur tushuning.", descriptionRu: "Поймите веб достаточно, чтобы находить уязвимости.",
     difficulty: "beginner", hue: 265, badge: null,
-    moduleSlugs: ["web-requests-101", "web-security", "web-exploitation"],
+    moduleSlugs: ["web-requests-101", "sql-injection-101", "web-security", "web-exploitation"],
   },
   {
     slug: "security-foundations", title: "Security foundations", titleUz: "Xavfsizlik asoslari", titleRu: "Основы безопасности",
     description: "The core ideas every defender and attacker shares.", descriptionUz: "Har bir himoyachi va hujumchi biladigan asosiy g'oyalar.", descriptionRu: "Базовые идеи для защитника и атакующего.",
     difficulty: "beginner", hue: 210, badge: null,
-    moduleSlugs: ["intro-to-linux-cli", "networking-basics", "passwords-and-hashing", "cryptography-for-security"],
+    moduleSlugs: ["intro-to-linux-cli", "networking-basics", "passwords-and-hashing", "recon-basics", "cryptography-for-security"],
   },
+];
+
+type Spotlight = { section: "threats" | "ai" | "live"; title: string; titleUz: string; description: string; descriptionUz: string; tag?: string; url?: string };
+
+const SPOTLIGHTS: Spotlight[] = [
+  { section: "threats", title: "OWASP Top 10 — the web's most common flaws", titleUz: "OWASP Top 10 — vebning eng keng tarqalgan kamchiliklari", description: "The industry list of the ten risks every web app faces. Learn to spot and fix them.", descriptionUz: "Har bir veb-ilova duch keladigan o'nta xavf ro'yxati. Ularni topish va tuzatishni o'rganing.", tag: "OWASP", url: "https://owasp.org/www-project-top-ten/" },
+  { section: "threats", title: "Keeping software patched", titleUz: "Dasturlarni yangilab turish", description: "Most breaches use a known bug with a fix already available. Why patching is your cheapest defence.", descriptionUz: "Ko'p buzilishlar yechimi allaqachon bor ma'lum xatodan foydalanadi. Nega yangilash — eng arzon himoya.", tag: "Basics" },
+  { section: "ai", title: "Prompt injection 101", titleUz: "Prompt injection 101", description: "How attackers trick LLM-powered apps into ignoring their instructions — and how to defend.", descriptionUz: "Hujumchilar LLM-ilovalarni ko'rsatmalarini e'tiborsiz qoldirishga qanday aldaydi — va qanday himoyalanadi.", tag: "LLM" },
+  { section: "ai", title: "Using AI safely while you learn", titleUz: "O'rganayotib AI'dan xavfsiz foydalanish", description: "AI assistants speed you up, but never paste secrets or a live target's data into them.", descriptionUz: "AI yordamchilar tezlashtiradi, lekin ularga hech qachon sirlar yoki jonli nishon ma'lumotini joylashtirmang.", tag: "Guide" },
 ];
 
 async function main() {
@@ -155,6 +200,13 @@ async function main() {
          module_id integer NOT NULL REFERENCES modules(id),
          order_index integer NOT NULL DEFAULT 0)`,
       "CREATE UNIQUE INDEX IF NOT EXISTS learn_path_modules_unique_idx ON learn_path_modules(path_id, module_id)",
+      `CREATE TABLE IF NOT EXISTS learn_spotlights (
+         id serial PRIMARY KEY, section text NOT NULL,
+         title text NOT NULL, title_uz text, title_ru text,
+         description text, description_uz text, description_ru text,
+         tag text, url text, starts_at timestamptz,
+         order_index integer NOT NULL DEFAULT 0, is_published boolean NOT NULL DEFAULT true,
+         created_at timestamptz NOT NULL DEFAULT now())`,
     ]) {
       await pool.query(ddl);
     }
@@ -249,7 +301,23 @@ async function main() {
       }
     }
 
-    console.log(`🎉 Seed done. Modules +${modAdded}, lessons +${lessonAdded}, paths +${pathAdded}, links ${linkAdded}.`);
+    // Spotlights — idempotent by (section, title).
+    let spotAdded = 0;
+    for (let si = 0; si < SPOTLIGHTS.length; si++) {
+      const s = SPOTLIGHTS[si];
+      const ex = await pool.query("SELECT id FROM learn_spotlights WHERE section=$1 AND title=$2 LIMIT 1", [s.section, s.title]);
+      if (ex.rowCount) {
+        await pool.query("UPDATE learn_spotlights SET title_uz=$2, description=$3, description_uz=$4, tag=$5, url=$6, order_index=$7 WHERE id=$1",
+          [ex.rows[0].id, s.titleUz, s.description, s.descriptionUz, s.tag ?? null, s.url ?? null, si]);
+      } else {
+        await pool.query(
+          "INSERT INTO learn_spotlights (section,title,title_uz,description,description_uz,tag,url,order_index,is_published) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,true)",
+          [s.section, s.title, s.titleUz, s.description, s.descriptionUz, s.tag ?? null, s.url ?? null, si]);
+        spotAdded++;
+      }
+    }
+
+    console.log(`🎉 Seed done. Modules +${modAdded}, lessons +${lessonAdded}, paths +${pathAdded}, links ${linkAdded}, spotlights +${spotAdded}.`);
   } finally {
     await pool.end();
   }

@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import { usersTable, ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionTeamsTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleQuestionsTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable, supportTicketsTable, giftsTable, pathsTable, pathModulesTable } from "@workspace/db/schema";
+import { usersTable, ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionTeamsTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleQuestionsTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable, supportTicketsTable, giftsTable, pathsTable, pathModulesTable, spotlightsTable } from "@workspace/db/schema";
 import { eq, and, or, desc, inArray, isNotNull, asc, not, count, ilike } from "drizzle-orm";
 import { authenticateToken } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
@@ -1423,6 +1423,78 @@ router.delete("/paths/:id", requirePermission("lessons.publish"), async (req, re
     await tx.delete(pathsTable).where(eq(pathsTable.id, id));
   });
   await writeAuditLog(req, "path.delete", "path", id);
+  res.json({ success: true });
+});
+
+// ---------------------------------------------------------------------------
+// Spotlights — curated cards for the hub's Recent Threats / AI Upskilling /
+// Live Classes tabs.
+// ---------------------------------------------------------------------------
+
+const SPOTLIGHT_SECTIONS = ["threats", "ai", "live"];
+
+function parseStartsAt(value: unknown): Date | null {
+  if (value === null || value === undefined || value === "") return null;
+  const d = new Date(value as string);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+// GET /api/admin/spotlights?section=
+router.get("/spotlights", requirePermission("lessons.publish"), async (req, res) => {
+  const section = typeof req.query.section === "string" ? req.query.section : "";
+  const filter = SPOTLIGHT_SECTIONS.includes(section) ? eq(spotlightsTable.section, section) : undefined;
+  const rows = await db.select().from(spotlightsTable).where(filter)
+    .orderBy(asc(spotlightsTable.orderIndex), desc(spotlightsTable.createdAt));
+  res.json({ spotlights: rows.map(s => ({ ...s, startsAt: s.startsAt ? s.startsAt.toISOString() : null, createdAt: s.createdAt.toISOString() })) });
+});
+
+// POST /api/admin/spotlights
+router.post("/spotlights", requirePermission("lessons.publish"), async (req, res) => {
+  const section = String(req.body?.section ?? "");
+  if (!SPOTLIGHT_SECTIONS.includes(section)) return res.status(400).json({ error: `section must be one of: ${SPOTLIGHT_SECTIONS.join(", ")}` });
+  const title = optionalText(req.body?.title);
+  if (!title) return res.status(400).json({ error: "title is required" });
+  const [created] = await db.insert(spotlightsTable).values({
+    section, title,
+    titleUz: optionalText(req.body?.titleUz), titleRu: optionalText(req.body?.titleRu),
+    description: optionalText(req.body?.description), descriptionUz: optionalText(req.body?.descriptionUz), descriptionRu: optionalText(req.body?.descriptionRu),
+    tag: optionalText(req.body?.tag), url: optionalText(req.body?.url),
+    startsAt: parseStartsAt(req.body?.startsAt),
+    orderIndex: clampInt(req.body?.orderIndex, 0, 0, 9999),
+    isPublished: req.body?.isPublished !== false,
+  }).returning();
+  await writeAuditLog(req, "spotlight.create", "spotlight", created.id, { section });
+  res.status(201).json(created);
+});
+
+// PATCH /api/admin/spotlights/:id
+router.patch("/spotlights/:id", requirePermission("lessons.publish"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid id" });
+  const updates: Record<string, unknown> = {};
+  if (req.body?.title !== undefined) { const v = optionalText(req.body.title); if (!v) return res.status(400).json({ error: "title cannot be empty" }); updates.title = v; }
+  for (const f of ["titleUz", "titleRu", "description", "descriptionUz", "descriptionRu", "tag", "url"] as const) {
+    if (req.body?.[f] !== undefined) updates[f] = optionalText(req.body[f]);
+  }
+  if (req.body?.startsAt !== undefined) updates.startsAt = parseStartsAt(req.body.startsAt);
+  if (req.body?.orderIndex !== undefined) updates.orderIndex = clampInt(req.body.orderIndex, 0, 0, 9999);
+  if (req.body?.isPublished !== undefined) {
+    if (typeof req.body.isPublished !== "boolean") return res.status(400).json({ error: "isPublished must be a boolean" });
+    updates.isPublished = req.body.isPublished;
+  }
+  if (Object.keys(updates).length === 0) return res.status(400).json({ error: "Nothing to update" });
+  const [updated] = await db.update(spotlightsTable).set(updates).where(eq(spotlightsTable.id, id)).returning();
+  if (!updated) return res.status(404).json({ error: "Not found" });
+  await writeAuditLog(req, "spotlight.update", "spotlight", id, { fields: Object.keys(updates) });
+  res.json({ ...updated, startsAt: updated.startsAt ? updated.startsAt.toISOString() : null, createdAt: updated.createdAt.toISOString() });
+});
+
+// DELETE /api/admin/spotlights/:id
+router.delete("/spotlights/:id", requirePermission("lessons.publish"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid id" });
+  await db.delete(spotlightsTable).where(eq(spotlightsTable.id, id));
+  await writeAuditLog(req, "spotlight.delete", "spotlight", id);
   res.json({ success: true });
 });
 

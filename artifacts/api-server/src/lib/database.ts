@@ -459,6 +459,22 @@ async function applySchema() {
   await createIndexSafely("learn_path_modules_unique_idx", "CREATE UNIQUE INDEX IF NOT EXISTS learn_path_modules_unique_idx ON learn_path_modules(path_id, module_id)");
   await pool.query("CREATE INDEX IF NOT EXISTS learn_path_modules_path_idx ON learn_path_modules(path_id)");
 
+  // Curated cards for the hub's Recent Threats / AI Upskilling / Live Classes tabs.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS learn_spotlights (
+      id serial PRIMARY KEY,
+      section text NOT NULL,
+      title text NOT NULL, title_uz text, title_ru text,
+      description text, description_uz text, description_ru text,
+      tag text, url text,
+      starts_at timestamptz,
+      order_index integer NOT NULL DEFAULT 0,
+      is_published boolean NOT NULL DEFAULT true,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query("CREATE INDEX IF NOT EXISTS learn_spotlights_section_idx ON learn_spotlights(section, is_published)");
+
   // Job board — the paid end of the talent pipeline.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS jobs (

@@ -4,10 +4,10 @@ import { db } from "@workspace/db";
 import {
   learnCategoriesTable, lessonsTable, lessonQuestionsTable, userLessonAttemptsTable,
   modulesTable, moduleQuestionsTable, moduleExamAttemptsTable, certificatesTable,
-  pathsTable, pathModulesTable,
+  pathsTable, pathModulesTable, spotlightsTable,
   programDiplomasTable, ctfTasksTable, ctfAttemptsTable,
 } from "@workspace/db/schema";
-import { eq, and, inArray, asc, sql } from "drizzle-orm";
+import { eq, and, inArray, asc, desc, sql } from "drizzle-orm";
 import { randomBytes, createHash } from "node:crypto";
 import { authenticateToken, optionalAuth } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
@@ -389,6 +389,20 @@ async function moduleProgressFor(userId: number | undefined, moduleIds: number[]
   }
   return { lessonsByModule, completedByModule, examByModule, certByModule };
 }
+
+// GET /api/learn/spotlights?section=threats|ai|live — curated hub cards.
+router.get("/spotlights", async (req, res) => {
+  const section = typeof req.query.section === "string" ? req.query.section : "";
+  if (!["threats", "ai", "live"].includes(section)) return res.status(400).json({ error: "Unknown section" });
+  const rows = await db.select().from(spotlightsTable)
+    .where(and(eq(spotlightsTable.section, section), eq(spotlightsTable.isPublished, true)))
+    .orderBy(asc(spotlightsTable.orderIndex), desc(spotlightsTable.createdAt));
+  res.json(rows.map(s => ({
+    id: s.id, title: s.title, titleUz: s.titleUz, titleRu: s.titleRu,
+    description: s.description, descriptionUz: s.descriptionUz, descriptionRu: s.descriptionRu,
+    tag: s.tag, url: s.url, startsAt: s.startsAt ? s.startsAt.toISOString() : null,
+  })));
+});
 
 // GET /api/learn/paths — learning tracks that group modules.
 router.get("/paths", optionalAuth, async (req, res) => {

@@ -31,6 +31,7 @@ type PathSummary = {
 };
 
 type Writeup = { id: number; ctfId: number; ctfName: string; category: string; difficulty: string; authorNickname: string; createdAt: string };
+type Spotlight = { id: number; title: string; titleUz?: string | null; titleRu?: string | null; description?: string | null; descriptionUz?: string | null; descriptionRu?: string | null; tag?: string | null; url?: string | null; startsAt?: string | null };
 
 const TABS = [
   { key: "paths", icon: Route, label: { en: "Paths", uz: "Yo'nalishlar", ru: "Пути" } },
@@ -75,6 +76,17 @@ export default function ModulesPage() {
       return r.json() as Promise<Writeup[]>;
     },
     enabled: tab === "walkthroughs",
+  });
+
+  const spotlightSection = tab === "threats" ? "threats" : tab === "ai" ? "ai" : tab === "live" ? "live" : null;
+  const { data: spotlights, isLoading: sLoading } = useQuery({
+    queryKey: ["spotlights", spotlightSection],
+    queryFn: async () => {
+      const r = await fetch(`/api/learn/spotlights?section=${spotlightSection}`);
+      if (!r.ok) throw new Error("spotlights");
+      return r.json() as Promise<Spotlight[]>;
+    },
+    enabled: !!spotlightSection,
   });
 
   const loc = (en: string, uz?: string | null, ru?: string | null) => (lang === "uz" ? uz : lang === "ru" ? ru : en) || en;
@@ -227,10 +239,49 @@ export default function ModulesPage() {
           />
         )}
 
-        {/* Aspirational tabs — shells for now */}
-        {tab === "ai" && <Soon icon={Sparkles} title={t("AI Upskilling", "AI ko'nikma", "AI-навыки")} text={t("Learn to attack and defend AI systems. Coming soon.", "AI tizimlariga hujum va himoyani o'rganing. Tez orada.", "Атака и защита ИИ-систем. Скоро.")} />}
-        {tab === "threats" && <Soon icon={ShieldAlert} title={t("Recent Threats", "So'nggi tahdidlar", "Недавние угрозы")} text={t("Practice on rooms based on real, recent CVEs. Coming soon.", "Haqiqiy, so'nggi CVE'lar asosidagi xonalarda mashq qiling. Tez orada.", "Практика на основе свежих CVE. Скоро.")} />}
-        {tab === "live" && <Soon icon={Radio} title={t("Live Classes", "Jonli darslar", "Живые уроки")} text={t("Instructor-led sessions and workshops. Coming soon.", "Ustoz boshchiligidagi jonli darslar va vorkshoplar. Tez orada.", "Занятия с преподавателем. Скоро.")} />}
+        {/* Curated tabs — Recent Threats / AI Upskilling / Live Classes */}
+        {spotlightSection && (
+          sLoading ? <Grid><CardsSkeleton n={3} /></Grid>
+          : spotlights && spotlights.length > 0 ? (
+            <Grid>
+              {spotlights.map(s => {
+                const isLive = spotlightSection === "live";
+                const when = s.startsAt ? new Date(s.startsAt) : null;
+                const inner = (
+                  <div className="group h-full rounded-2xl border border-border bg-card p-5 hover:border-primary/40 transition-colors flex flex-col" data-testid={`spotlight-${s.id}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      {spotlightSection === "threats" && <ShieldAlert className="w-4 h-4 text-rose-500" />}
+                      {spotlightSection === "ai" && <Sparkles className="w-4 h-4 text-primary" />}
+                      {isLive && <Radio className="w-4 h-4 text-emerald-500" />}
+                      {s.tag && <span className="text-[10px] font-bold uppercase tracking-wider bg-muted px-2 py-0.5 rounded">{s.tag}</span>}
+                    </div>
+                    <h3 className="font-bold text-base mb-1.5 group-hover:text-primary transition-colors">{loc(s.title, s.titleUz, s.titleRu)}</h3>
+                    {s.description && <p className="text-sm text-muted-foreground line-clamp-3 flex-1">{loc(s.description, s.descriptionUz, s.descriptionRu)}</p>}
+                    {isLive && when && (
+                      <div className="text-xs text-muted-foreground mt-3 inline-flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5" /> {when.toLocaleString(lang === "en" ? undefined : lang === "ru" ? "ru-RU" : "uz-UZ", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </div>
+                    )}
+                    {s.url && (
+                      <div className="mt-4">
+                        <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
+                          {isLive ? t("Join", "Qo'shilish", "Присоединиться") : t("Open", "Ochish", "Открыть")} <ChevronRight className="w-4 h-4" />
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+                return s.url
+                  ? <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer">{inner}</a>
+                  : <div key={s.id}>{inner}</div>;
+              })}
+            </Grid>
+          ) : (
+            spotlightSection === "ai" ? <Soon icon={Sparkles} title={t("AI Upskilling", "AI ko'nikma", "AI-навыки")} text={t("Attack and defend AI systems. Content is on the way.", "AI tizimlariga hujum va himoya. Kontent tez orada.", "Атака и защита ИИ. Контент скоро.")} />
+            : spotlightSection === "threats" ? <Soon icon={ShieldAlert} title={t("Recent Threats", "So'nggi tahdidlar", "Недавние угрозы")} text={t("Rooms based on real, recent CVEs. Content is on the way.", "Haqiqiy, so'nggi CVE'lar asosidagi xonalar. Kontent tez orada.", "Комнаты на основе свежих CVE. Скоро.")} />
+            : <Soon icon={Radio} title={t("Live Classes", "Jonli darslar", "Живые уроки")} text={t("Instructor-led sessions. None scheduled right now.", "Ustoz bilan jonli darslar. Hozircha rejalashtirilmagan.", "Занятия с преподавателем. Пока не запланированы.")} />
+          )
+        )}
       </div>
     </div>
   );
