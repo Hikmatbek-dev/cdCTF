@@ -144,6 +144,114 @@ const MODULES: Module[] = [
       { question: "A database user should have…", questionUz: "Baza foydalanuvchisida… bo'lishi kerak", questionRu: "У пользователя БД должно быть…", options: ["Least privilege", "All privileges", "No password", "Admin always"], optionsUz: ["Kam imtiyoz", "Barcha imtiyozlar", "Parolsiz", "Doim admin"], optionsRu: ["Минимум прав", "Все права", "Без пароля", "Всегда админ"], correctOption: 0 },
     ],
   },
+  {
+    slug: "bash-scripting-basics", title: "Bash scripting basics", titleUz: "Bash skript asoslari", titleRu: "Основы Bash-скриптов",
+    description: "Turn repetitive commands into small scripts that do the work for you.", descriptionUz: "Takroriy buyruqlarni ish qiladigan kichik skriptlarga aylantiring.", descriptionRu: "Превратите повторяющиеся команды в скрипты.",
+    difficulty: "beginner", estimatedHours: 1,
+    lessons: [
+      { title: "Your first script", titleUz: "Birinchi skriptingiz", titleRu: "Первый скрипт",
+        content: "## A script is just commands in a file\nStart with a shebang, make it executable, run it.\n\n```\n#!/bin/bash\necho \"Hello, $USER\"\n```\n\n```\n$ chmod +x hello.sh\n$ ./hello.sh\n```",
+        contentUz: "## Skript — fayldagi buyruqlar\nShebang bilan boshlang, ishga tushiriladigan qiling, ishga tushiring.\n\n```\n#!/bin/bash\necho \"Salom, $USER\"\n```\n\n```\n$ chmod +x hello.sh\n$ ./hello.sh\n```" },
+      { title: "Loops and arguments", titleUz: "Sikllar va argumentlar", titleRu: "Циклы и аргументы",
+        content: "## Arguments\n`$1`, `$2` are the words you pass in.\n\n## Loops\n```\nfor host in 10.0.0.1 10.0.0.2; do\n  ping -c1 $host\ndone\n```\n\nA loop turns one command into a sweep — the heart of automation.",
+        contentUz: "## Argumentlar\n`$1`, `$2` — siz uzatgan so'zlar.\n\n## Sikllar\n```\nfor host in 10.0.0.1 10.0.0.2; do\n  ping -c1 $host\ndone\n```\n\nSikl bitta buyruqni ko'plab bajarishga aylantiradi — avtomatlashtirishning yuragi." },
+    ],
+    exam: [
+      { question: "What starts a bash script's first line?", questionUz: "Bash skriptning birinchi qatori nima bilan boshlanadi?", questionRu: "С чего начинается первая строка скрипта?", options: ["#!/bin/bash", "// bash", "<bash>", "run bash"], optionsUz: ["#!/bin/bash", "// bash", "<bash>", "run bash"], optionsRu: ["#!/bin/bash", "// bash", "<bash>", "run bash"], correctOption: 0 },
+      { question: "What is `$1` in a script?", questionUz: "Skriptda `$1` nima?", questionRu: "Что такое `$1`?", options: ["First argument", "The script name", "An error", "The user"], optionsUz: ["Birinchi argument", "Skript nomi", "Xato", "Foydalanuvchi"], optionsRu: ["Первый аргумент", "Имя скрипта", "Ошибка", "Пользователь"], correctOption: 0 },
+      { question: "Which makes a file runnable?", questionUz: "Faylni ishga tushiriladigan qiladi?", questionRu: "Что делает файл исполняемым?", options: ["chmod +x", "cat", "ls -l", "rm"], optionsUz: ["chmod +x", "cat", "ls -l", "rm"], optionsRu: ["chmod +x", "cat", "ls -l", "rm"], correctOption: 0 },
+    ],
+  },
+  {
+    slug: "packet-analysis-wireshark", title: "Packet analysis with Wireshark", titleUz: "Wireshark bilan paket tahlili", titleRu: "Анализ пакетов в Wireshark",
+    description: "Capture live traffic and read what's really crossing the wire.", descriptionUz: "Jonli trafikni ushlang va simda aslida nima o'tayotganini o'qing.", descriptionRu: "Захватывайте трафик и читайте, что идёт по сети.",
+    difficulty: "beginner", estimatedHours: 1,
+    lessons: [
+      { title: "Capturing traffic", titleUz: "Trafikni ushlash", titleRu: "Захват трафика",
+        content: "## Pick an interface and go\nWireshark records every packet on a chosen interface. Start a capture, browse a site, stop it — you now have the whole conversation.\n\n## Too much data?\nThat's normal. The next lesson is about filtering it down.",
+        contentUz: "## Interfeysni tanlang va boshlang\nWireshark tanlangan interfeysdagi har paketni yozadi. Ushlashni boshlang, saytga kiring, to'xtating — butun muloqot qo'lingizda.\n\n## Ma'lumot ko'pmi?\nBu normal. Keyingi dars — uni filtrlash haqida." },
+      { title: "Display filters", titleUz: "Ko'rsatish filtrlari", titleRu: "Фильтры отображения",
+        content: "## Find the needle\nFilters cut the noise:\n\n```\nhttp\nip.addr == 10.0.0.5\ntcp.port == 80\n```\n\nUnencrypted protocols (HTTP, FTP, Telnet) show credentials in plain text — a big reason to use TLS.",
+        contentUz: "## Ninani toping\nFiltrlar shovqinni kesadi:\n\n```\nhttp\nip.addr == 10.0.0.5\ntcp.port == 80\n```\n\nShifrlanmagan protokollar (HTTP, FTP, Telnet) parollarni ochiq ko'rsatadi — TLS ishlatishning katta sababi." },
+    ],
+    exam: [
+      { question: "What does Wireshark do?", questionUz: "Wireshark nima qiladi?", questionRu: "Что делает Wireshark?", options: ["Captures & inspects packets", "Blocks ports", "Cracks passwords", "Hosts websites"], optionsUz: ["Paketlarni ushlaydi va tekshiradi", "Portlarni bloklaydi", "Parol buzadi", "Sayt joylaydi"], optionsRu: ["Захватывает пакеты", "Блокирует порты", "Взламывает пароли", "Хостит сайты"], correctOption: 0 },
+      { question: "Which filter shows only HTTP?", questionUz: "Qaysi filtr faqat HTTP'ni ko'rsatadi?", questionRu: "Какой фильтр показывает только HTTP?", options: ["http", "port http", "web only", "get http"], optionsUz: ["http", "port http", "web only", "get http"], optionsRu: ["http", "port http", "web only", "get http"], correctOption: 0 },
+      { question: "Why is plain HTTP risky on a network?", questionUz: "Nega tarmoqda oddiy HTTP xavfli?", questionRu: "Почему обычный HTTP опасен?", options: ["Credentials are visible", "It is slow", "It uses more RAM", "It needs a VPN"], optionsUz: ["Parollar ko'rinadi", "Sekin", "Ko'p RAM ishlatadi", "VPN kerak"], optionsRu: ["Пароли видны", "Медленно", "Много RAM", "Нужен VPN"], correctOption: 0 },
+    ],
+  },
+  {
+    slug: "xss-101", title: "Cross-site scripting (XSS) 101", titleUz: "Cross-site scripting (XSS) 101", titleRu: "Межсайтовый скриптинг (XSS) 101",
+    description: "When a site echoes your input as code, the browser runs it. Learn to spot and stop it.", descriptionUz: "Sayt kiritmangizni kod sifatida qaytarsa, brauzer uni ishga tushiradi. Topish va to'xtatishni o'rganing.", descriptionRu: "Когда сайт возвращает ввод как код — браузер его выполняет.",
+    difficulty: "beginner", estimatedHours: 1,
+    lessons: [
+      { title: "What XSS is", titleUz: "XSS nima", titleRu: "Что такое XSS",
+        content: "## Input becomes script\nIf a page prints your input without escaping it, you can inject HTML/JS:\n\n```\n<script>alert(1)</script>\n```\n\nReflected XSS bounces off one request; stored XSS is saved and hits every viewer.",
+        contentUz: "## Kiritma skriptga aylanadi\nAgar sahifa kiritmangizni ekranlashsiz chiqarsa, HTML/JS kirita olasiz:\n\n```\n<script>alert(1)</script>\n```\n\nReflected XSS bitta so'rovdan qaytadi; stored XSS saqlanadi va har ko'ruvchiga tegadi." },
+      { title: "Stopping XSS", titleUz: "XSS'ni to'xtatish", titleRu: "Защита от XSS",
+        content: "## The fix\n- Escape output for its context (HTML, attribute, JS).\n- Validate input.\n- Use a Content-Security-Policy.\n- Set cookies `HttpOnly` so stolen scripts can't read the session.",
+        contentUz: "## Yechim\n- Chiqishni kontekstiga qarab ekranlang (HTML, atribut, JS).\n- Kiritmani tekshiring.\n- Content-Security-Policy ishlating.\n- Cookie'larni `HttpOnly` qiling — o'g'irlangan skript sessiyani o'qiy olmasin." },
+    ],
+    exam: [
+      { question: "XSS lets an attacker run…", questionUz: "XSS hujumchiga… ishga tushirishga imkon beradi", questionRu: "XSS позволяет выполнить…", options: ["Script in the victim's browser", "SQL on the server", "A shell on the host", "A port scan"], optionsUz: ["Qurbon brauzerida skript", "Serverda SQL", "Xostda shell", "Port skan"], optionsRu: ["Скрипт в браузере жертвы", "SQL на сервере", "Shell на хосте", "Скан портов"], correctOption: 0 },
+      { question: "Stored XSS is dangerous because…", questionUz: "Stored XSS xavfli, chunki…", questionRu: "Stored XSS опасен, потому что…", options: ["It hits every viewer", "It is faster", "It needs no browser", "It encrypts data"], optionsUz: ["Har bir ko'ruvchiga tegadi", "Tezroq", "Brauzer kerak emas", "Ma'lumotni shifrlaydi"], optionsRu: ["Бьёт по всем", "Быстрее", "Не нужен браузер", "Шифрует данные"], correctOption: 0 },
+      { question: "A key defence against XSS is…", questionUz: "XSS'ga qarshi asosiy himoya…", questionRu: "Ключевая защита от XSS…", options: ["Output encoding", "A bigger server", "Hiding the URL", "Longer passwords"], optionsUz: ["Chiqishni ekranlash", "Kattaroq server", "URL yashirish", "Uzun parol"], optionsRu: ["Экранирование вывода", "Больший сервер", "Скрыть URL", "Длинный пароль"], correctOption: 0 },
+    ],
+  },
+  {
+    slug: "classical-ciphers", title: "Classical ciphers", titleUz: "Klassik shifrlar", titleRu: "Классические шифры",
+    description: "Caesar, XOR and base64 — the puzzles behind many beginner crypto challenges.", descriptionUz: "Caesar, XOR va base64 — ko'p boshlang'ich crypto topshiriqlar ortidagi jumboqlar.", descriptionRu: "Цезарь, XOR и base64 — основа многих крипто-задач.",
+    difficulty: "beginner", estimatedHours: 1,
+    lessons: [
+      { title: "Encoding is not encryption", titleUz: "Kodlash — shifrlash emas", titleRu: "Кодирование ≠ шифрование",
+        content: "## base64\nbase64 just re-writes bytes as text — no key, anyone can reverse it.\n\n```\n$ echo 'aGVsbG8=' | base64 -d\nhello\n```\n\nSpotting base64 (letters, digits, `+/`, `=` padding) is a common first step in a CTF.",
+        contentUz: "## base64\nbase64 baytlarni matn sifatida qayta yozadi — kalitsiz, har kim qaytara oladi.\n\n```\n$ echo 'aGVsbG8=' | base64 -d\nhello\n```\n\nbase64'ni tanish (harflar, raqamlar, `+/`, `=`) — CTF'da tez-tez birinchi qadam." },
+      { title: "Caesar and XOR", titleUz: "Caesar va XOR", titleRu: "Цезарь и XOR",
+        content: "## Caesar\nShift each letter by a fixed number. Only 25 shifts exist — brute force them all.\n\n## XOR\n`plaintext XOR key = ciphertext`. XOR is reversible: apply the key again to get the text back. A repeated single-byte key is easy to break by frequency.",
+        contentUz: "## Caesar\nHar harfni belgilangan songa suradi. Faqat 25 siljish bor — hammasini brute qiling.\n\n## XOR\n`ochiq XOR kalit = shifr`. XOR qaytariladi: kalitni yana qo'llang. Takroriy bir-baytli kalit chastota bo'yicha oson buziladi." },
+    ],
+    exam: [
+      { question: "base64 is…", questionUz: "base64 —", questionRu: "base64 —", options: ["Encoding, not encryption", "Strong encryption", "A hash", "A password"], optionsUz: ["Kodlash, shifrlash emas", "Kuchli shifr", "Hash", "Parol"], optionsRu: ["Кодирование, не шифр", "Сильный шифр", "Хеш", "Пароль"], correctOption: 0 },
+      { question: "How many shifts does a Caesar cipher have?", questionUz: "Caesar shifrida nechta siljish bor?", questionRu: "Сколько сдвигов у шифра Цезаря?", options: ["25", "1000", "2", "infinite"], optionsUz: ["25", "1000", "2", "cheksiz"], optionsRu: ["25", "1000", "2", "бесконечно"], correctOption: 0 },
+      { question: "XOR encryption is reversed by…", questionUz: "XOR shifri qanday qaytariladi?", questionRu: "XOR обращается…", options: ["XOR-ing with the same key", "A bigger key", "base64", "hashing"], optionsUz: ["Xuddi shu kalit bilan XOR", "Kattaroq kalit", "base64", "hashlash"], optionsRu: ["XOR тем же ключом", "Большим ключом", "base64", "хешем"], correctOption: 0 },
+    ],
+  },
+  {
+    slug: "linux-privesc-basics", title: "Linux privilege escalation basics", titleUz: "Linux imtiyozini oshirish asoslari", titleRu: "Основы повышения привилегий в Linux",
+    description: "You landed a low-privilege shell. Here's how attackers reach root.", descriptionUz: "Past imtiyozli shell oldingiz. Hujumchilar root'ga qanday yetadi.", descriptionRu: "Есть шелл с низкими правами — как добраться до root.",
+    difficulty: "intermediate", estimatedHours: 1,
+    lessons: [
+      { title: "Enumerate first", titleUz: "Avval sanab chiqing", titleRu: "Сначала разведка",
+        content: "## Look before you leap\nBefore exploiting, gather facts:\n\n```\nid\nsudo -l\nuname -a\nfind / -perm -4000 2>/dev/null\n```\n\n`sudo -l` shows what you may run as root; the `find` lists SUID binaries — both are classic paths up.",
+        contentUz: "## Sakramasdan qarang\nEkspluatatsiyadan oldin ma'lumot yig'ing:\n\n```\nid\nsudo -l\nuname -a\nfind / -perm -4000 2>/dev/null\n```\n\n`sudo -l` root sifatida nima ishlata olishingizni ko'rsatadi; `find` SUID fayllarni sanaydi — ikkalasi ham klassik yo'l." },
+      { title: "SUID and sudo", titleUz: "SUID va sudo", titleRu: "SUID и sudo",
+        content: "## SUID\nA SUID binary runs as its owner (often root). A misconfigured one (e.g. an editor or `find`) can hand you a root shell — see GTFOBins.\n\n## sudo rules\nIf `sudo -l` shows a program you can run as root without a password, GTFOBins often has a one-liner to abuse it.",
+        contentUz: "## SUID\nSUID fayl egasi (ko'pincha root) sifatida ishlaydi. Noto'g'ri sozlangani (masalan muharrir yoki `find`) root shell berishi mumkin — GTFOBins'ga qarang.\n\n## sudo qoidalari\nAgar `sudo -l` parolsiz root sifatida ishlatiladigan dasturni ko'rsatsa, GTFOBins'da ko'pincha uni suiiste'mol qilish yo'li bor." },
+    ],
+    exam: [
+      { question: "What does `sudo -l` show?", questionUz: "`sudo -l` nimani ko'rsatadi?", questionRu: "Что показывает `sudo -l`?", options: ["What you may run as root", "Your password", "Open ports", "Running processes"], optionsUz: ["Root sifatida nima ishlata olishingiz", "Parolingiz", "Ochiq portlar", "Jarayonlar"], optionsRu: ["Что можно как root", "Пароль", "Порты", "Процессы"], correctOption: 0 },
+      { question: "A SUID binary runs as…", questionUz: "SUID fayl kim sifatida ishlaydi?", questionRu: "SUID-файл выполняется от…", options: ["Its owner", "Nobody", "The current user only", "root always denied"], optionsUz: ["Egasi", "Hech kim", "Faqat joriy foydalanuvchi", "root doim rad"], optionsRu: ["Владельца", "Никого", "Текущего юзера", "root запрещён"], correctOption: 0 },
+      { question: "The first step of privesc is…", questionUz: "Privesc'ning birinchi qadami…", questionRu: "Первый шаг privesc…", options: ["Enumeration", "Rebooting", "Deleting logs", "Changing your password"], optionsUz: ["Sanab chiqish", "Qayta yuklash", "Loglarni o'chirish", "Parol o'zgartirish"], optionsRu: ["Разведка", "Перезагрузка", "Удаление логов", "Смена пароля"], correctOption: 0 },
+    ],
+  },
+  {
+    slug: "osint-fundamentals", title: "OSINT fundamentals", titleUz: "OSINT asoslari", titleRu: "Основы OSINT",
+    description: "Find what's public — legally and ethically — and turn scraps into a picture.", descriptionUz: "Ommaviy ma'lumotni qonuniy va axloqiy toping — bo'laklardan manzara tuzing.", descriptionRu: "Находите публичные данные — законно и этично.",
+    difficulty: "beginner", estimatedHours: 1,
+    lessons: [
+      { title: "What OSINT is", titleUz: "OSINT nima", titleRu: "Что такое OSINT",
+        content: "## Open-source intelligence\nOSINT is gathering information from public sources: search engines, social media, public records, image metadata. No hacking — just careful looking.\n\n## Ethics first\nOnly target what you're authorised to, and never harass a person.",
+        contentUz: "## Ochiq manba razvedkasi\nOSINT — ommaviy manbalardan ma'lumot yig'ish: qidiruv tizimlari, ijtimoiy tarmoqlar, ommaviy yozuvlar, rasm metadatasi. Hacking emas — diqqat bilan qarash.\n\n## Avval axloq\nFaqat ruxsat berilganini o'rganing va hech kimni bezovta qilmang." },
+      { title: "Search like a pro", titleUz: "Professional qidirish", titleRu: "Поиск как профи",
+        content: "## Google dorks\nOperators narrow a search:\n\n```\nsite:example.com filetype:pdf\nintitle:\"index of\"\n```\n\n## Metadata\nPhotos and documents can carry hidden data (author, GPS). `exiftool file.jpg` reveals it — a reminder to strip metadata before you post.",
+        contentUz: "## Google dork'lar\nOperatorlar qidiruvni toraytiradi:\n\n```\nsite:example.com filetype:pdf\nintitle:\"index of\"\n```\n\n## Metadata\nRasm va hujjatlar yashirin ma'lumot tashishi mumkin (muallif, GPS). `exiftool file.jpg` uni ochadi — joylashdan oldin metadatani tozalang." },
+    ],
+    exam: [
+      { question: "OSINT relies on…", questionUz: "OSINT nimaga tayanadi?", questionRu: "OSINT опирается на…", options: ["Public sources", "Hacking servers", "Stolen data", "Malware"], optionsUz: ["Ommaviy manbalar", "Serverlarni buzish", "O'g'irlangan ma'lumot", "Malware"], optionsRu: ["Публичные источники", "Взлом серверов", "Кражу данных", "Вредонос"], correctOption: 0 },
+      { question: "`exiftool` is used to…", questionUz: "`exiftool` nima uchun?", questionRu: "`exiftool` нужен для…", options: ["Read file metadata", "Crack hashes", "Scan ports", "Send email"], optionsUz: ["Fayl metadatasini o'qish", "Hash buzish", "Port skan", "Email yuborish"], optionsRu: ["Чтения метаданных", "Взлома хешей", "Скана портов", "Отправки почты"], correctOption: 0 },
+      { question: "Which is a Google dork?", questionUz: "Qaysi biri Google dork?", questionRu: "Что из этого Google dork?", options: ["site:example.com", "ping example.com", "sudo -l", "chmod +x"], optionsUz: ["site:example.com", "ping example.com", "sudo -l", "chmod +x"], optionsRu: ["site:example.com", "ping example.com", "sudo -l", "chmod +x"], correctOption: 0 },
+    ],
+  },
 ];
 
 const PATHS: Path[] = [
@@ -151,19 +259,19 @@ const PATHS: Path[] = [
     slug: "pre-security", title: "Pre-Security", titleUz: "Xavfsizlikka tayyorgarlik", titleRu: "Подготовка к безопасности",
     description: "Your first step into cyber. Learn how tech works before you learn to break it.", descriptionUz: "Kiberga birinchi qadam. Buzishni o'rganishdan oldin texnologiya qanday ishlashini biling.", descriptionRu: "Первый шаг в кибер. Сначала как всё работает, потом как ломать.",
     difficulty: "beginner", hue: 150, badge: "NEW",
-    moduleSlugs: ["intro-to-linux-cli", "networking-basics", "web-requests-101", "linux-for-security", "networking-for-security"],
+    moduleSlugs: ["intro-to-linux-cli", "bash-scripting-basics", "networking-basics", "web-requests-101", "linux-for-security", "networking-for-security"],
   },
   {
     slug: "web-fundamentals", title: "Web fundamentals", titleUz: "Veb asoslari", titleRu: "Основы веба",
     description: "Understand the web deeply enough to find its flaws.", descriptionUz: "Vebni kamchiliklarini topa oladigan darajada chuqur tushuning.", descriptionRu: "Поймите веб достаточно, чтобы находить уязвимости.",
     difficulty: "beginner", hue: 265, badge: null,
-    moduleSlugs: ["web-requests-101", "sql-injection-101", "web-security", "web-exploitation"],
+    moduleSlugs: ["web-requests-101", "sql-injection-101", "xss-101", "web-security", "web-exploitation"],
   },
   {
     slug: "security-foundations", title: "Security foundations", titleUz: "Xavfsizlik asoslari", titleRu: "Основы безопасности",
     description: "The core ideas every defender and attacker shares.", descriptionUz: "Har bir himoyachi va hujumchi biladigan asosiy g'oyalar.", descriptionRu: "Базовые идеи для защитника и атакующего.",
     difficulty: "beginner", hue: 210, badge: null,
-    moduleSlugs: ["intro-to-linux-cli", "networking-basics", "passwords-and-hashing", "recon-basics", "cryptography-for-security"],
+    moduleSlugs: ["intro-to-linux-cli", "networking-basics", "packet-analysis-wireshark", "passwords-and-hashing", "classical-ciphers", "recon-basics", "osint-fundamentals", "linux-privesc-basics", "cryptography-for-security"],
   },
 ];
 

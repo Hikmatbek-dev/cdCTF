@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Check, Lock, Play } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
-import { MODULE_ART } from "@/components/ModuleArt";
+import { moduleArtFor } from "@/components/ModuleArt";
 
 /**
  * The curriculum as a roadmap rather than a list.
@@ -111,7 +111,7 @@ export function RoadmapTree({ modules }: { modules: RoadmapModule[] }) {
                   const done = Boolean(m.certificateSerial || m.examPassed);
                   const isCurrent = idx === currentIndex;
                   const pct = m.lessonCount > 0 ? Math.round((m.completedCount / m.lessonCount) * 100) : 0;
-                  const Art = MODULE_ART[m.slug as keyof typeof MODULE_ART];
+                  const Art = moduleArtFor(m.slug);
 
                   return (
                     <Link href={`/modules/${m.id}`} key={m.id}>

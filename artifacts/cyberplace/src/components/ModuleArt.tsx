@@ -264,3 +264,22 @@ export const MODULE_ART: Record<string, (p: ArtProps) => React.ReactElement> = {
   "forensics-and-incident-response": ForensicsArt,
   "ctf-methodology": CtfArt,
 };
+
+/**
+ * Art for a module by slug — exact match first, then a keyword fallback so a
+ * newly seeded module (e.g. "intro-to-linux-cli", "networking-basics") still
+ * gets a fitting illustration instead of a blank tile, and future modules do too.
+ */
+export function moduleArtFor(slug?: string | null): ((p: ArtProps) => React.ReactElement) {
+  if (slug && MODULE_ART[slug]) return MODULE_ART[slug];
+  const s = (slug || "").toLowerCase();
+  if (/(linux|cli|command|bash|shell)/.test(s)) return LinuxArt;
+  if (/(network|tarmoq|packet|wireshark|tcp|dns)/.test(s)) return NetworkArt;
+  if (/(web|http|sql|xss|browser)/.test(s)) return WebArt;
+  if (/(crypto|cipher|password|hash|encryption)/.test(s)) return CryptoArt;
+  if (/(recon|scan|osint|enumerat|nmap)/.test(s)) return ReconArt;
+  if (/(exploit|privesc|privilege|payload|reverse)/.test(s)) return ExploitArt;
+  if (/(forensic|incident|malware|memory)/.test(s)) return ForensicsArt;
+  if (/(ctf|methodology|steg)/.test(s)) return CtfArt;
+  return CtfArt; // sensible default rather than a blank tile
+}

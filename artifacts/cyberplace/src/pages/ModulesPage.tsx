@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
 import { RoadmapTree } from "@/components/RoadmapTree";
 import { normalizeArray } from "@/lib/api-shapes";
-import { MODULE_ART } from "@/components/ModuleArt";
+import { moduleArtFor } from "@/components/ModuleArt";
 import { LoadFailure } from "@/components/LoadFailure";
 import { useListModules, getListModulesQueryKey } from "@workspace/api-client-react";
 
@@ -54,6 +54,7 @@ function difficultyMeta(difficulty: string, t: (en: string, uz?: string, ru?: st
 export default function ModulesPage() {
   const { t, lang } = useLang();
   const [tab, setTab] = useState<TabKey>("paths");
+  const [detail, setDetail] = useState<Spotlight | null>(null);
 
   const { data: modData, isLoading: modLoading, isError: modError, refetch } =
     useListModules({ query: { queryKey: getListModulesQueryKey() } });
@@ -190,14 +191,14 @@ export default function ModulesPage() {
             <Grid>
               {modules.map(m => {
                 const d = difficultyMeta(m.difficulty, t);
-                const Art = m.slug ? MODULE_ART[m.slug] : undefined;
+                const Art = moduleArtFor(m.slug);
                 const done = m.certificateSerial || m.examPassed;
                 const pct = m.lessonCount ? Math.round((m.completedCount / m.lessonCount) * 100) : 0;
                 return (
                   <Link key={m.id} href={`/modules/${m.id}`}>
                     <div className="group h-full rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/40 transition-colors cursor-pointer flex flex-col" data-testid={`module-card-${m.id}`}>
                       <div className="relative h-28 bg-muted/30 overflow-hidden flex items-center justify-center">
-                        {Art ? <Art className="w-full h-full" /> : <Layers className="w-10 h-10 text-muted-foreground/40" />}
+                        <Art className="w-full h-full" />
                         {done ? <span className="absolute top-3 right-3 text-primary bg-background/80 rounded-full p-1"><CheckCircle2 className="w-4 h-4" /></span>
                           : pct > 0 && <span className="absolute top-3 right-3 text-xs font-bold bg-background/80 rounded-full px-2 py-0.5 tabular-nums">{pct}%</span>}
                       </div>
@@ -225,17 +226,16 @@ export default function ModulesPage() {
               <div>
                 <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">{t("Guides & methodology", "Qo'llanma va metodologiya", "Гайды и методология")}</h2>
                 <Grid>
-                  {guideCards.map(s => {
-                    const inner = (
-                      <div className="group h-full rounded-2xl border border-border bg-card p-5 hover:border-primary/40 transition-colors flex flex-col" data-testid={`guide-${s.id}`}>
+                  {guideCards.map(s => (
+                    <button key={s.id} type="button" onClick={() => setDetail(s)} className="text-left" data-testid={`guide-${s.id}`}>
+                      <div className="group h-full rounded-2xl border border-border bg-card p-5 hover:border-primary/40 transition-colors flex flex-col">
                         <div className="flex items-center gap-2 mb-2"><FileText className="w-4 h-4 text-primary" />{s.tag && <span className="text-[10px] font-bold uppercase tracking-wider bg-muted px-2 py-0.5 rounded">{s.tag}</span>}</div>
                         <h3 className="font-bold text-base mb-1.5 group-hover:text-primary transition-colors">{loc(s.title, s.titleUz, s.titleRu)}</h3>
                         {s.description && <p className="text-sm text-muted-foreground line-clamp-3 flex-1">{loc(s.description, s.descriptionUz, s.descriptionRu)}</p>}
-                        {s.url && <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary">{t("Open", "Ochish", "Открыть")} <ChevronRight className="w-4 h-4" /></span>}
+                        <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary">{t("Details", "Batafsil", "Подробнее")} <ChevronRight className="w-4 h-4" /></span>
                       </div>
-                    );
-                    return s.url ? <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer">{inner}</a> : <div key={s.id}>{inner}</div>;
-                  })}
+                    </button>
+                  ))}
                 </Grid>
               </div>
             )}
@@ -271,33 +271,31 @@ export default function ModulesPage() {
               {spotlights.map(s => {
                 const isLive = spotlightSection === "live";
                 const when = s.startsAt ? new Date(s.startsAt) : null;
-                const inner = (
-                  <div className="group h-full rounded-2xl border border-border bg-card p-5 hover:border-primary/40 transition-colors flex flex-col" data-testid={`spotlight-${s.id}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      {spotlightSection === "threats" && <ShieldAlert className="w-4 h-4 text-rose-500" />}
-                      {spotlightSection === "ai" && <Sparkles className="w-4 h-4 text-primary" />}
-                      {isLive && <Radio className="w-4 h-4 text-emerald-500" />}
-                      {s.tag && <span className="text-[10px] font-bold uppercase tracking-wider bg-muted px-2 py-0.5 rounded">{s.tag}</span>}
-                    </div>
-                    <h3 className="font-bold text-base mb-1.5 group-hover:text-primary transition-colors">{loc(s.title, s.titleUz, s.titleRu)}</h3>
-                    {s.description && <p className="text-sm text-muted-foreground line-clamp-3 flex-1">{loc(s.description, s.descriptionUz, s.descriptionRu)}</p>}
-                    {isLive && when && (
-                      <div className="text-xs text-muted-foreground mt-3 inline-flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5" /> {when.toLocaleString(lang === "en" ? undefined : lang === "ru" ? "ru-RU" : "uz-UZ", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                return (
+                  <button key={s.id} type="button" onClick={() => setDetail(s)} className="text-left" data-testid={`spotlight-${s.id}`}>
+                    <div className="group h-full rounded-2xl border border-border bg-card p-5 hover:border-primary/40 transition-colors flex flex-col">
+                      <div className="flex items-center gap-2 mb-2">
+                        {spotlightSection === "threats" && <ShieldAlert className="w-4 h-4 text-rose-500" />}
+                        {spotlightSection === "ai" && <Sparkles className="w-4 h-4 text-primary" />}
+                        {spotlightSection === "networks" && <Network className="w-4 h-4 text-sky-500" />}
+                        {isLive && <Radio className="w-4 h-4 text-emerald-500" />}
+                        {s.tag && <span className="text-[10px] font-bold uppercase tracking-wider bg-muted px-2 py-0.5 rounded">{s.tag}</span>}
                       </div>
-                    )}
-                    {s.url && (
+                      <h3 className="font-bold text-base mb-1.5 group-hover:text-primary transition-colors">{loc(s.title, s.titleUz, s.titleRu)}</h3>
+                      {s.description && <p className="text-sm text-muted-foreground line-clamp-3 flex-1">{loc(s.description, s.descriptionUz, s.descriptionRu)}</p>}
+                      {isLive && when && (
+                        <div className="text-xs text-muted-foreground mt-3 inline-flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5" /> {when.toLocaleString(lang === "en" ? undefined : lang === "ru" ? "ru-RU" : "uz-UZ", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                      )}
                       <div className="mt-4">
                         <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
-                          {isLive ? t("Join", "Qo'shilish", "Присоединиться") : t("Open", "Ochish", "Открыть")} <ChevronRight className="w-4 h-4" />
+                          {t("Details", "Batafsil", "Подробнее")} <ChevronRight className="w-4 h-4" />
                         </span>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  </button>
                 );
-                return s.url
-                  ? <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer">{inner}</a>
-                  : <div key={s.id}>{inner}</div>;
               })}
             </Grid>
           ) : (
@@ -307,6 +305,41 @@ export default function ModulesPage() {
             : <Soon icon={Radio} title={t("Live Classes", "Jonli darslar", "Живые уроки")} text={t("Instructor-led sessions. None scheduled right now.", "Ustoz bilan jonli darslar. Hozircha rejalashtirilmagan.", "Занятия с преподавателем. Пока не запланированы.")} />
           )
         )}
+      </div>
+
+      {detail && <SpotlightDetail spotlight={detail} onClose={() => setDetail(null)} />}
+    </div>
+  );
+}
+
+/** A focused detail view for a spotlight card, with links to authoritative
+ * sources (the card's own link, an auto NVD link for CVE tags, and a search
+ * fallback) so "Details" always leads somewhere useful. */
+function SpotlightDetail({ spotlight: s, onClose }: { spotlight: Spotlight; onClose: () => void }) {
+  const { t, lang } = useLang();
+  const loc = (en: string, uz?: string | null, ru?: string | null) => (lang === "uz" ? uz : lang === "ru" ? ru : en) || en;
+  const cve = s.tag && /^CVE-\d{4}-\d{4,}$/i.test(s.tag) ? s.tag.toUpperCase() : null;
+  const title = loc(s.title, s.titleUz, s.titleRu);
+  const when = s.startsAt ? new Date(s.startsAt) : null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div className="bg-card border border-border rounded-2xl w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="p-6">
+          {s.tag && <span className="text-[10px] font-bold uppercase tracking-wider bg-muted px-2 py-0.5 rounded">{s.tag}</span>}
+          <h2 className="text-xl font-bold mt-3 mb-3">{title}</h2>
+          {s.description && <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{loc(s.description, s.descriptionUz, s.descriptionRu)}</p>}
+          {when && (
+            <div className="text-sm text-muted-foreground mt-4 inline-flex items-center gap-1.5">
+              <Clock className="w-4 h-4" /> {when.toLocaleString(lang === "en" ? undefined : lang === "ru" ? "ru-RU" : "uz-UZ", { dateStyle: "medium", timeStyle: "short" })}
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2 mt-6">
+            {s.url && <a href={s.url} target="_blank" rel="noopener noreferrer" className="cyber-button px-4 h-10 inline-flex items-center gap-2 text-sm"><ChevronRight className="w-4 h-4" /> {t("Read more", "Batafsil o'qish", "Читать далее")}</a>}
+            {cve && <a href={`https://nvd.nist.gov/vuln/detail/${cve}`} target="_blank" rel="noopener noreferrer" className="h-10 px-4 inline-flex items-center gap-2 text-sm rounded-lg border border-border hover:border-primary/40"><ShieldAlert className="w-4 h-4" /> NVD</a>}
+            {!s.url && !cve && <a href={`https://www.google.com/search?q=${encodeURIComponent(title + " cybersecurity")}`} target="_blank" rel="noopener noreferrer" className="h-10 px-4 inline-flex items-center gap-2 text-sm rounded-lg border border-border hover:border-primary/40"><ChevronRight className="w-4 h-4" /> {t("Search the web", "Internetdan qidirish", "Искать в интернете")}</a>}
+            <button onClick={onClose} className="h-10 px-4 inline-flex items-center text-sm rounded-lg border border-border hover:bg-muted ml-auto">{t("Close", "Yopish", "Закрыть")}</button>
+          </div>
+        </div>
       </div>
     </div>
   );
