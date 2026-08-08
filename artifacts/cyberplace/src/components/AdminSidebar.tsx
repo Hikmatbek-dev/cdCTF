@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, Flag, Trophy, BookOpen, GraduationCap, FileText, AlertTriangle, ChevronLeft, ShieldCheck, Terminal, LineChart, Menu, LifeBuoy, Gift } from "lucide-react";
+import { LayoutDashboard, Users, Flag, Trophy, BookOpen, GraduationCap, FileText, AlertTriangle, ChevronLeft, ShieldCheck, Terminal, LineChart, Menu, LifeBuoy, Gift, Route as RouteIcon } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -14,6 +14,7 @@ const ADMIN_LINKS = [
   { href: "/admin/competitions", permission: "competitions.manage", icon: Trophy, label: { en: "Competitions", uz: "Musobaqalar", ru: "Соревнования" } },
   { href: "/admin/lessons", permission: "lessons.read.all", icon: BookOpen, label: { en: "Lessons", uz: "Darsliklar", ru: "Уроки" } },
   { href: "/admin/curriculum", permission: "lessons.read.all", icon: GraduationCap, label: { en: "Curriculum", uz: "O'quv dasturi", ru: "Программа" } },
+  { href: "/admin/paths", permission: "lessons.publish", icon: RouteIcon, label: { en: "Paths", uz: "Yo'nalishlar", ru: "Пути" } },
   { href: "/admin/writeups", permission: "writeups.moderate", icon: FileText, label: { en: "Writeups", uz: "Writeuplar", ru: "Разборы" } },
   { href: "/admin/support", permission: "support.manage", icon: LifeBuoy, label: { en: "Support", uz: "Support", ru: "Поддержка" } },
   { href: "/admin/gift", permission: "admin.panel", superAdmin: true, icon: Gift, label: { en: "Gift", uz: "Sovg'a", ru: "Награда" } },

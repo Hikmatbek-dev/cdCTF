@@ -52,6 +52,7 @@ const AdminCurriculumPage = lazyWithRetry(() => import("@/pages/admin/AdminCurri
 const AdminWriteupsPage = lazyWithRetry(() => import("@/pages/admin/AdminWriteupsPage"));
 const AdminSupportPage = lazyWithRetry(() => import("@/pages/admin/AdminSupportPage"));
 const AdminGiftPage = lazyWithRetry(() => import("@/pages/admin/AdminGiftPage"));
+const AdminPathsPage = lazyWithRetry(() => import("@/pages/admin/AdminPathsPage"));
 const SupportPage = lazyWithRetry(() => import("@/pages/SupportPage"));
 const PathDetailPage = lazyWithRetry(() => import("@/pages/PathDetailPage"));
 const CompetitionCtfPage = lazyWithRetry(() => import("@/pages/CompetitionCtfPage"));
@@ -333,6 +334,9 @@ function Router() {
           </Route>
           <Route path="/admin/gift">
             {() => <PageTransition><SuperAdminRoute component={AdminGiftPage} /></PageTransition>}
+          </Route>
+          <Route path="/admin/paths">
+            {() => <PageTransition><PermissionRoute component={AdminPathsPage} permission="lessons.publish" /></PageTransition>}
           </Route>
           <Route component={NotFound} />
         </Switch>

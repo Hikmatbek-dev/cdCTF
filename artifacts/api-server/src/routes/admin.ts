@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import { usersTable, ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionTeamsTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleQuestionsTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable, supportTicketsTable, giftsTable } from "@workspace/db/schema";
+import { usersTable, ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionTeamsTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleQuestionsTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable, supportTicketsTable, giftsTable, pathsTable, pathModulesTable } from "@workspace/db/schema";
 import { eq, and, or, desc, inArray, isNotNull, asc, not, count, ilike } from "drizzle-orm";
 import { authenticateToken } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
@@ -1314,6 +1314,116 @@ router.post("/gifts", requireSuperAdmin, async (req, res) => {
   await writeAuditLog(req, "gift.award", "user", userId, { category, points });
   sendTelegramLog(`🎁 <b>Gift +${points}</b> → ${tgEscape(target.nickname)}\n📌 ${tgEscape(category)}${note ? "\n💬 " + tgEscape(note) : ""}`);
   res.status(201).json({ success: true, points });
+});
+
+// ---------------------------------------------------------------------------
+// Learning paths — ordered tracks that group modules. Managed here so the
+// founder builds them from real modules without the seed script.
+// ---------------------------------------------------------------------------
+
+const PATH_DIFFICULTIES = ["beginner", "intermediate", "advanced"];
+
+// GET /api/admin/paths — every path with its ordered module ids.
+router.get("/paths", requirePermission("lessons.publish"), async (_req, res) => {
+  const paths = await db.select().from(pathsTable).orderBy(asc(pathsTable.orderIndex), asc(pathsTable.id));
+  const links = await db.select().from(pathModulesTable).orderBy(asc(pathModulesTable.orderIndex));
+  res.json({
+    paths: paths.map(p => ({
+      ...p,
+      createdAt: p.createdAt.toISOString(),
+      moduleIds: links.filter(l => l.pathId === p.id).map(l => l.moduleId),
+    })),
+  });
+});
+
+// POST /api/admin/paths — create a path.
+router.post("/paths", requirePermission("lessons.publish"), async (req, res) => {
+  const slug = optionalText(req.body?.slug);
+  const title = optionalText(req.body?.title);
+  const description = optionalText(req.body?.description);
+  if (!slug || !/^[a-z0-9-]+$/.test(slug)) return res.status(400).json({ error: "slug: lowercase letters, digits, hyphens only" });
+  if (!title || !description) return res.status(400).json({ error: "title and description are required" });
+
+  const [clash] = await db.select({ id: pathsTable.id }).from(pathsTable).where(eq(pathsTable.slug, slug)).limit(1);
+  if (clash) return res.status(409).json({ error: "A path with that slug already exists" });
+
+  const [created] = await db.insert(pathsTable).values({
+    slug, title, description,
+    titleUz: optionalText(req.body?.titleUz), titleRu: optionalText(req.body?.titleRu),
+    descriptionUz: optionalText(req.body?.descriptionUz), descriptionRu: optionalText(req.body?.descriptionRu),
+    difficulty: PATH_DIFFICULTIES.includes(String(req.body?.difficulty)) ? String(req.body.difficulty) : "beginner",
+    hue: clampInt(req.body?.hue, 210, 0, 360),
+    badge: optionalText(req.body?.badge),
+    orderIndex: clampInt(req.body?.orderIndex, 0, 0, 9999),
+    isPublished: req.body?.isPublished !== false,
+  }).returning();
+  await writeAuditLog(req, "path.create", "path", created.id, { slug });
+  res.status(201).json(created);
+});
+
+// PATCH /api/admin/paths/:id — edit a path's fields.
+router.patch("/paths/:id", requirePermission("lessons.publish"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid path id" });
+  const [existing] = await db.select().from(pathsTable).where(eq(pathsTable.id, id)).limit(1);
+  if (!existing) return res.status(404).json({ error: "Path not found" });
+
+  const updates: Record<string, unknown> = {};
+  if (req.body?.title !== undefined) { const v = optionalText(req.body.title); if (!v) return res.status(400).json({ error: "title cannot be empty" }); updates.title = v; }
+  if (req.body?.description !== undefined) { const v = optionalText(req.body.description); if (!v) return res.status(400).json({ error: "description cannot be empty" }); updates.description = v; }
+  for (const f of ["titleUz", "titleRu", "descriptionUz", "descriptionRu", "badge"] as const) {
+    if (req.body?.[f] !== undefined) updates[f] = optionalText(req.body[f]);
+  }
+  if (req.body?.difficulty !== undefined) {
+    if (!PATH_DIFFICULTIES.includes(String(req.body.difficulty))) return res.status(400).json({ error: `difficulty must be one of: ${PATH_DIFFICULTIES.join(", ")}` });
+    updates.difficulty = String(req.body.difficulty);
+  }
+  if (req.body?.hue !== undefined) updates.hue = clampInt(req.body.hue, existing.hue, 0, 360);
+  if (req.body?.orderIndex !== undefined) updates.orderIndex = clampInt(req.body.orderIndex, existing.orderIndex, 0, 9999);
+  if (req.body?.isPublished !== undefined) {
+    if (typeof req.body.isPublished !== "boolean") return res.status(400).json({ error: "isPublished must be a boolean" });
+    updates.isPublished = req.body.isPublished;
+  }
+  if (Object.keys(updates).length === 0) return res.status(400).json({ error: "Nothing to update" });
+
+  const [updated] = await db.update(pathsTable).set(updates).where(eq(pathsTable.id, id)).returning();
+  await writeAuditLog(req, "path.update", "path", id, { fields: Object.keys(updates) });
+  res.json(updated);
+});
+
+// PUT /api/admin/paths/:id/modules — set the ordered module list.
+router.put("/paths/:id/modules", requirePermission("lessons.publish"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid path id" });
+  if (!Array.isArray(req.body?.moduleIds)) return res.status(400).json({ error: "moduleIds must be a list" });
+  const [existing] = await db.select({ id: pathsTable.id }).from(pathsTable).where(eq(pathsTable.id, id)).limit(1);
+  if (!existing) return res.status(404).json({ error: "Path not found" });
+
+  const ids = [...new Set(req.body.moduleIds.map(Number).filter((n: number) => Number.isInteger(n) && n > 0))] as number[];
+  // Keep only modules that actually exist.
+  const real = ids.length === 0 ? [] : (await db.select({ id: modulesTable.id }).from(modulesTable).where(inArray(modulesTable.id, ids))).map(m => m.id);
+  const ordered = ids.filter(i => real.includes(i));
+
+  await db.transaction(async tx => {
+    await tx.delete(pathModulesTable).where(eq(pathModulesTable.pathId, id));
+    for (let i = 0; i < ordered.length; i++) {
+      await tx.insert(pathModulesTable).values({ pathId: id, moduleId: ordered[i], orderIndex: i });
+    }
+  });
+  await writeAuditLog(req, "path.modules", "path", id, { count: ordered.length });
+  res.json({ success: true, moduleIds: ordered });
+});
+
+// DELETE /api/admin/paths/:id
+router.delete("/paths/:id", requirePermission("lessons.publish"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid path id" });
+  await db.transaction(async tx => {
+    await tx.delete(pathModulesTable).where(eq(pathModulesTable.pathId, id));
+    await tx.delete(pathsTable).where(eq(pathsTable.id, id));
+  });
+  await writeAuditLog(req, "path.delete", "path", id);
+  res.json({ success: true });
 });
 
 // DELETE /api/admin/lessons/:id
