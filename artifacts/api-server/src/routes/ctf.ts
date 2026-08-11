@@ -307,25 +307,6 @@ async function submitFlagHandler(req: Request, res: Response) {
       if (attempt?.blocked) return { status: 200, data: { correct: false, blocked: true, wrongAttempts: attempt.wrongAttempts } };
 
       if (verifyFlag(flag, challenge.flag)) {
-        // A lab flag belongs to whoever did the lab.
-        //
-        // The flags are server-issued now, so a correct one means someone
-        // exploited a running target — but not necessarily this someone. This
-        // closes the last stretch of that path: for a challenge a browser lab
-        // feeds, the submitter has to have started that lab at least once.
-        // Checked only on a correct flag, so the common case costs nothing.
-        const [pairedLab] = await tx.select({ id: labsTable.id }).from(labsTable)
-          .where(and(eq(labsTable.ctfId, ctfId), eq(labsTable.kind, "browser")))
-          .limit(1);
-        if (pairedLab) {
-          const [ownInstance] = await tx.select({ id: labInstancesTable.id }).from(labInstancesTable)
-            .where(and(eq(labInstancesTable.labId, pairedLab.id), eq(labInstancesTable.userId, userId)))
-            .limit(1);
-          if (!ownInstance) {
-            return { status: 403, data: { error: "Start this lab from the Labs page and solve it there first." } };
-          }
-        }
-
         if (!isHashedFlag(challenge.flag)) {
           await tx.update(ctfTasksTable).set({ flag: hashFlag(challenge.flag) }).where(eq(ctfTasksTable.id, ctfId));
         }
