@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRoute, useLocation } from "wouter";
 import { CheckCircle2, XCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -215,23 +215,34 @@ export default function LessonTestPage() {
             const rawOptions = lang === "uz" && q.optionsUz ? q.optionsUz : lang === "ru" && q.optionsRu ? q.optionsRu : q.options;
             const options = normalizeArray<string>(rawOptions, ["options", "data", "items"]);
             const questionText = t(q.question, q.questionUz ?? undefined, q.questionRu ?? undefined);
+            
+            // Randomly shuffle options while preserving the original index for the backend
+            const shuffledOptions = useMemo(() => {
+              const withIndex = options.map((text, originalIndex) => ({ text, originalIndex }));
+              for (let i = withIndex.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [withIndex[i], withIndex[j]] = [withIndex[j], withIndex[i]];
+              }
+              return withIndex;
+            }, [options]);
+
             return (
             <div key={q.id} className="p-5 rounded-xl border border-border bg-card" data-testid={`card-question-${qi}`}>
               <p className="font-medium mb-4 text-sm">{qi + 1}. {questionText}</p>
               <div className="space-y-2">
-                {options.map((opt, oi) => (
+                {shuffledOptions.map((opt, displayIndex) => (
                   <button
-                    key={oi}
-                    onClick={() => setAnswers(prev => ({ ...prev, [q.id]: oi }))}
+                    key={displayIndex}
+                    onClick={() => setAnswers(prev => ({ ...prev, [q.id]: opt.originalIndex }))}
                     className={`w-full text-left p-3 rounded-lg border text-sm transition-colors ${
-                      answers[q.id] === oi
+                      answers[q.id] === opt.originalIndex
                         ? "border-primary bg-primary/10 text-primary font-medium"
                         : "border-border hover:border-primary/40 hover:bg-muted/50"
                     }`}
-                    data-testid={`button-option-${qi}-${oi}`}
+                    data-testid={`button-option-${qi}-${displayIndex}`}
                   >
-                    <span className="font-mono text-xs mr-2 text-muted-foreground">{String.fromCharCode(65 + oi)}.</span>
-                    {opt}
+                    <span className="font-mono text-xs mr-2 text-muted-foreground">{String.fromCharCode(65 + displayIndex)}.</span>
+                    {opt.text}
                   </button>
                 ))}
               </div>

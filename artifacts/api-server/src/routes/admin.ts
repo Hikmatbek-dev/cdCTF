@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import { usersTable, ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionTeamsTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleQuestionsTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable, supportTicketsTable, giftsTable, pathsTable, pathModulesTable, spotlightsTable } from "@workspace/db/schema";
+import { usersTable, ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionTeamsTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleQuestionsTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable, supportTicketsTable, giftsTable, pathsTable, pathModulesTable, spotlightsTable, appSettingsTable } from "@workspace/db/schema";
 import { eq, and, or, desc, inArray, isNotNull, asc, not, count, ilike } from "drizzle-orm";
 import { authenticateToken } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
@@ -1199,6 +1199,22 @@ router.post("/settings/telegram/test", requireSuperAdmin, async (_req, res) => {
     return res.status(result.error === "not_configured" ? 400 : 502).json({ ok: false, error: result.error });
   }
   res.json({ ok: true });
+});
+
+// GET /api/admin/settings/subscription
+router.get("/settings/subscription", requireSuperAdmin, async (_req, res) => {
+  const [row] = await db.select({ value: appSettingsTable.value })
+    .from(appSettingsTable).where(eq(appSettingsTable.key, "subscription_enabled")).limit(1);
+  res.json({ enabled: row?.value === "true" });
+});
+
+// PUT /api/admin/settings/subscription
+router.put("/settings/subscription", requireSuperAdmin, async (req, res) => {
+  const enabled = req.body?.enabled === true;
+  await db.insert(appSettingsTable).values({ key: "subscription_enabled", value: enabled ? "true" : "false" })
+    .onConflictDoUpdate({ target: appSettingsTable.key, set: { value: enabled ? "true" : "false", updatedAt: new Date() } });
+  await writeAuditLog(req, "settings.subscription", "settings", "subscription", { enabled });
+  res.json({ success: true, enabled });
 });
 
 // ---------------------------------------------------------------------------

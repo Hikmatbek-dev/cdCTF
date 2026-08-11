@@ -98,6 +98,7 @@ export const usersTable = pgTable("users", {
   // applySchema, and only the handful of allocated codes sit in the index.
   referralCode: text("referral_code"),
   freeHintCredits: integer("free_hint_credits").notNull().default(0),
+  subscriptionEndDate: timestamp("subscription_end_date", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, table => [
   // The scoreboard's exact filter and sort: non-blocked users, role 'user',

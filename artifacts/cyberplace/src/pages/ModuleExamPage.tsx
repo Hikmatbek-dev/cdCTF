@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRoute, useLocation, Link } from "wouter";
 import { Award, CheckCircle2, XCircle, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -262,6 +262,17 @@ export default function ModuleExamPage() {
             <div className="space-y-6">
               {questions.map((q, qi) => {
                 const { question, options } = localized(q);
+                
+                // Randomly shuffle options while preserving the original index for the backend
+                const shuffledOptions = useMemo(() => {
+                  const withIndex = options.map((text, originalIndex) => ({ text, originalIndex }));
+                  for (let i = withIndex.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [withIndex[i], withIndex[j]] = [withIndex[j], withIndex[i]];
+                  }
+                  return withIndex;
+                }, [options]);
+
                 return (
                   <div key={q.id} className="border border-border rounded-xl p-5 bg-card">
                     <p className="font-medium mb-4">
@@ -269,18 +280,18 @@ export default function ModuleExamPage() {
                       {question}
                     </p>
                     <div className="space-y-2">
-                      {options.map((option, oi) => (
+                      {shuffledOptions.map((option, displayIndex) => (
                         <button
-                          key={oi}
-                          onClick={() => setAnswers(a => ({ ...a, [q.id]: oi }))}
+                          key={displayIndex}
+                          onClick={() => setAnswers(a => ({ ...a, [q.id]: option.originalIndex }))}
                           className={`w-full text-left px-4 py-3 rounded-lg border text-sm transition-colors ${
-                            answers[q.id] === oi
+                            answers[q.id] === option.originalIndex
                               ? "border-primary bg-primary/5 text-foreground"
                               : "border-border hover:bg-muted/50 text-muted-foreground"
                           }`}
-                          data-testid={`option-${q.id}-${oi}`}
+                          data-testid={`option-${q.id}-${displayIndex}`}
                         >
-                          {option}
+                          {option.text}
                         </button>
                       ))}
                     </div>

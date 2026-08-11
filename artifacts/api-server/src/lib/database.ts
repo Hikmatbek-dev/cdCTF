@@ -252,9 +252,14 @@ async function applySchema() {
     "CREATE INDEX IF NOT EXISTS rate_limits_reset_at_idx ON rate_limits(reset_at)",
   );
 
+  await pool.query("ALTER TABLE rate_limits ADD COLUMN IF NOT EXISTS reset_at timestamptz");
+
   await pool.query("ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS file_id integer REFERENCES ctf_files(id)");
   await pool.query("ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS hint_uz text");
   await pool.query("ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS hint_ru text");
+  await pool.query("ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS is_premium boolean NOT NULL DEFAULT false");
+
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_end_date timestamptz");
   await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS invite_code text");
   await createIndexSafely("competitions_invite_code_idx", "CREATE UNIQUE INDEX IF NOT EXISTS competitions_invite_code_idx ON competitions(invite_code) WHERE invite_code IS NOT NULL");
   await pool.query("ALTER TABLE competitions ADD COLUMN IF NOT EXISTS sponsor_name text");

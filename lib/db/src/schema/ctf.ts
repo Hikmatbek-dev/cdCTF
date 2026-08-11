@@ -28,6 +28,7 @@ export const ctfTasksTable = pgTable("ctf_tasks", {
   // Defaults to published so existing rows stay visible; the author create path
   // sets it false explicitly so drafts need an admin to publish them.
   isPublished: boolean("is_published").notNull().default(true),
+  isPremium: boolean("is_premium").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, table => [
   index("ctf_tasks_author_id_idx").on(table.authorId),
