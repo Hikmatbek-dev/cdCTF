@@ -25,7 +25,9 @@ export function DonateButton({ variant = "pill", onCopied }: { variant?: "pill" 
   if (variant === "block") {
     return (
       <>
-        <button data-payx-pay data-slug="cdctf-tolov" id="hidden-payx-block" className="hidden" aria-hidden="true"></button>
+        <div style={{ display: 'none' }}>
+          <button data-payx-pay data-slug="cdctf-tolov" id="hidden-payx-block"></button>
+        </div>
         <button 
           className="flex items-center gap-3 w-full min-h-[48px] px-4 rounded-lg text-[15px] font-medium text-foreground/80 hover:bg-muted" 
           data-testid="button-donate"
@@ -43,7 +45,9 @@ export function DonateButton({ variant = "pill", onCopied }: { variant?: "pill" 
 
   return (
     <>
-      <button data-payx-pay data-slug="cdctf-tolov" id="hidden-payx-pill" className="hidden" aria-hidden="true"></button>
+      <div style={{ display: 'none' }}>
+        <button data-payx-pay data-slug="cdctf-tolov" id="hidden-payx-pill"></button>
+      </div>
       <button 
         className="flex items-center gap-2 h-11 px-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-500 text-sm font-semibold hover:bg-rose-500/20 transition-colors cursor-pointer" 
         data-testid="button-donate"
