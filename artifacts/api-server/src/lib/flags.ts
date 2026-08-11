@@ -31,22 +31,24 @@ function matchesExact(submitted: string, stored: string) {
  * answer was wrongly rejected. Flags with no `{…}` shape get no variants.
  */
 function keywordVariants(submitted: string): string[] {
-  const trimmed = submitted.trim();
-  const match = /^([A-Za-z][A-Za-z0-9_]*)(\{[\s\S]*)$/.exec(trimmed);
-  if (!match) return [trimmed];
-  const [, keyword, rest] = match;
-  const titled = keyword.charAt(0).toUpperCase() + keyword.slice(1).toLowerCase();
+  // Strip invisible characters (like zero-width spaces) that browsers sometimes
+  // append when a learner copies the flag from a rendered page.
+  const raw = submitted.trim().replace(/[\u200B-\u200D\uFEFF]/g, "");
+  
+  let core = raw;
+  const match = /^([A-Za-z][A-Za-z0-9_]*)?(\{)([\s\S]*?)(\})$/.exec(raw);
+  if (match) {
+    core = match[3];
+  }
+  
   return [...new Set([
-    trimmed,
-    keyword.toLowerCase() + rest,
-    keyword.toUpperCase() + rest,
-    titled + rest,
-    "cdCTF" + rest,
-    "cdctf" + rest,
-    "CDCTF" + rest,
-    "flag" + rest,
-    "Flag" + rest,
-    "FLAG" + rest,
+    raw,
+    core,
+    `cdCTF{${core}}`,
+    `cdctf{${core}}`,
+    `flag{${core}}`,
+    `Flag{${core}}`,
+    `FLAG{${core}}`
   ])];
 }
 
