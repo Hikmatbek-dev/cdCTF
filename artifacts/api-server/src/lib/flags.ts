@@ -41,6 +41,12 @@ function keywordVariants(submitted: string): string[] {
     keyword.toLowerCase() + rest,
     keyword.toUpperCase() + rest,
     titled + rest,
+    "cdCTF" + rest,
+    "cdctf" + rest,
+    "CDCTF" + rest,
+    "flag" + rest,
+    "Flag" + rest,
+    "FLAG" + rest,
   ])];
 }
 
