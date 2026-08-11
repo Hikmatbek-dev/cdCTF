@@ -194,3 +194,14 @@ values
   ('Linux & Terminal', 'Linux va Terminal', 'Linux и терминал'),
   ('OSINT', 'OSINT', 'OSINT')
 on conflict do nothing;
+
+-- Protect all tables from unauthorized PostgREST API access by enabling RLS.
+DO $$ 
+DECLARE 
+  tname text; 
+BEGIN 
+  FOR tname IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') 
+  LOOP 
+    EXECUTE 'ALTER TABLE public.' || quote_ident(tname) || ' ENABLE ROW LEVEL SECURITY'; 
+  END LOOP; 
+END $$;

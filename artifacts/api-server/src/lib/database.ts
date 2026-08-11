@@ -672,5 +672,19 @@ async function applySchema() {
 
   for (const [name, statement] of indexes) await createIndexSafely(name, statement);
 
+  // Protect all tables from unauthorized PostgREST API access by enabling RLS.
+  // The API server bypasses RLS because it connects directly via the postgres role.
+  await pool.query(`
+    DO $$ 
+    DECLARE 
+      tname text; 
+    BEGIN 
+      FOR tname IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') 
+      LOOP 
+        EXECUTE 'ALTER TABLE public.' || quote_ident(tname) || ' ENABLE ROW LEVEL SECURITY'; 
+      END LOOP; 
+    END $$;
+  `);
+
   logger.info({ indexCount: indexes.length }, "Database shape verified");
 }
