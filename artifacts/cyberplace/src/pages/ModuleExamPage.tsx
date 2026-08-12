@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useRoute, useLocation, Link } from "wouter";
 import { Award, CheckCircle2, XCircle, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -73,7 +73,7 @@ export default function ModuleExamPage() {
 
   const shuffledQuestions = useMemo(() => questions.map(q => {
     const { question, options } = localized(q);
-    const withIndex = options.map((text, originalIndex) => ({ text, originalIndex }));
+    const withIndex = options.map((text: string, originalIndex: number) => ({ text, originalIndex }));
     for (let i = withIndex.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [withIndex[i], withIndex[j]] = [withIndex[j], withIndex[i]];
@@ -278,7 +278,7 @@ export default function ModuleExamPage() {
                       {question}
                     </p>
                     <div className="space-y-2">
-                      {shuffledOptions.map((option, displayIndex) => (
+                      {shuffledOptions.map((option: { text: string; originalIndex: number }, displayIndex: number) => (
                         <button
                           key={displayIndex}
                           onClick={() => setAnswers(a => ({ ...a, [q.id]: option.originalIndex }))}
