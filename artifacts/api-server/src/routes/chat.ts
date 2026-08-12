@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { communityMessages } from "@workspace/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth";
+import { authenticateToken } from "../middleware/auth";
 
 const router = Router();
 
@@ -35,10 +35,10 @@ router.get("/", async (req, res) => {
 });
 
 // Post a new message
-router.post("/", requireAuth, async (req, res) => {
+router.post("/", authenticateToken, async (req, res) => {
   try {
     const { content } = req.body;
-    const userId = req.user!.id;
+    const userId = req.user!.userId;
 
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
       return res.status(400).json({ error: "Message content is required" });
