@@ -107,26 +107,28 @@ export default function ChatPage() {
   }, [messages]);
 
   return (
-    <div className="flex-1 max-w-5xl mx-auto w-full p-4 sm:p-6 lg:p-8 flex flex-col pt-24 min-h-screen">
-      <div className="mb-6">
-        <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <MessageSquare className="w-5 h-5 text-primary" />
-          </div>
-          {t("Community Chat", "Umumiy Chat", "Общий чат")}
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          {t(
-            "Connect with other users, ask questions, and share your knowledge.",
-            "Boshqa foydalanuvchilar bilan bog'laning, savollar bering va tajribangizni ulashing.",
-            "Общайтесь с другими пользователями, задавайте вопросы и делитесь знаниями."
-          )}
-        </p>
+    <div className="flex-1 max-w-4xl mx-auto w-full flex flex-col pt-[72px] pb-4 px-2 sm:px-4 h-[100dvh]">
+      <div className="flex items-center gap-3 mb-3 px-2 shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+          <MessageSquare className="w-5 h-5 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight leading-tight">
+            {t("Community Chat", "Umumiy Chat", "Общий чат")}
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            {t(
+              "Connect and share your knowledge.",
+              "Bog'laning va tajribangizni ulashing.",
+              "Общайтесь и делитесь знаниями."
+            )}
+          </p>
+        </div>
       </div>
 
-      <div className="flex-1 bg-card border border-border rounded-2xl flex flex-col overflow-hidden h-[600px] shadow-sm">
+      <div className="flex-1 bg-card border border-border rounded-2xl flex flex-col overflow-hidden shadow-md min-h-0 relative">
         {/* Messages Area */}
-        <div className="flex-1 p-4 sm:p-6 overflow-y-auto bg-background/50 space-y-4">
+        <div className="flex-1 p-3 sm:p-5 overflow-y-auto space-y-4">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -169,15 +171,15 @@ export default function ChatPage() {
                       </div>
                     )}
                     <div 
-                      className={`px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed break-words whitespace-pre-wrap ${
+                      className={`px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-[14px] sm:text-[15px] leading-relaxed break-words whitespace-pre-wrap ${
                         isMe 
                           ? "bg-primary text-primary-foreground rounded-tr-sm" 
-                          : "bg-muted text-foreground rounded-tl-sm"
+                          : "bg-muted/80 text-foreground rounded-tl-sm"
                       }`}
                     >
                       {msg.content}
                     </div>
-                    <div className="text-[10px] text-muted-foreground mt-1 px-1">
+                    <div className={`text-[10px] text-muted-foreground mt-1 px-1 flex items-center gap-1 ${isMe ? "justify-end" : "justify-start"}`}>
                       {new Date(msg.createdAt).toLocaleTimeString(lang === 'uz' ? 'uz-UZ' : lang === 'ru' ? 'ru-RU' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
@@ -197,14 +199,15 @@ export default function ChatPage() {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder={t("Write a message...", "Xabar yozing...", "Напишите сообщение...")}
-                className="flex-1 h-12 px-4 rounded-xl border border-input bg-background text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-transparent transition-all"
+                className="flex-1 h-12 px-4 rounded-xl border border-input bg-background/50 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-transparent transition-all shadow-sm"
                 disabled={sendMessage.isPending}
                 maxLength={1000}
+                autoComplete="off"
               />
               <Button 
                 type="submit" 
                 disabled={!newMessage.trim() || sendMessage.isPending}
-                className="h-12 w-12 rounded-xl shrink-0 p-0"
+                className="h-12 w-12 rounded-xl shrink-0 p-0 shadow-sm transition-transform active:scale-95"
               >
                 {sendMessage.isPending ? (
                   <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
