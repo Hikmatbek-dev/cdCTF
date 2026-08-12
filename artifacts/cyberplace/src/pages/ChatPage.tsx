@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, UIEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
 import { useLang } from "@/lib/LanguageContext";
-import { Terminal } from "lucide-react";
+import { Terminal, Trash2, ChevronUp } from "lucide-react";
 import { Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 interface ChatMessage {
   id: number;
@@ -20,17 +21,48 @@ interface ChatMessage {
   };
 }
 
+function parseMessageContent(content: string) {
+  const parts = content.split(/(```[\s\S]*?```)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('```') && part.endsWith('```')) {
+      const code = part.slice(3, -3).replace(/^\w+\n/, '');
+      return (
+        <pre key={i} className="bg-black/20 dark:bg-white/10 p-2 rounded my-1 overflow-x-auto text-xs font-mono border border-green-500/30">
+          <code>{code}</code>
+        </pre>
+      );
+    }
+    const inlineParts = part.split(/(`[^`]+`)/g);
+    return (
+      <span key={i}>
+        {inlineParts.map((ip, j) => {
+          if (ip.startsWith('`') && ip.endsWith('`')) {
+            return <code key={j} className="bg-black/20 dark:bg-white/10 px-1 rounded text-xs border border-green-500/30">{ip.slice(1, -1)}</code>;
+          }
+          return ip;
+        })}
+      </span>
+    );
+  });
+}
+
 export default function ChatPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isSuperAdmin } = useAuth();
   const { t, lang } = useLang();
+  const { toast } = useToast();
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
+  const [limit, setLimit] = useState(50);
+  const [isScrolledUp, setIsScrolledUp] = useState(false);
+  const isAdmin = user?.role === "admin" || isSuperAdmin;
+
   const { data: messages, isLoading, error } = useQuery<ChatMessage[]>({
-    queryKey: ["community_messages"],
+    queryKey: ["community_messages", limit],
     queryFn: async () => {
-      const res = await fetch("/api/chat");
+      const res = await fetch(`/api/chat?limit=${limit}`);
       if (!res.ok) throw new Error("Failed to fetch messages");
       return res.json();
     },
@@ -41,9 +73,7 @@ export default function ChatPage() {
     mutationFn: async (content: string) => {
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content }),
       });
       if (!res.ok) {
@@ -53,8 +83,8 @@ export default function ChatPage() {
       return res.json();
     },
     onMutate: async (newContent) => {
-      await queryClient.cancelQueries({ queryKey: ["community_messages"] });
-      const previousMessages = queryClient.getQueryData<ChatMessage[]>(["community_messages"]);
+      await queryClient.cancelQueries({ queryKey: ["community_messages", limit] });
+      const previousMessages = queryClient.getQueryData<ChatMessage[]>(["community_messages", limit]);
       
       if (user) {
         const optimisticMsg: ChatMessage = {
@@ -71,19 +101,34 @@ export default function ChatPage() {
             points: user.points,
           }
         };
-        queryClient.setQueryData<ChatMessage[]>(["community_messages"], (old) => [...(old || []), optimisticMsg]);
+        queryClient.setQueryData<ChatMessage[]>(["community_messages", limit], (old) => [...(old || []), optimisticMsg]);
       }
       return { previousMessages };
     },
-    onError: (err, newContent, context) => {
+    onError: (err: any, newContent, context) => {
       if (context?.previousMessages) {
-        queryClient.setQueryData(["community_messages"], context.previousMessages);
+        queryClient.setQueryData(["community_messages", limit], context.previousMessages);
       }
-      console.error(err);
+      toast({
+        title: "Error",
+        description: err.message || "Could not send message",
+        variant: "destructive"
+      });
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["community_messages"] });
     },
+  });
+
+  const deleteMessage = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/chat/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete message");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["community_messages"] });
+    }
   });
 
   const handleSend = (e: React.FormEvent) => {
@@ -91,13 +136,20 @@ export default function ChatPage() {
     if (!newMessage.trim() || !isAuthenticated) return;
     sendMessage.mutate(newMessage);
     setNewMessage("");
+    setIsScrolledUp(false);
+  };
+
+  const handleScroll = (e: UIEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLDivElement;
+    const isAtBottom = Math.abs(target.scrollHeight - target.scrollTop - target.clientHeight) < 50;
+    setIsScrolledUp(!isAtBottom);
   };
 
   useEffect(() => {
-    if (messagesEndRef.current) {
+    if (!isScrolledUp && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+  }, [messages, isScrolledUp]);
 
   return (
     <div className="flex-1 w-full bg-gray-50 dark:bg-black font-mono text-green-700 dark:text-green-500 pt-[64px] flex flex-col h-[100dvh] transition-colors duration-200">
@@ -115,7 +167,23 @@ export default function ChatPage() {
 
       <div className="flex-1 overflow-hidden flex flex-col min-h-0 relative px-2 sm:px-4">
         {/* Messages Area */}
-        <div className="flex-1 p-2 sm:p-4 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-green-400 dark:scrollbar-thumb-green-900 scrollbar-track-gray-100 dark:scrollbar-track-black">
+        <div 
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 p-2 sm:p-4 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-green-400 dark:scrollbar-thumb-green-900 scrollbar-track-gray-100 dark:scrollbar-track-black"
+        >
+          {messages && messages.length >= limit && (
+            <div className="text-center pb-4">
+              <button 
+                onClick={() => setLimit(l => l + 50)}
+                className="text-xs text-green-600/70 hover:text-green-600 flex items-center justify-center w-full gap-1"
+              >
+                <ChevronUp className="w-4 h-4" />
+                {t("Load older logs...", "Eski loglarni yuklash...", "Загрузить старые логи...")}
+              </button>
+            </div>
+          )}
+
           {isLoading ? (
             <div className="text-green-600 dark:text-green-600/70 animate-pulse">
               [INIT] Loading secure comms link...
@@ -137,12 +205,28 @@ export default function ChatPage() {
               const promptSymbol = msg.user.role === 'admin' ? '#' : '$';
               
               return (
-                <div key={msg.id} className="text-[13px] sm:text-[14px] leading-relaxed break-words hover:bg-green-100 dark:hover:bg-green-950/20 px-1 -mx-1 rounded transition-colors">
-                  <span className="text-green-600/80 dark:text-green-700/70 select-none">[{timeStr}]</span>{" "}
-                  <span className={`${roleColor} font-bold`}>{msg.user.nickname}</span>
-                  <span className="text-green-700 dark:text-green-600 select-none">@{msg.user.points}pts</span>
-                  <span className="text-green-600 dark:text-green-500 select-none mr-2">{promptSymbol}</span>
-                  <span className="text-green-900 dark:text-green-300">{msg.content}</span>
+                <div key={msg.id} className="group relative text-[13px] sm:text-[14px] leading-relaxed break-words hover:bg-green-100 dark:hover:bg-green-950/20 px-1 -mx-1 rounded transition-colors flex">
+                  <div className="flex-1 min-w-0">
+                    <span className="text-green-600/80 dark:text-green-700/70 select-none shrink-0">[{timeStr}]</span>{" "}
+                    <span className={`${roleColor} font-bold`}>{msg.user.nickname}</span>
+                    <span className="text-green-700 dark:text-green-600 select-none">@{msg.user.points}pts</span>
+                    <span className="text-green-600 dark:text-green-500 select-none mr-2">{promptSymbol}</span>
+                    <span className="text-green-900 dark:text-green-300">{parseMessageContent(msg.content)}</span>
+                  </div>
+                  
+                  {isAdmin && (
+                    <button 
+                      onClick={() => {
+                        if (confirm(t("Delete this message?", "Bu xabarni o'chirasizmi?", "Удалить это сообщение?"))) {
+                          deleteMessage.mutate(msg.id);
+                        }
+                      }}
+                      disabled={deleteMessage.isPending}
+                      className="opacity-0 group-hover:opacity-100 shrink-0 p-1 text-red-500 hover:bg-red-500/20 rounded transition-all"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               );
             })
