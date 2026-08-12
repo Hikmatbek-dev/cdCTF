@@ -470,7 +470,7 @@ const learnHubOg: Handler = async (req, res) => {
   });
 };
 
-const competitionsHubOg: Handler = async (req, res) => {
+const competitionsHubOg: Handler = (req, res) => {
   const origin = siteOrigin(req);
   sendPage(res, {
     origin,

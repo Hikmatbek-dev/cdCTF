@@ -61,6 +61,7 @@ const ResendVerificationPage = lazyWithRetry(() => import("@/pages/ResendVerific
 const ForgotPasswordPage = lazyWithRetry(() => import("@/pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazyWithRetry(() => import("@/pages/ResetPasswordPage"));
 const GlossaryPage = lazyWithRetry(() => import("@/pages/GlossaryPage"));
+const ChatPage = lazyWithRetry(() => import("@/pages/ChatPage"));
 const NotFound = lazyWithRetry(() => import("@/pages/not-found"));
 
 /**
@@ -244,6 +245,9 @@ function Router() {
           </Route>
           <Route path="/scoreboard">
             {() => <PageTransition><ScoreboardPage /></PageTransition>}
+          </Route>
+          <Route path="/chat">
+            {() => <PageTransition><ChatPage /></PageTransition>}
           </Route>
           <Route path="/talent">
             {() => <PageTransition><TalentPage /></PageTransition>}

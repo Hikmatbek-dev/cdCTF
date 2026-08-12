@@ -175,6 +175,14 @@ create table if not exists audit_logs (
   created_at timestamptz not null default now()
 );
 
+create table if not exists community_messages (
+  id serial primary key,
+  user_id integer not null references users(id),
+  content text not null,
+  is_deleted boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
 insert into titles (name, category, points)
 values
   ('Kriptograf', 'Crypto', 500),

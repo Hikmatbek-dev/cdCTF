@@ -64,12 +64,22 @@ export default function ModuleExamPage() {
   const issueCertificate = useIssueCertificate();
 
   /** Localised text for a question and its options. */
-  const localized = (q: ExamQuestion) => ({
+  const localized = useCallback((q: ExamQuestion) => ({
     question: t(q.question, q.questionUz ?? undefined, q.questionRu ?? undefined),
     options: (lang === "uz" && q.optionsUz?.length ? q.optionsUz
       : lang === "ru" && q.optionsRu?.length ? q.optionsRu
         : q.options),
-  });
+  }), [lang, t]);
+
+  const shuffledQuestions = useMemo(() => questions.map(q => {
+    const { question, options } = localized(q);
+    const withIndex = options.map((text, originalIndex) => ({ text, originalIndex }));
+    for (let i = withIndex.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [withIndex[i], withIndex[j]] = [withIndex[j], withIndex[i]];
+    }
+    return { q, question, shuffledOptions: withIndex };
+  }), [questions, localized]);
 
   const handleStart = () => {
     startExam.mutate({ id }, {
@@ -260,19 +270,7 @@ export default function ModuleExamPage() {
             />
 
             <div className="space-y-6">
-              {questions.map((q, qi) => {
-                const { question, options } = localized(q);
-                
-                // Randomly shuffle options while preserving the original index for the backend
-                const shuffledOptions = useMemo(() => {
-                  const withIndex = options.map((text, originalIndex) => ({ text, originalIndex }));
-                  for (let i = withIndex.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [withIndex[i], withIndex[j]] = [withIndex[j], withIndex[i]];
-                  }
-                  return withIndex;
-                }, [options]);
-
+              {shuffledQuestions.map(({ q, question, shuffledOptions }, qi) => {
                 return (
                   <div key={q.id} className="border border-border rounded-xl p-5 bg-card">
                     <p className="font-medium mb-4">

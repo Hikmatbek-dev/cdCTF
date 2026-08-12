@@ -7,10 +7,13 @@
   5:8  warning  'path' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
 
 /home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/api-server/src/routes/admin.ts
-  71:46  warning  'titles' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  35:3   warning  'PERMISSIONS' is defined but never used. Allowed unused vars must match /^_/u      @typescript-eslint/no-unused-vars
+  78:46  warning  'titles' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
 
 /home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/api-server/src/routes/ctf.ts
-  3:61  warning  'titlesTable' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  3:61   warning  'titlesTable' is defined but never used. Allowed unused vars must match /^_/u        @typescript-eslint/no-unused-vars
+  3:100  warning  'labsTable' is defined but never used. Allowed unused vars must match /^_/u          @typescript-eslint/no-unused-vars
+  3:111  warning  'labInstancesTable' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
 
 /home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/api-server/src/routes/labs.ts
   5:33  warning  'or' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
@@ -19,7 +22,7 @@
   20:46  warning  'activeReferralCount' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
 
 /home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/components/LessonTasks.tsx
-  80:6  warning  React Hook useEffect has a missing dependency: 'tasks'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  102:6  warning  React Hook useEffect has a missing dependency: 'tasks'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
 
 /home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/hooks/use-toast.ts
   18:7  warning  'actionTypes' is assigned a value but only used as a type. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
@@ -29,13 +32,28 @@
   17:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/lib/seo.ts
-  439:28  warning  'index' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  474:28  warning  'index' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/pages/CompetitionDetailPage.tsx
-  157:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  158:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  159:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  160:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   89:54   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  188:37   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  189:37   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  190:32   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  191:27   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  195:31   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  228:24   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  230:32   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  463:113  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  463:146  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  475:25   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  478:69   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  478:148  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  478:223  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/pages/CompetitionsPage.tsx
+   97:33   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   99:32   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  102:105  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/pages/CtfDetailPage.tsx
   267:28   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
@@ -64,24 +82,18 @@
   39:14  warning  'lang' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
 
 /home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/pages/ImpactPage.tsx
-  21:11  error    'start' is never reassigned. Use 'const' instead  prefer-const
-  57:8   warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
-  62:8   warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  57:8  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  62:8  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/pages/LabsPage.tsx
   3:59  warning  'Flag' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
 
-/home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/pages/ModulesPage.tsx
-   1:10  warning  'Link' is defined but never used. Allowed unused vars must match /^_/u                   @typescript-eslint/no-unused-vars
-   3:18  warning  'Clock' is defined but never used. Allowed unused vars must match /^_/u                  @typescript-eslint/no-unused-vars
-   3:25  warning  'Award' is defined but never used. Allowed unused vars must match /^_/u                  @typescript-eslint/no-unused-vars
-   3:32  warning  'CheckCircle2' is defined but never used. Allowed unused vars must match /^_/u           @typescript-eslint/no-unused-vars
-   3:46  warning  'ChevronRight' is defined but never used. Allowed unused vars must match /^_/u           @typescript-eslint/no-unused-vars
-   3:60  warning  'Play' is defined but never used. Allowed unused vars must match /^_/u                   @typescript-eslint/no-unused-vars
-   9:10  warning  'MODULE_ART' is defined but never used. Allowed unused vars must match /^_/u             @typescript-eslint/no-unused-vars
-   9:22  warning  'LinuxArt' is defined but never used. Allowed unused vars must match /^_/u               @typescript-eslint/no-unused-vars
-  29:10  warning  'difficultyMeta' is defined but never used. Allowed unused vars must match /^_/u         @typescript-eslint/no-unused-vars
-  42:9   warning  'currentIndex' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+/home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/pages/LessonTestPage.tsx
+  212:12  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+
+/home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/pages/ModuleExamPage.tsx
+  263:16  error    React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+  271:19  warning  React Hook useMemo has a missing dependency: 'localized'. Either include it or remove the dependency array                                                                                 react-hooks/exhaustive-deps
 
 /home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/pages/ProfilePage.tsx
    84:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
@@ -89,8 +101,12 @@
   105:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
   106:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
   107:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  108:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  111:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  108:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  108:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  109:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  112:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  319:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  323:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/pages/ScoreboardPage.tsx
     3:18  warning  'Shield' is defined but never used. Allowed unused vars must match /^_/u             @typescript-eslint/no-unused-vars
@@ -105,6 +121,9 @@
 /home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/pages/admin/AdminBlockedPage.tsx
   19:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
   20:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/pages/admin/AdminCompetitionsPage.tsx
+  162:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/pages/admin/AdminCtfPage.tsx
   158:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
@@ -128,11 +147,17 @@
   436:66  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
   447:36  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
 
-/home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/pages/admin/AdminUsersPage.tsx
-   31:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  110:14  warning  'err' is defined but never used           @typescript-eslint/no-unused-vars
+/home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/pages/admin/AdminSpotlightsPage.tsx
+  57:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-✖ 79 problems (1 error, 78 warnings)
-  1 error and 0 warnings potentially fixable with the `--fix` option.
+/home/bozkurt/Desktop/ummuiy/2-darajali/CyberPlace.uz/artifacts/cyberplace/src/pages/admin/AdminUsersPage.tsx
+   32:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   98:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   99:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  118:14  warning  'err' is defined but never used           @typescript-eslint/no-unused-vars
+  404:62  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  567:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 97 problems (2 errors, 95 warnings)
 
  ELIFECYCLE  Command failed with exit code 1.

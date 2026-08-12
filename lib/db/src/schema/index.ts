@@ -13,3 +13,4 @@ export * from "./settings";
 export * from "./support";
 export * from "./gifts";
 export * from "./schema-state";
+export * from "./chat";

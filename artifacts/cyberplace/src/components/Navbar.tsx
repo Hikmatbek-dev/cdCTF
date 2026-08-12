@@ -34,6 +34,7 @@ const NAV_LINKS = [
   { href: "/ctf", also: [], label: { en: "Practice", uz: "Mashq", ru: "Практика" } },
   { href: "/labs", also: [], label: { en: "Labs", uz: "Laboratoriya", ru: "Лаборатории" } },
   { href: "/scoreboard", also: [], label: { en: "Ranking", uz: "Reyting", ru: "Рейтинг" } },
+  { href: "/chat", also: [], label: { en: "Chat", uz: "Chat", ru: "Чат" } },
   { href: "/competitions", also: [], label: { en: "Events", uz: "Tadbirlar", ru: "События" } },
   { href: "/jobs", also: ["/talent"], label: { en: "Careers", uz: "Karyera", ru: "Карьера" } },
 ];

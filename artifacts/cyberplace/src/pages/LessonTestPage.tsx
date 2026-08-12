@@ -51,6 +51,22 @@ export default function LessonTestPage() {
    * Attempts here are limited per rolling 24-hour window, so a bad day costs a
    * day and not the certificate.
    */
+  // Extract questions list safely
+  const questionList = normalizeArray<TestQuestion>(questions, ["questions", "data", "items"]);
+
+  // Randomly shuffle options while preserving the original index for the backend
+  const shuffledQuestions = useMemo(() => {
+    return questionList.map(q => {
+      const rawOptions = lang === "uz" && q.optionsUz ? q.optionsUz : lang === "ru" && q.optionsRu ? q.optionsRu : q.options;
+      const options = normalizeArray<string>(rawOptions, ["options", "data", "items"]);
+      const withIndex = options.map((text, originalIndex) => ({ text, originalIndex }));
+      for (let i = withIndex.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [withIndex[i], withIndex[j]] = [withIndex[j], withIndex[i]];
+      }
+      return { q, shuffledOptions: withIndex };
+    });
+  }, [questionList, lang]);
 
   // Start test on mount
   useEffect(() => {
@@ -183,7 +199,6 @@ export default function LessonTestPage() {
     );
   }
 
-  const questionList = normalizeArray<TestQuestion>(questions, ["questions", "data", "items"]);
   const answered = Object.keys(answers).length;
   const progress = questionList.length > 0 ? (answered / questionList.length) * 100 : 0;
 
@@ -209,23 +224,8 @@ export default function LessonTestPage() {
 
         {/* Questions */}
         <div className="space-y-6">
-          {questionList.map((q, qi) => {
-            // Questions and their options are stored per language; pick the set
-            // matching the UI, falling back to English when a translation is absent.
-            const rawOptions = lang === "uz" && q.optionsUz ? q.optionsUz : lang === "ru" && q.optionsRu ? q.optionsRu : q.options;
-            const options = normalizeArray<string>(rawOptions, ["options", "data", "items"]);
+          {shuffledQuestions.map(({ q, shuffledOptions }, qi) => {
             const questionText = t(q.question, q.questionUz ?? undefined, q.questionRu ?? undefined);
-            
-            // Randomly shuffle options while preserving the original index for the backend
-            const shuffledOptions = useMemo(() => {
-              const withIndex = options.map((text, originalIndex) => ({ text, originalIndex }));
-              for (let i = withIndex.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [withIndex[i], withIndex[j]] = [withIndex[j], withIndex[i]];
-              }
-              return withIndex;
-            }, [options]);
-
             return (
             <div key={q.id} className="p-5 rounded-xl border border-border bg-card" data-testid={`card-question-${qi}`}>
               <p className="font-medium mb-4 text-sm">{qi + 1}. {questionText}</p>
