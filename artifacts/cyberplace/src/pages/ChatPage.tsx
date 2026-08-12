@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth, User } from "@/lib/AuthContext";
+import { useAuth } from "@/lib/AuthContext";
 import { useLang } from "@/lib/LanguageContext";
-import { Send, AlertCircle, MessageSquare } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Terminal } from "lucide-react";
 import { Link } from "wouter";
 
 interface ChatMessage {
@@ -55,7 +54,6 @@ export default function ChatPage() {
       return res.json();
     },
     onMutate: async (newContent) => {
-      // Optimistic update
       await queryClient.cancelQueries({ queryKey: ["community_messages"] });
       const previousMessages = queryClient.getQueryData<ChatMessage[]>(["community_messages"]);
       
@@ -76,14 +74,12 @@ export default function ChatPage() {
         };
         queryClient.setQueryData<ChatMessage[]>(["community_messages"], (old) => [...(old || []), optimisticMsg]);
       }
-      
       return { previousMessages };
     },
     onError: (err, newContent, context) => {
       if (context?.previousMessages) {
         queryClient.setQueryData(["community_messages"], context.previousMessages);
       }
-      // Could show a toast here
       console.error(err);
     },
     onSettled: () => {
@@ -94,12 +90,10 @@ export default function ChatPage() {
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !isAuthenticated) return;
-    
     sendMessage.mutate(newMessage);
     setNewMessage("");
   };
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -107,120 +101,91 @@ export default function ChatPage() {
   }, [messages]);
 
   return (
-    <div className="flex-1 max-w-4xl mx-auto w-full flex flex-col pt-[72px] pb-4 px-2 sm:px-4 h-[100dvh]">
-      <div className="flex items-center gap-3 mb-3 px-2 shrink-0">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-          <MessageSquare className="w-5 h-5 text-primary" />
-        </div>
+    <div className="flex-1 w-full bg-black font-mono text-green-500 pt-[64px] flex flex-col h-[100dvh]">
+      <div className="p-3 sm:p-4 border-b border-green-900/50 flex items-center gap-3 shrink-0 bg-black/80 backdrop-blur">
+        <Terminal className="w-5 h-5 text-green-400" />
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight leading-tight">
-            {t("Community Chat", "Umumiy Chat", "Общий чат")}
+          <h1 className="text-lg font-bold tracking-wider uppercase text-green-400">
+            cdCTF_Global_Terminal
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            {t(
-              "Connect and share your knowledge.",
-              "Bog'laning va tajribangizni ulashing.",
-              "Общайтесь и делитесь знаниями."
-            )}
+          <p className="text-xs text-green-600/80">
+            {t("Secure connection established...", "Xavfsiz aloqa o'rnatildi...", "Защищенное соединение установлено...")}
           </p>
         </div>
       </div>
 
-      <div className="flex-1 bg-card border border-border rounded-2xl flex flex-col overflow-hidden shadow-md min-h-0 relative">
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0 relative px-2 sm:px-4">
         {/* Messages Area */}
-        <div className="flex-1 p-3 sm:p-5 overflow-y-auto space-y-4">
+        <div className="flex-1 p-2 sm:p-4 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-green-900 scrollbar-track-black">
           {isLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="text-green-600/70 animate-pulse">
+              [INIT] Loading secure comms link...
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-              <AlertCircle className="w-8 h-8 mb-2 text-destructive" />
-              <p>{t("Failed to load messages.", "Xabarlarni yuklashda xatolik yuz berdi.", "Не удалось загрузить сообщения.")}</p>
+            <div className="text-red-500">
+              [ERROR] Connection refused. Matrix glitch detected.
             </div>
           ) : messages?.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-              <MessageSquare className="w-12 h-12 mb-3 opacity-20" />
-              <p>{t("No messages yet. Be the first to say hi!", "Hali xabarlar yo'q. Birinchi bo'lib yozing!", "Пока нет сообщений. Напишите первым!")}</p>
+            <div className="text-green-600/50">
+              [SYSTEM] No prior logs found. Awaiting input.
             </div>
           ) : (
-            messages?.map((msg, idx) => {
-              const isMe = user?.id === msg.userId;
-              const showAvatar = idx === 0 || messages[idx - 1].userId !== msg.userId;
+            messages?.map((msg) => {
+              const date = new Date(msg.createdAt);
+              const timeStr = date.toLocaleTimeString(lang === 'uz' ? 'uz-UZ' : lang === 'ru' ? 'ru-RU' : 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+              
+              const roleColor = msg.user.role === 'admin' ? 'text-red-500' : 'text-blue-400';
+              const promptSymbol = msg.user.role === 'admin' ? '#' : '$';
               
               return (
-                <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"} gap-3`}>
-                  {!isMe && showAvatar && (
-                    <div className="w-8 h-8 shrink-0 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold mt-1">
-                      {msg.user.nickname[0].toUpperCase()}
-                    </div>
-                  )}
-                  {!isMe && !showAvatar && <div className="w-8 shrink-0" />}
-                  
-                  <div className={`max-w-[80%] sm:max-w-[70%] ${isMe ? "items-end" : "items-start"} flex flex-col`}>
-                    {showAvatar && (
-                      <div className="flex items-center gap-2 mb-1 px-1">
-                        <span className="text-xs font-semibold text-foreground/80">
-                          {msg.user.nickname}
-                        </span>
-                        {msg.user.role === 'admin' && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-destructive/10 text-destructive font-bold uppercase tracking-wider">
-                            Admin
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    <div 
-                      className={`px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-[14px] sm:text-[15px] leading-relaxed break-words whitespace-pre-wrap ${
-                        isMe 
-                          ? "bg-primary text-primary-foreground rounded-tr-sm" 
-                          : "bg-muted/80 text-foreground rounded-tl-sm"
-                      }`}
-                    >
-                      {msg.content}
-                    </div>
-                    <div className={`text-[10px] text-muted-foreground mt-1 px-1 flex items-center gap-1 ${isMe ? "justify-end" : "justify-start"}`}>
-                      {new Date(msg.createdAt).toLocaleTimeString(lang === 'uz' ? 'uz-UZ' : lang === 'ru' ? 'ru-RU' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  </div>
+                <div key={msg.id} className="text-[13px] sm:text-[14px] leading-relaxed break-words hover:bg-green-950/20 px-1 -mx-1 rounded transition-colors">
+                  <span className="text-green-700/70 select-none">[{timeStr}]</span>{" "}
+                  <span className={`${roleColor} font-bold`}>{msg.user.nickname}</span>
+                  <span className="text-green-600 select-none">@{msg.user.points}pts</span>
+                  <span className="text-green-500 select-none mr-2">{promptSymbol}</span>
+                  <span className="text-green-300">{msg.content}</span>
                 </div>
               );
             })
           )}
-          <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} className="h-1" />
         </div>
 
         {/* Input Area */}
-        <div className="p-4 bg-card border-t border-border">
+        <div className="p-2 sm:p-4 border-t border-green-900/50 shrink-0">
           {isAuthenticated ? (
-            <form onSubmit={handleSend} className="flex gap-3">
+            <form onSubmit={handleSend} className="flex gap-2 items-center">
+              <span className="text-green-500 font-bold hidden sm:inline select-none">
+                {user?.nickname}
+                <span className="text-green-700">@</span>cdctf<span className="text-green-700">:~$</span>
+              </span>
+              <span className="text-green-500 font-bold sm:hidden select-none">
+                ~$
+              </span>
               <input
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                placeholder={t("Write a message...", "Xabar yozing...", "Напишите сообщение...")}
-                className="flex-1 h-12 px-4 rounded-xl border border-input bg-background/50 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-transparent transition-all shadow-sm"
+                placeholder={t("type a command or message...", "xabar yoki buyruq kiriting...", "введите команду или сообщение...")}
+                className="flex-1 bg-transparent text-green-400 border-none outline-none focus:ring-0 placeholder:text-green-800 font-mono text-[14px]"
                 disabled={sendMessage.isPending}
                 maxLength={1000}
+                autoFocus
                 autoComplete="off"
               />
-              <Button 
+              <button 
                 type="submit" 
                 disabled={!newMessage.trim() || sendMessage.isPending}
-                className="h-12 w-12 rounded-xl shrink-0 p-0 shadow-sm transition-transform active:scale-95"
+                className="px-3 py-1 bg-green-900/40 text-green-400 hover:bg-green-800/60 rounded text-xs uppercase tracking-widest disabled:opacity-50 transition-colors border border-green-800/50"
               >
-                {sendMessage.isPending ? (
-                  <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Send className="w-5 h-5" />
-                )}
-              </Button>
+                {sendMessage.isPending ? "EXEC..." : "EXEC"}
+              </button>
             </form>
           ) : (
-            <div className="h-12 flex items-center justify-center bg-muted/50 rounded-xl border border-dashed border-border text-sm text-muted-foreground">
-              {t("You must be logged in to chat.", "Chatda yozish uchun tizimga kiring.", "Вы должны войти, чтобы писать в чат.")}{" "}
-              <Link href="/login" className="text-primary hover:underline ml-1 font-medium">
-                {t("Log in", "Kirish", "Войти")}
+            <div className="text-sm text-green-700">
+              [SYSTEM] {t("Authentication required.", "Tizimga kirish talab etiladi.", "Требуется аутентификация.")}{" "}
+              <Link href="/login" className="text-green-400 hover:underline font-bold">
+                ./login.sh
               </Link>
             </div>
           )}

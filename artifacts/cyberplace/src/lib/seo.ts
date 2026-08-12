@@ -234,6 +234,18 @@ const publicRoutes: Array<{ match: (path: string) => boolean; config: SeoConfig 
     }
   },
   {
+    match: (path) => path === "/chat",
+    config: {
+      title: text("Community Chat | cdCTF", "Umumiy Chat | cdCTF", "Общий чат | cdCTF"),
+      description: text(
+        "Connect with other hackers on cdCTF. Ask questions, share knowledge and join the community.",
+        "cdCTF dagi xakerlar bilan suhbatlashing. Savollar bering va tajriba ulashing.",
+        "Общайтесь с другими хакерами на cdCTF. Задавайте вопросы и делитесь опытом."
+      ),
+      keywords: text("cdctf chat, hacker chat, uzbekistan hacker community", "cdctf chat, xakerlar chati, o'zbekiston xakerlar jamoasi", "cdctf чат, чат хакеров, сообщество хакеров узбекистана"),
+    }
+  },
+  {
     // Sponsor-facing event posters. The per-event title comes from the crawler
     // preview (see the API's og routes); this is the in-browser tab title.
     match: (path) => /^\/e\/\d+$/.test(path),
