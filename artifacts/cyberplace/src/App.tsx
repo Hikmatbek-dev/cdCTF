@@ -351,7 +351,7 @@ function Router() {
       </Suspense>
       </ErrorBoundary>
         </main>
-      <Footer />
+      {location !== "/chat" && <Footer />}
       </div>
     </>
   );
