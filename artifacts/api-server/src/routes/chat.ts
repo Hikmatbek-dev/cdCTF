@@ -106,7 +106,7 @@ router.post("/", authenticateToken, async (req, res) => {
 // Delete a message (Admin only)
 router.delete("/:id", authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const messageId = parseInt(req.params.id);
+    const messageId = parseInt(req.params.id as string, 10);
     if (isNaN(messageId)) {
       return res.status(400).json({ error: "Invalid message ID" });
     }

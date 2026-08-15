@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { randomUUID } from "node:crypto";
 import { db } from "@workspace/db";
-import { usersTable, ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionTeamsTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleQuestionsTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable, supportTicketsTable, giftsTable, pathsTable, pathModulesTable, spotlightsTable, appSettingsTable } from "@workspace/db/schema";
+import { usersTable, ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, lessonsTable, lessonQuestionsTable, learnCategoriesTable, competitionsTable, competitionTasksTable, competitionTeamsTable, competitionUsersTable, competitionSolvesTable, userLessonAttemptsTable, titlesTable, auditLogsTable, modulesTable, moduleQuestionsTable, moduleExamAttemptsTable, certificatesTable, programDiplomasTable, supportTicketsTable, giftsTable, pathsTable, pathModulesTable, spotlightsTable, appSettingsTable, loginHistoryTable, userSessionsTable } from "@workspace/db/schema";
 import { eq, and, or, desc, inArray, isNotNull, asc, not, count, ilike } from "drizzle-orm";
 import { authenticateToken } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
@@ -122,6 +122,44 @@ router.get("/dashboard", requirePermission("admin.panel"), async (_req, res) => 
   for (const ch of ctfs) categoryMap.set(ch.category, (categoryMap.get(ch.category) ?? 0) + 1);
   const categoryDistribution = Array.from(categoryMap.entries()).map(([name, value]) => ({ name, value }));
 
+  // Daily Visits
+  const allLogins = await db.select().from(loginHistoryTable).where(eq(loginHistoryTable.success, true));
+  const dailyVisits = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split("T")[0];
+    const count = allLogins.filter(l => l.createdAt.toISOString().split("T")[0] === dateStr).length;
+    return { date: dateStr, count };
+  }).reverse();
+
+  // Active Users Duration
+  const sessions = await db.select().from(userSessionsTable).where(isNotNull(userSessionsTable.lastSeenAt));
+  const durationMap = new Map<number, number>();
+  for (const s of sessions) {
+    if (!s.lastSeenAt) continue;
+    const durationMin = Math.round((s.lastSeenAt.getTime() - s.createdAt.getTime()) / 60000);
+    if (durationMin > 0) {
+      durationMap.set(s.userId, (durationMap.get(s.userId) ?? 0) + durationMin);
+    }
+  }
+  const activeUsersDuration = [...users]
+    .filter(u => durationMap.has(u.id))
+    .map(u => ({ id: u.id, nickname: u.nickname, durationMinutes: durationMap.get(u.id) ?? 0 }))
+    .sort((a, b) => b.durationMinutes - a.durationMinutes)
+    .slice(0, 10);
+
+  // Most Engaged Activities
+  const auditLogs = await db.select().from(auditLogsTable);
+  const actionMap = new Map<string, number>();
+  for (const l of auditLogs) {
+    if (!l.action) continue;
+    actionMap.set(l.action, (actionMap.get(l.action) ?? 0) + 1);
+  }
+  const mostEngagedActivities = Array.from(actionMap.entries())
+    .map(([action, count]) => ({ action, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
   res.json({
     totalUsers: users.length,
     activeUsers,
@@ -134,6 +172,9 @@ router.get("/dashboard", requirePermission("admin.panel"), async (_req, res) => 
     mostActiveUsers,
     registrationHistory,
     categoryDistribution,
+    dailyVisits,
+    activeUsersDuration,
+    mostEngagedActivities,
   });
 });
 

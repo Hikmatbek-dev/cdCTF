@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, Flag, Trophy, BookOpen, GraduationCap, FileText, AlertTriangle, ChevronLeft, ShieldCheck, Terminal, LineChart, Menu, LifeBuoy, Gift, Route as RouteIcon, Sparkles } from "lucide-react";
+import { LayoutDashboard, Users, Flag, Trophy, BookOpen, GraduationCap, FileText, AlertTriangle, ChevronLeft, ShieldCheck, Terminal, LineChart, Menu, LifeBuoy, Gift, Route as RouteIcon, Sparkles, PieChart } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 // or moderator is never shown a button that answers 403.
 const ADMIN_LINKS = [
   { href: "/admin/dashboard", permission: "admin.panel", icon: LayoutDashboard, label: { en: "Overview", uz: "Boshqaruv", ru: "Главная" } },
+  { href: "/admin/statistics", permission: "admin.panel", icon: PieChart, label: { en: "Statistics", uz: "Umumiy Statistika", ru: "Статистика" } },
   { href: "/admin/users", permission: "users.read", icon: Users, label: { en: "Users", uz: "Foydalanuvchilar", ru: "Пользователи" } },
   { href: "/admin/ctf", permission: "ctf.read.all", icon: Flag, label: { en: "Challenges", uz: "CTF Topshiriqlari", ru: "CTF Задания" } },
   { href: "/admin/competitions", permission: "competitions.manage", icon: Trophy, label: { en: "Competitions", uz: "Musobaqalar", ru: "Соревнования" } },

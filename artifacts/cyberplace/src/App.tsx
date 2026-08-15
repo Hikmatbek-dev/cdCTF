@@ -41,6 +41,7 @@ const ProfileEditPage = lazyWithRetry(() => import("@/pages/ProfileEditPage"));
 const SecurityPage = lazyWithRetry(() => import("@/pages/SecurityPage"));
 const DashboardPage = lazyWithRetry(() => import("@/pages/DashboardPage"));
 const AdminDashboardPage = lazyWithRetry(() => import("@/pages/admin/AdminDashboardPage"));
+const AdminStatisticsPage = lazyWithRetry(() => import("@/pages/admin/AdminStatisticsPage"));
 const AdminUsersPage = lazyWithRetry(() => import("@/pages/admin/AdminUsersPage"));
 const AdminCtfPage = lazyWithRetry(() => import("@/pages/admin/AdminCtfPage"));
 const AdminCompetitionsPage = lazyWithRetry(() => import("@/pages/admin/AdminCompetitionsPage"));
@@ -306,6 +307,9 @@ function Router() {
           
           <Route path="/admin/dashboard">
             {() => <PageTransition><AdminRoute component={AdminDashboardPage} /></PageTransition>}
+          </Route>
+          <Route path="/admin/statistics">
+            {() => <PageTransition><AdminRoute component={AdminStatisticsPage} /></PageTransition>}
           </Route>
           <Route path="/admin/users">
             {() => <PageTransition><PermissionRoute component={AdminUsersPage} permission="users.read" /></PageTransition>}
