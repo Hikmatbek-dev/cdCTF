@@ -83,8 +83,10 @@ export default function ModuleExamPage() {
     const { question, options } = localized(q);
     const withIndex = options.map((text: string, originalIndex: number) => ({ text, originalIndex }));
     const list = [...withIndex];
+    let seed = (q.id * 15485863) % 2147483647;
     for (let i = list.length - 1; i > 0; i--) {
-      const j = (q.id * (i + 1) + i) % (i + 1);
+      seed = (seed * 16807) % 2147483647;
+      const j = Math.floor((seed / 2147483647) * (i + 1));
       [list[i], list[j]] = [list[j], list[i]];
     }
     return { q, question, shuffledOptions: list };

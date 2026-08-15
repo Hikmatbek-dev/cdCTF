@@ -54,7 +54,7 @@ export default function LessonTestPage() {
   // Extract questions list safely
   const questionList = normalizeArray<TestQuestion>(questions, ["questions", "data", "items"]);
 
-  // Randomly shuffle options once per question set, preserving originalIndex
+  // Randomly shuffle options once per question set, preserving originalIndex with true PRNG
   const shuffledQuestions = useMemo(() => {
     return questionList.map(q => {
       const rawOptions =
@@ -67,15 +67,17 @@ export default function LessonTestPage() {
       const options = normalizeArray<string>(rawOptions, ["options", "data", "items"]);
       const withIndex = options.map((text, originalIndex) => ({ text, originalIndex }));
       
-      // Seeded-style in-place shuffle per question ID to remain stable across renders
+      // Deterministic PRNG shuffle per question ID
       const list = [...withIndex];
+      let seed = (q.id * 15485863) % 2147483647;
       for (let i = list.length - 1; i > 0; i--) {
-        const j = (q.id * (i + 1) + i) % (i + 1);
+        seed = (seed * 16807) % 2147483647;
+        const j = Math.floor((seed / 2147483647) * (i + 1));
         [list[i], list[j]] = [list[j], list[i]];
       }
       return { q, shuffledOptions: list };
     });
-  }, [questions, lang]);
+  }, [questionList, lang]);
 
   // Start test on mount
   useEffect(() => {
