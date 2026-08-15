@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { TurnstileWidget } from "@/components/TurnstileWidget";
 import { useToast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/LanguageContext";
+import { CdCtfLogo } from "@/components/CdCtfLogo";
 
 // The widget renders nothing without a site key, and the server only rejects a
 // missing token when TURNSTILE_ENFORCE is on. Reading the key here keeps the
@@ -137,8 +138,8 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center px-4 bg-background pt-24 pb-16">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 mb-4 p-2.5">
-            <img src="/logo-remove-bg.png" alt="cdCTF Logo" className="w-full h-full object-contain scale-110" />
+          <div className="inline-flex items-center justify-center mb-4">
+            <CdCtfLogo className="h-14 w-auto" />
           </div>
           <h1 className="text-xl font-bold">{t("Create account", "Hisob yaratish", "Создать аккаунт")}</h1>
           <p className="text-sm text-muted-foreground mt-1">{t("Join the cdCTF community", "cdCTF jamoasiga qo'shiling", "Присоединяйтесь к cdCTF")}</p>

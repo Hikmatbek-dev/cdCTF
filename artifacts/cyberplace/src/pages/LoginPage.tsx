@@ -14,6 +14,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import * as api from "@/lib/security-api";
 import { nextFromLocation } from "@/lib/next-path";
 
+import { CdCtfLogo } from "@/components/CdCtfLogo";
+
 const PROVIDER_LABELS: Record<string, string> = {
   google: "Google",
   github: "GitHub",
@@ -155,8 +157,8 @@ export default function LoginPage() {
       <div className="w-full max-w-md relative z-10">
         <ScaleIn>
           <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-primary/10 border border-primary/20 mb-8 animate-float shadow-2xl p-3">
-              <img src="/logo-remove-bg.png" alt="cdCTF Logo" className="w-full h-full object-contain scale-110" />
+            <div className="inline-flex items-center justify-center mb-8 animate-float">
+              <CdCtfLogo className="h-16 sm:h-20 w-auto" />
             </div>
             <h1 className="mb-2">{t("Sign in", "Kirish", "Вход")}</h1>
             <p className="text-sm text-muted-foreground">{t("Welcome back to cdCTF.", "cdCTF'ga xush kelibsiz.", "С возвращением в cdCTF.")}</p>

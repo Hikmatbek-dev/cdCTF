@@ -76,14 +76,8 @@ export function Navbar() {
       >
         <div className="max-w-6xl mx-auto px-5 sm:px-6 h-16 flex items-center justify-between gap-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0" aria-label="cdCTF">
-            <span className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden p-1 shrink-0">
-              <img src="/logo-remove-bg.png" alt="cdCTF Logo" className="w-full h-full object-contain scale-110" />
-            </span>
-            <span className="font-display text-xl font-extrabold tracking-tight">
-              <span className="text-primary">cd</span>
-              <span className="text-foreground">CTF</span>
-            </span>
+          <Link href="/" className="flex items-center shrink-0" aria-label="cdCTF">
+            <CdCtfLogo className="h-10 w-auto" />
           </Link>
 
           {/* Desktop nav */}
