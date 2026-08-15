@@ -3,44 +3,58 @@ import React from "react";
 interface CdCtfLogoProps {
   className?: string;
   size?: number;
+  useImage?: boolean;
 }
 
 /**
  * Official cdCTF Monogram Logo Component
- * Continuous line 'cd' monogram with purple terminal cursor bar '_'
+ * Matches logo.png: continuous 'cd' monogram with purple angled terminal cursor '_'
  */
-export function CdCtfLogo({ className = "w-8 h-8", size }: CdCtfLogoProps) {
+export function CdCtfLogo({ className = "w-8 h-8", size, useImage = false }: CdCtfLogoProps) {
+  if (useImage) {
+    return (
+      <img
+        src="/logo.png"
+        alt="cdCTF Logo"
+        className={`object-contain ${className}`}
+        style={size ? { width: size, height: size } : undefined}
+      />
+    );
+  }
+
   return (
     <svg
-      viewBox="0 0 160 100"
+      viewBox="0 0 200 120"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       style={size ? { width: size, height: size } : undefined}
       aria-label="cdCTF Logo"
     >
-      {/* Continuous 'cd' vector path */}
+      {/* Continuous 'cd' monogram filled path */}
       <path
-        d="M 42 50 
-           C 42 32, 22 32, 22 50 
-           C 22 68, 42 68, 52 50 
-           C 62 32, 82 32, 82 50 
-           C 82 68, 62 68, 62 50 
-           L 82 15 
-           L 82 64"
-        stroke="currentColor"
-        strokeWidth="10"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d="M 60 30 
+           C 40 30, 24 44, 24 64 
+           C 24 84, 40 98, 60 98 
+           C 72 98, 83 91, 90 80 
+           C 97 91, 108 98, 120 98 
+           C 134 98, 146 88, 146 72 
+           L 146 18 
+           L 128 18 
+           L 128 68 
+           C 128 78, 120 84, 112 84 
+           C 102 84, 94 76, 94 64 
+           C 94 48, 106 30, 124 30 
+           L 124 30 
+           C 108 30, 94 42, 86 54 
+           C 79 40, 68 30, 60 30 Z"
+        fill="currentColor"
       />
-      {/* Terminal prompt cursor '_' */}
-      <rect
-        x="96"
-        y="56"
-        width="34"
-        height="9"
-        rx="4.5"
-        fill="#9064F7"
+
+      {/* Modern angled terminal cursor '_' */}
+      <path
+        d="M 142 98 L 152 84 L 186 84 L 186 98 Z"
+        fill="#8B5CF6"
       />
     </svg>
   );
