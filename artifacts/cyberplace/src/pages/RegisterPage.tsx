@@ -137,8 +137,8 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center px-4 bg-background pt-24 pb-16">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 mb-4 p-2.5">
-            <img src="/logo.png" alt="cdCTF Logo" className="w-full h-full object-contain" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 mb-4 p-2.5">
+            <img src="/logo-remove-bg.png" alt="cdCTF Logo" className="w-full h-full object-contain scale-110" />
           </div>
           <h1 className="text-xl font-bold">{t("Create account", "Hisob yaratish", "Создать аккаунт")}</h1>
           <p className="text-sm text-muted-foreground mt-1">{t("Join the cdCTF community", "cdCTF jamoasiga qo'shiling", "Присоединяйтесь к cdCTF")}</p>

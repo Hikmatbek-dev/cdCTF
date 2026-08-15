@@ -14,7 +14,7 @@ export function CdCtfLogo({ className = "w-8 h-8", size, useImage = false }: CdC
   if (useImage) {
     return (
       <img
-        src="/logo.png"
+        src="/logo-remove-bg.png"
         alt="cdCTF Logo"
         className={`object-contain ${className}`}
         style={size ? { width: size, height: size } : undefined}

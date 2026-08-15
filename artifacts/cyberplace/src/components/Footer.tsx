@@ -13,7 +13,7 @@ export function Footer() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 mb-10">
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-2.5 mb-3">
-              <img src="/logo.png" alt="cdCTF Logo" className="w-8 h-8 object-contain" />
+              <img src="/logo-remove-bg.png" alt="cdCTF Logo" className="w-10 h-10 object-contain" />
               <div className="text-2xl font-bold tracking-tight">
                 <span className="gradient-text">cd</span><span className="text-foreground/60">CTF</span>
               </div>
