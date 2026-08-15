@@ -88,6 +88,23 @@ export default function ModuleExamPage() {
         setQuestions(res.questions);
         setAnswers({});
         setResult(null);
+
+        if (res.questions.length === 0) {
+          submitExam.mutate(
+            { id, data: { sessionId: res.sessionId, answers: [] } },
+            {
+              onSuccess: submitRes => {
+                setResult(submitRes);
+                setSessionId(null);
+              },
+              onError: err => toast({
+                title: t("Could not submit", "Yuborib bo'lmadi", "Не удалось отправить"),
+                description: errorMessage(err, ""),
+                variant: "destructive",
+              }),
+            }
+          );
+        }
       },
       onError: err => {
         const status = (err as { status?: number })?.status;

@@ -76,8 +76,28 @@ export default function LessonTestPage() {
       {
         onSuccess: (res) => {
           setSessionId(res.sessionId);
-          setQuestions(normalizeArray<TestQuestion>(res.questions, ["questions", "data", "items"]));
+          const qList = normalizeArray<TestQuestion>(res.questions, ["questions", "data", "items"]);
+          setQuestions(qList);
           setAttemptsLeft(res.attemptsLeft);
+          
+          if (qList.length === 0) {
+            submitTest.mutate(
+              { id, data: { sessionId: res.sessionId, answers: [] } },
+              {
+                onSuccess: (submitRes) => {
+                  setResult(submitRes);
+                  void refetchSession();
+                  setLoading(false);
+                },
+                onError: () => {
+                  toast({ title: t("Error submitting test", "Testni yuborishda xatolik", "Ошибка при отправке теста"), variant: "destructive" });
+                  setLoading(false);
+                }
+              }
+            );
+            return;
+          }
+          
           setLoading(false);
         },
         onError: (err: unknown) => {

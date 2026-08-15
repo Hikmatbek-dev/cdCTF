@@ -116,7 +116,7 @@ export default function ChatPage() {
       });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["community_messages"] });
+      void queryClient.invalidateQueries({ queryKey: ["community_messages"] });
     },
   });
 
@@ -127,7 +127,7 @@ export default function ChatPage() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["community_messages"] });
+      void queryClient.invalidateQueries({ queryKey: ["community_messages"] });
     }
   });
 

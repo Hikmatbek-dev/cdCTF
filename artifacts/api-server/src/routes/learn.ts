@@ -182,7 +182,6 @@ async function startLessonTestHandler(req: Request, res: Response) {
   }
 
   const questions = await db.select().from(lessonQuestionsTable).where(eq(lessonQuestionsTable.lessonId, lessonId));
-  if (questions.length === 0) return res.status(400).json({ error: "No questions for this lesson" });
 
   const sessionId = uuidv4();
 
@@ -232,7 +231,6 @@ async function submitLessonTestHandler(req: Request, res: Response) {
   }
 
   const questions = await db.select().from(lessonQuestionsTable).where(eq(lessonQuestionsTable.lessonId, lessonId));
-  if (questions.length === 0) return res.status(400).json({ error: "No questions for this lesson" });
   const questionMap = new Map(questions.map(q => [q.id, q]));
 
   // Collapse the submission to at most one answer per question BEFORE scoring.
@@ -268,7 +266,7 @@ async function submitLessonTestHandler(req: Request, res: Response) {
       if (questionMap.get(questionId)!.correctOption === selectedOption) correct++;
     }
 
-    const score = correct / questions.length;
+    const score = questions.length === 0 ? 1 : correct / questions.length;
     const passed = score >= 0.8;
     let pointsEarned = 0;
 
@@ -642,7 +640,6 @@ router.post("/modules/:id/exam/start", authenticateToken, async (req, res) => {
   const questions = await db.select().from(moduleQuestionsTable)
     .where(eq(moduleQuestionsTable.moduleId, moduleId))
     .orderBy(asc(moduleQuestionsTable.orderIndex));
-  if (questions.length === 0) return res.status(400).json({ error: "Module has no exam yet" });
 
   const sessionId = uuidv4();
   const [existing] = await db.select().from(moduleExamAttemptsTable)
@@ -708,7 +705,6 @@ router.post("/modules/:id/exam/submit", authenticateToken, async (req, res) => {
   if (!mod) return res.status(404).json({ error: "Not found" });
 
   const questions = await db.select().from(moduleQuestionsTable).where(eq(moduleQuestionsTable.moduleId, moduleId));
-  if (questions.length === 0) return res.status(400).json({ error: "Module has no exam" });
   const questionMap = new Map(questions.map(q => [q.id, q]));
 
   // Same rule as the lesson test: collapse to one answer per question before
@@ -733,7 +729,7 @@ router.post("/modules/:id/exam/submit", authenticateToken, async (req, res) => {
     for (const [questionId, selectedOption] of answerByQuestion) {
       if (questionMap.get(questionId)!.correctOption === selectedOption) correct++;
     }
-    const score = Math.round((correct / questions.length) * 100);
+    const score = questions.length === 0 ? 100 : Math.round((correct / questions.length) * 100);
     const passed = score >= mod.passScore;
 
     await tx.update(moduleExamAttemptsTable).set({
