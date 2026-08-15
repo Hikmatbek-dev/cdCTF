@@ -1,6 +1,6 @@
 import { useRoute, Link } from "wouter";
 import { ShieldCheck, Download } from "lucide-react";
-import { ModuleCertificate, CredentialFrame, printCredential } from "@/components/Credentials";
+import { ModuleCertificate, CredentialFrame, downloadCredential } from "@/components/Credentials";
 import { ShareCredential } from "@/components/ShareCredential";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -93,7 +93,7 @@ export default function CertificatePage() {
         </CredentialFrame>
 
         <div className="flex justify-center mt-6">
-          <button onClick={printCredential} className="cyber-button h-11 px-6" data-testid="button-download-certificate">
+          <button onClick={() => downloadCredential(`cdCTF_Certificate_${cert.serial}.pdf`)} className="cyber-button h-11 px-6" data-testid="button-download-certificate">
             <Download className="w-4 h-4" />
             {t("Download PDF", "PDF yuklab olish", "Скачать PDF")}
           </button>

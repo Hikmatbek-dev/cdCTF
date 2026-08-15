@@ -74,12 +74,36 @@ export function CredentialFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+
 /**
- * Hands the sheet to the browser's print dialog, where "Save as PDF" produces
- * a vector A4 landscape file. See the @media print rules in index.css.
+ * Downloads the credential as an A4 PDF instead of opening the print dialog.
  */
-export function printCredential() {
-  window.print();
+export async function downloadCredential(filename: string) {
+  const element = document.querySelector('.credential-print') as HTMLElement;
+  if (!element) return;
+
+  try {
+    const canvas = await html2canvas(element, {
+      scale: 2, // higher resolution
+      useCORS: true,
+      backgroundColor: null
+    });
+    
+    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+    // A4 Landscape is 297 x 210 mm
+    const pdf = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
+    
+    pdf.addImage(imgData, 'JPEG', 0, 0, 297, 210);
+    pdf.save(filename);
+  } catch (error) {
+    console.error("Failed to generate PDF", error);
+  }
 }
 
 /**

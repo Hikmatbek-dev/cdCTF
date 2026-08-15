@@ -1,6 +1,6 @@
 import { useRoute, Link } from "wouter";
 import { ShieldCheck, Download } from "lucide-react";
-import { ProgrammeDiploma, CredentialFrame, printCredential } from "@/components/Credentials";
+import { ProgrammeDiploma, CredentialFrame, downloadCredential } from "@/components/Credentials";
 import { ShareCredential } from "@/components/ShareCredential";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -95,7 +95,7 @@ export default function DiplomaVerifyPage() {
         </CredentialFrame>
 
         <div className="flex justify-center mt-6">
-          <button onClick={printCredential} className="cyber-button h-11 px-6" data-testid="button-download-diploma">
+          <button onClick={() => downloadCredential(`cdCTF_Diploma_${diploma.serial}.pdf`)} className="cyber-button h-11 px-6" data-testid="button-download-diploma">
             <Download className="w-4 h-4" />
             {t("Download PDF", "PDF yuklab olish", "Скачать PDF")}
           </button>
