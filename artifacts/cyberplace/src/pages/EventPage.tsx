@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useRoute } from "wouter";
 import {
   ArrowRight, Award, CalendarClock, Check, Flag, Link2, Linkedin,
-  Radio, Send, ShieldCheck, Trophy, Users,
+  Radio, Send, ShieldCheck, Trophy, Users, Sparkles, Zap
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
@@ -10,19 +10,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { categoryStyle } from "@/lib/category-style";
 import { absoluteUrl, copyText, linkedInShareUrl, telegramShareUrl } from "@/lib/share";
 import { useGetCompetition, getGetCompetitionQueryKey } from "@workspace/api-client-react";
-
-/**
- * The page a sponsor puts on their own channel.
- *
- * /competitions/:id is the participant's console — team panel, scoreboard,
- * challenge list, all of it assuming you already know what cdCTF is. This is
- * the opposite audience: someone who followed a company's Telegram post and has
- * never heard of the platform. So it leads with the sponsor's brand and the
- * prize, states the date in words, and ends by explaining what cdCTF is at all.
- *
- * It is deliberately a short URL (/e/:id) because it gets pasted into posts,
- * printed on slides and read aloud.
- */
+import { FadeIn } from "@/components/PageTransition";
 
 type Competition = {
   id: number; name: string; description: string | null;
@@ -80,19 +68,19 @@ export default function EventPage() {
 
   if (!routeMatches || isLoading) {
     return (
-      <div className="min-h-screen bg-background page">
-        <div className="shell-narrow"><Skeleton className="h-96 w-full rounded-2xl bg-muted" /></div>
+      <div className="min-h-screen bg-background page flex items-center justify-center">
+        <div className="shell-narrow w-full"><Skeleton className="h-[480px] w-full rounded-3xl bg-muted" /></div>
       </div>
     );
   }
 
   if (isError || !c) {
     return (
-      <div className="min-h-screen bg-background page">
+      <div className="min-h-screen bg-background page flex items-center justify-center">
         <div className="shell-narrow text-center py-20">
-          <h1 className="text-2xl font-bold mb-3">{t("Event not found", "Tadbir topilmadi", "Событие не найдено")}</h1>
+          <h1 className="text-3xl font-bold mb-4 gradient-text">{t("Event Not Found", "Tadbir Topilmadi", "Событие Не Найдено")}</h1>
           <Link href="/competitions">
-            <button className="cyber-button-outline h-11 px-6">{t("All events", "Barcha tadbirlar", "Все события")}</button>
+            <button className="cyber-button h-11 px-6 font-bold">{t("Explore All Events", "Barcha Tadbirlar", "Все События")}</button>
           </Link>
         </div>
       </div>
@@ -103,189 +91,200 @@ export default function EventPage() {
   const dateLine = `${new Date(c.startTime).toLocaleString(locale, { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })} — ${new Date(c.endTime).toLocaleString(locale, { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}`;
 
   const statusChip = c.status === "active"
-    ? { icon: Radio, label: t("Live now", "Hozir jonli", "Идёт сейчас"), cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-500" }
+    ? { icon: Radio, label: t("Live Now", "Hozir Jonli", "Идёт сейчас"), cls: "border-emerald-500/50 bg-emerald-500/10 text-emerald-400 shadow-sm shadow-emerald-500/20" }
     : c.status === "upcoming"
-    ? { icon: CalendarClock, label: t("Registration open", "Ro'yxat ochiq", "Регистрация открыта"), cls: "border-primary/40 bg-primary/10 text-primary" }
-    : { icon: Trophy, label: t("Finished", "Yakunlandi", "Завершено"), cls: "border-border bg-muted/30 text-muted-foreground" };
+    ? { icon: CalendarClock, label: t("Registration Open", "Ro'yxat Ochiq", "Регистрация открыта"), cls: "border-primary/50 bg-primary/10 text-primary shadow-sm shadow-primary/20" }
+    : { icon: Trophy, label: t("Completed", "Yakunlandi", "Завершено"), cls: "border-border bg-muted/40 text-muted-foreground" };
 
   const categories = [...new Set(c.challenges.map(ch => ch.category))];
 
   return (
-    <div className="min-h-screen bg-background page">
-      <div className="shell-narrow py-8">
+    <div className="min-h-screen bg-background text-foreground page relative">
+      <div className="fixed inset-0 mono-grid pointer-events-none opacity-40" />
 
-        {/* Sponsor first. This is their poster — if it opens with cdCTF's logo
-            they will not share it. */}
-        {c.sponsorName && (
-          <div className="mb-8 rounded-2xl border border-border bg-card p-6 flex items-center gap-5" data-testid="event-sponsor">
-            {c.sponsorLogoUrl && (
-              <img src={c.sponsorLogoUrl} alt={c.sponsorName} className="h-14 w-auto max-w-[160px] object-contain shrink-0" />
-            )}
-            <div className="min-w-0">
-              <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
-                {t("Presented by", "Homiy", "Организатор")}
-              </div>
-              {c.sponsorUrl ? (
-                <a href={c.sponsorUrl} target="_blank" rel="noopener noreferrer nofollow"
-                   className="text-lg font-bold hover:text-primary transition-colors">{c.sponsorName}</a>
-              ) : (
-                <div className="text-lg font-bold">{c.sponsorName}</div>
+      <div className="shell-narrow relative z-10 py-10">
+        <FadeIn>
+          {/* Sponsor card header */}
+          {c.sponsorName && (
+            <div className="mb-8 rounded-2xl border border-primary/30 bg-card/80 backdrop-blur-md p-6 flex items-center gap-6 shadow-lg shadow-primary/5" data-testid="event-sponsor">
+              {c.sponsorLogoUrl && (
+                <img src={c.sponsorLogoUrl} alt={c.sponsorName} className="h-14 w-auto max-w-[160px] object-contain shrink-0 filter drop-shadow" />
               )}
+              <div className="min-w-0">
+                <div className="eyebrow mb-1 flex items-center gap-1.5 text-xs">
+                  <Sparkles className="w-3 h-3 text-primary" />
+                  {t("Official Organizer & Sponsor", "Rasmiy Homiy", "Организатор")}
+                </div>
+                {c.sponsorUrl ? (
+                  <a href={c.sponsorUrl} target="_blank" rel="noopener noreferrer nofollow"
+                     className="text-xl font-black hover:text-primary transition-colors">{c.sponsorName}</a>
+                ) : (
+                  <div className="text-xl font-black">{c.sponsorName}</div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 mb-6">
+            <div className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-mono font-bold uppercase tracking-wider ${statusChip.cls}`} data-testid="event-status">
+              <statusChip.icon className="w-4 h-4 animate-pulse" /> {statusChip.label}
             </div>
           </div>
-        )}
 
-        <div className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium mb-5 ${statusChip.cls}`} data-testid="event-status">
-          <statusChip.icon className="w-3.5 h-3.5" /> {statusChip.label}
-        </div>
+          <h1 className="text-3xl sm:text-5xl font-display font-black tracking-tight mb-4 leading-tight" data-testid="event-name">
+            <span className="gradient-text">{c.name}</span>
+          </h1>
 
-        <h1 className="mb-4" data-testid="event-name">
-          {c.name}
-        </h1>
+          {c.description && (
+            <p className="text-base text-muted-foreground leading-relaxed mb-6 whitespace-pre-line">{c.description}</p>
+          )}
 
-        {c.description && (
-          <p className="text-muted-foreground leading-relaxed mb-6 whitespace-pre-line">{c.description}</p>
-        )}
+          <div className="text-sm font-mono font-medium text-muted-foreground mb-8 flex items-center gap-2 bg-card/50 border border-border/50 rounded-xl px-4 py-2.5 w-fit">
+            <CalendarClock className="w-4 h-4 text-primary shrink-0" /> {dateLine}
+          </div>
 
-        <div className="text-sm text-muted-foreground mb-8 flex items-center gap-2">
-          <CalendarClock className="w-4 h-4 shrink-0" /> {dateLine}
-        </div>
+          {/* Live countdown */}
+          {countdown && (
+            <div className="glass-card p-6 mb-8 border-primary/30" data-testid="event-countdown">
+              <div className="text-xs font-mono font-bold text-primary uppercase tracking-wider mb-4 flex items-center gap-2">
+                <Zap className="w-4 h-4" />
+                {c.status === "active"
+                  ? t("Event Closes In", "Tadbir Tugashiga Qoldi", "До завершения осталось")
+                  : t("Event Starts In", "Tadbir Boshlanishiga Qoldi", "До старта осталось")}
+              </div>
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  { v: countdown.days, l: t("Days", "Kun", "Дн.") },
+                  { v: countdown.hours, l: t("Hours", "Soat", "Час.") },
+                  { v: countdown.minutes, l: t("Mins", "Daq", "Мин.") },
+                  { v: countdown.seconds, l: t("Secs", "Son", "Сек.") },
+                ].map((u, i) => (
+                  <div key={i} className="rounded-xl border border-primary/20 bg-background/80 py-4 text-center">
+                    <div className="text-3xl sm:text-4xl font-black font-display text-foreground tabular-nums leading-none">{String(u.v).padStart(2, "0")}</div>
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mt-2">{u.l}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-        {/* Countdown — the one element that makes a poster feel urgent. */}
-        {countdown && (
-          <div className="grid grid-cols-4 gap-3 mb-8" data-testid="event-countdown">
+          {/* Prize block */}
+          {c.prize && (
+            <div className="mb-8 rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-card to-card p-6 flex items-start gap-4 shadow-lg shadow-amber-500/5" data-testid="event-prize">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center border border-amber-500/40 shrink-0">
+                <Award className="w-6 h-6 text-amber-400" />
+              </div>
+              <div>
+                <div className="text-xs font-mono uppercase tracking-wider text-amber-400 font-bold mb-1">{t("Grand Prize & Rewards", "Musobaqa Sovrini", "Приз и Награды")}</div>
+                <div className="font-bold text-lg leading-snug whitespace-pre-line">{c.prize}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Event stats */}
+          <div className="grid grid-cols-3 gap-4 mb-8">
             {[
-              { v: countdown.days, l: t("days", "kun", "дн.") },
-              { v: countdown.hours, l: t("hours", "soat", "час.") },
-              { v: countdown.minutes, l: t("min", "daq", "мин") },
-              { v: countdown.seconds, l: t("sec", "son", "сек") },
-            ].map((u, i) => (
-              <div key={i} className="rounded-2xl border border-border bg-card py-4 text-center">
-                <div className="text-3xl font-black tabular-nums leading-none">{String(u.v).padStart(2, "0")}</div>
-                <div className="text-xs uppercase tracking-wide text-muted-foreground mt-1.5">{u.l}</div>
+              { icon: Users, v: c.participantCount, l: t("Registered", "Ro'yxatdan O'tgan", "Участников") },
+              { icon: Flag, v: c.ctfCount, l: t("Challenges", "Topshiriqlar", "Заданий") },
+              { icon: Trophy, v: categories.length, l: t("Categories", "Kategoriyalar", "Категорий") },
+            ].map((s, i) => (
+              <div key={i} className="glass-card p-5 text-center" data-testid={`event-stat-${i}`}>
+                <s.icon className="w-5 h-5 text-primary mx-auto mb-2" />
+                <div className="text-3xl font-black font-display tabular-nums leading-none">{s.v}</div>
+                <div className="text-xs font-mono text-muted-foreground mt-2">{s.l}</div>
               </div>
             ))}
-            <div className="col-span-4 text-center text-xs text-muted-foreground -mt-1">
-              {c.status === "active"
-                ? t("until it closes", "yakunlanishiga", "до завершения")
-                : t("until it starts", "boshlanishiga", "до старта")}
-            </div>
           </div>
-        )}
 
-        {/* Prize — the reason a stranger clicks. */}
-        {c.prize && (
-          <div className="mb-8 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6 flex items-start gap-4" data-testid="event-prize">
-            <Award className="w-6 h-6 text-amber-500 shrink-0" />
-            <div>
-              <div className="text-xs uppercase tracking-wide text-amber-500 font-semibold mb-1">{t("Prize", "Sovrin", "Приз")}</div>
-              <div className="font-semibold leading-snug whitespace-pre-line">{c.prize}</div>
+          {categories.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-8">
+              {categories.map(cat => {
+                const s = categoryStyle(cat);
+                return (
+                  <span key={cat} className={`text-xs font-mono font-bold px-3.5 py-1.5 rounded-lg border ${s.text} ${s.tint} ${s.border}`}>{cat}</span>
+                );
+              })}
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="grid grid-cols-3 gap-3 mb-8">
-          {[
-            { icon: Users, v: c.participantCount, l: t("registered", "ro'yxatdan o'tgan", "зарегистрировано") },
-            { icon: Flag, v: c.ctfCount, l: t("challenges", "topshiriq", "заданий") },
-            { icon: Trophy, v: categories.length, l: t("categories", "kategoriya", "категорий") },
-          ].map((s, i) => (
-            <div key={i} className="rounded-2xl border border-border bg-card/60 p-5 text-center" data-testid={`event-stat-${i}`}>
-              <s.icon className="w-4 h-4 text-primary mx-auto mb-2" />
-              <div className="text-2xl font-bold tabular-nums leading-none">{s.v}</div>
-              <div className="text-xs text-muted-foreground mt-1.5">{s.l}</div>
-            </div>
-          ))}
-        </div>
-
-        {categories.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-8">
-            {categories.map(cat => {
-              const s = categoryStyle(cat);
-              return (
-                <span key={cat} className={`text-xs font-medium px-3 py-1.5 rounded-full border ${s.text} ${s.tint} ${s.border}`}>{cat}</span>
-              );
-            })}
-          </div>
-        )}
-
-        {/* The action. Logged out, the honest first step is an account. */}
-        <div className="flex flex-wrap gap-3 mb-10">
-          {c.status === "ended" ? (
-            <Link href={`/competitions/${c.id}`}>
-              <button className="cyber-button h-13 px-8 py-3.5" data-testid="event-results">
-                {t("See the results", "Natijalarni ko'rish", "Смотреть результаты")} <ArrowRight className="w-4 h-4" />
-              </button>
-            </Link>
-          ) : isAuthenticated ? (
-            <Link href={`/competitions/${c.id}`}>
-              <button className="cyber-button h-13 px-8 py-3.5" data-testid="event-join">
-                {c.isJoined
-                  ? t("Open the event", "Tadbirni ochish", "Открыть событие")
-                  : t("Register for this event", "Bu tadbirga ro'yxatdan o'tish", "Зарегистрироваться")}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </Link>
-          ) : (
-            <>
-              <Link href="/register">
-                <button className="cyber-button h-13 px-8 py-3.5" data-testid="event-register">
-                  {t("Create a free account", "Bepul hisob ochish", "Создать бесплатный аккаунт")} <ArrowRight className="w-4 h-4" />
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-4 mb-10">
+            {c.status === "ended" ? (
+              <Link href={`/competitions/${c.id}`}>
+                <button className="cyber-button h-13 px-8 text-sm font-bold gap-2" data-testid="event-results">
+                  {t("See Scoreboard & Solves", "Natijalarni Ko'rish", "Смотреть результаты")} <ArrowRight className="w-4 h-4" />
                 </button>
               </Link>
-              <Link href="/login">
-                <button className="cyber-button-outline h-13 px-6 py-3.5">{t("I already have one", "Hisobim bor", "У меня есть аккаунт")}</button>
+            ) : isAuthenticated ? (
+              <Link href={`/competitions/${c.id}`}>
+                <button className="cyber-button h-13 px-8 text-sm font-bold gap-2" data-testid="event-join">
+                  {c.isJoined
+                    ? t("Enter Arena Console", "Musobaqani Ochish", "Открыть событие")
+                    : t("Register for Tournament", "Ro'yxatdan O'tish", "Зарегистрироваться")}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </Link>
-            </>
-          )}
-        </div>
+            ) : (
+              <>
+                <Link href="/register">
+                  <button className="cyber-button h-13 px-8 text-sm font-bold gap-2" data-testid="event-register">
+                    {t("Create Account & Join", "Bepul Hisob Ochish", "Создать бесплатный аккаунт")} <ArrowRight className="w-4 h-4" />
+                  </button>
+                </Link>
+                <Link href="/login">
+                  <button className="cyber-button-outline h-13 px-6 text-sm font-bold">{t("Existing User Login", "Hisobga Kirish", "Войти в аккаунт")}</button>
+                </Link>
+              </>
+            )}
+          </div>
 
-        {/* Share row — the whole point of this page existing separately. */}
-        <div className="rounded-2xl border border-border bg-card/60 p-6 mb-10">
-          <h2 className="font-semibold mb-1.5">{t("Spread the word", "Xabarni tarqating", "Расскажите другим")}</h2>
-          <p className="text-sm text-muted-foreground mb-5">
-            {t("This short link is safe to post anywhere — it opens for people who have no account yet.",
-               "Bu qisqa havolani istalgan joyga joylashtirish mumkin — hisobi yo'q odamlarga ham ochiladi.",
-               "Эту короткую ссылку можно публиковать где угодно — она открывается и без аккаунта.")}
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <a href={telegramShareUrl(url, caption)} target="_blank" rel="noopener noreferrer"
-               className="inline-flex items-center gap-2 h-11 px-5 rounded-xl bg-[#229ED9] text-white font-medium text-sm hover:brightness-110 transition"
-               data-testid="event-share-telegram">
-              <Send className="w-4 h-4" /> {t("Telegram", "Telegram", "Telegram")}
-            </a>
-            <a href={linkedInShareUrl(url)} target="_blank" rel="noopener noreferrer"
-               className="inline-flex items-center gap-2 h-11 px-5 rounded-xl bg-[#0A66C2] text-white font-medium text-sm hover:brightness-110 transition"
-               data-testid="event-share-linkedin">
-              <Linkedin className="w-4 h-4" /> LinkedIn
-            </a>
-            <button onClick={doCopy}
-                    className="inline-flex items-center gap-2 h-11 px-5 rounded-xl border border-border bg-background font-medium text-sm hover:border-primary/40 transition"
-                    data-testid="event-share-copy">
-              {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Link2 className="w-4 h-4" />}
-              {copied ? t("Copied", "Nusxalandi", "Скопировано") : url.replace(/^https?:\/\//, "")}
-            </button>
+          {/* Share widget */}
+          <div className="glass-card p-6 mb-10 border-border">
+            <h2 className="font-bold text-base mb-1">{t("Share Event Link", "Havolani Tarqating", "Поделиться Событием")}</h2>
+            <p className="text-xs text-muted-foreground mb-4">
+              {t("Direct share link for social networks and security team chats.",
+                 "Ijtimoiy tarmoqlar va jamoalar uchun tayyor havola.",
+                 "Прямая ссылка для социальных сетей и командных чатов.")}
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <a href={telegramShareUrl(url, caption)} target="_blank" rel="noopener noreferrer"
+                 className="inline-flex items-center gap-2 h-11 px-5 rounded-xl bg-[#229ED9] text-white font-bold text-xs hover:brightness-110 transition shadow-sm"
+                 data-testid="event-share-telegram">
+                <Send className="w-4 h-4" /> {t("Telegram", "Telegram", "Telegram")}
+              </a>
+              <a href={linkedInShareUrl(url)} target="_blank" rel="noopener noreferrer"
+                 className="inline-flex items-center gap-2 h-11 px-5 rounded-xl bg-[#0A66C2] text-white font-bold text-xs hover:brightness-110 transition shadow-sm"
+                 data-testid="event-share-linkedin">
+                <Linkedin className="w-4 h-4" /> LinkedIn
+              </a>
+              <button onClick={doCopy}
+                      className="cyber-button-outline h-11 px-5 text-xs font-mono font-semibold gap-2"
+                      data-testid="event-share-copy">
+                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Link2 className="w-4 h-4" />}
+                {copied ? t("Copied", "Nusxalandi", "Скопировано") : url.replace(/^https?:\/\//, "")}
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* For the stranger who arrived from the sponsor's channel. */}
-        <div className="rounded-2xl border border-border bg-muted/20 p-6" data-testid="event-about">
-          <div className="flex items-center gap-2 mb-2">
-            <ShieldCheck className="w-4 h-4 text-primary" />
-            <h2 className="font-semibold">{t("What is cdCTF?", "cdCTF nima?", "Что такое cdCTF?")}</h2>
+          {/* About cdCTF */}
+          <div className="glass-card p-6 border-border" data-testid="event-about">
+            <div className="flex items-center gap-2 mb-2">
+              <ShieldCheck className="w-5 h-5 text-primary" />
+              <h2 className="font-bold text-base">{t("About cdCTF Cyber Range", "cdCTF Nima?", "О платформе cdCTF")}</h2>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+              {t("National cybersecurity academy and battle ground for Uzbekistan, supporting Uzbek, Russian and English. Solve interactive CTF challenges, gain verified credentials, and accelerate your tech career.",
+                 "O'zbekiston uchun bepul kiberxavfsizlik akademiyasi va CTF platformasi. Topshiriqlarni yeching, sertifikat oling va karyerangizni oshiring.",
+                 "Национальная академия кибербезопасности Узбекистана. Решайте задания, получайте проверяемые сертификаты и развивайтесь.")}
+            </p>
+            <div className="flex flex-wrap gap-4 text-xs font-mono font-semibold">
+              <Link href="/start"><span className="text-primary hover:underline flex items-center gap-1">{t("Start Learning", "O'rganishni Boshlash", "Начать Обучение")} <ArrowRight className="w-3 h-3" /></span></Link>
+              <Link href="/impact"><span className="text-primary hover:underline flex items-center gap-1">{t("Platform Stats", "Statistika", "Статистика")} <ArrowRight className="w-3 h-3" /></span></Link>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-            {t("A free cybersecurity academy and CTF platform built for Uzbekistan, in Uzbek, Russian and English. Learn from the lessons, prove it on the challenges, earn a certificate anyone can verify.",
-               "O'zbekiston uchun qurilgan bepul kiberxavfsizlik akademiyasi va CTF platformasi — o'zbek, rus va ingliz tillarida. Darslardan o'rganing, topshiriqlarda isbotlang, istalgan kishi tekshira oladigan sertifikat oling.",
-               "Бесплатная академия кибербезопасности и CTF-платформа для Узбекистана на трёх языках. Учитесь по урокам, доказывайте на заданиях, получайте проверяемый сертификат.")}
-          </p>
-          <div className="flex flex-wrap gap-3 text-sm">
-            <Link href="/start"><span className="text-primary hover:underline">{t("Start learning", "O'rganishni boshlash", "Начать обучение")}</span></Link>
-            <span className="text-muted-foreground">·</span>
-            <Link href="/impact"><span className="text-primary hover:underline">{t("See the numbers", "Raqamlarni ko'rish", "Смотреть цифры")}</span></Link>
-          </div>
-        </div>
+        </FadeIn>
       </div>
     </div>
   );
 }
+
