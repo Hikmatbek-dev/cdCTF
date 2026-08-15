@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 import { loginWithNext } from "@/lib/next-path";
+import { normalizeArray } from "@/lib/api-shapes";
 import {
   useGetModule, getGetModuleQueryKey,
   useStartModuleExam, useSubmitModuleExam, useIssueCertificate,
@@ -64,21 +65,29 @@ export default function ModuleExamPage() {
   const issueCertificate = useIssueCertificate();
 
   /** Localised text for a question and its options. */
-  const localized = useCallback((q: ExamQuestion) => ({
-    question: t(q.question, q.questionUz ?? undefined, q.questionRu ?? undefined),
-    options: (lang === "uz" && q.optionsUz?.length ? q.optionsUz
-      : lang === "ru" && q.optionsRu?.length ? q.optionsRu
-        : q.options),
-  }), [lang, t]);
+  const localized = useCallback((q: ExamQuestion) => {
+    const rawOpts =
+      lang === "uz" && Array.isArray(q.optionsUz) && q.optionsUz.length > 0
+        ? q.optionsUz
+        : lang === "ru" && Array.isArray(q.optionsRu) && q.optionsRu.length > 0
+          ? q.optionsRu
+          : q.options;
+
+    return {
+      question: t(q.question, q.questionUz ?? undefined, q.questionRu ?? undefined),
+      options: normalizeArray<string>(rawOpts, ["options", "data", "items"]),
+    };
+  }, [lang, t]);
 
   const shuffledQuestions = useMemo(() => questions.map(q => {
     const { question, options } = localized(q);
     const withIndex = options.map((text: string, originalIndex: number) => ({ text, originalIndex }));
-    for (let i = withIndex.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [withIndex[i], withIndex[j]] = [withIndex[j], withIndex[i]];
+    const list = [...withIndex];
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = (q.id * (i + 1) + i) % (i + 1);
+      [list[i], list[j]] = [list[j], list[i]];
     }
-    return { q, question, shuffledOptions: withIndex };
+    return { q, question, shuffledOptions: list };
   }), [questions, localized]);
 
   const handleStart = () => {

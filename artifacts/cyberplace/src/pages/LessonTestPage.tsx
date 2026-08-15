@@ -54,19 +54,28 @@ export default function LessonTestPage() {
   // Extract questions list safely
   const questionList = normalizeArray<TestQuestion>(questions, ["questions", "data", "items"]);
 
-  // Randomly shuffle options while preserving the original index for the backend
+  // Randomly shuffle options once per question set, preserving originalIndex
   const shuffledQuestions = useMemo(() => {
     return questionList.map(q => {
-      const rawOptions = lang === "uz" && q.optionsUz ? q.optionsUz : lang === "ru" && q.optionsRu ? q.optionsRu : q.options;
+      const rawOptions =
+        lang === "uz" && Array.isArray(q.optionsUz) && q.optionsUz.length > 0
+          ? q.optionsUz
+          : lang === "ru" && Array.isArray(q.optionsRu) && q.optionsRu.length > 0
+            ? q.optionsRu
+            : q.options;
+
       const options = normalizeArray<string>(rawOptions, ["options", "data", "items"]);
       const withIndex = options.map((text, originalIndex) => ({ text, originalIndex }));
-      for (let i = withIndex.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [withIndex[i], withIndex[j]] = [withIndex[j], withIndex[i]];
+      
+      // Seeded-style in-place shuffle per question ID to remain stable across renders
+      const list = [...withIndex];
+      for (let i = list.length - 1; i > 0; i--) {
+        const j = (q.id * (i + 1) + i) % (i + 1);
+        [list[i], list[j]] = [list[j], list[i]];
       }
-      return { q, shuffledOptions: withIndex };
+      return { q, shuffledOptions: list };
     });
-  }, [questionList, lang]);
+  }, [questions, lang]);
 
   // Start test on mount
   useEffect(() => {
