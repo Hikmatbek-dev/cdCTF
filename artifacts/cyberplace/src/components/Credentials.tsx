@@ -74,7 +74,7 @@ export function CredentialFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
-import html2canvas from 'html2canvas';
+import { toJpeg } from 'html-to-image';
 import jsPDF from 'jspdf';
 
 /**
@@ -85,13 +85,9 @@ export async function downloadCredential(filename: string) {
   if (!element) return;
 
   try {
-    const canvas = await html2canvas(element, {
-      scale: 2, // higher resolution
-      useCORS: true,
-      backgroundColor: null
-    });
+    // Generate JPEG via html-to-image (handles modern CSS like oklab)
+    const imgData = await toJpeg(element, { quality: 1.0, pixelRatio: 2 });
     
-    const imgData = canvas.toDataURL('image/jpeg', 1.0);
     // A4 Landscape is 297 x 210 mm
     const pdf = new jsPDF({
       orientation: 'landscape',
