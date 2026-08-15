@@ -176,8 +176,11 @@ export function ModuleCertificate({ d, l }: { d: CredentialData; l: CredentialLa
 
       <div className="relative h-full flex flex-col px-[9%] py-[7%]">
         <div className="flex items-baseline justify-between">
-          <div className="font-bold text-[1.5cqw] tracking-tight">
-            <span style={{ color: "#9064F7" }}>cd</span><span className="opacity-45">CTF</span>
+          <div className="flex items-center gap-[0.8cqw]">
+            <img src="/logo.png" alt="cdCTF Logo" className="h-[2.2cqw] object-contain" />
+            <div className="font-bold text-[1.5cqw] tracking-tight">
+              <span style={{ color: "#9064F7" }}>cd</span><span className="opacity-45">CTF</span>
+            </div>
           </div>
           <div className="font-mono text-[0.95cqw] tracking-[0.4em] uppercase opacity-55">{l.title}</div>
         </div>

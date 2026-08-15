@@ -155,8 +155,8 @@ export default function LoginPage() {
       <div className="w-full max-w-md relative z-10">
         <ScaleIn>
           <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl bg-primary/10 border border-border mb-8 animate-float shadow-2xl ">
-              <Shield className="w-10 h-10 text-primary" />
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 mb-8 animate-float shadow-2xl p-3">
+              <img src="/logo.png" alt="cdCTF Logo" className="w-full h-full object-contain" />
             </div>
             <h1 className="mb-2">{t("Sign in", "Kirish", "Вход")}</h1>
             <p className="text-sm text-muted-foreground">{t("Welcome back to cdCTF.", "cdCTF'ga xush kelibsiz.", "С возвращением в cdCTF.")}</p>
