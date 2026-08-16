@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRoute, useLocation, Link } from "wouter";
 import {
   BookOpen, CheckCircle2, Lock, ChevronRight, ChevronLeft, ChevronDown, Copy, Check,
-  ArrowRight, GraduationCap, ListChecks, Flag,
+  ArrowRight, GraduationCap, ListChecks, Flag, Bookmark, BookmarkCheck, PenLine
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,6 +11,7 @@ import { useLang } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
 import { loginWithNext } from "@/lib/next-path";
 import { Markdown } from "@/components/Markdown";
+import { Textarea } from "@/components/ui/textarea";
 import {
   useGetLesson, getGetLessonQueryKey,
   useGetModule, getGetModuleQueryKey,
@@ -29,6 +30,9 @@ export default function LessonDetailPage() {
   const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [readProgress, setReadProgress] = useState(0);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [notes, setNotes] = useState("");
+  const [showNotes, setShowNotes] = useState(false);
 
   const { data: lesson, isLoading, isError, error, refetch } = useGetLesson(id, {
     query: { enabled: !!id, queryKey: getGetLessonQueryKey(id) },
@@ -61,6 +65,43 @@ export default function LessonDetailPage() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [id]);
+
+  // Load Bookmarks & Notes from localStorage
+  useEffect(() => {
+    const savedBookmark = localStorage.getItem(`bookmark_lesson_${id}`);
+    setIsBookmarked(savedBookmark === "true");
+    const savedNotes = localStorage.getItem(`notes_lesson_${id}`);
+    if (savedNotes) setNotes(savedNotes);
+  }, [id]);
+
+  const toggleBookmark = () => {
+    const newVal = !isBookmarked;
+    setIsBookmarked(newVal);
+    localStorage.setItem(`bookmark_lesson_${id}`, newVal.toString());
+  };
+
+  const saveNotes = (val: string) => {
+    setNotes(val);
+    localStorage.setItem(`notes_lesson_${id}`, val);
+  };
+
+  // Keyboard Hotkeys: Alt+Left, Alt+Right, Space/Enter
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in notes
+      if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return;
+
+      if (e.altKey && e.key === "ArrowLeft" && prev) {
+        e.preventDefault();
+        setLocation(`/learn/${prev.id}`);
+      } else if (e.altKey && e.key === "ArrowRight" && next) {
+        e.preventDefault();
+        setLocation(`/learn/${next.id}`);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [prev, next, setLocation]);
 
   // Jump to top when moving between lessons.
   useEffect(() => { window.scrollTo({ top: 0 }); }, [id]);
@@ -203,18 +244,62 @@ export default function LessonDetailPage() {
             </div>
 
             {/* Header */}
-            <div className="flex items-center gap-2 mb-3">
-              <span className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 rounded-full px-2.5 py-1">
-                <BookOpen className="w-3 h-3" /> {lesson.points} {t("points", "ball", "очки")}
-              </span>
-              {lesson.isCompleted && (
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-primary"><CheckCircle2 className="w-3.5 h-3.5" /> {t("Completed", "Tugatilgan", "Завершено")}</span>
-              )}
-              {lesson.isBlocked && (
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-destructive"><Lock className="w-3.5 h-3.5" /> {t("Blocked", "Bloklangan", "Заблокировано")}</span>
-              )}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 rounded-full px-2.5 py-1">
+                  <BookOpen className="w-3 h-3" /> {lesson.points} {t("points", "ball", "очки")}
+                </span>
+                {lesson.isCompleted && (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-primary"><CheckCircle2 className="w-3.5 h-3.5" /> {t("Completed", "Tugatilgan", "Завершено")}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowNotes(!showNotes)} className={`p-2 rounded-lg transition-colors border ${showNotes ? "bg-primary/20 border-primary/50 text-primary" : "bg-muted/50 border-border text-muted-foreground hover:bg-muted"}`} title="Personal Notes">
+                  <PenLine className="w-4 h-4" />
+                </button>
+                <button onClick={toggleBookmark} className={`p-2 rounded-lg transition-colors border ${isBookmarked ? "bg-yellow-500/20 border-yellow-500/50 text-yellow-500" : "bg-muted/50 border-border text-muted-foreground hover:bg-muted"}`} title="Bookmark Lesson">
+                  {isBookmarked ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
-            <h1 className="mb-8" data-testid="text-lesson-title">{localizedTitle}</h1>
+            
+            {showNotes && (
+              <div className="mb-6 animate-in slide-in-from-top-2 fade-in duration-200">
+                <div className="glass-card !p-4 border-primary/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold flex items-center gap-2 text-primary">
+                      <PenLine className="w-4 h-4" /> {t("Personal Notes", "Shaxsiy qaydlar", "Личные заметки")}
+                    </span>
+                  </div>
+                  <Textarea 
+                    value={notes}
+                    onChange={(e) => saveNotes(e.target.value)}
+                    placeholder={t("Jot down your notes here... They are saved automatically.", "Qaydlaringizni shu yerga yozing... Ular avtomatik saqlanadi.", "Запишите свои заметки здесь... Они сохраняются автоматически.")}
+                    className="min-h-[100px] bg-background/50 border-primary/20 focus-visible:ring-primary/30"
+                  />
+                </div>
+              </div>
+            )}
+            
+            <header className="mb-8 relative overflow-hidden rounded-2xl p-6 border border-border bg-card/30">
+              <div
+                className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-overlay"
+                style={{ 
+                  backgroundImage: `url(https://images.unsplash.com/photo-${[
+                    "1526374965328-7f61d4dc18c5", "1550751827-4bd374c3f58b", 
+                    "1518770660439-4636190af475", "1558494949-ef010cbdcc31", 
+                    "1451187580459-43490279c0fa", "1563206767-5b18f218e8de"
+                  ][lesson.id % 6]}?w=1200&q=80)` 
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+              
+              <div className="relative z-10">
+                <h1 className="text-3xl sm:text-4xl font-black drop-shadow-md" data-testid="text-lesson-title">
+                  {localizedTitle}
+                </h1>
+              </div>
+            </header>
 
             {/* Content, as numbered tasks. The lesson is split at its own `##`
                 headings so its shape is visible before you start and your
@@ -228,15 +313,7 @@ export default function LessonDetailPage() {
 
             {/* Test CTA */}
             <div className="mt-10">
-              {lesson.isBlocked ? (
-                <div className="glass-card flex items-center gap-3 border-destructive/30">
-                  <Lock className="w-5 h-5 text-destructive shrink-0" />
-                  <div>
-                    <p className="font-medium text-destructive text-sm">{t("This lesson is blocked", "Bu dars bloklangan", "Этот урок заблокирован")}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{t("Contact admin to unblock.", "Blokni ochish uchun adminga murojaat qiling.", "Обратитесь к администратору.")}</p>
-                  </div>
-                </div>
-              ) : lesson.isCompleted ? (
+              {lesson.isCompleted ? (
                 <div className="glass-card flex items-center justify-between gap-4 border-primary/30">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center neon-glow shrink-0">
@@ -353,22 +430,28 @@ export default function LessonDetailPage() {
             {(prev || next || mod) && (
               <div className="grid sm:grid-cols-2 gap-3 mt-6">
                 {prev ? (
-                  <Link href={`/learn/${prev.id}`} className="group glass-card !p-4 flex items-center gap-3 hover:border-primary/40">
+                  <Link href={`/learn/${prev.id}`} className="group glass-card !p-4 flex items-center gap-3 hover:border-primary/40 relative overflow-hidden">
                     <ChevronLeft className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                     <div className="min-w-0">
                       <div className="text-xs uppercase tracking-wider text-muted-foreground">{t("Previous", "Oldingi", "Назад")}</div>
                       <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">{t(prev.title, prev.titleUz ?? undefined, prev.titleRu ?? undefined)}</div>
                     </div>
+                    <div className="absolute bottom-1 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <kbd className="px-1.5 py-0.5 text-[10px] bg-muted rounded border border-border text-muted-foreground">Alt + ←</kbd>
+                    </div>
                   </Link>
                 ) : <div className="hidden sm:block" />}
 
                 {next ? (
-                  <Link href={`/learn/${next.id}`} className="group glass-card !p-4 flex items-center gap-3 text-right hover:border-primary/40 sm:justify-end">
+                  <Link href={`/learn/${next.id}`} className="group glass-card !p-4 flex items-center gap-3 text-right hover:border-primary/40 sm:justify-end relative overflow-hidden">
                     <div className="min-w-0 order-1 sm:order-none">
                       <div className="text-xs uppercase tracking-wider text-muted-foreground">{t("Next", "Keyingi", "Далее")}</div>
                       <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">{t(next.title, next.titleUz ?? undefined, next.titleRu ?? undefined)}</div>
                     </div>
                     <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0 order-2" />
+                    <div className="absolute bottom-1 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <kbd className="px-1.5 py-0.5 text-[10px] bg-muted rounded border border-border text-muted-foreground">Alt + →</kbd>
+                    </div>
                   </Link>
                 ) : mod ? (
                   <Link href={`/modules/${mod.id}`} className="group glass-card !p-4 flex items-center gap-3 hover:border-primary/40 sm:justify-end border-primary/25">

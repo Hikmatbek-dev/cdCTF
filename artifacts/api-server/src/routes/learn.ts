@@ -108,7 +108,7 @@ router.get("/lessons", optionalAuth, async (req, res) => {
       return {
         ...l, categoryName: l.categoryName ?? "General",
         isCompleted: attempt?.status === "completed",
-        isBlocked: attempt?.blocked ?? false,
+        isBlocked: false,
         attemptCount: attempt?.attemptCount ?? 0,
       };
     });
@@ -146,7 +146,7 @@ router.get("/lessons/:id", optionalAuth, async (req, res) => {
   res.json({
     ...lesson, categoryName: lesson.categoryName ?? "General",
     isCompleted: userAttempt?.status === "completed",
-    isBlocked: userAttempt?.blocked ?? false,
+    isBlocked: false,
     attemptCount: userAttempt?.attemptCount ?? 0,
   });
 });
@@ -187,14 +187,14 @@ async function startLessonTestHandler(req: Request, res: Response) {
 
   if (!attempt) {
     await db.insert(userLessonAttemptsTable).values({
-      userId, lessonId, status: "in_progress", attemptCount: 1, testSessionId: sessionId, testStartedAt: now, updatedAt: now,
+      userId, lessonId, status: "in_progress", attemptCount: 1, testSessionId: sessionId, testStartedAt: now, updatedAt: now, blocked: false
     });
   } else {
     await db.update(userLessonAttemptsTable).set({
       // `testStartedAt` restarts the window only when the previous one has
       // expired; inside a window it keeps marking the latest attempt, which is
       // what the retry time above is measured from.
-      status: "in_progress", attemptCount: used + 1, testSessionId: sessionId, testStartedAt: windowOpen ? attempt.testStartedAt! : now, updatedAt: now,
+      status: "in_progress", attemptCount: used + 1, testSessionId: sessionId, testStartedAt: windowOpen ? attempt.testStartedAt! : now, updatedAt: now, blocked: false
     }).where(eq(userLessonAttemptsTable.id, attempt.id));
   }
 

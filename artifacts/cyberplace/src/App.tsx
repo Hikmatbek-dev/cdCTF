@@ -24,6 +24,8 @@ const LessonTestPage = lazyWithRetry(() => import("@/pages/LessonTestPage"));
 const ModulesPage = lazyWithRetry(() => import("@/pages/ModulesPage"));
 const ModuleDetailPage = lazyWithRetry(() => import("@/pages/ModuleDetailPage"));
 const ModuleExamPage = lazyWithRetry(() => import("@/pages/ModuleExamPage"));
+const PathExamPage = lazyWithRetry(() => import("@/pages/PathExamPage"));
+const PathCertificatePage = lazyWithRetry(() => import("@/pages/PathCertificatePage"));
 const CertificatePage = lazyWithRetry(() => import("@/pages/CertificatePage"));
 const DiplomaPage = lazyWithRetry(() => import("@/pages/DiplomaPage"));
 const DiplomaVerifyPage = lazyWithRetry(() => import("@/pages/DiplomaVerifyPage"));
@@ -213,6 +215,12 @@ function Router() {
           </Route>
           <Route path="/learn">
             {() => <PageTransition><LearnPage /></PageTransition>}
+          </Route>
+          <Route path="/path-exam/:pathId">
+            {() => <PageTransition><ProtectedRoute component={PathExamPage} /></PageTransition>}
+          </Route>
+          <Route path="/path-certificate/:pathId">
+            {() => <PageTransition><ProtectedRoute component={PathCertificatePage} /></PageTransition>}
           </Route>
           <Route path="/learn/:id/test">
             <PageTransition><LessonTestPage /></PageTransition>

@@ -207,172 +207,230 @@ export default function ModuleExamPage() {
   const score = result?.score ?? mod.exam.bestScore;
 
   return (
-    <div className="min-h-screen bg-background text-foreground page">
-      <div className="shell-narrow">
+    <div className="min-h-screen bg-background text-foreground page relative">
+      {/* Background ambient glow */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px] opacity-50 mix-blend-screen" />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-sky-500/10 rounded-full blur-[120px] opacity-40 mix-blend-screen" />
+      </div>
+
+      <div className="shell-narrow relative z-10 py-12">
         <Link href={`/modules/${id}`}>
-          <button className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors">
-            <ArrowLeft className="w-4 h-4" />
+          <button className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary mb-10 transition-all hover:-translate-x-1 group">
+            <div className="p-1.5 rounded-lg bg-muted group-hover:bg-primary/10 transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+            </div>
             {title}
           </button>
         </Link>
 
         {/* Step 3 — the certificate name. */}
         {showNameForm ? (
-          <section className="border border-border rounded-xl p-6 bg-card" data-testid="section-certificate-name">
-            <div className="flex items-center gap-3 mb-4">
-              <Award className="w-6 h-6 text-primary" />
-              <h1 className="text-2xl font-semibold tracking-tight">
-                {t("You passed", "Siz o'tdingiz", "Вы сдали")}
-              </h1>
+          <section className="glass-card rounded-3xl p-8 sm:p-12 text-center animate-in zoom-in-95 fade-in duration-700 shadow-2xl border-primary/20" data-testid="section-certificate-name">
+            <div className="w-20 h-20 mx-auto bg-emerald-500/10 rounded-full flex items-center justify-center mb-6 ring-4 ring-emerald-500/20">
+              <Award className="w-10 h-10 text-emerald-500" />
             </div>
-            <p className="text-sm text-muted-foreground mb-6">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 bg-gradient-to-r from-emerald-400 to-emerald-600 bg-clip-text text-transparent">
+              {t("Exam Passed!", "Imtihondan o'tdingiz!", "Экзамен Сдан!")}
+            </h1>
+            <p className="text-base text-muted-foreground mb-8 max-w-lg mx-auto">
               {t(
-                `Your score is ${score}%. Enter your name exactly as it appears on your passport — it will be printed on the certificate and cannot be changed casually later.`,
-                `Ballingiz ${score}%. Ismingizni pasportdagidek kiriting — u sertifikatga chop etiladi va keyin osongina o'zgartirilmaydi.`,
-                `Ваш балл ${score}%. Введите имя точно как в паспорте — оно будет напечатано на сертификате.`,
+                `Outstanding! Your score is ${score}%. Enter your name exactly as it appears on your passport — it will be permanently engraved on your verifiable certificate.`,
+                `Qoyilmaqom! Ballingiz ${score}%. Ismingizni pasportdagidek kiriting — u tekshiriladigan sertifikatingizga abadiy muhrlanadi.`,
+                `Отлично! Ваш балл ${score}%. Введите имя точно как в паспорте — оно будет навсегда закреплено на вашем сертификате.`,
               )}
             </p>
 
-            <div className="space-y-2 mb-6">
-              <Label htmlFor="fullName">
+            <div className="max-w-md mx-auto space-y-4 mb-8 text-left">
+              <Label htmlFor="fullName" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">
                 {t("Full name (as on passport)", "To'liq ism (pasportdagidek)", "Полное имя (как в паспорте)")}
               </Label>
               <Input
                 id="fullName"
                 value={fullName}
                 onChange={e => setFullName(e.target.value)}
-                placeholder={t("Aziz Karimov", "Aziz Karimov", "Азиз Каримов")}
+                placeholder={t("e.g. Aziz Karimov", "masalan, Aziz Karimov", "напр. Азиз Каримов")}
+                className="h-14 text-lg bg-background/50 border-primary/30 focus-visible:ring-primary/50 rounded-xl"
                 data-testid="input-full-name"
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground/80 ml-1">
                 {t(
-                  "Letters, spaces, hyphens and apostrophes only — not a nickname.",
-                  "Faqat harflar, bo'shliq, defis va apostrof — taxallus emas.",
-                  "Только буквы, пробелы, дефисы и апострофы — не никнейм.",
+                  "Letters, spaces, hyphens and apostrophes only — no nicknames allowed.",
+                  "Faqat harflar, bo'shliq, defis va apostrof — taxallus yozish mumkin emas.",
+                  "Только буквы, пробелы, дефисы и апострофы — без никнеймов.",
                 )}
               </p>
             </div>
 
-            <Button
+            <button
               onClick={handleIssue}
               disabled={fullName.trim().length < 3 || issueCertificate.isPending}
+              className="cyber-button h-14 px-8 w-full max-w-md text-lg disabled:opacity-50 transition-all shadow-primary/20 shadow-xl"
               data-testid="button-issue-certificate"
             >
-              {issueCertificate.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {t("Issue certificate", "Sertifikatni olish", "Получить сертификат")}
-            </Button>
+              {issueCertificate.isPending && <Loader2 className="w-5 h-5 mr-3 animate-spin" />}
+              {t("Claim Certificate", "Sertifikatni Olish", "Получить сертификат")}
+            </button>
           </section>
 
         /* Step 2b — a failing result. */
         ) : result ? (
-          <section className="border border-border rounded-xl p-6 bg-card text-center" data-testid="section-exam-result">
-            <XCircle className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
-            <h1 className="text-2xl font-semibold tracking-tight mb-2">
-              {t("Not this time", "Bu safar bo'lmadi", "В этот раз не вышло")}
+          <section className="glass-card rounded-3xl p-8 sm:p-12 text-center animate-in zoom-in-95 fade-in duration-500 border-rose-500/20" data-testid="section-exam-result">
+            <div className="w-20 h-20 mx-auto bg-rose-500/10 rounded-full flex items-center justify-center mb-6 ring-4 ring-rose-500/20">
+              <XCircle className="w-10 h-10 text-rose-500" />
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 text-foreground">
+              {t("Mission Failed", "Missiya Muvaffaqiyatsiz", "Миссия Провалена")}
             </h1>
-            <p className="text-sm text-muted-foreground mb-6">
+            <p className="text-base text-muted-foreground mb-8 max-w-lg mx-auto">
               {t(
-                `You scored ${result.score}% (${result.correct}/${result.total}). You need ${result.passScore}%.`,
-                `Ballingiz ${result.score}% (${result.correct}/${result.total}). Kerak: ${result.passScore}%.`,
-                `Ваш балл ${result.score}% (${result.correct}/${result.total}). Нужно ${result.passScore}%.`,
+                `You scored ${result.score}% (${result.correct}/${result.total}). You need at least ${result.passScore}% to claim the certificate. Review the module and try again.`,
+                `Ballingiz ${result.score}% (${result.correct}/${result.total}). Sertifikat olish uchun kamida ${result.passScore}% kerak. Modulni takrorlang va qayta urinib ko'ring.`,
+                `Ваш балл ${result.score}% (${result.correct}/${result.total}). Для получения сертификата нужно минимум ${result.passScore}%. Повторите модуль и попробуйте снова.`,
               )}
             </p>
-            <Button onClick={handleStart} disabled={startExam.isPending} data-testid="button-retake">
-              {startExam.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {t("Try again", "Qayta urinish", "Попробовать снова")}
-            </Button>
+            <button onClick={handleStart} disabled={startExam.isPending} className="cyber-button-outline h-14 px-10 text-lg mx-auto" data-testid="button-retake">
+              {startExam.isPending && <Loader2 className="w-5 h-5 mr-3 animate-spin" />}
+              {t("Retake Exam", "Qayta Topshirish", "Пересдать Экзамен")}
+            </button>
           </section>
 
         /* Step 2a — the questions. */
         ) : sessionId ? (
-          <section data-testid="section-exam-questions">
-            <div className="flex items-center justify-between mb-2">
-              <h1 className="text-lg font-semibold">{t("Final exam", "Yakuniy imtihon", "Итоговый экзамен")}</h1>
-              <span className="text-sm text-muted-foreground tabular-nums">
-                {Object.keys(answers).length}/{questions.length}
-              </span>
+          <section data-testid="section-exam-questions" className="animate-in fade-in slide-in-from-bottom-8 duration-700">
+            <div className="glass-card rounded-2xl p-6 mb-8 sticky top-4 z-20 shadow-xl border-primary/20 backdrop-blur-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-sky-400 bg-clip-text text-transparent flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  {t("Active Exam Session", "Faol Imtihon Sessiyasi", "Активная Экзаменационная Сессия")}
+                </h1>
+                <div className="px-3 py-1 rounded-full bg-muted border border-border text-sm font-mono font-bold">
+                  {Object.keys(answers).length} / {questions.length}
+                </div>
+              </div>
+              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary transition-all duration-500 ease-out relative"
+                  style={{ width: `${questions.length > 0 ? (Object.keys(answers).length / questions.length) * 100 : 0}%` }}
+                >
+                  <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                </div>
+              </div>
             </div>
-            <Progress
-              value={questions.length > 0 ? (Object.keys(answers).length / questions.length) * 100 : 0}
-              className="h-1.5 mb-8"
-            />
 
             <div className="space-y-6">
               {shuffledQuestions.map(({ q, question, shuffledOptions }, qi) => {
+                const isAnswered = answers[q.id] !== undefined;
                 return (
-                  <div key={q.id} className="border border-border rounded-xl p-5 bg-card">
-                    <p className="font-medium mb-4">
-                      <span className="text-muted-foreground mr-2 tabular-nums">{qi + 1}.</span>
+                  <div key={q.id} className={`glass-card rounded-3xl p-6 sm:p-8 transition-all duration-500 ${isAnswered ? 'border-primary/30 shadow-lg shadow-primary/5' : 'border-border'}`}>
+                    <h3 className="text-lg sm:text-xl font-medium mb-6 leading-relaxed">
+                      <span className="text-primary font-black mr-3 tabular-nums text-2xl">{qi + 1}.</span>
                       {question}
-                    </p>
-                    <div className="space-y-2">
-                      {shuffledOptions.map((option: { text: string; originalIndex: number }, displayIndex: number) => (
-                        <button
-                          key={displayIndex}
-                          onClick={() => setAnswers(a => ({ ...a, [q.id]: option.originalIndex }))}
-                          className={`w-full text-left px-4 py-3 rounded-lg border text-sm transition-colors ${
-                            answers[q.id] === option.originalIndex
-                              ? "border-primary bg-primary/5 text-foreground"
-                              : "border-border hover:bg-muted/50 text-muted-foreground"
-                          }`}
-                          data-testid={`option-${q.id}-${displayIndex}`}
-                        >
-                          {option.text}
-                        </button>
-                      ))}
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {shuffledOptions.map((option: { text: string; originalIndex: number }, displayIndex: number) => {
+                        const isSelected = answers[q.id] === option.originalIndex;
+                        return (
+                          <button
+                            key={displayIndex}
+                            onClick={() => setAnswers(a => ({ ...a, [q.id]: option.originalIndex }))}
+                            className={`w-full text-left px-5 py-4 rounded-xl border transition-all duration-300 relative overflow-hidden group ${
+                              isSelected
+                                ? "border-primary bg-primary/10 text-foreground shadow-[0_0_15px_rgba(59,70,207,0.15)] scale-[1.02]"
+                                : "border-border bg-card/40 hover:bg-card hover:border-primary/40 hover:shadow-md text-muted-foreground hover:text-foreground"
+                            }`}
+                            data-testid={`option-${q.id}-${displayIndex}`}
+                          >
+                            {isSelected && <div className="absolute inset-0 bg-primary/5 animate-pulse" />}
+                            <div className="flex items-start gap-3 relative z-10">
+                              <div className={`w-5 h-5 rounded-full border flex-shrink-0 mt-0.5 flex items-center justify-center transition-colors ${
+                                isSelected ? "border-primary bg-primary" : "border-muted-foreground/40 group-hover:border-primary/50"
+                              }`}>
+                                {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                              </div>
+                              <span className="text-sm font-medium leading-tight pt-0.5">{option.text}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            <Button
-              onClick={handleSubmit}
-              disabled={Object.keys(answers).length < questions.length || submitExam.isPending}
-              className="w-full mt-8"
-              data-testid="button-submit-exam"
-            >
-              {submitExam.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {t("Submit exam", "Imtihonni yakunlash", "Завершить экзамен")}
-            </Button>
+            <div className="mt-12 flex justify-end">
+              <button
+                onClick={handleSubmit}
+                disabled={Object.keys(answers).length < questions.length || submitExam.isPending}
+                className="cyber-button h-14 px-10 text-lg w-full sm:w-auto min-w-[200px]"
+                data-testid="button-submit-exam"
+              >
+                {submitExam.isPending ? (
+                  <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-5 h-5 mr-2" />
+                )}
+                {t("Submit Exam", "Imtihonni Yakunlash", "Завершить Экзамен")}
+              </button>
+            </div>
           </section>
 
         /* Step 1 — the intro. */
         ) : (
-          <section className="border border-border rounded-xl p-6 bg-card" data-testid="section-exam-intro">
-            <h1 className="text-2xl font-semibold tracking-tight mb-3">
-              {t("Final exam", "Yakuniy imtihon", "Итоговый экзамен")}
-            </h1>
-            <p className="text-sm text-muted-foreground mb-6">
-              {t(
-                `${mod.examQuestionCount} questions covering the whole module. You need ${mod.passScore}% for a certificate, and you can retake it — your best score is kept.`,
-                `Butun modulni qamrab oluvchi ${mod.examQuestionCount} ta savol. Sertifikat uchun ${mod.passScore}% kerak, qayta topshirish mumkin — eng yaxshi ball saqlanadi.`,
-                `${mod.examQuestionCount} вопросов по всему модулю. Для сертификата нужно ${mod.passScore}%, пересдать можно — сохраняется лучший балл.`,
-              )}
-            </p>
-
-            {mod.exam.attemptCount > 0 && (
-              <p className="text-sm mb-6 inline-flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-primary" />
-                {t("Best score:", "Eng yaxshi ball:", "Лучший балл:")}{" "}
-                <span className="font-semibold tabular-nums">{mod.exam.bestScore}%</span>
-              </p>
-            )}
-
-            {mod.examUnlocked ? (
-              <Button onClick={handleStart} disabled={startExam.isPending} data-testid="button-begin-exam">
-                {startExam.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {t("Begin", "Boshlash", "Начать")}
-              </Button>
-            ) : (
-              <p className="text-sm text-muted-foreground">
+          <section className="glass-card rounded-3xl overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700" data-testid="section-exam-intro">
+            <div className="h-32 bg-gradient-to-br from-primary/20 to-sky-500/20 relative">
+              <div className="absolute -bottom-10 left-8 w-20 h-20 bg-card rounded-2xl border-2 border-primary/20 shadow-xl flex items-center justify-center rotate-3">
+                <Award className="w-10 h-10 text-primary" />
+              </div>
+            </div>
+            
+            <div className="pt-16 pb-8 px-8 sm:px-12">
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 text-foreground">
+                {t("Final Certification Exam", "Yakuniy Sertifikat Imtihoni", "Финальный Сертификационный Экзамен")}
+              </h1>
+              <p className="text-base sm:text-lg text-muted-foreground mb-8 leading-relaxed max-w-2xl">
                 {t(
-                  "Finish every lesson in this module first.",
-                  "Avval ushbu moduldagi barcha darslarni tugating.",
-                  "Сначала пройдите все уроки этого модуля.",
+                  `This assessment contains ${mod.examQuestionCount} questions covering the entire module. You must achieve a score of ${mod.passScore}% to earn the official certificate. You can retake the exam if needed — your highest score will be recorded.`,
+                  `Ushbu yakuniy sinov modulning barcha mavzularini qamrab oluvchi ${mod.examQuestionCount} ta savoldan iborat. Rasmiy sertifikatni qo'lga kiritish uchun kamida ${mod.passScore}% to'plashingiz zarur. Imtihonni qayta topshirish mumkin — eng yuqori ballingiz saqlanadi.`,
+                  `Этот тест содержит ${mod.examQuestionCount} вопросов по всему модулю. Для получения официального сертификата необходимо набрать минимум ${mod.passScore}%. Вы можете пересдать экзамен — сохранится ваш лучший результат.`,
                 )}
               </p>
-            )}
+
+              {mod.exam.attemptCount > 0 && (
+                <div className="inline-flex items-center gap-4 bg-muted/50 border border-border rounded-2xl px-5 py-3 mb-10">
+                  <div className="p-2 bg-primary/10 rounded-full">
+                    <CheckCircle2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {t("Your Best Score", "Sizning Eng Yaxshi Natijangiz", "Ваш Лучший Результат")}
+                    </div>
+                    <div className="text-xl font-black tabular-nums">{mod.exam.bestScore}%</div>
+                  </div>
+                </div>
+              )}
+
+              <div className="border-t border-border pt-8 flex items-center gap-4">
+                {mod.examUnlocked ? (
+                  <button onClick={handleStart} disabled={startExam.isPending} className="cyber-button h-14 px-10 text-lg shadow-primary/20" data-testid="button-begin-exam">
+                    {startExam.isPending && <Loader2 className="w-5 h-5 mr-3 animate-spin" />}
+                    {t("Start Exam Now", "Imtihonni Hozir Boshlash", "Начать Экзамен Сейчас")}
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-3 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-xl px-5 py-4 w-full sm:w-auto">
+                    <XCircle className="w-5 h-5 shrink-0" />
+                    <span className="font-medium">
+                      {t(
+                        "You must complete every lesson in this module before taking the final exam.",
+                        "Yakuniy imtihonni topshirishdan oldin ushbu moduldagi barcha darslarni to'liq tugatishingiz shart.",
+                        "Перед сдачей финального экзамена вы должны пройти все уроки в этом модуле.",
+                      )}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
           </section>
         )}
       </div>

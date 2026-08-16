@@ -51,17 +51,30 @@ export default function PathDetailPage() {
         </Link>
 
         {/* Hero */}
-        <div className="rounded-3xl p-8 mb-8 text-white relative overflow-hidden" style={{ background: `linear-gradient(135deg, hsl(${path.hue} 70% 45%), hsl(${(path.hue + 40) % 360} 70% 32%))` }}>
-          <RouteIcon className="w-10 h-10 mb-4 opacity-90" />
-          {path.badge && <span className="absolute top-6 right-6 text-[10px] font-bold uppercase tracking-wider bg-white/90 text-black px-2 py-0.5 rounded">{path.badge}</span>}
-          <h1 className="text-3xl font-bold mb-2">{loc(path.title, path.titleUz, path.titleRu)}</h1>
-          <p className="text-white/90 max-w-2xl">{loc(path.description, path.descriptionUz, path.descriptionRu)}</p>
-          <div className="flex items-center gap-4 mt-5 text-sm">
-            <span className="inline-flex items-center gap-1.5"><Layers className="w-4 h-4" /> {path.moduleCount} {t("modules", "modul", "модулей")}</span>
-            <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> {path.completedModules}/{path.moduleCount} {t("done", "tugatilgan", "готово")}</span>
-          </div>
-          <div className="mt-4 h-2 rounded-full bg-black/25 overflow-hidden max-w-md">
-            <div className="h-full rounded-full bg-white" style={{ width: `${pct}%` }} />
+        <div className="rounded-3xl p-8 mb-8 text-white relative overflow-hidden border border-border">
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-luminosity"
+            style={{ 
+              backgroundImage: `url(https://images.unsplash.com/photo-${[
+                "1550751827-4bd374c3f58b", "1526374965328-7f61d4dc18c5", 
+                "1558494949-ef010cbdcc31", "1563206767-5b18f218e8de"
+              ][(path.slug.length) % 4]}?w=1200&q=80)` 
+            }}
+          />
+          <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, hsl(${path.hue} 70% 25% / 0.8), hsl(${(path.hue + 40) % 360} 70% 15% / 0.9))` }} />
+          
+          <div className="relative z-10">
+            <RouteIcon className="w-10 h-10 mb-4 opacity-90" />
+            {path.badge && <span className="absolute top-0 right-0 text-[10px] font-bold uppercase tracking-wider bg-white/90 text-black px-2 py-0.5 rounded">{path.badge}</span>}
+            <h1 className="text-3xl font-bold mb-2 drop-shadow-md">{loc(path.title, path.titleUz, path.titleRu)}</h1>
+            <p className="text-white/90 max-w-2xl">{loc(path.description, path.descriptionUz, path.descriptionRu)}</p>
+            <div className="flex items-center gap-4 mt-5 text-sm">
+              <span className="inline-flex items-center gap-1.5"><Layers className="w-4 h-4" /> {path.moduleCount} {t("modules", "modul", "модулей")}</span>
+              <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> {path.completedModules}/{path.moduleCount} {t("done", "tugatilgan", "готово")}</span>
+            </div>
+            <div className="mt-4 h-2 rounded-full bg-black/40 overflow-hidden max-w-md shadow-inner">
+              <div className="h-full rounded-full bg-white/90" style={{ width: `${pct}%` }} />
+            </div>
           </div>
         </div>
 

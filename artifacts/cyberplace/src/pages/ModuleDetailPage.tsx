@@ -107,30 +107,45 @@ export default function ModuleDetailPage() {
           </button>
         </Link>
 
-        <header className="mb-8">
-          <h1 className="font-semibold mb-3" data-testid="text-module-title">
-            {t(mod.title, mod.titleUz ?? undefined, mod.titleRu ?? undefined)}
-          </h1>
-          <p className="text-muted-foreground mb-5">
-            {t(mod.description, mod.descriptionUz ?? undefined, mod.descriptionRu ?? undefined)}
-          </p>
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5">
-              <Clock className="w-4 h-4" />
-              {t(`${mod.estimatedHours} hours`, `${mod.estimatedHours} soat`, `${mod.estimatedHours} часов`)}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <FileText className="w-4 h-4" />
-              {t(`${mod.lessonCount} lessons`, `${mod.lessonCount} ta dars`, `${mod.lessonCount} уроков`)}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Award className="w-4 h-4" />
-              {t(
-                `Certificate at ${mod.passScore}%`,
-                `${mod.passScore}% dan sertifikat`,
-                `Сертификат от ${mod.passScore}%`,
-              )}
-            </span>
+        {/* Module Header with Dynamic Banner Image */}
+        <header className="mb-8 relative overflow-hidden rounded-3xl p-8 border border-border bg-card/40">
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-20 mix-blend-luminosity"
+            style={{ 
+              backgroundImage: `url(https://images.unsplash.com/photo-${[
+                "1550751827-4bd374c3f58b", "1526374965328-7f61d4dc18c5", 
+                "1558494949-ef010cbdcc31", "1563206767-5b18f218e8de",
+                "1518770660439-4636190af475", "1451187580459-43490279c0fa"
+              ][mod.id % 6]}?w=1200&q=80)` 
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
+          
+          <div className="relative z-10">
+            <h1 className="text-3xl sm:text-4xl font-black mb-3 drop-shadow-md" data-testid="text-module-title">
+              {t(mod.title, mod.titleUz ?? undefined, mod.titleRu ?? undefined)}
+            </h1>
+            <p className="text-muted-foreground text-lg max-w-3xl mb-6">
+              {t(mod.description, mod.descriptionUz ?? undefined, mod.descriptionRu ?? undefined)}
+            </p>
+            <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
+              <span className="inline-flex items-center gap-2 bg-background/50 backdrop-blur border border-border px-3 py-1.5 rounded-full">
+                <Clock className="w-4 h-4 text-primary" />
+                {t(`${mod.estimatedHours} hours`, `${mod.estimatedHours} soat`, `${mod.estimatedHours} часов`)}
+              </span>
+              <span className="inline-flex items-center gap-2 bg-background/50 backdrop-blur border border-border px-3 py-1.5 rounded-full">
+                <FileText className="w-4 h-4 text-primary" />
+                {t(`${mod.lessonCount} lessons`, `${mod.lessonCount} ta dars`, `${mod.lessonCount} уроков`)}
+              </span>
+              <span className="inline-flex items-center gap-2 bg-background/50 backdrop-blur border border-border px-3 py-1.5 rounded-full text-yellow-500/90 border-yellow-500/20">
+                <Award className="w-4 h-4" />
+                {t(
+                  `Certificate at ${mod.passScore}%`,
+                  `${mod.passScore}% dan sertifikat`,
+                  `Сертификат от ${mod.passScore}%`,
+                )}
+              </span>
+            </div>
           </div>
         </header>
 

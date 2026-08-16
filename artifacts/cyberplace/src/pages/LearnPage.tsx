@@ -12,7 +12,7 @@ import { moduleArtFor } from "@/components/ModuleArt";
 import { normalizeArray } from "@/lib/api-shapes";
 
 // Defined 4 Major Paths as requested by the User
-const PATHS = [
+export const PATHS = [
   {
     id: "foundation",
     title: { en: "Foundation", uz: "Foundation", ru: "Foundation" },
@@ -24,6 +24,7 @@ const PATHS = [
     icon: Cpu,
     color: "from-sky-500 to-blue-600",
     shadow: "shadow-blue-500/20",
+    imageUrl: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80",
     modules: ["intro-to-linux-cli", "networking-basics", "web-requests-101", "passwords-and-hashing", "classical-ciphers"],
   },
   {
@@ -37,6 +38,7 @@ const PATHS = [
     icon: Flame,
     color: "from-rose-500 to-red-600",
     shadow: "shadow-red-500/20",
+    imageUrl: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&q=80",
     modules: ["recon-basics", "linux-privesc-basics", "bash-scripting-basics"],
   },
   {
@@ -50,6 +52,7 @@ const PATHS = [
     icon: Shield,
     color: "from-indigo-500 to-violet-600",
     shadow: "shadow-violet-500/20",
+    imageUrl: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&q=80",
     modules: ["packet-analysis-wireshark", "osint-fundamentals"],
   },
   {
@@ -63,6 +66,7 @@ const PATHS = [
     icon: Search,
     color: "from-emerald-500 to-teal-600",
     shadow: "shadow-emerald-500/20",
+    imageUrl: "https://images.unsplash.com/photo-1563206767-5b18f218e8de?w=800&q=80",
     modules: ["sql-injection-101", "xss-101"],
   }
 ];
@@ -165,7 +169,11 @@ export default function LearnPage() {
                       : `border-border bg-card/60 hover:bg-card hover:border-primary/50 hover:shadow-xl`
                   } ${isCompact ? 'p-4 sm:p-5' : 'p-6 sm:p-8'}`}
                 >
-                  <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${path.color} opacity-10 rounded-bl-full blur-2xl group-hover:opacity-20 transition-opacity`} />
+                  <div
+                    className="absolute inset-0 bg-cover bg-center opacity-10 group-hover:opacity-20 transition-opacity duration-500 mix-blend-overlay"
+                    style={{ backgroundImage: `url(${path.imageUrl})` }}
+                  />
+                  <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${path.color} opacity-20 rounded-bl-full blur-3xl group-hover:opacity-40 transition-opacity`} />
                   
                   <div className="flex items-start gap-4">
                     <div className={`shrink-0 rounded-2xl flex items-center justify-center bg-gradient-to-br ${path.color} ${isCompact ? 'w-10 h-10 shadow-lg' : 'w-14 h-14 shadow-xl'}`}>
@@ -201,19 +209,24 @@ export default function LearnPage() {
             <div className="border-t border-border pt-10">
               
               {/* Path Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
-                <div>
-                  <h2 className="text-2xl sm:text-3xl font-black mb-2 flex items-center gap-3">
-                    <selectedPath.icon className="w-8 h-8 text-primary" />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8 relative overflow-hidden rounded-3xl p-8 border border-border bg-card/40">
+                <div
+                  className="absolute inset-0 bg-cover bg-center opacity-15 mix-blend-luminosity"
+                  style={{ backgroundImage: `url(${selectedPath.imageUrl})` }}
+                />
+                <div className={`absolute inset-0 bg-gradient-to-r ${selectedPath.color} opacity-10 blur-xl`} />
+                <div className="relative z-10">
+                  <h2 className="text-3xl sm:text-4xl font-black mb-3 flex items-center gap-3">
+                    <selectedPath.icon className={`w-10 h-10 bg-gradient-to-br ${selectedPath.color} text-transparent bg-clip-text drop-shadow-md`} />
                     {loc(selectedPath.title.en, selectedPath.title.uz, selectedPath.title.ru)} {t("Path", "Yo'nalishi", "Путь")}
                   </h2>
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground text-lg max-w-2xl">
                     {loc(selectedPath.description.en, selectedPath.description.uz, selectedPath.description.ru)}
                   </p>
                 </div>
                 
                 {/* Path Progress & Final Exam Action */}
-                <div className="glass-card p-4 rounded-2xl border-border flex items-center gap-6 shrink-0 shadow-lg">
+                <div className="glass-card p-5 rounded-2xl border-primary/20 flex items-center gap-6 shrink-0 shadow-2xl relative z-10 bg-background/80 backdrop-blur-md">
                   <div>
                     <div className="text-xs font-mono text-muted-foreground uppercase mb-1 font-bold">
                       {t("Path Progress", "Yo'nalish Holati", "Прогресс Пути")}
@@ -222,10 +235,10 @@ export default function LearnPage() {
                   </div>
                   
                   {pathProgress.completed === pathProgress.total && pathProgress.total > 0 ? (
-                    <Link href="/diploma">
+                    <Link href={`/path-exam/${selectedPath.id}`}>
                       <button className="cyber-button h-11 px-5 gap-2 shadow-primary/20">
                         <Award className="w-5 h-5" />
-                        {t("Claim Path Certificate", "Sertifikatni Olish", "Получить Сертификат")}
+                        {t("Yakuniy Imtihonni Boshlash", "Yakuniy Imtihonni Boshlash", "Начать Финальный Экзамен")}
                       </button>
                     </Link>
                   ) : (

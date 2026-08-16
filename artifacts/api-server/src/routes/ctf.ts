@@ -59,7 +59,7 @@ router.get("/", optionalAuth, requireScope("ctf:read"), async (req, res) => {
       return {
         id: ch.id, name: ch.name, nameUz: ch.nameUz, nameRu: ch.nameRu,
         category: ch.category, difficulty: ch.difficulty, points: ch.points,
-        solvedCount: 0, isSolved: attempt?.solved ?? false, isBlocked: attempt?.blocked ?? false,
+        solvedCount: 0, isSolved: attempt?.solved ?? false, isBlocked: false,
         wrongAttempts: attempt?.wrongAttempts ?? 0, hintUsed: attempt?.hintUsed ?? false,
         fileUrl: ch.fileUrl,
       };
@@ -192,7 +192,7 @@ router.get("/:id", optionalAuth, requireScope("ctf:read"), async (req, res) => {
     solvedCount,
     fileUrl: challenge.fileUrl,
     isSolved: userAttempt?.solved ?? false,
-    isBlocked: userAttempt?.blocked ?? false,
+    isBlocked: false,
     wrongAttempts: userAttempt?.wrongAttempts ?? 0,
     // Hint state, not the hint itself. The text only travels once it has been
     // paid for — otherwise anyone could read it out of the network response and
@@ -304,7 +304,6 @@ async function submitFlagHandler(req: Request, res: Response) {
         .limit(1);
 
       if (attempt?.solved) return { status: 200, data: { correct: true, blocked: false, wrongAttempts: attempt.wrongAttempts } };
-      if (attempt?.blocked) return { status: 200, data: { correct: false, blocked: true, wrongAttempts: attempt.wrongAttempts } };
 
       if (verifyFlag(flag, challenge.flag)) {
         if (!isHashedFlag(challenge.flag)) {
@@ -330,15 +329,15 @@ async function submitFlagHandler(req: Request, res: Response) {
         return { status: 200, data: { correct: true, blocked: false, pointsEarned: pointsEarned + titlePoints } };
       } else {
         const wrongAttempts = (attempt?.wrongAttempts ?? 0) + 1;
-        const isBlocked = wrongAttempts >= 3;
+        const isBlocked = false; // Never block permanently, rely on rate limiter
 
         if (!attempt) {
-          await tx.insert(ctfAttemptsTable).values({ userId, ctfId, wrongAttempts, blocked: isBlocked, updatedAt: new Date() });
+          await tx.insert(ctfAttemptsTable).values({ userId, ctfId, wrongAttempts, blocked: false, updatedAt: new Date() });
         } else {
-          await tx.update(ctfAttemptsTable).set({ wrongAttempts, blocked: isBlocked, updatedAt: new Date() }).where(eq(ctfAttemptsTable.id, attempt.id));
+          await tx.update(ctfAttemptsTable).set({ wrongAttempts, blocked: false, updatedAt: new Date() }).where(eq(ctfAttemptsTable.id, attempt.id));
         }
 
-        return { status: 200, data: { correct: false, blocked: isBlocked, wrongAttempts } };
+        return { status: 200, data: { correct: false, blocked: false, wrongAttempts } };
       }
     });
 
