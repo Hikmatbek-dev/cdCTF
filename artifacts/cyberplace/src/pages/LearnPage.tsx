@@ -1,379 +1,348 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import { 
-  BookOpen, CheckCircle2, Lock, ChevronRight, Shield, Search, X, 
-  Award, Sparkles, Filter, Terminal, Cpu, Clock, Flame, Zap, Check, ArrowUpRight
+  Shield, Cpu, Zap, Search, ChevronRight, CheckCircle2, Lock, ArrowUpRight, Award, Flame, Play, Check, Clock, Code, FileText, Target
 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
-import { normalizeLearnCategories, normalizeLessons } from "@/lib/api-shapes";
-import { useListLearnCategories, getListLearnCategoriesQueryKey, useListLessons, getListLessonsQueryKey } from "@workspace/api-client-react";
-import { FadeIn, ScaleIn } from "@/components/PageTransition";
+import { useListModules, getListModulesQueryKey } from "@workspace/api-client-react";
+import { FadeIn } from "@/components/PageTransition";
 import { LoadFailure } from "@/components/LoadFailure";
+import { Skeleton } from "@/components/ui/skeleton";
+import { moduleArtFor } from "@/components/ModuleArt";
+import { normalizeArray } from "@/lib/api-shapes";
 
-const CATEGORY_ICONS: Record<string, any> = {
-  "Linux for Security": Terminal,
-  "Networking": Cpu,
-  "Web Security": Shield,
-  "Cryptography": Zap,
-  "Recon & Scanning": Search,
-  "Exploitation": Flame,
-  "Forensics & IR": BookOpen,
-  "CTF Methodology": Award,
+// Defined 4 Major Paths as requested by the User
+const PATHS = [
+  {
+    id: "foundation",
+    title: { en: "Foundation", uz: "Foundation", ru: "Foundation" },
+    description: {
+      en: "The core ideas every defender and attacker shares. Networking, Linux CLI, and how the web works.",
+      uz: "Har bir himoyachi va hujumchi bilishi kerak bo'lgan asoslar. Tarmoq, Linux CLI va veb qanday ishlashi.",
+      ru: "Базовые знания для защитников и атакующих. Сети, Linux CLI и как работает веб."
+    },
+    icon: Cpu,
+    color: "from-sky-500 to-blue-600",
+    shadow: "shadow-blue-500/20",
+    modules: ["intro-to-linux-cli", "networking-basics", "web-requests-101", "passwords-and-hashing", "classical-ciphers"],
+  },
+  {
+    id: "red-team",
+    title: { en: "Red Team", uz: "Red Team", ru: "Red Team" },
+    description: {
+      en: "Learn how to attack. Reconnaissance, exploitation, privilege escalation, and offensive tooling.",
+      uz: "Hujum qilishni o'rganing. Razvedka, ekspluatatsiya, imtiyozlarni oshirish va hujum vositalari.",
+      ru: "Учитесь атаковать. Разведка, эксплуатация, повышение привилегий и инструменты для атаки."
+    },
+    icon: Flame,
+    color: "from-rose-500 to-red-600",
+    shadow: "shadow-red-500/20",
+    modules: ["recon-basics", "linux-privesc-basics", "bash-scripting-basics"],
+  },
+  {
+    id: "blue-team",
+    title: { en: "Blue Team", uz: "Blue Team", ru: "Blue Team" },
+    description: {
+      en: "Defend the fortress. Threat hunting, digital forensics, packet analysis, and incident response.",
+      uz: "Qal'ani himoya qiling. Tahdidlarni qidirish, raqamli forenzika, paketlar tahlili va insidentlarga javob.",
+      ru: "Защищайте крепость. Поиск угроз, цифровая криминалистика, анализ пакетов и реагирование на инциденты."
+    },
+    icon: Shield,
+    color: "from-indigo-500 to-violet-600",
+    shadow: "shadow-violet-500/20",
+    modules: ["packet-analysis-wireshark", "osint-fundamentals"],
+  },
+  {
+    id: "web-security",
+    title: { en: "Web Security", uz: "Web Security", ru: "Web Security" },
+    description: {
+      en: "Break and secure web apps. SQL Injection, XSS, CSRF, and modern web vulnerabilities.",
+      uz: "Veb-ilovalarni buzing va himoya qiling. SQL Injection, XSS, CSRF va zamonaviy veb-zaifliklar.",
+      ru: "Взламывайте и защищайте веб-приложения. SQL-инъекции, XSS, CSRF и современные веб-уязвимости."
+    },
+    icon: Search,
+    color: "from-emerald-500 to-teal-600",
+    shadow: "shadow-emerald-500/20",
+    modules: ["sql-injection-101", "xss-101"],
+  }
+];
+
+// Enrich modules with skills/topics visually
+const MODULE_SKILLS: Record<string, string[]> = {
+  "intro-to-linux-cli": ["Bash", "File System", "Permissions"],
+  "networking-basics": ["TCP/IP", "Ports", "DNS"],
+  "web-requests-101": ["HTTP", "Methods", "Headers"],
+  "passwords-and-hashing": ["SHA-256", "Salting", "Cracking"],
+  "classical-ciphers": ["Caesar", "XOR", "Base64"],
+  "recon-basics": ["Nmap", "Subdomains", "Discovery"],
+  "linux-privesc-basics": ["SUID", "Cron Jobs", "Root"],
+  "bash-scripting-basics": ["Automation", "Variables", "Loops"],
+  "packet-analysis-wireshark": ["PCAP", "Filters", "Traffic"],
+  "osint-fundamentals": ["Google Dorks", "Social Media", "Public Records"],
+  "sql-injection-101": ["Databases", "Payloads", "Bypass"],
+  "xss-101": ["JavaScript", "Payloads", "Sanitization"]
+};
+
+type ModuleSummary = {
+  id: number; slug: string;
+  title: string; titleUz?: string | null; titleRu?: string | null;
+  description: string; descriptionUz?: string | null; descriptionRu?: string | null;
+  difficulty: string; estimatedHours: number;
+  lessonCount: number; completedCount: number;
+  examPassed: boolean; certificateSerial?: string | null;
 };
 
 export default function LearnPage() {
-  const { t } = useLang();
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<"all" | "completed" | "uncompleted">("all");
-  const [query, setQuery] = useState("");
+  const { t, lang } = useLang();
+  const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
 
-  const { data: categories, isLoading: catsLoading, isError: catsError, refetch: refetchCats } = useListLearnCategories({
-    query: { queryKey: getListLearnCategoriesQueryKey() },
-  });
+  const { data: modData, isLoading, isError, refetch } =
+    useListModules({ query: { queryKey: getListModulesQueryKey() } });
+  
+  const allModules = normalizeArray<ModuleSummary>(modData, ["id", "title"]);
 
-  const { data: lessons, isLoading: lessonsLoading, isError: lessonsError, refetch: refetchLessons } = useListLessons(
-    selectedCategory ? { category: selectedCategory } : {},
-    { query: { queryKey: getListLessonsQueryKey({ category: selectedCategory ?? undefined }) } }
-  );
+  const loc = (en: string, uz?: string | null, ru?: string | null) => (lang === "uz" ? uz : lang === "ru" ? ru : en) || en;
 
-  const categoryList = normalizeLearnCategories(categories);
-  const allLessons = normalizeLessons(lessons);
+  const selectedPath = PATHS.find(p => p.id === selectedPathId);
 
-  // Compute overall stats
-  const stats = useMemo(() => {
-    const total = allLessons.length;
-    const completed = allLessons.filter(l => l.isCompleted).length;
-    const totalPoints = allLessons.reduce((sum, l) => sum + (l.points || 0), 0);
-    const earnedPoints = allLessons.filter(l => l.isCompleted).reduce((sum, l) => sum + (l.points || 0), 0);
-    const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
-    return { total, completed, totalPoints, earnedPoints, progressPercent };
-  }, [allLessons]);
+  // Filter modules for the selected path
+  const pathModules = useMemo(() => {
+    if (!selectedPath) return [];
+    return allModules.filter(m => selectedPath.modules.includes(m.slug));
+  }, [selectedPath, allModules]);
 
-  // Filter lessons by search query and status filter
-  const q = query.trim().toLowerCase();
-  const filteredLessons = useMemo(() => {
-    return allLessons.filter(l => {
-      const matchesSearch = !q || [l.title, l.titleUz, l.titleRu, l.categoryName]
-        .some(s => (s ?? "").toLowerCase().includes(q));
-      
-      const matchesStatus = 
-        statusFilter === "all" ? true :
-        statusFilter === "completed" ? l.isCompleted :
-        !l.isCompleted;
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [allLessons, q, statusFilter]);
+  // Path Progress
+  const pathProgress = useMemo(() => {
+    if (!pathModules.length) return { percent: 0, completed: 0, total: 0 };
+    const completed = pathModules.filter(m => m.examPassed || m.certificateSerial).length;
+    return {
+      percent: Math.round((completed / pathModules.length) * 100),
+      completed,
+      total: pathModules.length
+    };
+  }, [pathModules]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground page relative overflow-hidden pb-20">
-      {/* Background Cyber Glow & Grid */}
+    <div className="min-h-screen bg-background text-foreground page relative overflow-hidden pb-24">
+      {/* Background Ambience */}
       <div className="fixed inset-0 mono-grid pointer-events-none opacity-20" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[350px] bg-gradient-to-b from-primary/15 via-primary/5 to-transparent blur-[140px] pointer-events-none rounded-full" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-primary/10 via-primary/5 to-transparent blur-[150px] pointer-events-none rounded-full" />
 
-      <div className="shell relative z-10 py-6">
-        {/* Header Hero Section */}
+      <div className="shell relative z-10 pt-10">
+        
+        {/* Main Header */}
         <FadeIn>
-          <div className="glass-card bg-gradient-to-r from-card/90 via-card/70 to-card/90 border-primary/20 p-8 sm:p-10 rounded-3xl mb-10 shadow-2xl relative overflow-hidden">
-            <div className="absolute -right-12 -bottom-12 opacity-10 pointer-events-none">
-              <BookOpen className="w-80 h-80 text-primary" />
-            </div>
-
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
-              <div className="space-y-3 max-w-2xl">
-                <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/25 text-primary text-xs font-mono font-bold tracking-wider uppercase">
-                  <Terminal className="w-4 h-4" />
-                  <span>{t("cdCTF · Academy", "cdCTF · Akademiya", "cdCTF · Академия")}</span>
-                </div>
-
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
-                  {t("Cyber Security ", "Kiber Xavfsizlik ", "Кибербезопасность ")}
-                  <span className="gradient-text">{t("Curriculum", "Darsliklari", "Учебный Курс")}</span>
-                </h1>
-
-                <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                  {t(
-                    "Master hands-on offensive & defensive security tools, Linux terminal commands, network analysis, and vulnerability exploitation.",
-                    "Kiberxavfsizlik vositalari, Linux terminal buyruqlari, tarmoq tahlili va zaifliklarni topishni amaliy shaklda o'rganing.",
-                    "Осваивайте инструменты защиты и атаки, командную строку Linux, анализ сетей и поиск уязвимостей."
-                  )}
-                </p>
-
-                <div className="flex flex-wrap items-center gap-4 pt-2">
-                  <Link href="/modules">
-                    <button className="cyber-button text-xs h-11 px-6 font-bold gap-2">
-                      <Sparkles className="w-4 h-4" />
-                      {t("View Structured Paths", "Tayyor Yo'nalishlar", "Учебные Треки")}
-                      <ArrowUpRight className="w-4 h-4" />
-                    </button>
-                  </Link>
-                  <Link href="/labs">
-                    <button className="cyber-button-outline text-xs h-11 px-6 font-bold gap-2">
-                      <Cpu className="w-4 h-4" />
-                      {t("Hands-on Virtual Labs", "Amaliy Muhitlar", "Практические Лабы")}
-                    </button>
-                  </Link>
-                </div>
-              </div>
-
-              {/* Stats Card */}
-              <div className="glass-card bg-card/90 border-primary/30 p-6 rounded-2xl w-full lg:w-80 shrink-0 shadow-xl space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold uppercase text-muted-foreground">{t("Overall Progress", "Umumiy Bajarilish", "Прогресс")}</span>
-                  <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                    {stats.progressPercent}%
-                  </span>
-                </div>
-
-                <div className="w-full h-3 rounded-full bg-muted overflow-hidden p-0.5 border border-border">
-                  <div
-                    className="h-full bg-gradient-to-r from-primary via-emerald-400 to-emerald-500 rounded-full transition-all duration-700 shadow-sm"
-                    style={{ width: `${stats.progressPercent}%` }}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  <div className="bg-muted/50 p-3 rounded-xl border border-border">
-                    <span className="text-[11px] text-muted-foreground font-mono block mb-0.5">{t("Lessons", "Darslar", "Уроки")}</span>
-                    <span className="font-mono text-lg font-black text-foreground">{stats.completed} / {stats.total}</span>
-                  </div>
-                  <div className="bg-muted/50 p-3 rounded-xl border border-border">
-                    <span className="text-[11px] text-muted-foreground font-mono block mb-0.5">{t("Earned XP", "To'plangan XP", "Заработано")}</span>
-                    <span className="font-mono text-lg font-black text-primary">+{stats.earnedPoints}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-4">
+              {t("Choose Your ", "O'z Yo'nalishingizni ", "Выберите ")}
+              <span className="gradient-text">{t("Path", "Tanlang", "Путь")}</span>
+            </h1>
+            <p className="text-muted-foreground text-base sm:text-lg">
+              {t(
+                "Select a specialized cybersecurity track. Complete all modules within the path to unlock the final exam and earn your professional certificate.",
+                "Maxsus kiberxavfsizlik yo'nalishini tanlang. Yo'nalishdagi barcha modullarni yakunlang, yakuniy imtihonni topshiring va professional sertifikatga ega bo'ling.",
+                "Выберите специализированный трек кибербезопасности. Пройдите все модули, чтобы открыть финальный экзамен и получить профессиональный сертификат."
+              )}
+            </p>
           </div>
         </FadeIn>
 
-        {/* Categories Bar / Grid */}
+        {/* Path Selection Grid */}
         <FadeIn delay={0.1}>
-          <div className="mb-10">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-primary" />
-                <h2 className="text-base font-extrabold tracking-tight">{t("Categories", "Kategoriyalar", "Категории")}</h2>
-              </div>
-              {selectedCategory && (
+          <div className={`grid gap-4 sm:gap-6 transition-all duration-500 ${selectedPathId ? 'grid-cols-2 sm:grid-cols-4 mb-10' : 'grid-cols-1 sm:grid-cols-2 max-w-4xl mx-auto mb-16'}`}>
+            {PATHS.map((path) => {
+              const Icon = path.icon;
+              const isSelected = selectedPathId === path.id;
+              const isCompact = selectedPathId !== null;
+              
+              return (
                 <button
-                  onClick={() => setSelectedCategory(null)}
-                  className="text-xs font-mono text-primary hover:underline flex items-center gap-1"
+                  key={path.id}
+                  onClick={() => setSelectedPathId(isSelected ? null : path.id)}
+                  className={`relative text-left rounded-3xl border transition-all duration-300 overflow-hidden group ${
+                    isSelected 
+                      ? `border-primary bg-card shadow-2xl ${path.shadow} scale-[1.02]` 
+                      : `border-border bg-card/60 hover:bg-card hover:border-primary/50 hover:shadow-xl`
+                  } ${isCompact ? 'p-4 sm:p-5' : 'p-6 sm:p-8'}`}
                 >
-                  <X className="w-3.5 h-3.5" />
-                  {t("Show All", "Barchasini ko'rsatish", "Показать все")}
-                </button>
-              )}
-            </div>
-
-            {catsLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <Skeleton key={i} className="h-20 rounded-2xl" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-                <button
-                  onClick={() => setSelectedCategory(null)}
-                  className={`p-3.5 rounded-2xl border text-center transition-all flex flex-col items-center justify-center gap-2 ${
-                    !selectedCategory
-                      ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20 scale-[1.02]"
-                      : "bg-card hover:bg-muted/80 border-border text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <BookOpen className="w-5 h-5" />
-                  <span className="text-xs font-bold truncate max-w-full">{t("All", "Barchasi", "Все")}</span>
-                  <span className="text-[10px] font-mono opacity-80">{allLessons.length}</span>
-                </button>
-
-                {categoryList.map((cat) => {
-                  const Icon = CATEGORY_ICONS[cat.name] || BookOpen;
-                  const isSelected = selectedCategory === cat.name;
-
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => setSelectedCategory(cat.name)}
-                      className={`p-3.5 rounded-2xl border text-center transition-all flex flex-col items-center justify-center gap-2 group ${
-                        isSelected
-                          ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20 scale-[1.02]"
-                          : "bg-card hover:bg-muted/80 border-border text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <Icon className={`w-5 h-5 ${isSelected ? "text-primary-foreground" : "text-primary group-hover:scale-110 transition-transform"}`} />
-                      <span className="text-xs font-bold truncate max-w-full">
-                        {t(cat.name, cat.nameUz ?? undefined, cat.nameRu ?? undefined)}
-                      </span>
-                      <span className="text-[10px] font-mono opacity-80">{cat.completedCount}/{cat.lessonCount}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </FadeIn>
-
-        {/* Filter and Search controls */}
-        <FadeIn delay={0.15}>
-          <div className="glass-card p-4 rounded-2xl mb-8 flex flex-col sm:flex-row gap-4 items-center justify-between border-border shadow-md">
-            <div className="relative w-full sm:flex-1">
-              <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t("Search lessons by title, topic or category...", "Darslarni nomi yoki mavzusi bo'yicha qidirish...", "Поиск уроков по названию...")}
-                aria-label={t("Search lessons", "Darslarni qidirish", "Поиск уроков")}
-                className="field !pl-11 h-11 text-sm bg-card/80 border-border rounded-xl"
-              />
-              {query && (
-                <button
-                  onClick={() => setQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-              <span className="text-xs font-mono font-semibold text-muted-foreground hidden sm:inline flex items-center gap-1">
-                <Filter className="w-3.5 h-3.5" />
-                {t("Status:", "Holat:", "Статус:")}
-              </span>
-              <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border w-full sm:w-auto">
-                <button
-                  onClick={() => setStatusFilter("all")}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    statusFilter === "all" ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {t("All", "Hammasi", "Все")}
-                </button>
-                <button
-                  onClick={() => setStatusFilter("uncompleted")}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    statusFilter === "uncompleted" ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {t("To Do", "Bajarilmagan", "Не пройдены")}
-                </button>
-                <button
-                  onClick={() => setStatusFilter("completed")}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    statusFilter === "completed" ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {t("Done", "Tugatilgan", "Пройдены")}
-                </button>
-              </div>
-            </div>
-          </div>
-        </FadeIn>
-
-        {/* Lessons List Grid */}
-        <FadeIn delay={0.2}>
-          {lessonsError ? (
-            <LoadFailure onRetry={() => refetchLessons()} />
-          ) : lessonsLoading ? (
-            <div className="grid gap-4">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton key={i} className="h-24 rounded-2xl bg-muted/60" />
-              ))}
-            </div>
-          ) : filteredLessons.length === 0 ? (
-            <div className="glass-card rounded-3xl py-20 text-center px-6 border-dashed border-border">
-              <div className="w-16 h-16 rounded-2xl bg-muted border border-border flex items-center justify-center mx-auto mb-4 text-muted-foreground">
-                <Search className="w-8 h-8" />
-              </div>
-              <h3 className="text-lg font-bold mb-2">{t("No lessons found", "Darslar topilmadi", "Уроки не найдены")}</h3>
-              <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">
-                {query
-                  ? t(`No topics match "${query}". Try resetting your search filter.`, `"${query}" bo'yicha dars topilmadi. Qidiruvni tozalab ko'ring.`, `Уроки по запросу "${query}" не найдены.`)
-                  : t("No lessons available in this status filter.", "Bu filtrda darslar mavjud emas.", "Нет уроков в этом фильтре.")}
-              </p>
-              <button
-                onClick={() => { setQuery(""); setStatusFilter("all"); setSelectedCategory(null); }}
-                className="cyber-button h-10 px-6 text-xs font-bold"
-              >
-                {t("Reset All Filters", "Barcha Filtrlarni Tozalash", "Сбросить фильтры")}
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3.5">
-              {filteredLessons.map((lesson, idx) => (
-                <FadeIn key={lesson.id} delay={idx * 0.02}>
-                  <Link href={`/learn/${lesson.id}`}>
-                    <div
-                      className={`group relative p-5 sm:p-6 rounded-2xl glass-card border border-border hover:border-primary/50 transition-all duration-300 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 ${
-                        lesson.isBlocked ? "opacity-50 grayscale pointer-events-none" : ""
-                      }`}
-                    >
-                      <div className="flex items-center gap-4 sm:gap-5 min-w-0">
-                        {/* Status Icon Badge */}
-                        <div
-                          className={`w-13 h-13 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center border shrink-0 transition-all duration-300 shadow-md ${
-                            lesson.isCompleted
-                              ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400 shadow-emerald-500/10"
-                              : lesson.isBlocked
-                              ? "bg-muted border-border text-muted-foreground"
-                              : "bg-primary/10 border-primary/30 text-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary"
-                          }`}
-                        >
-                          {lesson.isCompleted ? (
-                            <CheckCircle2 className="w-7 h-7" />
-                          ) : lesson.isBlocked ? (
-                            <Lock className="w-6 h-6" />
-                          ) : (
-                            <BookOpen className="w-6 h-6" />
-                          )}
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                            <span className="text-[11px] font-mono font-bold text-primary uppercase tracking-wider bg-primary/10 px-2.5 py-0.5 rounded-md border border-primary/20">
-                              {lesson.categoryName}
-                            </span>
-                            {lesson.isCompleted && (
-                              <span className="text-[11px] font-mono font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-md flex items-center gap-1">
-                                <Check className="w-3.5 h-3.5" />
-                                {t("Completed", "Bajarildi", "Пройден")}
-                              </span>
-                            )}
-                          </div>
-
-                          <h3 className="text-base sm:text-lg font-bold text-foreground group-hover:text-primary transition-colors truncate">
-                            {t(lesson.title, lesson.titleUz ?? undefined, lesson.titleRu ?? undefined)}
-                          </h3>
-                        </div>
-                      </div>
-
-                      {/* XP & Arrow */}
-                      <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 border-t sm:border-t-0 pt-3 sm:pt-0">
-                        <div className="flex items-center gap-3">
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/30 text-primary text-xs font-mono font-black shadow-sm">
-                            <Award className="w-4 h-4" />
-                            +{lesson.points} XP
-                          </span>
-                          <span className="text-xs font-mono text-muted-foreground flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5" />
-                            ~15m
-                          </span>
-                        </div>
-
-                        <div className="w-10 h-10 rounded-xl bg-muted/60 border border-border group-hover:border-primary/50 group-hover:bg-primary/10 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-all">
-                          <ChevronRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
-                        </div>
-                      </div>
+                  <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${path.color} opacity-10 rounded-bl-full blur-2xl group-hover:opacity-20 transition-opacity`} />
+                  
+                  <div className="flex items-start gap-4">
+                    <div className={`shrink-0 rounded-2xl flex items-center justify-center bg-gradient-to-br ${path.color} ${isCompact ? 'w-10 h-10 shadow-lg' : 'w-14 h-14 shadow-xl'}`}>
+                      <Icon className={`text-white ${isCompact ? 'w-5 h-5' : 'w-7 h-7'}`} />
                     </div>
-                  </Link>
-                </FadeIn>
-              ))}
-            </div>
-          )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className={`font-black tracking-tight text-foreground group-hover:text-primary transition-colors ${isCompact ? 'text-base sm:text-lg mb-1' : 'text-xl sm:text-2xl mb-2'}`}>
+                        {loc(path.title.en, path.title.uz, path.title.ru)}
+                      </h3>
+                      {!isCompact && (
+                        <p className="text-muted-foreground text-sm leading-relaxed mb-4 line-clamp-3">
+                          {loc(path.description.en, path.description.uz, path.description.ru)}
+                        </p>
+                      )}
+                      
+                      {!isCompact && (
+                        <div className="flex items-center gap-2 text-xs font-mono font-bold text-primary uppercase tracking-wider">
+                          <span>{path.modules.length} {t("Modules", "Modullar", "Модулей")}</span>
+                          <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </FadeIn>
+
+        {/* Active Path Content */}
+        {selectedPath && (
+          <FadeIn delay={0.2}>
+            <div className="border-t border-border pt-10">
+              
+              {/* Path Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-black mb-2 flex items-center gap-3">
+                    <selectedPath.icon className="w-8 h-8 text-primary" />
+                    {loc(selectedPath.title.en, selectedPath.title.uz, selectedPath.title.ru)} {t("Path", "Yo'nalishi", "Путь")}
+                  </h2>
+                  <p className="text-muted-foreground">
+                    {loc(selectedPath.description.en, selectedPath.description.uz, selectedPath.description.ru)}
+                  </p>
+                </div>
+                
+                {/* Path Progress & Final Exam Action */}
+                <div className="glass-card p-4 rounded-2xl border-border flex items-center gap-6 shrink-0 shadow-lg">
+                  <div>
+                    <div className="text-xs font-mono text-muted-foreground uppercase mb-1 font-bold">
+                      {t("Path Progress", "Yo'nalish Holati", "Прогресс Пути")}
+                    </div>
+                    <div className="text-xl font-black">{pathProgress.completed} / {pathProgress.total}</div>
+                  </div>
+                  
+                  {pathProgress.completed === pathProgress.total && pathProgress.total > 0 ? (
+                    <Link href="/diploma">
+                      <button className="cyber-button h-11 px-5 gap-2 shadow-primary/20">
+                        <Award className="w-5 h-5" />
+                        {t("Claim Path Certificate", "Sertifikatni Olish", "Получить Сертификат")}
+                      </button>
+                    </Link>
+                  ) : (
+                    <button disabled className="cyber-button-outline h-11 px-5 gap-2 opacity-50 cursor-not-allowed border-dashed">
+                      <Lock className="w-4 h-4" />
+                      {t("Yakuniy Imtihon", "Yakuniy Imtihon", "Финальный Экзамен")}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Modules List */}
+              {isError ? (
+                <LoadFailure onRetry={() => refetch()} />
+              ) : isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-48 rounded-3xl" />)}
+                </div>
+              ) : pathModules.length === 0 ? (
+                <div className="glass-card text-center py-20 rounded-3xl border-dashed">
+                  <div className="w-16 h-16 rounded-2xl bg-muted border border-border flex items-center justify-center mx-auto mb-4 text-muted-foreground">
+                    <Zap className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-lg font-bold mb-2">{t("Modules coming soon", "Modullar tayyorlanmoqda", "Модули в разработке")}</h3>
+                  <p className="text-sm text-muted-foreground">{t("We are actively building the curriculum for this path.", "Biz ushbu yo'nalish uchun o'quv dasturini faol tayyorlamoqdamiz.", "Мы активно разрабатываем учебную программу для этого пути.")}</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {pathModules.map((m, idx) => {
+                    const Art = moduleArtFor(m.slug);
+                    const done = m.certificateSerial || m.examPassed;
+                    const pct = m.lessonCount ? Math.round((m.completedCount / m.lessonCount) * 100) : 0;
+                    const skills = MODULE_SKILLS[m.slug] || ["Security", "Basics"];
+                    const xp = m.lessonCount * 150;
+                    
+                    return (
+                      <FadeIn key={m.id} delay={idx * 0.05}>
+                        <Link href={`/modules/${m.id}`}>
+                          <div className="group h-full rounded-3xl border border-border bg-card overflow-hidden hover:border-primary/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col sm:flex-row relative">
+                            {done && (
+                              <div className="absolute top-3 right-3 z-20 bg-emerald-500/90 text-white p-1.5 rounded-full shadow-lg backdrop-blur-sm">
+                                <CheckCircle2 className="w-5 h-5" />
+                              </div>
+                            )}
+                            
+                            {/* Left Art Section */}
+                            <div className="relative h-48 sm:h-auto sm:w-1/3 bg-muted/30 overflow-hidden flex items-center justify-center shrink-0 border-b sm:border-b-0 sm:border-r border-border/50">
+                              <Art className="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity group-hover:scale-105 duration-500" />
+                              <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-card/80 to-transparent" />
+                            </div>
+                            
+                            {/* Right Content Section */}
+                            <div className="p-5 sm:p-6 flex flex-col flex-1 relative z-10">
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border ${
+                                  m.difficulty === "beginner" ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" :
+                                  m.difficulty === "intermediate" ? "text-amber-400 bg-amber-500/10 border-amber-500/20" :
+                                  "text-rose-400 bg-rose-500/10 border-rose-500/20"
+                                }`}>
+                                  {m.difficulty}
+                                </span>
+                                {pct > 0 && !done && (
+                                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border text-sky-400 bg-sky-500/10 border-sky-500/20">
+                                    {pct}% {t("Done", "Bajarildi", "Пройдено")}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              <h3 className="font-bold text-lg sm:text-xl mb-2 group-hover:text-primary transition-colors line-clamp-1">
+                                {loc(m.title, m.titleUz, m.titleRu)}
+                              </h3>
+                              
+                              <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1">
+                                {loc(m.description, m.descriptionUz, m.descriptionRu)}
+                              </p>
+
+                              {/* Skills Tags */}
+                              <div className="flex flex-wrap gap-1.5 mb-5">
+                                {skills.map((skill, i) => (
+                                  <span key={i} className="text-[11px] font-mono text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md border border-border/50">
+                                    {skill}
+                                  </span>
+                                ))}
+                              </div>
+                              
+                              <div className="flex items-center justify-between border-t border-border/50 pt-4 mt-auto">
+                                <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground font-semibold">
+                                  <div className="flex items-center gap-1.5">
+                                    <FileText className="w-3.5 h-3.5" />
+                                    {m.completedCount} / {m.lessonCount}
+                                  </div>
+                                  <div className="flex items-center gap-1.5 text-primary">
+                                    <Target className="w-3.5 h-3.5" />
+                                    +{xp} XP
+                                  </div>
+                                  {m.estimatedHours > 0 && (
+                                    <div className="flex items-center gap-1.5 hidden sm:flex">
+                                      <Clock className="w-3.5 h-3.5" />
+                                      {m.estimatedHours}h
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
+                                  <Play className="w-4 h-4 ml-0.5 fill-current" />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      </FadeIn>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </FadeIn>
+        )}
       </div>
     </div>
   );

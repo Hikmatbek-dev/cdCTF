@@ -13,6 +13,7 @@ import { Writeups } from "@/components/Writeups";
 import { motion } from "framer-motion";
 import { FadeIn, ScaleIn } from "@/components/PageTransition";
 import { errorToast } from "@/lib/error-toast";
+import { Markdown } from "@/components/Markdown";
 
 /**
  * Which module teaches the skill a challenge category needs.
@@ -216,11 +217,11 @@ export default function CtfDetailPage() {
                 </div>
                 <h2 className="text-sm font-semibold text-primary mb-6 flex items-center gap-3">
                   <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
-                  {t("Description", "Tavsif", "Описание")}
+                  {t("Task Description & Walkthrough", "Vazifa haqida chuqur ma'lumot", "Описание задачи и прохождение")}
                 </h2>
-                <p className="text-xl leading-relaxed text-foreground/80 whitespace-pre-wrap font-medium tracking-tight" data-testid="text-description">
-                  {t(challenge.description, challenge.descriptionUz ?? undefined, challenge.descriptionRu ?? undefined)}
-                </p>
+                <div data-testid="text-description" className="mb-4">
+                  <Markdown content={t(challenge.description, challenge.descriptionUz ?? undefined, challenge.descriptionRu ?? undefined) || ""} />
+                </div>
               </div>
             </FadeIn>
 
