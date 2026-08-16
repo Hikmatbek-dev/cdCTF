@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import { 
   BookOpen, CheckCircle2, Lock, ChevronRight, Shield, Search, X, 
-  Award, Sparkles, Filter, Terminal, Cpu, Clock, Flame, Zap, Check, ArrowUpRight, Bookmark
+  Award, Sparkles, Filter, Terminal, Cpu, Clock, Flame, Zap, Check, ArrowUpRight
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
@@ -10,7 +10,6 @@ import { normalizeLearnCategories, normalizeLessons } from "@/lib/api-shapes";
 import { useListLearnCategories, getListLearnCategoriesQueryKey, useListLessons, getListLessonsQueryKey } from "@workspace/api-client-react";
 import { FadeIn, ScaleIn } from "@/components/PageTransition";
 import { LoadFailure } from "@/components/LoadFailure";
-import { getBookmarkedLessonIds, toggleBookmarkLesson, getLearningStreak } from "@/lib/learn-storage";
 
 const CATEGORY_ICONS: Record<string, any> = {
   "Linux for Security": Terminal,
@@ -26,9 +25,8 @@ const CATEGORY_ICONS: Record<string, any> = {
 export default function LearnPage() {
   const { t } = useLang();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<"all" | "completed" | "uncompleted" | "bookmarked">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "completed" | "uncompleted">("all");
   const [query, setQuery] = useState("");
-  const [bookmarkedIds, setBookmarkedIds] = useState<number[]>(() => getBookmarkedLessonIds());
 
   const { data: categories, isLoading: catsLoading, isError: catsError, refetch: refetchCats } = useListLearnCategories({
     query: { queryKey: getListLearnCategoriesQueryKey() },
@@ -52,13 +50,6 @@ export default function LearnPage() {
     return { total, completed, totalPoints, earnedPoints, progressPercent };
   }, [allLessons]);
 
-  const handleToggleBookmark = (e: React.MouseEvent, lessonId: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    toggleBookmarkLesson(lessonId);
-    setBookmarkedIds(getBookmarkedLessonIds());
-  };
-
   // Filter lessons by search query and status filter
   const q = query.trim().toLowerCase();
   const filteredLessons = useMemo(() => {
@@ -69,12 +60,11 @@ export default function LearnPage() {
       const matchesStatus = 
         statusFilter === "all" ? true :
         statusFilter === "completed" ? l.isCompleted :
-        statusFilter === "bookmarked" ? bookmarkedIds.includes(l.id) :
         !l.isCompleted;
 
       return matchesSearch && matchesStatus;
     });
-  }, [allLessons, q, statusFilter, bookmarkedIds]);
+  }, [allLessons, q, statusFilter]);
 
   return (
     <div className="min-h-screen bg-background text-foreground page relative overflow-hidden pb-20">
@@ -143,21 +133,14 @@ export default function LearnPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-2.5 pt-2">
-                  <div className="bg-muted/50 p-2.5 rounded-xl border border-border">
-                    <span className="text-[10px] text-muted-foreground font-mono block mb-0.5">{t("Lessons", "Darslar", "Уроки")}</span>
-                    <span className="font-mono text-base font-black text-foreground">{stats.completed}/{stats.total}</span>
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <div className="bg-muted/50 p-3 rounded-xl border border-border">
+                    <span className="text-[11px] text-muted-foreground font-mono block mb-0.5">{t("Lessons", "Darslar", "Уроки")}</span>
+                    <span className="font-mono text-lg font-black text-foreground">{stats.completed} / {stats.total}</span>
                   </div>
-                  <div className="bg-muted/50 p-2.5 rounded-xl border border-border">
-                    <span className="text-[10px] text-muted-foreground font-mono block mb-0.5">{t("Earned XP", "To'plangan", "XP")}</span>
-                    <span className="font-mono text-base font-black text-primary">+{stats.earnedPoints}</span>
-                  </div>
-                  <div className="bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/25">
-                    <span className="text-[10px] text-amber-400 font-mono block mb-0.5 flex items-center gap-1">
-                      <Flame className="w-3 h-3 text-amber-500 fill-amber-500 animate-pulse" />
-                      {t("Streak", "Seriya", "Стрик")}
-                    </span>
-                    <span className="font-mono text-base font-black text-amber-400">{getLearningStreak()} {t("days", "kun", "дн")}</span>
+                  <div className="bg-muted/50 p-3 rounded-xl border border-border">
+                    <span className="text-[11px] text-muted-foreground font-mono block mb-0.5">{t("Earned XP", "To'plangan XP", "Заработано")}</span>
+                    <span className="font-mono text-lg font-black text-primary">+{stats.earnedPoints}</span>
                   </div>
                 </div>
               </div>
@@ -285,20 +268,6 @@ export default function LearnPage() {
                 >
                   {t("Done", "Tugatilgan", "Пройдены")}
                 </button>
-                <button
-                  onClick={() => setStatusFilter("bookmarked")}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
-                    statusFilter === "bookmarked" ? "bg-amber-500/15 text-amber-400 shadow-sm border border-amber-500/30" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Bookmark className={`w-3.5 h-3.5 ${statusFilter === "bookmarked" ? "fill-current" : ""}`} />
-                  {t("Bookmarked", "Saqlangan", "В закладках")}
-                  {bookmarkedIds.length > 0 && (
-                    <span className="w-4 h-4 rounded-full bg-amber-500 text-slate-950 font-mono text-[10px] font-black inline-flex items-center justify-center">
-                      {bookmarkedIds.length}
-                    </span>
-                  )}
-                </button>
               </div>
             </div>
           </div>
@@ -394,21 +363,8 @@ export default function LearnPage() {
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={(e) => handleToggleBookmark(e, lesson.id)}
-                            className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${
-                              bookmarkedIds.includes(lesson.id)
-                                ? "bg-amber-500/15 border-amber-500/40 text-amber-400"
-                                : "bg-muted/60 border-border text-muted-foreground hover:text-amber-400 hover:border-amber-500/30"
-                            }`}
-                            title={t("Bookmark", "Saqlash", "В закладки")}
-                          >
-                            <Bookmark className={`w-4 h-4 ${bookmarkedIds.includes(lesson.id) ? "fill-current text-amber-400" : ""}`} />
-                          </button>
-                          <div className="w-10 h-10 rounded-xl bg-muted/60 border border-border group-hover:border-primary/50 group-hover:bg-primary/10 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-all">
-                            <ChevronRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
-                          </div>
+                        <div className="w-10 h-10 rounded-xl bg-muted/60 border border-border group-hover:border-primary/50 group-hover:bg-primary/10 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-all">
+                          <ChevronRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
                         </div>
                       </div>
                     </div>

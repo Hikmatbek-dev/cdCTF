@@ -2,8 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRoute, useLocation, Link } from "wouter";
 import {
   BookOpen, CheckCircle2, Lock, ChevronRight, ChevronLeft, ChevronDown, Copy, Check,
-  ArrowRight, GraduationCap, ListChecks, Flag, Terminal as TerminalIcon, Sparkles, Bookmark,
-  Columns, Type, Eye, Share2, Clock
+  ArrowRight, GraduationCap, ListChecks, Flag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,10 +14,6 @@ import {
   useGetLesson, getGetLessonQueryKey,
   useGetModule, getGetModuleQueryKey,
 } from "@workspace/api-client-react";
-import { CyberCliSimulator } from "@/components/CyberCliSimulator";
-import { LessonNotesDrawer } from "@/components/LessonNotesDrawer";
-import { isLessonBookmarked, toggleBookmarkLesson } from "@/lib/learn-storage";
-
 
 /**
  * Renders **bold**, *italic* and `code` inside one line.
@@ -60,9 +55,6 @@ function isTableSeparator(line: string) {
 function CodeBlock({ code, lang }: { code: string; lang: string }) {
   const { t } = useLang();
   const [copied, setCopied] = useState(false);
-  const [showCli, setShowCli] = useState(false);
-
-  const isShell = !lang || ["bash", "sh", "shell", "terminal", "zsh", "cmd", "cli"].includes(lang.toLowerCase());
 
   const copy = async () => {
     try {
@@ -74,46 +66,25 @@ function CodeBlock({ code, lang }: { code: string; lang: string }) {
     }
   };
 
-  const firstCmdLine = code.split("\n").find(l => l.trim() && !l.trim().startsWith("#"))?.replace(/^\$\s*/, "") || "ls";
-
   return (
-    <div className="my-6 rounded-xl overflow-hidden bg-[#111726] border border-[#243049] group/code shadow-lg">
+    <div className="my-6 rounded-xl overflow-hidden bg-[#111726] border border-[#243049] group/code">
       <div className="flex items-center justify-between px-4 py-2 border-b border-[#243049] bg-[#161d30]">
-        <span className="font-mono text-xs uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-          {isShell && <TerminalIcon className="w-3.5 h-3.5 text-emerald-400" />}
+        <span className="font-mono text-xs uppercase tracking-wider text-slate-400">
           {lang || t("shell", "shell", "shell")}
         </span>
-        <div className="flex items-center gap-2">
-          {isShell && (
-            <button
-              onClick={() => setShowCli(!showCli)}
-              className="inline-flex items-center gap-1.5 min-h-[32px] px-2.5 rounded-md text-xs font-medium text-emerald-300 hover:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-colors"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              {showCli ? t("Hide Sandbox", "Sandboxni berkitish", "Скрыть песочницу") : t("Try in CLI Sandbox", "CLI Sandboxda sinash", "Открыть песочницу")}
-            </button>
-          )}
-          <button
-            onClick={copy}
-            className="inline-flex items-center gap-1.5 min-h-[32px] px-2.5 -mr-1.5 rounded-md text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
-            aria-label={t("Copy code", "Nusxa olish", "Копировать")}
-          >
-            {copied
-              ? <><Check className="w-3.5 h-3.5 text-emerald-300" aria-hidden="true" />{t("Copied", "Nusxa olindi", "Скопировано")}</>
-              : <><Copy className="w-3.5 h-3.5" aria-hidden="true" />{t("Copy", "Nusxa", "Копия")}</>}
-          </button>
-        </div>
+        <button
+          onClick={copy}
+          className="inline-flex items-center gap-1.5 min-h-[32px] px-2.5 -mr-1.5 rounded-md text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+          aria-label={t("Copy code", "Nusxa olish", "Копировать")}
+        >
+          {copied
+            ? <><Check className="w-3.5 h-3.5 text-emerald-300" aria-hidden="true" />{t("Copied", "Nusxa olindi", "Скопировано")}</>
+            : <><Copy className="w-3.5 h-3.5" aria-hidden="true" />{t("Copy", "Nusxa", "Копия")}</>}
+        </button>
       </div>
-
       <pre className="p-4 overflow-x-auto text-[13px] font-mono leading-relaxed text-slate-200">
         <code>{code}</code>
       </pre>
-
-      {showCli && (
-        <div className="p-3 border-t border-[#243049] bg-[#0c101a]">
-          <CyberCliSimulator initialCommand={firstCmdLine} />
-        </div>
-      )}
     </div>
   );
 }
@@ -227,19 +198,6 @@ export default function LessonDetailPage() {
   const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [readProgress, setReadProgress] = useState(0);
-  const [splitSandbox, setSplitSandbox] = useState(false);
-  const [fontSize, setFontSize] = useState<"sm" | "base" | "lg" | "xl">("base");
-  const [readingTheme, setReadingTheme] = useState<"default" | "hacker" | "sepia">("default");
-  const [bookmarked, setBookmarked] = useState(() => isLessonBookmarked(id));
-
-  useEffect(() => {
-    setBookmarked(isLessonBookmarked(id));
-  }, [id]);
-
-  const handleToggleBookmark = () => {
-    const updated = toggleBookmarkLesson(id);
-    setBookmarked(updated);
-  };
 
   const { data: lesson, isLoading, isError, error, refetch } = useGetLesson(id, {
     query: { enabled: !!id, queryKey: getGetLessonQueryKey(id) },
@@ -272,21 +230,6 @@ export default function LessonDetailPage() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [id]);
-
-  // Keyboard Hotkeys: Alt+Right Arrow (Next lesson), Alt+Left Arrow (Prev lesson)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey && e.key === "ArrowRight" && next) {
-        e.preventDefault();
-        setLocation(`/learn/${next.id}`);
-      } else if (e.altKey && e.key === "ArrowLeft" && prev) {
-        e.preventDefault();
-        setLocation(`/learn/${prev.id}`);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [next, prev, setLocation]);
 
   // Jump to top when moving between lessons.
   useEffect(() => { window.scrollTo({ top: 0 }); }, [id]);
@@ -338,99 +281,14 @@ export default function LessonDetailPage() {
   const sibDone = siblings.filter(l => l.isCompleted).length;
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      readingTheme === "hacker" 
-        ? "bg-[#040a06] text-emerald-300 font-mono" 
-        : readingTheme === "sepia"
-        ? "bg-[#fbf0d9] text-[#3d2e1e]"
-        : "bg-background text-foreground"
-    }`}>
+    <div className="min-h-screen bg-background text-foreground">
       {/* Reading-progress bar, pinned under the navbar. */}
-      <div className="fixed top-0 left-0 right-0 z-40 h-1 bg-transparent">
-        <div className="h-full bg-primary transition-[width] duration-150 shadow-sm shadow-primary/50" style={{ width: `${readProgress}%` }} />
-      </div>
-
-      {/* Floating Interactive Reading Toolbar */}
-      <div className="fixed bottom-6 right-6 z-40 flex items-center gap-1.5 p-2 rounded-2xl glass-card border-primary/30 shadow-2xl backdrop-blur-xl">
-        <button
-          onClick={() => setSplitSandbox(!splitSandbox)}
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold font-mono flex items-center gap-1.5 transition-all ${
-            splitSandbox ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" : "hover:bg-muted text-muted-foreground hover:text-foreground"
-          }`}
-          title={t("Toggle Side-by-Side CLI Terminal Sandbox", "Jonli CLI Terminal Rejimini Yoqish/O'chirish", "Режим раздельного терминала")}
-        >
-          <Columns className="w-4 h-4" />
-          <span className="hidden sm:inline">{splitSandbox ? t("Close Terminal", "Terminalni Yopish", "Закрыть CLI") : t("CLI Sandbox Mode", "CLI Sandbox Rejimi", "CLI Режим")}</span>
-        </button>
-
-        <div className="w-px h-5 bg-border my-auto" />
-
-        {/* Font Size Selector */}
-        <div className="flex items-center gap-0.5 bg-muted/60 p-1 rounded-xl">
-          {(["sm", "base", "lg", "xl"] as const).map(sz => (
-            <button
-              key={sz}
-              onClick={() => setFontSize(sz)}
-              className={`px-2 py-0.5 rounded-lg text-xs font-mono font-bold transition-all ${
-                fontSize === sz ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {sz.toUpperCase()}
-            </button>
-          ))}
-        </div>
-
-        <div className="w-px h-5 bg-border my-auto" />
-
-        {/* Reading Theme Selector */}
-        <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl">
-          <button
-            onClick={() => setReadingTheme("default")}
-            className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
-              readingTheme === "default" ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground"
-            }`}
-            title={t("Dark Glass Theme", "Tungi rejim", "Тёмная тема")}
-          >
-            🌙
-          </button>
-          <button
-            onClick={() => setReadingTheme("hacker")}
-            className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
-              readingTheme === "hacker" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40" : "text-muted-foreground"
-            }`}
-            title={t("Hacker Matrix Theme", "Matrix Rejimi", "Тема Hacker")}
-          >
-            📟
-          </button>
-          <button
-            onClick={() => setReadingTheme("sepia")}
-            className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
-              readingTheme === "sepia" ? "bg-amber-100 text-amber-900 border border-amber-300" : "text-muted-foreground"
-            }`}
-            title={t("Sepia Comfort Theme", "Sepiya Rejimi", "Тема Сепия")}
-          >
-            📜
-          </button>
-        </div>
-
-        <div className="w-px h-5 bg-border my-auto" />
-
-        {/* Quick Bookmark Button */}
-        <button
-          onClick={handleToggleBookmark}
-          className={`p-2 rounded-xl border transition-all ${
-            bookmarked
-              ? "bg-amber-500/20 border-amber-500/40 text-amber-400 shadow-md shadow-amber-500/10"
-              : "hover:bg-muted border-border text-muted-foreground hover:text-foreground"
-          }`}
-          title={t("Bookmark Lesson", "Darsni saqlash", "В закладки")}
-        >
-          <Bookmark className={`w-4 h-4 ${bookmarked ? "fill-current" : ""}`} />
-        </button>
+      <div className="fixed top-0 left-0 right-0 z-40 h-0.5 bg-transparent">
+        <div className="h-full bg-primary transition-[width] duration-150" style={{ width: `${readProgress}%` }} />
       </div>
 
       <div className="shell page">
-        <div className={`lg:grid ${splitSandbox ? "lg:grid-cols-[220px_1fr_450px]" : "lg:grid-cols-[240px_1fr]"} lg:gap-8 transition-all duration-300`}>
+        <div className="lg:grid lg:grid-cols-[240px_1fr] lg:gap-10">
 
           {/* Lesson stepper — the "where am I" context that ties the module
               together. Sticky on wide screens, hidden on mobile. */}
@@ -497,12 +355,7 @@ export default function LessonDetailPage() {
           )}
 
           {/* Article */}
-          <article className={`min-w-0 ${splitSandbox ? "max-w-none" : "max-w-2xl"} ${
-            fontSize === "sm" ? "text-xs leading-relaxed" :
-            fontSize === "lg" ? "text-base leading-relaxed" :
-            fontSize === "xl" ? "text-lg leading-loose" :
-            "text-sm leading-relaxed"
-          }`}>
+          <article className="min-w-0 max-w-2xl">
             {/* Breadcrumb + position */}
             <div className="flex items-center flex-wrap gap-x-2 text-xs text-muted-foreground mb-5">
               <Link href="/modules" className="inline-flex items-center min-h-[24px] py-1 hover:text-foreground transition-colors">{t("Learn", "O'rganish", "Учиться")}</Link>
@@ -698,30 +551,8 @@ export default function LessonDetailPage() {
               </div>
             )}
           </article>
-
-          {/* Side-by-Side CLI Terminal Sandbox (Visible when Split Sandbox Mode is Active) */}
-          {splitSandbox && (
-            <aside className="hidden lg:block min-w-0">
-              <div className="sticky top-24 space-y-4">
-                <div className="flex items-center justify-between px-2 bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20">
-                  <div className="flex items-center gap-2 text-xs font-mono font-bold text-emerald-400">
-                    <TerminalIcon className="w-4 h-4" />
-                    <span>{t("Interactive CLI Playground", "Interaktiv CLI Muhiti", "Интерактивный CLI")}</span>
-                  </div>
-                  <button
-                    onClick={() => setSplitSandbox(false)}
-                    className="text-xs font-mono font-bold text-slate-400 hover:text-slate-100 px-2 py-0.5 rounded bg-slate-800/60 transition-colors"
-                  >
-                    ✕ {t("Close", "Yopish", "Закрыть")}
-                  </button>
-                </div>
-                <CyberCliSimulator initialCommand="ls -la" />
-              </div>
-            </aside>
-          )}
         </div>
       </div>
-      <LessonNotesDrawer lessonId={id} lessonTitle={localizedTitle} />
     </div>
   );
 }

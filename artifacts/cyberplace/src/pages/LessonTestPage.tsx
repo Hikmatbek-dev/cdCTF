@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRoute, useLocation } from "wouter";
-import { CheckCircle2, XCircle, ArrowRight, Sparkles } from "lucide-react";
+import { CheckCircle2, XCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useLang } from "@/lib/LanguageContext";
@@ -8,8 +8,6 @@ import { useStartLessonTest, useSubmitLessonTest } from "@workspace/api-client-r
 import { useToast } from "@/hooks/use-toast";
 import { normalizeArray } from "@/lib/api-shapes";
 import { loginWithNext } from "@/lib/next-path";
-import { triggerConfetti } from "@/lib/confetti";
-import { updateLearningStreak } from "@/lib/learn-storage";
 
 type TestQuestion = {
   id: number;
@@ -166,42 +164,11 @@ export default function LessonTestPage() {
         onSuccess: (res) => {
           setResult(res);
           void refetchSession();
-          if (res.passed) {
-            triggerConfetti();
-            updateLearningStreak();
-          }
         },
         onError: () => toast({ title: t("Error submitting test", "Testni yuborishda xatolik", "Ошибка при отправке теста"), variant: "destructive" }),
       }
     );
   };
-
-  // Power-User Hotkeys for Quiz options (A/B/C/D or 1/2/3/4)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger inside text inputs
-      if (["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName)) return;
-      if (result || loading || shuffledQuestions.length === 0) return;
-
-      const key = e.key.toUpperCase();
-      let optIdx = -1;
-      if (key === "A" || key === "1") optIdx = 0;
-      else if (key === "B" || key === "2") optIdx = 1;
-      else if (key === "C" || key === "3") optIdx = 2;
-      else if (key === "D" || key === "4") optIdx = 3;
-
-      if (optIdx !== -1) {
-        // Find the first unanswered question
-        const targetQ = shuffledQuestions.find(({ q }) => answers[q.id] === undefined) || shuffledQuestions[0];
-        if (targetQ && targetQ.shuffledOptions[optIdx]) {
-          setAnswers(prev => ({ ...prev, [targetQ.q.id]: targetQ.shuffledOptions[optIdx].originalIndex }));
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [answers, shuffledQuestions, result, loading]);
 
   if (result) {
     const percentage = Math.round(result.score * 100);
