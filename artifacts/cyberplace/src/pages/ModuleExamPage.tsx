@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useRoute, useLocation, Link } from "wouter";
-import { Award, CheckCircle2, XCircle, ArrowLeft, Loader2 } from "lucide-react";
+import { Award, CheckCircle2, XCircle, ArrowLeft, Loader2, Sparkles, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { useLang } from "@/lib/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 import { loginWithNext } from "@/lib/next-path";
 import { normalizeArray } from "@/lib/api-shapes";
+import { triggerConfetti } from "@/lib/confetti";
 import {
   useGetModule, getGetModuleQueryKey,
   useStartModuleExam, useSubmitModuleExam, useIssueCertificate,
@@ -151,6 +152,9 @@ export default function ModuleExamPage() {
         onSuccess: res => {
           setResult(res);
           setSessionId(null);
+          if (res.passed) {
+            triggerConfetti();
+          }
         },
         onError: err => toast({
           title: t("Could not submit", "Yuborib bo'lmadi", "Не удалось отправить"),

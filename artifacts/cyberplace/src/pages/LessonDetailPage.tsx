@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRoute, useLocation, Link } from "wouter";
 import {
   BookOpen, CheckCircle2, Lock, ChevronRight, ChevronLeft, ChevronDown, Copy, Check,
-  ArrowRight, GraduationCap, ListChecks, Flag,
+  ArrowRight, GraduationCap, ListChecks, Flag, Terminal as TerminalIcon, Sparkles, Bookmark
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +14,10 @@ import {
   useGetLesson, getGetLessonQueryKey,
   useGetModule, getGetModuleQueryKey,
 } from "@workspace/api-client-react";
+import { CyberCliSimulator } from "@/components/CyberCliSimulator";
+import { LessonNotesDrawer } from "@/components/LessonNotesDrawer";
+import { isLessonBookmarked } from "@/lib/learn-storage";
+
 
 /**
  * Renders **bold**, *italic* and `code` inside one line.
@@ -55,6 +59,9 @@ function isTableSeparator(line: string) {
 function CodeBlock({ code, lang }: { code: string; lang: string }) {
   const { t } = useLang();
   const [copied, setCopied] = useState(false);
+  const [showCli, setShowCli] = useState(false);
+
+  const isShell = !lang || ["bash", "sh", "shell", "terminal", "zsh", "cmd", "cli"].includes(lang.toLowerCase());
 
   const copy = async () => {
     try {
@@ -66,25 +73,46 @@ function CodeBlock({ code, lang }: { code: string; lang: string }) {
     }
   };
 
+  const firstCmdLine = code.split("\n").find(l => l.trim() && !l.trim().startsWith("#"))?.replace(/^\$\s*/, "") || "ls";
+
   return (
-    <div className="my-6 rounded-xl overflow-hidden bg-[#111726] border border-[#243049] group/code">
+    <div className="my-6 rounded-xl overflow-hidden bg-[#111726] border border-[#243049] group/code shadow-lg">
       <div className="flex items-center justify-between px-4 py-2 border-b border-[#243049] bg-[#161d30]">
-        <span className="font-mono text-xs uppercase tracking-wider text-slate-400">
+        <span className="font-mono text-xs uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+          {isShell && <TerminalIcon className="w-3.5 h-3.5 text-emerald-400" />}
           {lang || t("shell", "shell", "shell")}
         </span>
-        <button
-          onClick={copy}
-          className="inline-flex items-center gap-1.5 min-h-[32px] px-2.5 -mr-1.5 rounded-md text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
-          aria-label={t("Copy code", "Nusxa olish", "Копировать")}
-        >
-          {copied
-            ? <><Check className="w-3.5 h-3.5 text-emerald-300" aria-hidden="true" />{t("Copied", "Nusxa olindi", "Скопировано")}</>
-            : <><Copy className="w-3.5 h-3.5" aria-hidden="true" />{t("Copy", "Nusxa", "Копия")}</>}
-        </button>
+        <div className="flex items-center gap-2">
+          {isShell && (
+            <button
+              onClick={() => setShowCli(!showCli)}
+              className="inline-flex items-center gap-1.5 min-h-[32px] px-2.5 rounded-md text-xs font-medium text-emerald-300 hover:text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              {showCli ? t("Hide Sandbox", "Sandboxni berkitish", "Скрыть песочницу") : t("Try in CLI Sandbox", "CLI Sandboxda sinash", "Открыть песочницу")}
+            </button>
+          )}
+          <button
+            onClick={copy}
+            className="inline-flex items-center gap-1.5 min-h-[32px] px-2.5 -mr-1.5 rounded-md text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+            aria-label={t("Copy code", "Nusxa olish", "Копировать")}
+          >
+            {copied
+              ? <><Check className="w-3.5 h-3.5 text-emerald-300" aria-hidden="true" />{t("Copied", "Nusxa olindi", "Скопировано")}</>
+              : <><Copy className="w-3.5 h-3.5" aria-hidden="true" />{t("Copy", "Nusxa", "Копия")}</>}
+          </button>
+        </div>
       </div>
+
       <pre className="p-4 overflow-x-auto text-[13px] font-mono leading-relaxed text-slate-200">
         <code>{code}</code>
       </pre>
+
+      {showCli && (
+        <div className="p-3 border-t border-[#243049] bg-[#0c101a]">
+          <CyberCliSimulator initialCommand={firstCmdLine} />
+        </div>
+      )}
     </div>
   );
 }
@@ -230,6 +258,21 @@ export default function LessonDetailPage() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [id]);
+
+  // Keyboard Hotkeys: Alt+Right Arrow (Next lesson), Alt+Left Arrow (Prev lesson)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key === "ArrowRight" && next) {
+        e.preventDefault();
+        setLocation(`/learn/${next.id}`);
+      } else if (e.altKey && e.key === "ArrowLeft" && prev) {
+        e.preventDefault();
+        setLocation(`/learn/${prev.id}`);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [next, prev, setLocation]);
 
   // Jump to top when moving between lessons.
   useEffect(() => { window.scrollTo({ top: 0 }); }, [id]);
@@ -553,6 +596,7 @@ export default function LessonDetailPage() {
           </article>
         </div>
       </div>
+      <LessonNotesDrawer lessonId={id} lessonTitle={localizedTitle} />
     </div>
   );
 }
