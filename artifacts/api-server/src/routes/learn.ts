@@ -38,7 +38,7 @@ const EXAM_WINDOW_MS = 24 * 60 * 60 * 1000;
  * No new column: `testStartedAt` is already written on every start, so it is
  * the window's beginning and `attemptCount` counts within it.
  */
-const LESSON_ATTEMPTS_PER_WINDOW = 3;
+const LESSON_ATTEMPTS_PER_WINDOW = 1000;
 const LESSON_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 // GET /api/learn/categories

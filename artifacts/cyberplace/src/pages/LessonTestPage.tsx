@@ -247,9 +247,9 @@ export default function LessonTestPage() {
             button: a learner should know the bar and the budget before they
             commit to answering. */}
         <p className="text-xs text-muted-foreground mb-5">
-          {t(`${questionList.length} questions · pass at 80% · ${attemptsLeft} more tries today`,
-             `${questionList.length} ta savol · 80% dan o'tiladi · bugun yana ${attemptsLeft} urinish`,
-             `${questionList.length} вопросов · порог 80% · сегодня ещё ${attemptsLeft} попыток`)}
+          {t(`${questionList.length} questions · pass at 80% · unlimited attempts`,
+             `${questionList.length} ta savol · 80% dan o'tiladi · cheksiz urinishlar`,
+             `${questionList.length} вопросов · порог 80% · попытки не ограничены`)}
         </p>
         <Progress value={progress} className="mb-8 h-1.5" />
 

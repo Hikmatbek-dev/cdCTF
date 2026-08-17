@@ -325,43 +325,6 @@ export default function LessonDetailPage() {
                     {t("Retake test", "Qayta topshirish", "Пересдать")}
                   </Button>
                 </div>
-              ) : lesson.attemptCount >= 3 ? (
-                /* Out of attempts is not a dead end: the lesson stays readable,
-                   and the rest of the module is still open. Say so, and give
-                   somewhere to go. */
-                <div className="glass-card">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-muted border border-border flex items-center justify-center shrink-0">
-                      <ListChecks className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm">{t("You've used all 3 test attempts", "3 ta urinishning hammasini ishlatdingiz", "Вы использовали все 3 попытки")}</p>
-                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                        {t(
-                          "The lesson stays open — re-read it any time. You can carry on with the rest of the module, and the final exam covers this material again.",
-                          "Dars ochiq qoladi — istalgan vaqtda qayta o'qing. Modulning qolganini davom ettiraversangiz bo'ladi, yakuniy imtihon bu mavzuni yana qamrab oladi.",
-                          "Урок остаётся открытым — перечитайте в любое время. Можно продолжать модуль, а итоговый экзамен снова охватит этот материал.",
-                        )}
-                      </p>
-                      <div className="flex flex-wrap gap-2 mt-4">
-                        {next && (
-                          <Link href={`/learn/${next.id}`}>
-                            <button className="cyber-button h-9 px-4 text-xs">
-                              {t("Next lesson", "Keyingi dars", "Следующий урок")} <ArrowRight className="w-3.5 h-3.5" />
-                            </button>
-                          </Link>
-                        )}
-                        {mod && (
-                          <Link href={`/modules/${mod.id}`}>
-                            <button className="cyber-button-outline h-9 px-4 text-xs">
-                              {t("Back to module", "Modulga qaytish", "К модулю")}
-                            </button>
-                          </Link>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
               ) : (
                 <div className="glass-card flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-primary/25">
                   {/* Lessons are readable without an account, so this card is
@@ -376,7 +339,7 @@ export default function LessonDetailPage() {
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {isAuthenticated
-                        ? t(`${3 - lesson.attemptCount} attempts remaining`, `${3 - lesson.attemptCount} urinish qoldi`, `Осталось попыток: ${3 - lesson.attemptCount}`)
+                        ? t(`Unlimited attempts`, `Cheksiz urinishlar`, `Неограниченное количество попыток`)
                         : t("It takes half a minute, and you come straight back here.", "Yarim daqiqa vaqt oladi va shu yerga qaytasiz.", "Это полминуты, и вы вернётесь сюда же.")}
                     </p>
                   </div>
