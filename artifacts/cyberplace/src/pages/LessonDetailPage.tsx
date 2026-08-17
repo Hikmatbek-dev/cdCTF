@@ -297,8 +297,13 @@ export default function LessonDetailPage() {
             </header>
 
             {/* Continuous Content */}
-            <div className="prose prose-sm sm:prose-base dark:prose-invert prose-headings:font-black prose-a:text-primary prose-a:no-underline hover:prose-a:underline max-w-none mb-12">
-              <Markdown content={localizedContent} />
+            <div className="glass-card !p-6 sm:!p-10 mb-12 relative overflow-hidden border-primary/20 shadow-xl shadow-primary/5">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] -z-10 mix-blend-screen pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/5 rounded-full blur-[80px] -z-10 mix-blend-screen pointer-events-none" />
+              
+              <div className="prose prose-sm sm:prose-base dark:prose-invert prose-headings:font-black prose-h2:text-primary prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none max-w-none">
+                <Markdown content={localizedContent} />
+              </div>
             </div>
 
             {/* Test CTA */}

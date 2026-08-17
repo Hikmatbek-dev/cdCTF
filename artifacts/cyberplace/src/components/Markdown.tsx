@@ -6,7 +6,7 @@ import { useLang } from "@/lib/LanguageContext";
  * Renders **bold**, *italic* and `code` inside one line.
  */
 export function renderInline(text: string, keyPrefix: string) {
-  const tokens = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\*[^*\s][^*]*\*)/g);
+  const tokens = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\*[^*\s][^*]*\*|!\[.*?\]\(.*?\))/g);
   return tokens.map((tok, i) => {
     const key = `${keyPrefix}-${i}`;
     if (tok.startsWith("**") && tok.endsWith("**") && tok.length > 4) {
@@ -17,6 +17,19 @@ export function renderInline(text: string, keyPrefix: string) {
     }
     if (tok.startsWith("*") && tok.endsWith("*") && tok.length > 2) {
       return <em key={key}>{tok.slice(1, -1)}</em>;
+    }
+    if (tok.startsWith("![") && tok.endsWith(")")) {
+      const mdImageMatch = tok.match(/!\[(.*?)\]\((.*?)\)/);
+      if (mdImageMatch) {
+        return (
+          <img 
+            key={key} 
+            src={mdImageMatch[2]} 
+            alt={mdImageMatch[1]} 
+            className="inline-block max-h-48 rounded-lg shadow-sm align-middle mx-2" 
+          />
+        );
+      }
     }
     return tok;
   });
@@ -138,6 +151,34 @@ function renderLines(lines: string[], blockKey: number) {
       out.push(<h1 key={j} className="text-2xl font-bold tracking-tight mt-8 mb-3">{renderInline(line.slice(2), `h1-${blockKey}-${j}`)}</h1>);
     } else if (line.trim() === "") {
       // blank
+    } else if (line.trim().startsWith("<img") || line.trim().startsWith("![")) {
+      // Parse markdown image ![alt](url) or HTML img tag
+      const mdImageMatch = line.match(/!\[(.*?)\]\((.*?)\)/);
+      if (mdImageMatch) {
+        out.push(
+          <img 
+            key={`img-${blockKey}-${j}`} 
+            src={mdImageMatch[2]} 
+            alt={mdImageMatch[1]} 
+            className="w-full max-w-2xl mx-auto rounded-xl shadow-lg border border-border/50 my-8 object-contain bg-muted/20" 
+          />
+        );
+      } else {
+        const srcMatch = line.match(/src=["'](.*?)["']/);
+        const altMatch = line.match(/alt=["'](.*?)["']/);
+        if (srcMatch) {
+          out.push(
+            <img 
+              key={`img-${blockKey}-${j}`} 
+              src={srcMatch[1]} 
+              alt={altMatch ? altMatch[1] : ""} 
+              className="w-full max-w-2xl mx-auto rounded-xl shadow-lg border border-border/50 my-8 object-contain bg-muted/20" 
+            />
+          );
+        } else {
+          out.push(<p key={j} className="text-[15px] leading-7 text-muted-foreground my-3">{renderInline(line, `p-${blockKey}-${j}`)}</p>);
+        }
+      }
     } else {
       out.push(<p key={j} className="text-[15px] leading-7 text-muted-foreground my-3">{renderInline(line, `p-${blockKey}-${j}`)}</p>);
     }
