@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import { 
-  Shield, Cpu, Zap, Search, ChevronRight, CheckCircle2, Lock, ArrowUpRight, Award, Flame, Play, Check, Clock, Code, FileText, Target
+  Shield, Cpu, Zap, Search, ChevronRight, CheckCircle2, Lock, ArrowUpRight, Award, Flame, Play, Check, Clock, Code, FileText, Target, Trophy
 } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
+import { useAuth } from "@/lib/AuthContext";
 import { useListModules, getListModulesQueryKey } from "@workspace/api-client-react";
 import { FadeIn } from "@/components/PageTransition";
 import { LoadFailure } from "@/components/LoadFailure";
@@ -98,6 +99,7 @@ type ModuleSummary = {
 
 export default function LearnPage() {
   const { t, lang } = useLang();
+  const { auth } = useAuth();
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
 
   const { data: modData, isLoading, isError, refetch } =
@@ -126,17 +128,70 @@ export default function LearnPage() {
     };
   }, [pathModules]);
 
+  const userXp = auth?.user?.xp ?? 0;
+  const currentLevel = Math.floor(userXp / 1000) + 1;
+  const nextLevelXp = currentLevel * 1000;
+  const levelProgress = ((userXp % 1000) / 1000) * 100;
+
   return (
     <div className="min-h-screen bg-background text-foreground page relative overflow-hidden pb-24">
       {/* Background Ambience */}
       <div className="fixed inset-0 mono-grid pointer-events-none opacity-20" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-primary/10 via-primary/5 to-transparent blur-[150px] pointer-events-none rounded-full" />
 
-      <div className="shell relative z-10 pt-10">
+      <div className="shell relative z-10 pt-6">
         
+        {/* Gamified User Stats Banner */}
+        {auth?.user && (
+          <FadeIn>
+            <div className="mb-10 p-5 rounded-3xl border border-primary/20 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-md shadow-lg shadow-primary/5 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">
+              <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-secondary/10 rounded-full blur-3xl pointer-events-none" />
+              
+              <div className="flex items-center gap-5 relative z-10">
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary-foreground flex items-center justify-center text-primary-foreground font-black text-2xl shadow-xl shadow-primary/20 neon-glow">
+                    {currentLevel}
+                  </div>
+                  <div className="absolute -bottom-2 -right-2 bg-background border border-border rounded-full p-1 shadow-sm">
+                    <Trophy className="w-4 h-4 text-amber-500" />
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold tracking-tight">{t("Welcome back, ", "Xush kelibsiz, ", "С возвращением, ")}<span className="text-primary">{auth.user.username}</span>!</h2>
+                  <p className="text-sm text-muted-foreground">{t("Keep learning to level up.", "Darajangizni oshirish uchun o'qishda davom eting.", "Продолжайте учиться, чтобы повысить уровень.")}</p>
+                </div>
+              </div>
+              
+              <div className="flex-1 w-full md:max-w-xs relative z-10">
+                <div className="flex justify-between text-xs font-bold font-mono mb-2">
+                  <span className="text-muted-foreground uppercase">{t("Level Progress", "Daraja Holati", "Прогресс Уровня")}</span>
+                  <span className="text-primary">{userXp} / {nextLevelXp} XP</span>
+                </div>
+                <div className="h-3 w-full bg-muted/50 rounded-full overflow-hidden border border-border/50">
+                  <div 
+                    className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full transition-all duration-1000 ease-out" 
+                    style={{ width: `${levelProgress}%` }}
+                  />
+                </div>
+              </div>
+              
+              <div className="hidden lg:flex items-center gap-3 px-5 py-3 rounded-2xl bg-background/50 border border-border/50 relative z-10">
+                <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center">
+                  <Flame className="w-5 h-5 text-orange-500 fill-orange-500/20" />
+                </div>
+                <div>
+                  <div className="text-sm font-bold">{t("1 Day Streak", "1 Kunlik Seriya", "Серия 1 день")}</div>
+                  <div className="text-xs text-muted-foreground">{t("You're on fire!", "Ajoyib ketyapsiz!", "Так держать!")}</div>
+                </div>
+              </div>
+            </div>
+          </FadeIn>
+        )}
+
         {/* Main Header */}
-        <FadeIn>
-          <div className="text-center max-w-3xl mx-auto mb-12">
+        <FadeIn delay={0.1}>
+          <div className="text-center max-w-3xl mx-auto mb-10">
             <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-4">
               {t("Choose Your ", "O'z Yo'nalishingizni ", "Выберите ")}
               <span className="gradient-text">{t("Path", "Tanlang", "Путь")}</span>

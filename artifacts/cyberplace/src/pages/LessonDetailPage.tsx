@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRoute, useLocation, Link } from "wouter";
 import {
   BookOpen, CheckCircle2, Lock, ChevronRight, ChevronLeft, ChevronDown, Copy, Check,
-  ArrowRight, GraduationCap, ListChecks, Flag, Bookmark, BookmarkCheck, PenLine
+  ArrowRight, GraduationCap, ListChecks, Flag, Bookmark, BookmarkCheck, PenLine, Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -275,29 +275,28 @@ export default function LessonDetailPage() {
                 </div>
               </div>
             )}
-            
-            <header className="mb-8 relative overflow-hidden rounded-2xl p-6 border border-border bg-card/30">
-              <div
-                className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-overlay"
-                style={{ 
-                  backgroundImage: `url(https://images.unsplash.com/photo-${[
-                    "1526374965328-7f61d4dc18c5", "1550751827-4bd374c3f58b", 
-                    "1518770660439-4636190af475", "1558494949-ef010cbdcc31", 
-                    "1451187580459-43490279c0fa", "1563206767-5b18f218e8de"
-                  ][lesson.id % 6]}?w=1200&q=80)` 
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+            {/* Sleek Header */}
+            <header className="mb-6 relative overflow-hidden rounded-2xl p-6 sm:p-8 border border-primary/20 bg-gradient-to-br from-card to-card/50 shadow-lg shadow-primary/5">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px] -z-10 mix-blend-screen pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-secondary/10 rounded-full blur-[60px] -z-10 mix-blend-screen pointer-events-none" />
               
-              <div className="relative z-10">
-                <h1 className="text-3xl sm:text-4xl font-black drop-shadow-md" data-testid="text-lesson-title">
+              <div className="relative z-10 flex flex-col gap-4">
+                <h1 className="text-3xl sm:text-4xl font-black drop-shadow-sm tracking-tight" data-testid="text-lesson-title">
                   {localizedTitle}
                 </h1>
+                <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground font-medium">
+                  <span className="flex items-center gap-1.5 bg-background/80 px-2.5 py-1 rounded-md border border-border/50">
+                    <Clock className="w-4 h-4 text-primary" /> {Math.max(1, Math.ceil((localizedContent?.length || 0) / 1000))} {t("min read", "daqiqa o'qish", "мин чтения")}
+                  </span>
+                  <span className="flex items-center gap-1.5 bg-background/80 px-2.5 py-1 rounded-md border border-border/50">
+                    <BookOpen className="w-4 h-4 text-sky-500" /> {t("Theory", "Nazariya", "Теория")}
+                  </span>
+                </div>
               </div>
             </header>
 
             {/* Continuous Content */}
-            <div className="glass-card !p-6 sm:!p-10 mb-12 relative overflow-hidden border-primary/20 shadow-xl shadow-primary/5">
+            <div className="glass-card !p-5 sm:!p-8 mb-8 relative overflow-hidden border-primary/20 shadow-xl shadow-primary/5">
               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] -z-10 mix-blend-screen pointer-events-none" />
               <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/5 rounded-full blur-[80px] -z-10 mix-blend-screen pointer-events-none" />
               
