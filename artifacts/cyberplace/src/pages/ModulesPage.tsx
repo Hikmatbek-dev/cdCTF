@@ -153,10 +153,20 @@ export default function ModulesPage() {
                 return (
                   <Link key={p.id} href={`/paths/${p.slug}`}>
                     <div className="group h-full rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/40 transition-colors cursor-pointer flex flex-col" data-testid={`path-card-${p.slug}`}>
-                      <div className="relative h-28 flex items-center justify-center" style={{ background: `linear-gradient(135deg, hsl(${p.hue} 70% 45%), hsl(${(p.hue + 40) % 360} 70% 35%))` }}>
-                        <Route className="w-10 h-10 text-white/90" />
-                        {p.badge && <span className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wider bg-white/90 text-black px-2 py-0.5 rounded">{p.badge}</span>}
-                        {pct > 0 && <span className="absolute top-3 right-3 text-xs font-bold text-white bg-black/30 rounded-full px-2 py-0.5 tabular-nums">{pct}%</span>}
+                      <div className="relative h-28 flex items-center justify-center overflow-hidden">
+                        <div
+                          className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-luminosity transition-transform duration-700 group-hover:scale-110"
+                          style={{ 
+                            backgroundImage: `url(https://images.unsplash.com/photo-${[
+                              "1550751827-4bd374c3f58b", "1526374965328-7f61d4dc18c5", 
+                              "1558494949-ef010cbdcc31", "1563206767-5b18f218e8de"
+                            ][(p.slug.length) % 4]}?w=600&q=80)` 
+                          }}
+                        />
+                        <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, hsl(${p.hue} 70% 35% / 0.8), hsl(${(p.hue + 40) % 360} 70% 20% / 0.9))` }} />
+                        <Route className="w-10 h-10 text-white relative z-10 drop-shadow-md" />
+                        {p.badge && <span className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wider bg-white/90 text-black px-2 py-0.5 rounded shadow-sm z-10">{p.badge}</span>}
+                        {pct > 0 && <span className="absolute top-3 right-3 text-xs font-bold text-white bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5 tabular-nums z-10 border border-white/10">{pct}%</span>}
                       </div>
                       <div className="p-5 flex flex-col flex-1">
                         <h3 className="font-bold text-lg mb-1.5 group-hover:text-primary transition-colors">{loc(p.title, p.titleUz, p.titleRu)}</h3>
@@ -198,9 +208,21 @@ export default function ModulesPage() {
                   <Link key={m.id} href={`/modules/${m.id}`}>
                     <div className="group h-full rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/40 transition-colors cursor-pointer flex flex-col" data-testid={`module-card-${m.id}`}>
                       <div className="relative h-28 bg-muted/30 overflow-hidden flex items-center justify-center">
-                        <Art className="w-full h-full" />
-                        {done ? <span className="absolute top-3 right-3 text-primary bg-background/80 rounded-full p-1"><CheckCircle2 className="w-4 h-4" /></span>
-                          : pct > 0 && <span className="absolute top-3 right-3 text-xs font-bold bg-background/80 rounded-full px-2 py-0.5 tabular-nums">{pct}%</span>}
+                        <div
+                          className="absolute inset-0 bg-cover bg-center opacity-60 transition-transform duration-700 group-hover:scale-110"
+                          style={{ 
+                            backgroundImage: `url(https://images.unsplash.com/photo-${[
+                              "1550751827-4bd374c3f58b", "1526374965328-7f61d4dc18c5", 
+                              "1558494949-ef010cbdcc31", "1563206767-5b18f218e8de",
+                              "1518770660439-4636190af475", "1451187580459-43490279c0fa"
+                            ][m.id % 6]}?w=600&q=80)` 
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />
+                        <div className="absolute inset-0 bg-primary/10 mix-blend-color" />
+                        
+                        {done ? <span className="absolute top-3 right-3 text-primary bg-background/80 backdrop-blur-sm rounded-full p-1 shadow-sm border border-border/50"><CheckCircle2 className="w-4 h-4" /></span>
+                          : pct > 0 && <span className="absolute top-3 right-3 text-xs font-bold bg-background/80 backdrop-blur-sm shadow-sm border border-border/50 rounded-full px-2 py-0.5 tabular-nums">{pct}%</span>}
                       </div>
                       <div className="p-5 flex flex-col flex-1">
                         <h3 className="font-bold text-base mb-1.5 group-hover:text-primary transition-colors">{loc(m.title, m.titleUz, m.titleRu)}</h3>
