@@ -672,6 +672,8 @@ bin  boot  dev  etc  home  lib  media  mnt  opt  proc  root  run  sbin  srv  sys
 
 Knowing what these hold is the difference between guessing and looking.
 
+<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRt9l4-ab9716tEPKh_5lCOXlWdljiQqy9NXzAy79vozeyY0VDGGf6Nbjdf&s=10" alt="Linux Filesystem Hierarchy" className="w-full max-w-2xl mx-auto rounded-xl shadow-lg border border-border/50 my-6" />
+
 ## The ones that matter in security
 
 **`/etc`** — system-wide configuration. Plain text, almost always readable.
@@ -771,6 +773,8 @@ bin  boot  dev  etc  home  lib  media  mnt  opt  proc  root  run  sbin  srv  sys
 
 Bularda nima borligini bilish — taxmin qilish bilan qarab olish orasidagi farq.
 
+<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRt9l4-ab9716tEPKh_5lCOXlWdljiQqy9NXzAy79vozeyY0VDGGf6Nbjdf&s=10" alt="Linux Filesystem Hierarchy" className="w-full max-w-2xl mx-auto rounded-xl shadow-lg border border-border/50 my-6" />
+
 ## Xavfsizlikda muhimlari
 
 **`/etc`** — tizim bo'ylab sozlamalar. Oddiy matn, deyarli doim o'qilaveradi.
@@ -869,6 +873,8 @@ bin  boot  dev  etc  home  lib  media  mnt  opt  proc  root  run  sbin  srv  sys
 ```
 
 Знание того, что здесь лежит, — это разница между догадкой и проверкой.
+
+<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRt9l4-ab9716tEPKh_5lCOXlWdljiQqy9NXzAy79vozeyY0VDGGf6Nbjdf&s=10" alt="Linux Filesystem Hierarchy" className="w-full max-w-2xl mx-auto rounded-xl shadow-lg border border-border/50 my-6" />
 
 ## Важные для безопасности
 

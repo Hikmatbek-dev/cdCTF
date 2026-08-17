@@ -16,11 +16,6 @@ import {
   useGetLesson, getGetLessonQueryKey,
   useGetModule, getGetModuleQueryKey,
 } from "@workspace/api-client-react";
-
-import { LessonTasks, splitIntoTasks } from "@/components/LessonTasks";
-
-
-
 type SiblingLesson = { id: number; title: string; titleUz?: string | null; titleRu?: string | null; isCompleted: boolean };
 
 export default function LessonDetailPage() {
@@ -301,15 +296,10 @@ export default function LessonDetailPage() {
               </div>
             </header>
 
-            {/* Content, as numbered tasks. The lesson is split at its own `##`
-                headings so its shape is visible before you start and your
-                position in it is visible throughout — a single 2,700-character
-                column gave a reader neither. */}
-            <LessonTasks
-              lessonId={lesson.id}
-              tasks={splitIntoTasks(localizedContent)}
-              renderBody={(body, key) => <div key={key}><Markdown content={body} /></div>}
-            />
+            {/* Continuous Content */}
+            <div className="prose prose-sm sm:prose-base dark:prose-invert prose-headings:font-black prose-a:text-primary prose-a:no-underline hover:prose-a:underline max-w-none mb-12">
+              <Markdown content={localizedContent} />
+            </div>
 
             {/* Test CTA */}
             <div className="mt-10">
