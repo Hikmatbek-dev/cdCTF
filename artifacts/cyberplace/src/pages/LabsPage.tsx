@@ -106,7 +106,7 @@ export default function LabsPage() {
   }, [running?.id, running?.expiresAt]);
 
   const copyHost = (text: string) => {
-    navigator.clipboard.writeText(text);
+    void navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     toast({ title: t("Target host copied to clipboard!", "Nishon manzili nusxalandi!", "Адрес скопирован!") });

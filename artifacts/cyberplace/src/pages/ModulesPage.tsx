@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
   GraduationCap, Clock, Award, CheckCircle2, ChevronRight, Route, Layers,
-  FileText, Network, Sparkles, ShieldAlert, Radio, Map,
+  FileText, Network, Sparkles, ShieldAlert, Radio, Map, Code, Hexagon, Terminal
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLang } from "@/lib/LanguageContext";
@@ -104,15 +104,25 @@ export default function ModulesPage() {
   const loc = (en: string, uz?: string | null, ru?: string | null) => (lang === "uz" ? uz : lang === "ru" ? ru : en) || en;
 
   return (
-    <div className="min-h-screen bg-background text-foreground page">
-      <div className="shell">
-        <header className="mb-8">
-          <div className="eyebrow mb-3">
-            <GraduationCap className="w-3.5 h-3.5" />
-            {t("cdCTF · Learn", "cdCTF · O'rganish", "cdCTF · Обучение")}
+    <div className="min-h-screen bg-background text-foreground page relative">
+      <div className="fixed inset-0 mono-grid pointer-events-none opacity-40" />
+      <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/20 blur-[120px] rounded-full pointer-events-none opacity-50" />
+      
+      <div className="shell relative z-10 py-8">
+        <header className="mb-10 relative">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/30 shadow-[0_0_20px_rgba(var(--primary),0.15)]">
+              <GraduationCap className="w-7 h-7 text-primary animate-glow" />
+            </div>
+            <div>
+              <div className="eyebrow flex items-center gap-2 mb-1">
+                <Terminal className="w-3.5 h-3.5 text-primary" />
+                {t("cdCTF · Learn", "cdCTF · O'rganish", "cdCTF · Обучение")}
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight"><span className="gradient-text">{t("Learn cyber security", "Kiberxavfsizlikni o'rganish", "Изучайте кибербезопасность")}</span></h1>
+            </div>
           </div>
-          <h1 className="mb-3"><span className="gradient-text">{t("Learn cyber security", "Kiberxavfsizlikni o'rganish", "Изучайте кибербезопасность")}</span></h1>
-          <p className="text-muted-foreground max-w-2xl">
+          <p className="text-muted-foreground max-w-2xl text-base sm:text-lg">
             {t("Follow a structured path, work through focused modules, and sharpen your skills — from your first command to a full attack chain.",
                "Tuzilgan yo'nalishni bosib o'ting, fokusli modullarni o'rganing va ko'nikmalaringizni charxlang — birinchi buyruqdan to'liq hujum zanjirigacha.",
                "Идите по структурированному пути, проходите модули и оттачивайте навыки — от первой команды до полной цепочки атаки.")}
@@ -120,23 +130,25 @@ export default function ModulesPage() {
         </header>
 
         {/* Tabs */}
-        <div className="flex gap-1 overflow-x-auto border-b border-border mb-8 -mx-2 px-2 no-scrollbar">
-          {TABS.map(tb => {
-            const Icon = tb.icon;
-            const active = tab === tb.key;
-            return (
-              <button
-                key={tb.key}
-                onClick={() => setTab(tb.key)}
-                className={`shrink-0 inline-flex items-center gap-2 px-3.5 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                  active ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-                data-testid={`learn-tab-${tb.key}`}
-              >
-                <Icon className="w-4 h-4" /> {tb.label[lang]}
-              </button>
-            );
-          })}
+        <div className="flex gap-2 overflow-x-auto mb-10 pb-2 no-scrollbar">
+          <div className="flex bg-card/60 backdrop-blur-md border border-border/50 p-1.5 rounded-xl shadow-inner">
+            {TABS.map(tb => {
+              const Icon = tb.icon;
+              const active = tab === tb.key;
+              return (
+                <button
+                  key={tb.key}
+                  onClick={() => setTab(tb.key)}
+                  className={`shrink-0 flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 ${
+                    active ? "bg-primary text-primary-foreground shadow-md shadow-primary/20 scale-100" : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted scale-95 hover:scale-100"
+                  }`}
+                  data-testid={`learn-tab-${tb.key}`}
+                >
+                  <Icon className="w-4 h-4" /> {tb.label[lang]}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* PATHS */}
@@ -152,21 +164,24 @@ export default function ModulesPage() {
                 const pct = p.moduleCount ? Math.round((p.completedModules / p.moduleCount) * 100) : 0;
                 return (
                   <Link key={p.id} href={`/paths/${p.slug}`}>
-                    <div className="group h-full rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/40 transition-colors cursor-pointer flex flex-col" data-testid={`path-card-${p.slug}`}>
-                      <div className="relative h-28 flex items-center justify-center overflow-hidden">
-                        <div
-                          className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-luminosity transition-transform duration-700 group-hover:scale-110"
-                          style={{ 
-                            backgroundImage: `url(https://images.unsplash.com/photo-${[
-                              "1550751827-4bd374c3f58b", "1526374965328-7f61d4dc18c5", 
-                              "1558494949-ef010cbdcc31", "1563206767-5b18f218e8de"
-                            ][(p.slug.length) % 4]}?w=600&q=80)` 
+                    <div className="group h-full rounded-3xl border border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer flex flex-col shadow-lg shadow-black/5" data-testid={`path-card-${p.slug}`}>
+                      <div className="relative h-32 flex items-center justify-center overflow-hidden border-b border-border/30">
+                        {/* Dynamic Background Pattern */}
+                        <div 
+                          className="absolute inset-0 opacity-20 transition-transform duration-700 group-hover:scale-110 group-hover:rotate-1"
+                          style={{
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 20.5V18H0v-2h20v-2H0v-2h20v-2H0V8h20V6H0V4h20V2H0V0h22v20h2V0h2v20h2V0h2v20h2V0h2v20h2V0h2v20h2v2H20v-1.5zM0 20h2v20H0V20zm4 0h2v20H4V20zm4 0h2v20H8V20zm4 0h2v20h-2V20zm4 0h2v20h-2V20zm4 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
                           }}
                         />
-                        <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, hsl(${p.hue} 70% 35% / 0.8), hsl(${(p.hue + 40) % 360} 70% 20% / 0.9))` }} />
-                        <Route className="w-10 h-10 text-white relative z-10 drop-shadow-md" />
-                        {p.badge && <span className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wider bg-white/90 text-black px-2 py-0.5 rounded shadow-sm z-10">{p.badge}</span>}
-                        {pct > 0 && <span className="absolute top-3 right-3 text-xs font-bold text-white bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5 tabular-nums z-10 border border-white/10">{pct}%</span>}
+                        {/* Accent Gradient */}
+                        <div className="absolute inset-0 opacity-80" style={{ background: `linear-gradient(135deg, hsl(${p.hue} 80% 20%), hsl(${(p.hue + 40) % 360} 90% 8%))` }} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
+                        
+                        <div className="relative z-10 w-12 h-12 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-xl group-hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-shadow duration-300">
+                          <Route className="w-6 h-6 text-white" />
+                        </div>
+                        {p.badge && <span className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-widest bg-white/10 backdrop-blur-md text-white border border-white/20 px-2.5 py-0.5 rounded shadow-sm z-10">{p.badge}</span>}
+                        {pct > 0 && <span className="absolute top-3 right-3 text-[10px] font-bold text-white bg-black/60 backdrop-blur-sm rounded-md px-2 py-1 tabular-nums z-10 border border-white/10">{pct}%</span>}
                       </div>
                       <div className="p-5 flex flex-col flex-1">
                         <h3 className="font-bold text-lg mb-1.5 group-hover:text-primary transition-colors">{loc(p.title, p.titleUz, p.titleRu)}</h3>
@@ -206,23 +221,21 @@ export default function ModulesPage() {
                 const pct = m.lessonCount ? Math.round((m.completedCount / m.lessonCount) * 100) : 0;
                 return (
                   <Link key={m.id} href={`/modules/${m.id}`}>
-                    <div className="group h-full rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/40 transition-colors cursor-pointer flex flex-col" data-testid={`module-card-${m.id}`}>
-                      <div className="relative h-28 bg-muted/30 overflow-hidden flex items-center justify-center">
-                        <div
-                          className="absolute inset-0 bg-cover bg-center opacity-60 transition-transform duration-700 group-hover:scale-110"
-                          style={{ 
-                            backgroundImage: `url(https://images.unsplash.com/photo-${[
-                              "1550751827-4bd374c3f58b", "1526374965328-7f61d4dc18c5", 
-                              "1558494949-ef010cbdcc31", "1563206767-5b18f218e8de",
-                              "1518770660439-4636190af475", "1451187580459-43490279c0fa"
-                            ][m.id % 6]}?w=600&q=80)` 
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />
-                        <div className="absolute inset-0 bg-primary/10 mix-blend-color" />
+                    <div className="group h-full rounded-2xl border border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer flex flex-col shadow-lg shadow-black/5" data-testid={`module-card-${m.id}`}>
+                      <div className="relative h-32 bg-muted/20 overflow-hidden flex items-center justify-center border-b border-border/30">
+                        {/* Cyber grid lines */}
+                        <div className="absolute inset-0 [background-image:linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:20px_20px] transition-transform duration-700 group-hover:scale-110" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
                         
-                        {done ? <span className="absolute top-3 right-3 text-primary bg-background/80 backdrop-blur-sm rounded-full p-1 shadow-sm border border-border/50"><CheckCircle2 className="w-4 h-4" /></span>
-                          : pct > 0 && <span className="absolute top-3 right-3 text-xs font-bold bg-background/80 backdrop-blur-sm shadow-sm border border-border/50 rounded-full px-2 py-0.5 tabular-nums">{pct}%</span>}
+                        {/* Glow effect based on completion */}
+                        <div className={`absolute -bottom-10 w-32 h-32 rounded-full blur-[40px] opacity-20 transition-colors duration-500 ${done ? 'bg-primary' : 'bg-primary group-hover:bg-primary/50'}`} />
+                        
+                        <div className="relative z-10 w-12 h-12 text-muted-foreground group-hover:text-primary transition-colors duration-300 drop-shadow-md">
+                          <Art className="w-full h-full" />
+                        </div>
+                        
+                        {done ? <span className="absolute top-3 right-3 text-primary bg-primary/10 backdrop-blur-md rounded-md px-2 py-1.5 shadow-sm border border-primary/30 flex items-center justify-center"><CheckCircle2 className="w-4 h-4" /></span>
+                          : pct > 0 && <span className="absolute top-3 right-3 text-[10px] font-bold bg-background/80 backdrop-blur-md shadow-sm border border-border/50 rounded-md px-2 py-1 tabular-nums">{pct}%</span>}
                       </div>
                       <div className="p-5 flex flex-col flex-1">
                         <h3 className="font-bold text-base mb-1.5 group-hover:text-primary transition-colors">{loc(m.title, m.titleUz, m.titleRu)}</h3>

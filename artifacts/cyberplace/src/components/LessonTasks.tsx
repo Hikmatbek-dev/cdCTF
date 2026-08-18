@@ -99,7 +99,7 @@ export function LessonTasks({ lessonId, tasks, renderBody }: Props) {
     setDone(set);
     const firstOpen = tasks.findIndex((_, i) => !set.has(i));
     setOpen(firstOpen === -1 ? null : firstOpen);
-  }, [storageKey, tasks.length]);
+  }, [storageKey, tasks]);
 
   const persist = (set: Set<number>) => {
     setDone(new Set(set));

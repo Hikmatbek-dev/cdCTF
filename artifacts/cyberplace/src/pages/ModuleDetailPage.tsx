@@ -108,18 +108,14 @@ export default function ModuleDetailPage() {
         </Link>
 
         {/* Module Header with Dynamic Banner Image */}
-        <header className="mb-8 relative overflow-hidden rounded-3xl p-8 border border-border bg-card/40">
-          <div
-            className="absolute inset-0 bg-cover bg-center opacity-20 mix-blend-luminosity"
-            style={{ 
-              backgroundImage: `url(https://images.unsplash.com/photo-${[
-                "1550751827-4bd374c3f58b", "1526374965328-7f61d4dc18c5", 
-                "1558494949-ef010cbdcc31", "1563206767-5b18f218e8de",
-                "1518770660439-4636190af475", "1451187580459-43490279c0fa"
-              ][mod.id % 6]}?w=1200&q=80)` 
+        <header className="mb-8 relative overflow-hidden rounded-3xl p-8 border border-border/50 bg-card/40 backdrop-blur-sm shadow-xl shadow-black/10">
+          <div 
+            className="absolute inset-0 opacity-15"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 20.5V18H0v-2h20v-2H0v-2h20v-2H0V8h20V6H0V4h20V2H0V0h22v20h2V0h2v20h2V0h2v20h2V0h2v20h2V0h2v20h2v2H20v-1.5zM0 20h2v20H0V20zm4 0h2v20H4V20zm4 0h2v20H8V20zm4 0h2v20h-2V20zm4 0h2v20h-2V20zm4 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background/90 to-background/95" />
           
           <div className="relative z-10">
             <h1 className="text-3xl sm:text-4xl font-black mb-3 drop-shadow-md" data-testid="text-module-title">
@@ -174,21 +170,25 @@ export default function ModuleDetailPage() {
           <h2 className="text-sm font-medium text-muted-foreground mb-4">
             {t("Lessons", "Darslar", "Уроки")}
           </h2>
-          <div className="border border-border rounded-xl divide-y divide-border overflow-hidden">
+          <div className="border border-border/50 rounded-2xl divide-y divide-border/50 overflow-hidden bg-card/40 backdrop-blur-sm shadow-sm">
             {mod.lessons.map((lesson, i) => (
               <Link href={`/learn/${lesson.id}`} key={lesson.id}>
                 <div
-                  className="flex items-center gap-4 px-5 py-4 bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+                  className="group flex items-center gap-4 px-5 py-4 bg-card/20 hover:bg-muted/50 transition-colors cursor-pointer"
                   data-testid={`row-module-lesson-${lesson.id}`}
                 >
-                  {lesson.isCompleted
-                    ? <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
-                    : <Circle className="w-5 h-5 text-muted-foreground/40 shrink-0" />}
-                  <span className="text-sm text-muted-foreground tabular-nums w-6 shrink-0">{i + 1}</span>
-                  <span className="flex-1 text-sm font-medium">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors border shadow-inner ${lesson.isCompleted ? "bg-primary/20 text-primary border-primary/30" : "bg-muted/50 text-muted-foreground border-border/50"}`}>
+                    {lesson.isCompleted
+                      ? <CheckCircle2 className="w-5 h-5 drop-shadow-sm" />
+                      : <span className="text-sm font-bold">{i + 1}</span>}
+                  </div>
+                  <span className="flex-1 text-base font-semibold group-hover:text-primary transition-colors">
                     {t(lesson.title, lesson.titleUz ?? undefined, lesson.titleRu ?? undefined)}
                   </span>
-                  <span className="text-xs text-muted-foreground shrink-0">+{lesson.points}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-medium text-muted-foreground bg-background/50 px-2 py-1 rounded-md border border-border/50 shrink-0">+{lesson.points} xp</span>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-300" />
+                  </div>
                 </div>
               </Link>
             ))}
