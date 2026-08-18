@@ -78,7 +78,10 @@ export default function CompetitionCtfPage() {
 
   if (!competition || !challenge) return null;
 
-  const canSubmit = competition.isJoined && competition.status === "active" && !challenge.isSolved && !challenge.isBlocked;
+  const competitionChallenge = competition.challenges?.find(c => c.id === ctfId);
+  const isSolvedInCompetition = competitionChallenge?.isSolved ?? false;
+
+  const canSubmit = competition.isJoined && competition.status === "active" && !isSolvedInCompetition && !challenge.isBlocked;
 
   return (
     <div className="min-h-screen bg-background page">
@@ -113,10 +116,10 @@ export default function CompetitionCtfPage() {
           </div>
         )}
 
-        {challenge.isSolved && (
-          <div className="mb-4 flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4 text-primary">
+        {isSolvedInCompetition && (
+          <div className="mb-4 flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-emerald-500">
             <CheckCircle2 className="w-5 h-5" />
-            <span className="font-medium">{t("Already solved in your main challenge record.", "Asosiy challenge yozuvida allaqachon yechilgan.", "Уже решено в вашей основной записи задания.")}</span>
+            <span className="font-medium">{t("You have already solved this challenge in this competition.", "Ushbu musobaqada bu topshiriqni allaqachon yechgansiz.", "Вы уже решили это задание в данном соревновании.")}</span>
           </div>
         )}
 
@@ -127,7 +130,7 @@ export default function CompetitionCtfPage() {
           </div>
         )}
 
-        {challenge.wrongAttempts > 0 && !challenge.isBlocked && !challenge.isSolved && (
+        {challenge.wrongAttempts > 0 && !challenge.isBlocked && !isSolvedInCompetition && (
           <div className="mb-4 flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-destructive text-sm font-medium">
             <AlertTriangle className="w-5 h-5" />
             <span>{t(`Warning: ${challenge.wrongAttempts}/3 attempts used.`, `Ogohlantirish: ${challenge.wrongAttempts}/3 urinish ishlatildi.`, `Предупреждение: использовано ${challenge.wrongAttempts}/3 попыток.`)}</span>
