@@ -3,6 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { Trophy, Clock, Users, Flag, Lock, Gift, UserPlus, Copy, Share2, Send, CheckCircle, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
 import { useToast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/LanguageContext";
@@ -200,366 +201,370 @@ export default function CompetitionDetailPage() {
   // and an individual event never sprouts teams.
   const isTeamMode = (comp as any).format === "team";
   const canManageTeam = isAuthenticated && comp.status !== "ended" && isTeamMode;
-
   return (
     <div className="min-h-screen bg-background page">
-      <div className="shell-mid py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <span className={`px-2 py-0.5 rounded border text-xs font-medium ${comp.status === "active" ? "bg-green-500/10 text-green-500 border-green-500/20" : comp.status === "upcoming" ? "bg-blue-500/10 text-blue-500 border-blue-500/20" : "bg-muted text-muted-foreground border-border"}`}>
+      {/* Hero Header */}
+      <div className="relative border-b border-border/50 bg-card/30 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50" />
+        <div className="shell-mid relative py-12">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <span className={`px-3 py-1 rounded-full border text-xs font-bold uppercase tracking-wider ${comp.status === "active" ? "bg-green-500/10 text-green-500 border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.2)]" : comp.status === "upcoming" ? "bg-blue-500/10 text-blue-500 border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.2)]" : "bg-muted text-muted-foreground border-border"}`}>
               {statusLabel(t, comp.status)}
             </span>
             {comp.type === "private" && (
-              <span className="flex items-center gap-1 text-xs text-orange-500"><Lock className="w-3 h-3" /> {t("Private", "Yopiq", "Приватный")}</span>
+              <span className="flex items-center gap-1 text-xs font-bold text-orange-500 uppercase tracking-wider bg-orange-500/10 px-3 py-1 rounded-full border border-orange-500/20"><Lock className="w-3.5 h-3.5" /> {t("Private", "Yopiq", "Приватный")}</span>
             )}
-            <span className="flex items-center gap-1 rounded border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-              <Users className="w-3 h-3" /> {isTeamMode ? t("Team", "Jamoa", "Командный") : t("Individual", "Yakka", "Индивидуальный")}
+            <span className="flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-bold text-primary uppercase tracking-wider">
+              <Users className="w-3.5 h-3.5" /> {isTeamMode ? t("Team", "Jamoa", "Командный") : t("Individual", "Yakka", "Индивидуальный")}
             </span>
           </div>
-          <h1 className="text-2xl font-bold mb-2" data-testid="text-competition-name">{comp.name}</h1>
-          {comp.description && <p className="text-muted-foreground text-sm mb-4">{comp.description}</p>}
+          
+          <h1 className="text-4xl md:text-5xl font-black mb-4 tracking-tight" data-testid="text-competition-name">{comp.name}</h1>
+          
+          {comp.description && <p className="text-lg text-muted-foreground/90 max-w-3xl mb-6 leading-relaxed">{comp.description}</p>}
 
-          <div className="flex flex-wrap items-center gap-3 mb-4">
-            {/* This page assumes you already have an account and know what cdCTF
-                is. /e/:id assumes neither — it is the link to hand a sponsor. */}
+          <div className="flex flex-wrap gap-6 text-sm text-muted-foreground font-medium mb-6">
+            <span className="flex items-center gap-2 bg-background/50 px-3 py-1.5 rounded-lg border border-border/50"><Clock className="w-4 h-4 text-primary" /> {formatDate(comp.startTime)}</span>
+            <span className="flex items-center gap-2 bg-background/50 px-3 py-1.5 rounded-lg border border-border/50"><Clock className="w-4 h-4 opacity-50" /> {formatDate(comp.endTime)}</span>
+            <span className="flex items-center gap-2 bg-background/50 px-3 py-1.5 rounded-lg border border-border/50"><Users className="w-4 h-4 text-primary" /> {comp.participantCount} {t("participants", "qatnashchi", "участников")}</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
             <Link href={`/e/${id}`}>
-              <button className="inline-flex items-center gap-2 text-sm text-primary hover:underline" data-testid="link-event-poster">
+              <Button variant="outline" className="gap-2 rounded-full border-primary/20 hover:bg-primary/5 hover:text-primary transition-all">
                 <Share2 className="w-4 h-4" />
-                {t("Open the shareable page for this event", "Bu tadbirning ulashiladigan sahifasini ochish", "Открыть страницу события для репоста")}
-              </button>
+                {t("Share", "Ulashish", "Поделиться")}
+              </Button>
             </Link>
-            {/* The event's own Telegram channel if it set one, otherwise the
-                official site-wide channel — announcements, hints, Q&A. */}
             {((comp as any).telegramUrl || telegramChannelUrl) && (
-              <a
-                href={(comp as any).telegramUrl || telegramChannelUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-sm font-medium text-sky-500 hover:bg-sky-500/20 transition-colors"
-                data-testid="link-competition-telegram"
-              >
-                <Send className="w-4 h-4" />
-                {t("Telegram channel", "Telegram kanal", "Telegram-канал")}
+              <a href={(comp as any).telegramUrl || telegramChannelUrl} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" className="gap-2 rounded-full border-sky-500/20 text-sky-500 hover:bg-sky-500/10 hover:text-sky-500 hover:border-sky-500/30 transition-all">
+                  <Send className="w-4 h-4" />
+                  {t("Telegram", "Telegram", "Telegram")}
+                </Button>
               </a>
             )}
+            {comp.prize && (
+              <div className="inline-flex items-center gap-2.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-2 shadow-[0_0_15px_rgba(245,158,11,0.15)]" data-testid="competition-prize">
+                <Gift className="w-4 h-4 text-amber-500 shrink-0" />
+                <span className="text-sm font-bold text-amber-600 dark:text-amber-400">{comp.prize}</span>
+              </div>
+            )}
           </div>
-
-          {/* Prize on offer — the reason a sponsored event pulls a crowd. Shown
-              prominently so participants see what they are competing for. */}
-          {comp.prize && (
-            <div className="mb-4 inline-flex items-center gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5" data-testid="competition-prize">
-              <Gift className="w-4 h-4 text-amber-500 shrink-0" />
-              <span className="text-sm">
-                <span className="text-muted-foreground">{t("Prize", "Sovrin", "Приз")}: </span>
-                <span className="font-semibold text-amber-600 dark:text-amber-400">{comp.prize}</span>
-              </span>
-            </div>
-          )}
-
-          {/* Sponsor credit. A named sponsor with a logo is what a company pays
-              for; it renders as a tasteful "Powered by" strip, linked if a URL
-              was set. */}
-          {comp.sponsorName && (
-            <div className="mb-4 flex items-center gap-3 rounded-xl border border-border bg-muted/20 px-4 py-3" data-testid="competition-sponsor">
-              {comp.sponsorLogoUrl && (
-                <img
-                  src={comp.sponsorLogoUrl}
-                  alt={comp.sponsorName}
-                  className="h-8 w-auto max-w-[140px] object-contain"
-                  loading="lazy"
-                />
-              )}
-              <div className="text-xs leading-tight">
-                <div className="text-muted-foreground">{t("Powered by", "Homiy", "Спонсор")}</div>
-                {comp.sponsorUrl ? (
-                  <a href={comp.sponsorUrl} target="_blank" rel="noopener noreferrer sponsored" className="font-semibold text-foreground hover:text-primary transition-colors">
-                    {comp.sponsorName}
-                  </a>
-                ) : (
-                  <span className="font-semibold text-foreground">{comp.sponsorName}</span>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
-            <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> {formatDate(comp.startTime)}</span>
-            <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 opacity-50" /> {formatDate(comp.endTime)}</span>
-            <span className="flex items-center gap-1.5"><Users className="w-4 h-4" /> {comp.participantCount} {t("participants", "qatnashchi", "участников")}</span>
-          </div>
-
-          {/* Individual events join here. Team events are joined by creating or
-              joining a team below, so this solo path is hidden for them. */}
-          {!isTeamMode && isAuthenticated && !comp.isJoined && comp.status !== "ended" && (
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              {comp.type === "private" && (
-                <input
-                  value={inviteCode}
-                  onChange={(event) => setInviteCode(event.target.value)}
-                  placeholder={t("Invite code", "Taklif kodi", "Код приглашения")}
-                  className="h-9 rounded-md border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                  data-testid="input-invite-code"
-                />
-              )}
-              <Button onClick={handleJoin} disabled={isJoining || (comp.type === "private" && !inviteCode.trim())} className="gap-2" data-testid="button-join-competition">
-                <Trophy className="w-4 h-4" /> {t("Join Competition", "Musobaqaga Qo'shilish", "Присоединиться")}
-              </Button>
-            </div>
-          )}
-          {comp.isJoined && (
-            <span className="text-sm text-primary font-medium">{t("You are participating", "Siz qatnashyapsiz", "Вы участвуете")}</span>
-          )}
-          {comp.certificateUrl && comp.status === "ended" && (
-            <a href={comp.certificateUrl} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" size="sm" className="mt-2">{t("View Certificate", "Sertifikatni Ko'rish", "Посмотреть сертификат")}</Button>
-            </a>
-          )}
-
-          {/* Team play. A solved challenge counts once for the whole team, so
-              the choice to compete solo or as a team is made here, up front. */}
-          {canManageTeam && (
-            myTeam ? (
-              <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3" data-testid="my-team">
-                <div className="flex items-center gap-2 text-sm">
-                  <Users className="w-4 h-4 text-primary" />
-                  <span className="text-muted-foreground">{t("Your team", "Sizning jamoangiz", "Ваша команда")}:</span>
-                  <span className="font-semibold">{myTeam.name}</span>
-                  {myTeam.isCaptain && <span className="text-xs text-muted-foreground">({t("captain", "kapitan", "капитан")})</span>}
-                </div>
-                {myTeam.isCaptain && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{t("Invite code", "Taklif kodi", "Код приглашения")}:</span>
-                    <code className="rounded bg-muted px-2 py-0.5 text-sm font-mono" data-testid="team-invite-code">{myTeam.inviteCode}</code>
-                    <button onClick={() => copyTeamCode(myTeam.inviteCode)} className="text-muted-foreground hover:text-primary" title={t("Copy", "Nusxalash", "Копировать")}>
-                      <Copy className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="mt-4 rounded-xl border border-dashed border-border p-4">
-                <div className="flex items-center gap-2 mb-3 text-sm font-medium">
-                  <Users className="w-4 h-4 text-primary" /> {t("Compete as a team", "Jamoa bo'lib qatnashish", "Участвовать командой")}
-                </div>
-                <p className="text-xs text-muted-foreground mb-3">
-                  {t("A challenge solved by one member counts for the whole team.",
-                     "Bir a'zo yechgan topshiriq butun jamoa uchun hisoblanadi.",
-                     "Задание, решённое одним участником, засчитывается всей команде.")}
-                  {comp.maxTeamSize ? " " + t(`Max ${comp.maxTeamSize} per team.`, `Jamoada eng ko'pi ${comp.maxTeamSize} kishi.`, `Макс. ${comp.maxTeamSize} в команде.`) : ""}
-                </p>
-                {/* A private team event still needs its competition code to enter;
-                    it rides along with team create/join. */}
-                {comp.type === "private" && (
-                  <input
-                    value={inviteCode}
-                    onChange={(event) => setInviteCode(event.target.value)}
-                    placeholder={t("Competition invite code", "Musobaqa taklif kodi", "Код приглашения соревнования")}
-                    className="mb-3 h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                    data-testid="input-comp-invite-for-team"
-                  />
-                )}
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="flex gap-2">
-                    <input
-                      value={teamName}
-                      onChange={(e) => setTeamName(e.target.value)}
-                      placeholder={t("New team name", "Yangi jamoa nomi", "Название команды")}
-                      className="h-9 flex-1 rounded-md border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                      data-testid="input-team-name"
-                    />
-                    <Button size="sm" variant="outline" onClick={handleCreateTeam} disabled={teamBusy || teamName.trim().length < 2} className="gap-1.5 shrink-0" data-testid="button-create-team">
-                      <UserPlus className="w-4 h-4" /> {t("Create", "Yaratish", "Создать")}
-                    </Button>
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      value={teamCode}
-                      onChange={(e) => setTeamCode(e.target.value)}
-                      placeholder={t("Team code", "Jamoa kodi", "Код команды")}
-                      className="h-9 flex-1 rounded-md border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                      data-testid="input-team-code"
-                    />
-                    <Button size="sm" variant="outline" onClick={handleJoinTeam} disabled={teamBusy || !teamCode.trim()} className="gap-1.5 shrink-0" data-testid="button-join-team">
-                      {t("Join", "Qo'shilish", "Войти")}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )
-          )}
         </div>
+      </div>
 
-        {/* Winners — the payoff of a sponsored event. Once it has ended, the top
-            three finishers get a podium the sponsor (and the winners) can share.
-            Only shown when there is a result to show. */}
-        {(() => {
-          // The podium is drawn from the authoritative board for the mode: teams
-          // for a team event, individuals for an individual one. Drawing it from
-          // the individual board in a team event crowned the member who happened
-          // to submit, not the winning team.
-          const winners = isTeamMode
-            ? teams.slice(0, 3).map(tm => ({ key: `team-${tm.teamId}`, name: tm.name, points: tm.points, href: null as string | null }))
-            : scoreboard.slice(0, 3).map(e => ({ key: `user-${e.userId}`, name: e.nickname, points: e.points, href: `/profile/${e.userId}` }));
-          if (comp.status !== "ended" || winners.length === 0) return null;
-          return (
-            <div className="mb-8 rounded-2xl border border-amber-500/20 bg-gradient-to-b from-amber-500/5 to-transparent p-6" data-testid="competition-winners">
-              <h2 className="text-base font-semibold mb-5 flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-amber-500" /> {t("Winners", "G'oliblar", "Победители")}
-                <span className="text-xs font-normal text-muted-foreground">· {isTeamMode ? t("Teams", "Jamoalar", "Команды") : t("Individual", "Yakka", "Индивидуальный")}</span>
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {winners.map((w, i) => {
-                  const medal = ["ring-amber-400/50 bg-amber-400/10", "ring-slate-300/40 bg-slate-300/10", "ring-orange-500/40 bg-orange-500/10"][i];
-                  const card = (
-                    <div className={`flex items-center gap-3 rounded-xl border border-transparent ring-1 ${medal} p-4 ${w.href ? "hover:border-amber-500/30 transition-colors cursor-pointer" : ""}`} data-testid={`winner-${i + 1}`}>
-                      <span className="text-2xl font-black tabular-nums w-8 text-center">{i + 1}</span>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-semibold truncate">{w.name}</div>
-                        <div className="text-xs text-muted-foreground tabular-nums">{w.points} {t("points", "ball", "очки")}</div>
-                      </div>
-                      {i === 0 && <Trophy className="w-5 h-5 text-amber-500 shrink-0" />}
+      {/* Main Content */}
+      <div className="shell-mid py-8">
+        
+        {/* Giant Timer for Upcoming */}
+        {comp.status === "upcoming" && (
+          <div className="mb-12 relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-card to-background p-8 md:p-12 text-center shadow-2xl shadow-primary/5">
+            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay"></div>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
+            
+            <h3 className="text-xl md:text-2xl font-bold mb-8 text-foreground/80 uppercase tracking-widest">{t("Competition starts in", "Musobaqa boshlanishiga qoldi", "Соревнование начнется через")}</h3>
+            
+            <div className="flex justify-center gap-4 md:gap-8 text-4xl md:text-6xl font-black font-mono text-primary">
+              {(() => {
+                const diff = Math.max(0, new Date(comp.startTime).getTime() - now.getTime());
+                const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                const m = Math.floor((diff / 1000 / 60) % 60);
+                const s = Math.floor((diff / 1000) % 60);
+                return (
+                  <>
+                    <div className="flex flex-col items-center group">
+                      <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 md:p-6 min-w-[80px] md:min-w-[120px] shadow-lg group-hover:scale-105 transition-transform">{d}</div>
+                      <span className="text-xs md:text-sm text-muted-foreground mt-3 uppercase tracking-widest font-sans">{t("Days", "Kun", "Дней")}</span>
                     </div>
-                  );
-                  return w.href ? <Link href={w.href} key={w.key}>{card}</Link> : <div key={w.key}>{card}</div>;
-                })}
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* The sponsor's report. Shown once the event has ended and only when
-            it carried a sponsor — before that the numbers are still moving and
-            mean nothing. */}
-        {comp.status === "ended" && comp.sponsorName && (
-          <SponsorReport competitionId={id} sponsorName={comp.sponsorName} />
-        )}
-
-        {/* Team leaderboard — team events only, once teams have registered. */}
-        {isTeamMode && teams.length > 0 && (
-          <div className="mb-8" data-testid="team-leaderboard">
-            <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
-              <Users className="w-4 h-4 text-primary" /> {t("Teams", "Jamoalar", "Команды")} ({teams.length})
-            </h2>
-            <div className="space-y-2">
-              {teams.map((team) => (
-                <div key={team.teamId} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card" data-testid={`team-row-${team.teamId}`}>
-                  <span className="w-6 font-mono text-muted-foreground text-sm">#{team.rank}</span>
-                  <div className="min-w-0 flex-1">
-                    <div className="font-medium text-sm truncate">{team.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {team.members?.length ?? 0} {t("members", "a'zo", "участн.")}
-                      {team.members?.length > 0 && ` · ${team.members.slice(0, 3).join(", ")}${team.members.length > 3 ? "…" : ""}`}
+                    <span className="py-4 md:py-6 text-primary/50">:</span>
+                    <div className="flex flex-col items-center group">
+                      <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 md:p-6 min-w-[80px] md:min-w-[120px] shadow-lg group-hover:scale-105 transition-transform">{h.toString().padStart(2, '0')}</div>
+                      <span className="text-xs md:text-sm text-muted-foreground mt-3 uppercase tracking-widest font-sans">{t("Hrs", "Soat", "Час")}</span>
                     </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <div className="font-mono font-bold text-primary tabular-nums">{team.points}</div>
-                    <div className="text-xs text-muted-foreground">{team.solvedCount} {t("solved", "yechim", "решено")}</div>
-                  </div>
-                </div>
-              ))}
+                    <span className="py-4 md:py-6 text-primary/50">:</span>
+                    <div className="flex flex-col items-center group">
+                      <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 md:p-6 min-w-[80px] md:min-w-[120px] shadow-lg group-hover:scale-105 transition-transform">{m.toString().padStart(2, '0')}</div>
+                      <span className="text-xs md:text-sm text-muted-foreground mt-3 uppercase tracking-widest font-sans">{t("Min", "Daq", "Мин")}</span>
+                    </div>
+                    <span className="py-4 md:py-6 text-primary/50">:</span>
+                    <div className="flex flex-col items-center group">
+                      <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 md:p-6 min-w-[80px] md:min-w-[120px] shadow-lg group-hover:scale-105 transition-transform">{s.toString().padStart(2, '0')}</div>
+                      <span className="text-xs md:text-sm text-muted-foreground mt-3 uppercase tracking-widest font-sans">{t("Sec", "Son", "Сек")}</span>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* CTF List */}
-          <div>
-            <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
-              <Flag className="w-4 h-4 text-primary" /> {t("Challenges", "Topshiriqlar", "Задания")} ({(comp as any).challengesLocked ? (comp as any).ctfCount : challenges.length})
-            </h2>
-            
-            {comp.status === "upcoming" && (
-              <div className="mb-6 rounded-2xl bg-card border border-primary/20 p-8 text-center shadow-lg shadow-primary/5">
-                <h3 className="text-xl font-bold mb-4">{t("Competition starts in:", "Musobaqa boshlanishiga qoldi:", "Соревнование начнется через:")}</h3>
-                <div className="flex justify-center gap-4 text-3xl md:text-4xl font-mono font-bold text-primary">
-                  {(() => {
-                    const diff = Math.max(0, new Date(comp.startTime).getTime() - now.getTime());
-                    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-                    const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-                    const m = Math.floor((diff / 1000 / 60) % 60);
-                    const s = Math.floor((diff / 1000) % 60);
-                    return (
-                      <>
-                        <div className="flex flex-col items-center"><span className="bg-primary/10 rounded-xl p-3 min-w-[70px]">{d}</span><span className="text-xs text-muted-foreground mt-2 uppercase">{t("Days", "Kun", "Дней")}</span></div>
-                        <span className="py-3">:</span>
-                        <div className="flex flex-col items-center"><span className="bg-primary/10 rounded-xl p-3 min-w-[70px]">{h.toString().padStart(2, '0')}</span><span className="text-xs text-muted-foreground mt-2 uppercase">{t("Hrs", "Soat", "Час")}</span></div>
-                        <span className="py-3">:</span>
-                        <div className="flex flex-col items-center"><span className="bg-primary/10 rounded-xl p-3 min-w-[70px]">{m.toString().padStart(2, '0')}</span><span className="text-xs text-muted-foreground mt-2 uppercase">{t("Min", "Daq", "Мин")}</span></div>
-                        <span className="py-3">:</span>
-                        <div className="flex flex-col items-center"><span className="bg-primary/10 rounded-xl p-3 min-w-[70px]">{s.toString().padStart(2, '0')}</span><span className="text-xs text-muted-foreground mt-2 uppercase">{t("Sec", "Son", "Сек")}</span></div>
-                      </>
-                    );
-                  })()}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="w-full justify-start border-b border-border bg-transparent p-0 rounded-none h-auto overflow-x-auto overflow-y-hidden mb-8">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none px-6 py-3 text-base font-semibold transition-none">
+              {t("Overview", "Umumiy", "Обзор")}
+            </TabsTrigger>
+            {comp.status !== "upcoming" && (
+              <TabsTrigger value="challenges" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none px-6 py-3 text-base font-semibold transition-none flex items-center gap-2">
+                {t("Challenges", "Topshiriqlar", "Задания")} 
+                <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">{challenges.length}</span>
+              </TabsTrigger>
+            )}
+            {comp.status !== "upcoming" && (
+              <TabsTrigger value="scoreboard" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none px-6 py-3 text-base font-semibold transition-none">
+                {t("Scoreboard", "Reyting", "Рейтинг")}
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="participants" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none px-6 py-3 text-base font-semibold transition-none flex items-center gap-2">
+              {isTeamMode ? t("Teams", "Jamoalar", "Команды") : t("Participants", "Ishtirokchilar", "Участники")}
+              <span className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full">{isTeamMode ? teams.length : scoreboard.length}</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-8 mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Action Card: Join / Team Management */}
+            <div className="rounded-2xl border border-border/50 bg-card/40 p-6 backdrop-blur-sm shadow-sm">
+              {!isTeamMode && isAuthenticated && !comp.isJoined && comp.status !== "ended" && (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  {comp.type === "private" && (
+                    <input
+                      value={inviteCode}
+                      onChange={(event) => setInviteCode(event.target.value)}
+                      placeholder={t("Invite code", "Taklif kodi", "Код приглашения")}
+                      className="h-11 rounded-xl border border-border bg-background px-4 text-sm outline-none focus:ring-2 focus:ring-primary/30 w-full sm:w-auto min-w-[250px]"
+                      data-testid="input-invite-code"
+                    />
+                  )}
+                  <Button onClick={handleJoin} disabled={isJoining || (comp.type === "private" && !inviteCode.trim())} size="lg" className="gap-2 rounded-xl w-full sm:w-auto" data-testid="button-join-competition">
+                    <Trophy className="w-5 h-5" /> {t("Join Competition", "Musobaqaga Qo'shilish", "Присоединиться")}
+                  </Button>
+                </div>
+              )}
+              {comp.isJoined && (
+                <div className="flex items-center gap-3">
+                  <div className="bg-green-500/20 p-2 rounded-full"><CheckCircle className="w-6 h-6 text-green-500" /></div>
+                  <div>
+                    <h4 className="font-bold">{t("You are participating", "Siz qatnashyapsiz", "Вы участвуете")}</h4>
+                    <p className="text-sm text-muted-foreground">{t("Good luck!", "Omad yor bo'lsin!", "Удачи!")}</p>
+                  </div>
+                </div>
+              )}
+              
+              {canManageTeam && (
+                myTeam ? (
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4" data-testid="my-team">
+                    <div className="flex items-center gap-4">
+                      <div className="bg-primary/20 p-3 rounded-2xl"><Users className="w-6 h-6 text-primary" /></div>
+                      <div>
+                        <div className="text-sm text-muted-foreground uppercase tracking-widest font-bold mb-0.5">{t("Your team", "Sizning jamoangiz", "Ваша команда")}</div>
+                        <div className="text-xl font-black">{myTeam.name} {myTeam.isCaptain && <span className="text-sm font-semibold text-primary ml-2">({t("captain", "kapitan", "капитан")})</span>}</div>
+                      </div>
+                    </div>
+                    {myTeam.isCaptain && (
+                      <div className="flex items-center gap-3 bg-background rounded-xl p-2 pr-4 border border-border/50">
+                        <div className="text-xs text-muted-foreground uppercase font-bold ml-2">{t("Invite code", "Taklif kodi", "Код приглашения")}:</div>
+                        <code className="bg-muted px-3 py-1.5 rounded-lg text-sm font-mono font-bold tracking-widest" data-testid="team-invite-code">{myTeam.inviteCode}</code>
+                        <Button variant="ghost" size="icon" onClick={() => copyTeamCode(myTeam.inviteCode)} title={t("Copy", "Nusxalash", "Копировать")}>
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="bg-primary/20 p-2 rounded-xl"><Users className="w-5 h-5 text-primary" /></div>
+                      <div>
+                        <h4 className="font-bold">{t("Compete as a team", "Jamoa bo'lib qatnashish", "Участвовать командой")}</h4>
+                        <p className="text-sm text-muted-foreground">{t("A challenge solved by one member counts for the whole team.", "Bir a'zo yechgan topshiriq butun jamoa uchun hisoblanadi.", "Задание, решённое одним участником, засчитывается всей команде.")}</p>
+                      </div>
+                    </div>
+                    {comp.type === "private" && (
+                      <input value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} placeholder={t("Competition invite code", "Musobaqa taklif kodi", "Код приглашения соревнования")} className="mb-4 h-11 w-full rounded-xl border border-border bg-background px-4 text-sm outline-none focus:ring-2 focus:ring-primary/30" data-testid="input-comp-invite-for-team" />
+                    )}
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="flex gap-2">
+                        <input value={teamName} onChange={(e) => setTeamName(e.target.value)} placeholder={t("New team name", "Yangi jamoa nomi", "Название команды")} className="h-11 flex-1 rounded-xl border border-border bg-background px-4 text-sm outline-none focus:ring-2 focus:ring-primary/30" data-testid="input-team-name" />
+                        <Button size="lg" onClick={handleCreateTeam} disabled={teamBusy || teamName.trim().length < 2} className="gap-2 rounded-xl" data-testid="button-create-team">
+                          <UserPlus className="w-4 h-4" /> {t("Create", "Yaratish", "Создать")}
+                        </Button>
+                      </div>
+                      <div className="flex gap-2">
+                        <input value={teamCode} onChange={(e) => setTeamCode(e.target.value)} placeholder={t("Team code", "Jamoa kodi", "Код команды")} className="h-11 flex-1 rounded-xl border border-border bg-background px-4 text-sm outline-none focus:ring-2 focus:ring-primary/30" data-testid="input-team-code" />
+                        <Button size="lg" variant="outline" onClick={handleJoinTeam} disabled={teamBusy || !teamCode.trim()} className="gap-2 rounded-xl" data-testid="button-join-team">
+                          {t("Join", "Qo'shilish", "Войти")}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+
+            {comp.sponsorName && (
+              <div className="rounded-2xl border border-border/50 bg-card/40 p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 backdrop-blur-sm" data-testid="competition-sponsor">
+                {comp.sponsorLogoUrl && (
+                  <div className="bg-white p-4 rounded-xl border border-border/50 shadow-sm shrink-0">
+                    <img src={comp.sponsorLogoUrl} alt={comp.sponsorName} className="h-12 w-auto max-w-[160px] object-contain" loading="lazy" />
+                  </div>
+                )}
+                <div className="text-center sm:text-left">
+                  <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-1">{t("Powered by", "Bosh homiy", "Генеральный спонсор")}</div>
+                  {comp.sponsorUrl ? (
+                    <a href={comp.sponsorUrl} target="_blank" rel="noopener noreferrer sponsored" className="text-xl font-black text-foreground hover:text-primary transition-colors">
+                      {comp.sponsorName}
+                    </a>
+                  ) : (
+                    <div className="text-xl font-black text-foreground">{comp.sponsorName}</div>
+                  )}
                 </div>
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {challenges.map(ch => (
-                <Link href={comp.isJoined && comp.status === "active" ? `/competitions/${comp.id}/ctf/${ch.id}` : `/ctf/${ch.id}`} key={ch.id}>
-                  <div className={`relative group flex flex-col h-full p-5 rounded-2xl border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${ch.isSolved ? "border-emerald-500/40 bg-gradient-to-br from-emerald-500/10 to-transparent shadow-emerald-500/5" : "border-border/50 bg-card/60 hover:bg-card hover:border-primary/50"}`} data-testid={`card-comp-ctf-${ch.id}`}>
-                    {ch.isSolved && (
-                      <div className="absolute -top-2 -right-2 z-10 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg">
-                        <CheckCircle className="w-4 h-4" />
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between mb-3">
-                      <DifficultyBadge difficulty={ch.difficulty} />
-                      <span className="text-xs font-mono font-bold text-primary px-2 py-1 bg-primary/10 rounded-md">
-                        {ch.points} XP
-                      </span>
-                    </div>
-                    <h3 className={`text-base font-bold mb-1 truncate ${ch.isSolved ? "text-emerald-500" : "group-hover:text-primary transition-colors"}`}>
-                      {ch.name}
-                    </h3>
-                    <p className="text-xs text-muted-foreground mt-auto flex items-center justify-between pt-4 border-t border-border/50">
-                      <span>{ch.category}</span>
-                      <ChevronRight className={`w-4 h-4 transition-transform ${ch.isSolved ? "text-emerald-500 translate-x-1" : "text-muted-foreground group-hover:text-primary group-hover:translate-x-1"}`} />
-                    </p>
+            {/* Winners Podium */}
+            {(() => {
+              const winners = isTeamMode
+                ? teams.slice(0, 3).map(tm => ({ key: `team-${tm.teamId}`, name: tm.name, points: tm.points, href: null as string | null }))
+                : scoreboard.slice(0, 3).map(e => ({ key: `user-${e.userId}`, name: e.nickname, points: e.points, href: `/profile/${e.userId}` }));
+              if (comp.status !== "ended" || winners.length === 0) return null;
+              return (
+                <div className="rounded-3xl border border-amber-500/20 bg-gradient-to-b from-amber-500/10 to-transparent p-8 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(245,158,11,0.05)] text-center relative overflow-hidden" data-testid="competition-winners">
+                  <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay"></div>
+                  <h2 className="text-2xl font-black mb-8 flex items-center justify-center gap-3">
+                    <Trophy className="w-8 h-8 text-amber-500 drop-shadow-md" /> 
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-500 to-orange-400">{t("Winners", "G'oliblar", "Победители")}</span>
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    {winners.map((w, i) => {
+                      const medal = ["border-amber-400/50 bg-amber-400/10 shadow-[0_0_20px_rgba(251,191,36,0.2)]", "border-slate-300/40 bg-slate-300/10", "border-orange-500/40 bg-orange-500/10"][i];
+                      const textColor = ["text-amber-500", "text-slate-400", "text-orange-500"][i];
+                      const card = (
+                        <div className={`flex flex-col items-center gap-4 rounded-2xl border ${medal} p-6 ${w.href ? "hover:-translate-y-1 transition-transform cursor-pointer" : ""}`} data-testid={`winner-${i + 1}`}>
+                          <div className={`text-4xl font-black ${textColor}`}>#{i + 1}</div>
+                          <div className="font-bold text-lg truncate w-full text-center">{w.name}</div>
+                          <div className="text-sm font-semibold px-3 py-1 bg-background/50 rounded-full tabular-nums">{w.points} {t("points", "ball", "очки")}</div>
+                        </div>
+                      );
+                      return w.href ? <Link href={w.href} key={w.key} className="block">{card}</Link> : <div key={w.key}>{card}</div>;
+                    })}
                   </div>
-                </Link>
-              ))}
-              {(comp as any).challengesLocked ? (
-                <div className="flex flex-col items-center text-center gap-2 rounded-xl border border-dashed border-border py-8 px-4" data-testid="challenges-locked">
-                  <Lock className="w-6 h-6 text-muted-foreground" />
-                  <p className="text-sm font-medium">
-                    {comp.status === "active" 
-                      ? t("Join the competition to see the challenges", "Topshiriqlarni ko'rish uchun musobaqaga qo'shiling", "Присоединитесь к соревнованию, чтобы увидеть задания")
-                      : t(`${(comp as any).ctfCount} challenges — revealed when the competition starts`, `${(comp as any).ctfCount} ta topshiriq — musobaqa boshlanganda ochiladi`, `${(comp as any).ctfCount} заданий — откроются в начале соревнования`)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {comp.status === "active"
-                      ? t("Don't miss out on the action.", "Musobaqani o'tkazib yubormang.", "Не пропустите действие.")
-                      : t("Join now so you're ready.", "Tayyor turish uchun hoziroq qo'shiling.", "Присоединяйтесь, чтобы быть готовым.")}
-                  </p>
                 </div>
-              ) : challenges.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">{t("No challenges added yet", "Topshiriqlar qo'shilmagan", "Задания ещё не добавлены")}</p>
+              );
+            })()}
+
+            {comp.status === "ended" && comp.sponsorName && (
+              <SponsorReport competitionId={id} sponsorName={comp.sponsorName} />
+            )}
+          </TabsContent>
+
+          {comp.status !== "upcoming" && (
+            <TabsContent value="challenges" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {challenges.map(ch => (
+                  <Link href={comp.isJoined && comp.status === "active" ? `/competitions/${comp.id}/ctf/${ch.id}` : `/ctf/${ch.id}`} key={ch.id} className="block h-full">
+                    <div className={`relative flex flex-col h-full p-6 rounded-3xl border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${ch.isSolved ? "border-emerald-500/40 bg-gradient-to-br from-emerald-500/10 to-transparent shadow-[0_0_20px_rgba(16,185,129,0.05)]" : "border-border/50 bg-card/60 hover:bg-card hover:border-primary/50"}`} data-testid={`card-comp-ctf-${ch.id}`}>
+                      {ch.isSolved && (
+                        <div className="absolute top-4 right-4 z-10 bg-emerald-500 text-white p-2 rounded-full shadow-lg">
+                          <CheckCircle className="w-5 h-5" />
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between mb-4">
+                        <DifficultyBadge difficulty={ch.difficulty} />
+                        <span className="text-sm font-mono font-black text-primary px-3 py-1 bg-primary/10 rounded-lg">
+                          {ch.points} XP
+                        </span>
+                      </div>
+                      <h3 className={`text-xl font-bold mb-2 ${ch.isSolved ? "text-emerald-500" : "text-foreground group-hover:text-primary transition-colors"}`}>
+                        {ch.name}
+                      </h3>
+                      <div className="mt-auto pt-6 flex items-center justify-between border-t border-border/50">
+                        <span className="text-sm font-semibold text-muted-foreground tracking-wide uppercase">{ch.category}</span>
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors ${ch.isSolved ? "bg-emerald-500/20 text-emerald-500" : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"}`}>
+                          <ChevronRight className="w-4 h-4 ml-0.5" />
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+                {challenges.length === 0 && (
+                  <div className="col-span-full py-20 text-center border border-dashed rounded-3xl border-border/60 bg-muted/20">
+                    <Flag className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                    <p className="text-lg font-medium text-muted-foreground">{t("No challenges added yet", "Topshiriqlar qo'shilmagan", "Задания ещё не добавлены")}</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          )}
+
+          {comp.status !== "upcoming" && (
+            <TabsContent value="scoreboard" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="rounded-3xl border border-border/50 bg-card overflow-hidden shadow-sm">
+                <div className="p-6 border-b border-border/50 bg-muted/20 flex items-center justify-between">
+                  <h2 className="text-xl font-black flex items-center gap-3">
+                    <Trophy className="w-6 h-6 text-primary" /> {t("Live Scoreboard", "Jonli Reyting", "Рейтинг")}
+                  </h2>
+                  <span className="text-sm font-bold text-muted-foreground px-3 py-1 bg-background rounded-full border border-border/50">
+                    {isTeamMode ? `${teams.length} Teams` : `${scoreboard.length} Players`}
+                  </span>
+                </div>
+                <div className="p-0">
+                  {(isTeamMode ? teams : scoreboard).map((entry: any, i: number) => (
+                    <div key={entry.userId || entry.teamId} className={`flex items-center gap-4 p-4 sm:p-6 border-b border-border/30 last:border-0 hover:bg-muted/10 transition-colors ${i < 3 ? "bg-gradient-to-r from-primary/5 to-transparent" : ""}`}>
+                      <div className={`w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center rounded-xl font-black text-lg shrink-0 ${i === 0 ? "bg-amber-400 text-amber-950 shadow-[0_0_15px_rgba(251,191,36,0.4)]" : i === 1 ? "bg-slate-300 text-slate-900" : i === 2 ? "bg-orange-400 text-orange-950" : "bg-muted text-muted-foreground"}`}>
+                        {entry.rank}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-lg truncate">{entry.nickname || entry.name}</div>
+                        {isTeamMode && entry.members && (
+                          <div className="text-xs text-muted-foreground truncate mt-1">
+                            {entry.members.length} {t("members", "a'zo", "участн.")}
+                            {entry.members.length > 0 && ` · ${entry.members.slice(0, 3).join(", ")}${entry.members.length > 3 ? "…" : ""}`}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="font-mono font-black text-xl sm:text-2xl text-primary tabular-nums tracking-tight">{entry.points}</div>
+                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mt-0.5">{t("Points", "Ball", "Очки")}</div>
+                      </div>
+                    </div>
+                  ))}
+                  {(isTeamMode ? teams : scoreboard).length === 0 && (
+                    <div className="py-16 text-center text-muted-foreground font-medium">
+                      {t("No participants yet", "Hozircha ishtirokchilar yo'q", "Пока нет участников")}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+          )}
+
+          <TabsContent value="participants" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {(isTeamMode ? teams : scoreboard).map((entry: any, i: number) => (
+                <div key={entry.userId || entry.teamId} className="flex flex-col items-center justify-center text-center p-6 rounded-2xl border border-border/50 bg-card/40 hover:bg-card hover:border-primary/30 hover:shadow-lg transition-all" style={{ animationDelay: `${i * 50}ms` }}>
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center mb-4">
+                    <Users className="w-8 h-8 text-primary" />
+                  </div>
+                  <h3 className="font-bold text-lg w-full truncate px-2">{entry.nickname || entry.name}</h3>
+                  {isTeamMode && (
+                    <p className="text-xs text-muted-foreground mt-2 font-medium">
+                      {entry.members?.length ?? 0} {t("members", "a'zo", "участн.")}
+                    </p>
+                  )}
+                </div>
+              ))}
+              {(isTeamMode ? teams : scoreboard).length === 0 && (
+                <div className="col-span-full py-20 text-center border border-dashed rounded-3xl border-border/60 bg-muted/20">
+                  <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                  <p className="text-lg font-medium text-muted-foreground">{t("No participants joined yet", "Hali hech kim qo'shilmadi", "Никто еще не присоединился")}</p>
+                </div>
               )}
             </div>
-          </div>
+          </TabsContent>
 
-          {/* Individual scoreboard — individual events only. Team events rank by
-              team above, so a per-person board here would just confuse. */}
-          {!isTeamMode && comp.status !== "upcoming" && scoreboard.length > 0 && (
-            <div>
-              <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-primary" /> {t("Scoreboard", "Reyting", "Рейтинг")}
-              </h2>
-              <div className="space-y-1.5">
-                {scoreboard.slice(0, 10).map((entry) => (
-                  <div key={entry.userId} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card text-sm" data-testid={`row-comp-scoreboard-${entry.userId}`}>
-                    <span className="w-5 font-mono text-muted-foreground">#{entry.rank}</span>
-                    <span className="flex-1 font-medium truncate">{entry.nickname}</span>
-                    <span className="font-mono font-bold text-primary">{entry.points}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        </Tabs>
       </div>
     </div>
   );
-}
+};
