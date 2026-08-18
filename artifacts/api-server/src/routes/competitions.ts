@@ -90,13 +90,29 @@ router.get("/:id", optionalAuth, async (req, res) => {
   const revealChallenges = status === "ended" || isStaff || (isJoined && status === "active");
 
   const challengeIds = tasks.map(t => t.ctfId);
-  const allChallenges = (!revealChallenges || challengeIds.length === 0) ? [] : await db.select({
+  const allChallengesRaw = (!revealChallenges || challengeIds.length === 0) ? [] : await db.select({
     id: ctfTasksTable.id,
     name: ctfTasksTable.name,
     category: ctfTasksTable.category,
     difficulty: ctfTasksTable.difficulty,
     points: ctfTasksTable.points,
   }).from(ctfTasksTable).where(inArray(ctfTasksTable.id, challengeIds));
+
+  let solves = new Set<number>();
+  if (userId && revealChallenges && challengeIds.length > 0) {
+    const mySolves = await db.select({ ctfId: competitionSolvesTable.ctfId })
+      .from(competitionSolvesTable)
+      .where(and(
+        eq(competitionSolvesTable.competitionId, id),
+        myTeam ? eq(competitionSolvesTable.teamId, myTeam.id) : eq(competitionSolvesTable.userId, userId)
+      ));
+    solves = new Set(mySolves.map(s => s.ctfId));
+  }
+
+  const allChallenges = allChallengesRaw.map(c => ({
+    ...c,
+    isSolved: solves.has(c.id),
+  }));
 
   res.json({
     id: comp.id,

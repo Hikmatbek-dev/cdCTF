@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
-import { Trophy, Clock, Users, Flag, Lock, Gift, UserPlus, Copy, Share2, Send } from "lucide-react";
+import { Trophy, Clock, Users, Flag, Lock, Gift, UserPlus, Copy, Share2, Send, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
@@ -30,6 +30,12 @@ export default function CompetitionDetailPage() {
   const [teamName, setTeamName] = useState("");
   const [teamCode, setTeamCode] = useState("");
   const [teamBusy, setTeamBusy] = useState(false);
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const { data: comp, isLoading } = useGetCompetition(id, {
     query: { enabled: !!id, queryKey: getGetCompetitionQueryKey(id) },
@@ -462,21 +468,57 @@ export default function CompetitionDetailPage() {
             <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
               <Flag className="w-4 h-4 text-primary" /> {t("Challenges", "Topshiriqlar", "Задания")} ({(comp as any).challengesLocked ? (comp as any).ctfCount : challenges.length})
             </h2>
+            
+            {comp.status === "upcoming" && (
+              <div className="mb-6 rounded-2xl bg-card border border-primary/20 p-8 text-center shadow-lg shadow-primary/5">
+                <h3 className="text-xl font-bold mb-4">{t("Competition starts in:", "Musobaqa boshlanishiga qoldi:", "Соревнование начнется через:")}</h3>
+                <div className="flex justify-center gap-4 text-3xl md:text-4xl font-mono font-bold text-primary">
+                  {(() => {
+                    const diff = Math.max(0, new Date(comp.startTime).getTime() - now.getTime());
+                    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                    const m = Math.floor((diff / 1000 / 60) % 60);
+                    const s = Math.floor((diff / 1000) % 60);
+                    return (
+                      <>
+                        <div className="flex flex-col items-center"><span className="bg-primary/10 rounded-xl p-3 min-w-[70px]">{d}</span><span className="text-xs text-muted-foreground mt-2 uppercase">{t("Days", "Kun", "Дней")}</span></div>
+                        <span className="py-3">:</span>
+                        <div className="flex flex-col items-center"><span className="bg-primary/10 rounded-xl p-3 min-w-[70px]">{h.toString().padStart(2, '0')}</span><span className="text-xs text-muted-foreground mt-2 uppercase">{t("Hrs", "Soat", "Час")}</span></div>
+                        <span className="py-3">:</span>
+                        <div className="flex flex-col items-center"><span className="bg-primary/10 rounded-xl p-3 min-w-[70px]">{m.toString().padStart(2, '0')}</span><span className="text-xs text-muted-foreground mt-2 uppercase">{t("Min", "Daq", "Мин")}</span></div>
+                        <span className="py-3">:</span>
+                        <div className="flex flex-col items-center"><span className="bg-primary/10 rounded-xl p-3 min-w-[70px]">{s.toString().padStart(2, '0')}</span><span className="text-xs text-muted-foreground mt-2 uppercase">{t("Sec", "Son", "Сек")}</span></div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               {challenges.map(ch => (
                 <Link href={comp.isJoined && comp.status === "active" ? `/competitions/${comp.id}/ctf/${ch.id}` : `/ctf/${ch.id}`} key={ch.id}>
-                  <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:border-primary/30 transition-colors cursor-pointer" data-testid={`card-comp-ctf-${ch.id}`}>
+                  <div className={`flex items-center gap-3 p-3 rounded-lg border ${ch.isSolved ? "border-green-500/50 bg-green-500/5" : "border-border bg-card"} hover:border-primary/30 transition-colors cursor-pointer`} data-testid={`card-comp-ctf-${ch.id}`}>
                     <DifficultyBadge difficulty={ch.difficulty} />
                     <span className="flex-1 text-sm font-medium truncate">{ch.name}</span>
                     <span className="text-xs font-mono text-primary">{ch.points} points</span>
+                    {ch.isSolved && <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />}
                   </div>
                 </Link>
               ))}
               {(comp as any).challengesLocked ? (
                 <div className="flex flex-col items-center text-center gap-2 rounded-xl border border-dashed border-border py-8 px-4" data-testid="challenges-locked">
                   <Lock className="w-6 h-6 text-muted-foreground" />
-                  <p className="text-sm font-medium">{t(`${(comp as any).ctfCount} challenges — revealed when the competition starts`, `${(comp as any).ctfCount} ta topshiriq — musobaqa boshlanganda ochiladi`, `${(comp as any).ctfCount} заданий — откроются в начале соревнования`)}</p>
-                  <p className="text-xs text-muted-foreground">{t("Join now so you're ready.", "Tayyor turish uchun hoziroq qo'shiling.", "Присоединяйтесь, чтобы быть готовым.")}</p>
+                  <p className="text-sm font-medium">
+                    {comp.status === "active" 
+                      ? t("Join the competition to see the challenges", "Topshiriqlarni ko'rish uchun musobaqaga qo'shiling", "Присоединитесь к соревнованию, чтобы увидеть задания")
+                      : t(`${(comp as any).ctfCount} challenges — revealed when the competition starts`, `${(comp as any).ctfCount} ta topshiriq — musobaqa boshlanganda ochiladi`, `${(comp as any).ctfCount} заданий — откроются в начале соревнования`)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {comp.status === "active"
+                      ? t("Don't miss out on the action.", "Musobaqani o'tkazib yubormang.", "Не пропустите действие.")
+                      : t("Join now so you're ready.", "Tayyor turish uchun hoziroq qo'shiling.", "Присоединяйтесь, чтобы быть готовым.")}
+                  </p>
                 </div>
               ) : challenges.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">{t("No challenges added yet", "Topshiriqlar qo'shilmagan", "Задания ещё не добавлены")}</p>
