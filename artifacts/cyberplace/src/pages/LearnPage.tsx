@@ -99,7 +99,7 @@ type ModuleSummary = {
 
 export default function LearnPage() {
   const { t, lang } = useLang();
-  const { auth } = useAuth();
+  const { user } = useAuth();
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
 
   const { data: modData, isLoading, isError, refetch } =
@@ -128,7 +128,7 @@ export default function LearnPage() {
     };
   }, [pathModules]);
 
-  const userXp = auth?.user?.xp ?? 0;
+  const userXp = user?.points ?? 0;
   const currentLevel = Math.floor(userXp / 1000) + 1;
   const nextLevelXp = currentLevel * 1000;
   const levelProgress = ((userXp % 1000) / 1000) * 100;
@@ -142,7 +142,7 @@ export default function LearnPage() {
       <div className="shell relative z-10 pt-6">
         
         {/* Gamified User Stats Banner */}
-        {auth?.user && (
+        {user && (
           <FadeIn>
             <div className="mb-10 p-5 rounded-3xl border border-primary/20 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-md shadow-lg shadow-primary/5 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">
               <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
@@ -158,7 +158,7 @@ export default function LearnPage() {
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold tracking-tight">{t("Welcome back, ", "Xush kelibsiz, ", "С возвращением, ")}<span className="text-primary">{auth.user.username}</span>!</h2>
+                  <h2 className="text-xl font-bold tracking-tight">{t("Welcome back, ", "Xush kelibsiz, ", "С возвращением, ")}<span className="text-primary">{user.nickname}</span>!</h2>
                   <p className="text-sm text-muted-foreground">{t("Keep learning to level up.", "Darajangizni oshirish uchun o'qishda davom eting.", "Продолжайте учиться, чтобы повысить уровень.")}</p>
                 </div>
               </div>
