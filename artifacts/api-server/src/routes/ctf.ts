@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { db } from "@workspace/db";
-import { ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, titlesTable, usersTable, modulesTable, labsTable, labInstancesTable } from "@workspace/db/schema";
+import { ctfTasksTable, ctfAttemptsTable, ctfWriteupsTable, titlesTable, usersTable, modulesTable, labsTable, labInstancesTable, competitionTasksTable } from "@workspace/db/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { authenticateToken, optionalAuth, requireScope } from "../middleware/auth";
 import { hashFlag, isHashedFlag, verifyFlag } from "../lib/flags";
@@ -26,7 +26,12 @@ router.get("/", optionalAuth, requireScope("ctf:read"), async (req, res) => {
   const userId = req.user?.userId;
 
   // Drafts are visible only through the admin routes.
-  const published = await db.select().from(ctfTasksTable).where(eq(ctfTasksTable.isPublished, true));
+  // Competition tasks are hidden from the general CTF list.
+  const compTasks = await db.select({ ctfId: competitionTasksTable.ctfId }).from(competitionTasksTable);
+  const compTaskIds = new Set(compTasks.map(t => t.ctfId));
+
+  const allPublished = await db.select().from(ctfTasksTable).where(eq(ctfTasksTable.isPublished, true));
+  const published = allPublished.filter(c => !compTaskIds.has(c.id));
   let challenges = published;
 
   // Which categories and difficulties actually have something in them. The
@@ -130,8 +135,9 @@ router.get("/writeups", optionalAuth, requireScope("ctf:read"), async (_req, res
   })
     .from(ctfWriteupsTable)
     .innerJoin(ctfTasksTable, eq(ctfWriteupsTable.ctfId, ctfTasksTable.id))
+    .leftJoin(competitionTasksTable, eq(ctfTasksTable.id, competitionTasksTable.ctfId))
     .innerJoin(usersTable, eq(ctfWriteupsTable.userId, usersTable.id))
-    .where(and(eq(ctfWriteupsTable.isPublished, true), eq(ctfTasksTable.isPublished, true)))
+    .where(and(eq(ctfWriteupsTable.isPublished, true), eq(ctfTasksTable.isPublished, true), sql`${competitionTasksTable.ctfId} IS NULL`))
     .orderBy(desc(ctfWriteupsTable.createdAt))
     .limit(60);
   res.json(rows.map(w => ({ ...w, createdAt: w.createdAt.toISOString() })));

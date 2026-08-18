@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
-import { Trophy, Clock, Users, Flag, Lock, Gift, UserPlus, Copy, Share2, Send, CheckCircle } from "lucide-react";
+import { Trophy, Clock, Users, Flag, Lock, Gift, UserPlus, Copy, Share2, Send, CheckCircle, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DifficultyBadge } from "@/components/DifficultyBadge";
@@ -495,14 +495,28 @@ export default function CompetitionDetailPage() {
               </div>
             )}
 
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {challenges.map(ch => (
                 <Link href={comp.isJoined && comp.status === "active" ? `/competitions/${comp.id}/ctf/${ch.id}` : `/ctf/${ch.id}`} key={ch.id}>
-                  <div className={`flex items-center gap-3 p-3 rounded-lg border ${ch.isSolved ? "border-green-500/50 bg-green-500/5" : "border-border bg-card"} hover:border-primary/30 transition-colors cursor-pointer`} data-testid={`card-comp-ctf-${ch.id}`}>
-                    <DifficultyBadge difficulty={ch.difficulty} />
-                    <span className="flex-1 text-sm font-medium truncate">{ch.name}</span>
-                    <span className="text-xs font-mono text-primary">{ch.points} points</span>
-                    {ch.isSolved && <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />}
+                  <div className={`relative group flex flex-col h-full p-5 rounded-2xl border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${ch.isSolved ? "border-emerald-500/40 bg-gradient-to-br from-emerald-500/10 to-transparent shadow-emerald-500/5" : "border-border/50 bg-card/60 hover:bg-card hover:border-primary/50"}`} data-testid={`card-comp-ctf-${ch.id}`}>
+                    {ch.isSolved && (
+                      <div className="absolute -top-2 -right-2 z-10 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg">
+                        <CheckCircle className="w-4 h-4" />
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between mb-3">
+                      <DifficultyBadge difficulty={ch.difficulty} />
+                      <span className="text-xs font-mono font-bold text-primary px-2 py-1 bg-primary/10 rounded-md">
+                        {ch.points} XP
+                      </span>
+                    </div>
+                    <h3 className={`text-base font-bold mb-1 truncate ${ch.isSolved ? "text-emerald-500" : "group-hover:text-primary transition-colors"}`}>
+                      {ch.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-auto flex items-center justify-between pt-4 border-t border-border/50">
+                      <span>{ch.category}</span>
+                      <ChevronRight className={`w-4 h-4 transition-transform ${ch.isSolved ? "text-emerald-500 translate-x-1" : "text-muted-foreground group-hover:text-primary group-hover:translate-x-1"}`} />
+                    </p>
                   </div>
                 </Link>
               ))}
