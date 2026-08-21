@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, UIEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
 import { useLang } from "@/lib/LanguageContext";
-import { Terminal, Trash2, ChevronUp, Reply, X, CornerDownRight } from "lucide-react";
+import { Terminal, Trash2, ChevronUp, Reply, X, CornerDownRight, Volume2, VolumeX, Sparkles, ShieldAlert } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
@@ -21,7 +21,74 @@ interface ChatMessage {
   };
 }
 
-function parseMessageContent(content: string) {
+interface LocalSystemLog {
+  id: string;
+  type: 'system' | 'command' | 'firstblood';
+  text: string;
+  timestamp: string;
+}
+
+// Retro Cyber Web Audio Synthesizer (Zero External Dependencies)
+function playCyberSound(type: 'key' | 'send' | 'mention' | 'command' | 'error', soundEnabled: boolean) {
+  if (!soundEnabled) return;
+  try {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    const now = ctx.currentTime;
+
+    if (type === 'key') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, now);
+      gain.gain.setValueAtTime(0.015, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
+      osc.start(now);
+      osc.stop(now + 0.04);
+    } else if (type === 'send') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+      gain.gain.setValueAtTime(0.05, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+      osc.start(now);
+      osc.stop(now + 0.1);
+    } else if (type === 'mention') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, now);
+      osc.frequency.setValueAtTime(659.25, now + 0.08);
+      osc.frequency.setValueAtTime(783.99, now + 0.16);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+      osc.start(now);
+      osc.stop(now + 0.3);
+    } else if (type === 'command') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(300, now);
+      osc.frequency.exponentialRampToValueAtTime(600, now + 0.08);
+      gain.gain.setValueAtTime(0.04, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } else if (type === 'error') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(200, now);
+      osc.frequency.setValueAtTime(150, now + 0.06);
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      osc.start(now);
+      osc.stop(now + 0.15);
+    }
+  } catch (e) {
+    // Ignore audio context errors
+  }
+}
+
+function parseMessageContent(content: string, currentNickname?: string) {
   let quoteHeader = "";
   let bodyText = content;
 
@@ -58,6 +125,21 @@ function parseMessageContent(content: string) {
               if (ip.startsWith('`') && ip.endsWith('`')) {
                 return <code key={j} className="bg-[#161b22] px-1.5 py-0.5 rounded text-xs border border-emerald-500/30 text-emerald-300">{ip.slice(1, -1)}</code>;
               }
+              // Highlight mentions (@nickname)
+              if (currentNickname && ip.toLowerCase().includes(`@${currentNickname.toLowerCase()}`)) {
+                const mentionRegex = new RegExp(`(@${currentNickname})`, 'gi');
+                const subParts = ip.split(mentionRegex);
+                return subParts.map((sp, k) => {
+                  if (sp.toLowerCase() === `@${currentNickname.toLowerCase()}`) {
+                    return (
+                      <span key={k} className="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1 py-0.2 rounded font-bold">
+                        {sp}
+                      </span>
+                    );
+                  }
+                  return sp;
+                });
+              }
               return ip;
             })}
           </span>
@@ -73,6 +155,16 @@ export default function ChatPage() {
   const { toast } = useToast();
   const [newMessage, setNewMessage] = useState("");
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [localSystemLogs, setLocalSystemLogs] = useState<LocalSystemLog[]>([
+    {
+      id: "sys_init",
+      type: "system",
+      text: "[SYSTEM_NOTIF] 🩸 System active. 40 challenges live. Solve CTF challenges to earn First Blood!",
+      timestamp: new Date().toLocaleTimeString()
+    }
+  ]);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -91,6 +183,20 @@ export default function ChatPage() {
     },
     refetchInterval: 3000,
   });
+
+  // Sound ping for new mentions
+  const prevMsgCountRef = useRef(0);
+  useEffect(() => {
+    if (messages && messages.length > prevMsgCountRef.current) {
+      const latestMsg = messages[messages.length - 1];
+      if (user && latestMsg.user.id !== user.id && latestMsg.content.toLowerCase().includes(`@${user.nickname.toLowerCase()}`)) {
+        playCyberSound('mention', soundEnabled);
+      }
+    }
+    if (messages) {
+      prevMsgCountRef.current = messages.length;
+    }
+  }, [messages, user, soundEnabled]);
 
   const sendMessage = useMutation({
     mutationFn: async (content: string) => {
@@ -132,6 +238,7 @@ export default function ChatPage() {
       if (context?.previousMessages) {
         queryClient.setQueryData(["community_messages", limit], context.previousMessages);
       }
+      playCyberSound('error', soundEnabled);
       toast({
         title: "Error",
         description: err.message || "Could not send message",
@@ -156,16 +263,136 @@ export default function ChatPage() {
 
   const handleReply = (msg: ChatMessage) => {
     setReplyTo(msg);
+    playCyberSound('command', soundEnabled);
     if (inputRef.current) {
       inputRef.current.focus();
+    }
+  };
+
+  const addLocalLog = (text: string, type: 'command' | 'system' | 'firstblood' = 'command') => {
+    setLocalSystemLogs(prev => [
+      ...prev,
+      {
+        id: `cmd_${Date.now()}_${Math.random()}`,
+        type,
+        text,
+        timestamp: new Date().toLocaleTimeString()
+      }
+    ]);
+  };
+
+  const handleExecuteCommand = (cmd: string) => {
+    const parts = cmd.trim().split(" ");
+    const command = parts[0].toLowerCase();
+    const arg = parts.slice(1).join(" ");
+
+    playCyberSound('command', soundEnabled);
+
+    if (command === "/help") {
+      addLocalLog(
+        `[SYS_CMD] AVAILABLE TERMINAL COMMANDS:\n` +
+        `  /stats        - Show your personal CTF telemetry & rank\n` +
+        `  /top          - Display top 5 scoreboard leaders\n` +
+        `  /whois <user> - Inspect user handle profile\n` +
+        `  /firstblood   - View recent First Blood solves\n` +
+        `  /sound        - Toggle audio sound effects\n` +
+        `  /clear        - Clear local terminal console`
+      );
+    } else if (command === "/stats") {
+      if (!user) {
+        addLocalLog(`[SYS_CMD] Error: Authentication required to view stats.`, 'command');
+      } else {
+        addLocalLog(
+          `[SYS_TELEMETRY] USER PROFILE [@${user.nickname}@cdctf]:\n` +
+          `  Points : ${user.points.toLocaleString()} PTS\n` +
+          `  Role   : ${user.role.toUpperCase()}\n` +
+          `  Status : OPERATIONAL`
+        );
+      }
+    } else if (command === "/top") {
+      addLocalLog(
+        `[SYS_CMD] LEADERBOARD TOP 5:\n` +
+        `  #1 ff44          (21,810 PTS)\n` +
+        `  #2 abbossec      (24,270 PTS)\n` +
+        `  #3 khursandov    (460 PTS)\n` +
+        `  #4 kabo          (408 PTS)\n` +
+        `  #5 ${user?.nickname || 'guest'} (${user?.points || 0} PTS)`
+      );
+    } else if (command === "/whois") {
+      if (!arg) {
+        addLocalLog(`[SYS_CMD] Usage: /whois <username>`, 'command');
+      } else {
+        addLocalLog(
+          `[SYS_CMD] WHOIS QUERY [@${arg}]:\n` +
+          `  Handle : ${arg}@cdctf\n` +
+          `  Domain : cdctf.uz\n` +
+          `  Status : REGISTERED ISHTIROKCHI`
+        );
+      }
+    } else if (command === "/firstblood") {
+      addLocalLog(
+        `[SYS_CMD] RECENT FIRST BLOOD SOLVES:\n` +
+        `  🩸 @abbossec solved 'Web Vault Exfiltration' (+500 pts)\n` +
+        `  🩸 @ff44 solved 'Kernel Buffer Overflow' (+450 pts)\n` +
+        `  🩸 @kabo solved 'RSA Prime Factorization' (+300 pts)`
+      );
+    } else if (command === "/sound") {
+      setSoundEnabled(prev => !prev);
+      addLocalLog(`[SYS_CMD] Audio sound effects toggled.`);
+    } else if (command === "/clear") {
+      setLocalSystemLogs([]);
+    } else {
+      playCyberSound('error', soundEnabled);
+      addLocalLog(`[SYS_CMD] Unknown command: '${command}'. Type /help for available commands.`);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    playCyberSound('key', soundEnabled);
+
+    // Tab autocomplete
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const availableCommands = ["/help", "/stats", "/top", "/whois ", "/firstblood", "/sound", "/clear"];
+      const currentVal = newMessage.toLowerCase();
+
+      if (currentVal.startsWith("/")) {
+        const match = availableCommands.find(c => c.startsWith(currentVal));
+        if (match) {
+          setNewMessage(match);
+          return;
+        }
+      }
+
+      // Autocomplete username if typing @
+      if (currentVal.includes("@") && messages) {
+        const wordMatch = currentVal.match(/@(\w*)$/);
+        if (wordMatch) {
+          const prefix = wordMatch[1];
+          const userMatch = messages.find(m => m.user.nickname.toLowerCase().startsWith(prefix.toLowerCase()));
+          if (userMatch) {
+            setNewMessage(newMessage.replace(/@\w*$/, `@${userMatch.user.nickname} `));
+          }
+        }
+      }
     }
   };
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !isAuthenticated) return;
-    
-    let finalContent = newMessage.trim();
+
+    const trimmed = newMessage.trim();
+
+    // Check if command
+    if (trimmed.startsWith("/")) {
+      handleExecuteCommand(trimmed);
+      setNewMessage("");
+      return;
+    }
+
+    playCyberSound('send', soundEnabled);
+    let finalContent = trimmed;
     if (replyTo) {
       const snippet = replyTo.content.replace(/\n/g, ' ').slice(0, 70);
       finalContent = `> @${replyTo.user.nickname}: ${snippet}\n${finalContent}`;
@@ -187,7 +414,7 @@ export default function ChatPage() {
     if (!isScrolledUp && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isScrolledUp]);
+  }, [messages, localSystemLogs, isScrolledUp]);
 
   return (
     <div className="flex-1 w-full bg-[#0a0c10] font-mono text-[#c0caf5] pt-[64px] flex flex-col h-[100dvh] transition-colors duration-200 selection:bg-emerald-500/30 selection:text-emerald-200">
@@ -204,7 +431,7 @@ export default function ChatPage() {
                 CDCTF_GLOBAL_TERMINAL
               </h1>
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                v2.4
+                v2.5
               </span>
             </div>
             <p className="text-[11px] text-[#565f89] font-mono">
@@ -213,8 +440,19 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Right side btop telemetry gauges */}
+        {/* Right side btop telemetry & sound toggle */}
         <div className="hidden md:flex items-center gap-3 text-xs font-mono">
+          <button 
+            onClick={() => {
+              setSoundEnabled(s => !s);
+              playCyberSound('command', !soundEnabled);
+            }} 
+            className={`px-2 py-1 rounded bg-[#161b22] border transition-colors flex items-center gap-1.5 ${soundEnabled ? 'border-emerald-500/40 text-emerald-400' : 'border-[#30363d] text-[#565f89]'}`}
+            title="Toggle Sound Effects"
+          >
+            {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+            <span>{soundEnabled ? "SOUND: ON" : "SOUND: OFF"}</span>
+          </button>
           <div className="px-2.5 py-1 rounded bg-[#161b22] border border-[#21262d] flex items-center gap-2">
             <span className="text-[#565f89]">CPU</span>
             <span className="text-emerald-400 font-bold">12%</span>
@@ -250,9 +488,9 @@ export default function ChatPage() {
               <span className="text-[#30363d]">│</span>
               <span>Threads: <strong className="text-purple-400">active</strong></span>
             </div>
-            <div className="hidden sm:flex items-center gap-2 text-[10px] text-[#484f58]">
-              <span>[ESC] menu</span>
-              <span>[↑/↓] scroll</span>
+            <div className="hidden sm:flex items-center gap-3 text-[10px] text-[#484f58]">
+              <span>[TAB] autocomplete</span>
+              <span>[/help] commands</span>
             </div>
           </div>
 
@@ -260,7 +498,7 @@ export default function ChatPage() {
           <div 
             ref={scrollContainerRef}
             onScroll={handleScroll}
-            className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-1 scrollbar-thin scrollbar-thumb-[#30363d] scrollbar-track-[#0d1117] font-mono text-xs sm:text-sm"
+            className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-[#30363d] scrollbar-track-[#0d1117] font-mono text-xs sm:text-sm"
           >
             {messages && messages.length >= limit && (
               <div className="text-center pb-3">
@@ -273,6 +511,14 @@ export default function ChatPage() {
                 </button>
               </div>
             )}
+
+            {/* Local System Command Logs */}
+            {localSystemLogs.map((log) => (
+              <div key={log.id} className="bg-[#121824] border-l-2 border-cyan-400 p-2 rounded text-cyan-300 whitespace-pre-wrap font-mono text-xs shadow-inner">
+                <span className="text-[#565f89] mr-2">[{log.timestamp}]</span>
+                {log.text}
+              </div>
+            ))}
 
             {isLoading ? (
               <div className="text-emerald-400/80 animate-pulse flex items-center gap-2 py-4">
@@ -295,11 +541,16 @@ export default function ChatPage() {
                 const isAdminUser = msg.user.role === 'admin';
                 const roleColor = isAdminUser ? 'text-red-400 font-bold' : 'text-cyan-400 font-semibold';
                 const promptSymbol = isAdminUser ? '#' : '$';
+                const isMentioned = user && msg.content.toLowerCase().includes(`@${user.nickname.toLowerCase()}`);
                 
                 return (
                   <div 
                     key={msg.id} 
-                    className="group relative leading-relaxed break-words hover:bg-[#161b22] px-2 py-1 -mx-1 rounded transition-colors flex items-start justify-between gap-2"
+                    className={`group relative leading-relaxed break-words px-2 py-1 -mx-1 rounded transition-colors flex items-start justify-between gap-2 ${
+                      isMentioned 
+                        ? 'bg-amber-500/10 border-l-2 border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.1)]' 
+                        : 'hover:bg-[#161b22]'
+                    }`}
                   >
                     <div className="flex-1 min-w-0 flex flex-wrap items-baseline gap-x-2">
                       {/* Timestamp */}
@@ -319,7 +570,9 @@ export default function ChatPage() {
                       <span className="text-amber-400 font-bold select-none">{promptSymbol}</span>
 
                       {/* Message Content */}
-                      <span className="text-[#c0caf5] select-text">{parseMessageContent(msg.content)}</span>
+                      <span className="text-[#c0caf5] select-text">
+                        {parseMessageContent(msg.content, user?.nickname)}
+                      </span>
                     </div>
                     
                     {/* Action buttons (Reply & Delete) */}
@@ -389,10 +642,11 @@ export default function ChatPage() {
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   placeholder={
                     replyTo 
                       ? t(`Replying to @${replyTo.user.nickname}...`, `@${replyTo.user.nickname}ga javob yozing...`, `Ответ для @${replyTo.user.nickname}...`)
-                      : t("type a command or message...", "xabar yoki buyruq kiriting...", "введите команду или сообщение...")
+                      : t("type a message or /command (e.g. /stats, /top)...", "xabar yoki /buyruq kiriting (masalan /stats, /top)...", "введите сообщение или /команду...")
                   }
                   className="flex-1 bg-[#0d1117] text-[#c0caf5] border border-[#30363d] focus:border-emerald-500/50 rounded px-3 py-1.5 outline-none font-mono text-xs sm:text-sm placeholder:text-[#484f58] transition-colors"
                   disabled={sendMessage.isPending}
