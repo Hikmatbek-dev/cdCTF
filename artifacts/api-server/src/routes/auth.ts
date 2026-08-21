@@ -182,34 +182,52 @@ type LoginContext = {
 
 /** Final step of every successful login, whether or not 2FA was involved. */
 async function issueSession(res: Response, user: typeof usersTable.$inferSelect, ctx: LoginContext) {
-  // Must run before this login is recorded, otherwise the new IP/device it is
-  // checking for would already be in the history and never look new.
-  const suspicious = await suspiciousLoginReasons({ userId: user.id, ipAddress: ctx.ipAddress, deviceLabel: ctx.deviceLabel });
+  let suspicious: string[] = [];
+  try {
+    suspicious = await suspiciousLoginReasons({ userId: user.id, ipAddress: ctx.ipAddress, deviceLabel: ctx.deviceLabel });
+  } catch (err) {
+    logger.warn({ err }, "Failed to check suspicious login reasons");
+  }
 
   const tokenId = randomUUID();
-  await createSession({
-    userId: user.id,
-    tokenId,
-    ipAddress: ctx.ipAddress,
-    userAgent: ctx.userAgent,
-    deviceLabel: ctx.deviceLabel,
-    expiresAt: new Date(Date.now() + AUTH_SESSION_MAX_AGE_MS),
-  });
+  try {
+    await createSession({
+      userId: user.id,
+      tokenId,
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      deviceLabel: ctx.deviceLabel,
+      expiresAt: new Date(Date.now() + AUTH_SESSION_MAX_AGE_MS),
+    });
+  } catch (err) {
+    logger.warn({ err }, "Failed to create session in db, proceeding with JWT token");
+  }
+
   const token = generateToken(user.id, user.role, tokenId);
 
-  await recordLoginAttempt({
-    userId: user.id, identifier: ctx.identifier, ipAddress: ctx.ipAddress,
-    userAgent: ctx.userAgent, deviceLabel: ctx.deviceLabel,
-    success: true, suspiciousReasons: suspicious,
-  });
+  try {
+    await recordLoginAttempt({
+      userId: user.id, identifier: ctx.identifier, ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent, deviceLabel: ctx.deviceLabel,
+      success: true, suspiciousReasons: suspicious,
+    });
+  } catch (err) {
+    logger.warn({ err }, "Failed to record login attempt");
+  }
 
   res.cookie(AUTH_COOKIE_NAME, token, authCookieOptions());
   
-  const [pendingRef] = await db.select().from(referralsTable).where(and(eq(referralsTable.refereeId, user.id), eq(referralsTable.status, "pending"))).limit(1);
+  let isPendingReferee = false;
+  try {
+    const [pendingRef] = await db.select().from(referralsTable).where(and(eq(referralsTable.refereeId, user.id), eq(referralsTable.status, "pending"))).limit(1);
+    isPendingReferee = !!pendingRef;
+  } catch (err) {
+    logger.warn({ err }, "Failed to check pending referrals");
+  }
 
   return res.json({
     token,
-    user: { ...publicUser(user), isPendingReferee: !!pendingRef },
+    user: { ...publicUser(user), isPendingReferee },
     suspiciousLogin: suspicious.length > 0 ? { reasons: suspicious } : null,
   });
 }
@@ -265,7 +283,13 @@ router.post("/register", authRateLimit, validateBody(RegisterBody), async (req, 
   // the Telegram feed, so notify directly (fire-and-forget).
   sendTelegramLog(`🆕 <b>New user</b>\n👤 ${tgEscape(user.nickname)} (${tgEscape(user.email)})`);
 
-  const [pendingRef] = await db.select().from(referralsTable).where(and(eq(referralsTable.refereeId, user.id), eq(referralsTable.status, "pending"))).limit(1);
+  let isPendingReferee = false;
+  try {
+    const [pendingRef] = await db.select().from(referralsTable).where(and(eq(referralsTable.refereeId, user.id), eq(referralsTable.status, "pending"))).limit(1);
+    isPendingReferee = !!pendingRef;
+  } catch (err) {
+    logger.warn({ err }, "Failed to query referrals on register");
+  }
 
   res.status(201).json({
     user: {
@@ -273,47 +297,56 @@ router.post("/register", authRateLimit, validateBody(RegisterBody), async (req, 
       points: user.points, role: user.role, emailVerified: emailResult.ok ? user.emailVerified : true,
       isBlocked: user.isBlocked, openToWork: user.openToWork,
       isEmployer: user.isEmployer, companyName: user.companyName, createdAt: user.createdAt,
-      isPendingReferee: !!pendingRef,
+      isPendingReferee,
     },
     requiresEmailVerification: emailResult.ok,
   });
 });
 
 router.post("/login", authRateLimit, validateBody(LoginBody), async (req, res) => {
-  const body = req.body as z.infer<typeof LoginBody>;
-  const identifier = normalizeNickname(body.nickname);
-  const email = normalizeEmail(identifier);
-  const password = body.password;
+  try {
+    const body = req.body as z.infer<typeof LoginBody>;
+    const identifier = normalizeNickname(body.nickname);
+    const email = normalizeEmail(identifier);
+    const password = body.password;
 
-  const ipAddress = req.ip ?? null;
-  const userAgent = req.headers["user-agent"] ?? null;
-  const deviceLabel = parseDeviceLabel(userAgent ?? undefined);
+    const ipAddress = req.ip ?? null;
+    const userAgent = req.headers["user-agent"] ?? null;
+    const deviceLabel = parseDeviceLabel(userAgent ?? undefined);
 
-  async function rejectLogin(userId: number | null, failureReason: LoginFailureReason, status: number, message: string) {
-    await recordLoginAttempt({ userId, identifier, ipAddress, userAgent, deviceLabel, success: false, failureReason });
-    return res.status(status).json({ error: message });
+    async function rejectLogin(userId: number | null, failureReason: LoginFailureReason, status: number, message: string) {
+      try {
+        await recordLoginAttempt({ userId, identifier, ipAddress, userAgent, deviceLabel, success: false, failureReason });
+      } catch (err) {
+        logger.warn({ err }, "Failed to record login attempt on failure");
+      }
+      return res.status(status).json({ error: message });
+    }
+
+    const [user] = await db.select().from(usersTable).where(
+      or(
+        eq(usersTable.nickname, identifier),
+        eq(usersTable.email, email),
+      ),
+    ).limit(1);
+    if (!user) return rejectLogin(null, "unknown_user", 401, "Invalid credentials");
+    if (user.isBlocked) return rejectLogin(user.id, "blocked", 403, "Account blocked");
+    if (!user.emailVerified && user.role !== "admin") return rejectLogin(user.id, "email_unverified", 403, "Email not verified");
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) return rejectLogin(user.id, "bad_password", 401, "Invalid credentials");
+
+    // Password is right but not sufficient. Nothing is recorded in login_history
+    // yet — the attempt resolves at /2fa/verify, one way or the other.
+    if (user.totpEnabled) {
+      return res.json({ requires2fa: true, mfaToken: generateMfaToken(user.id) });
+    }
+
+    return await issueSession(res, user, { identifier, ipAddress, userAgent, deviceLabel });
+  } catch (error) {
+    logger.error({ error }, "Unhandled error during login");
+    return res.status(500).json({ error: error instanceof Error ? error.message : "Internal server error" });
   }
-
-  const [user] = await db.select().from(usersTable).where(
-    or(
-      eq(usersTable.nickname, identifier),
-      eq(usersTable.email, email),
-    ),
-  ).limit(1);
-  if (!user) return rejectLogin(null, "unknown_user", 401, "Invalid credentials");
-  if (user.isBlocked) return rejectLogin(user.id, "blocked", 403, "Account blocked");
-  if (!user.emailVerified && user.role !== "admin") return rejectLogin(user.id, "email_unverified", 403, "Email not verified");
-
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) return rejectLogin(user.id, "bad_password", 401, "Invalid credentials");
-
-  // Password is right but not sufficient. Nothing is recorded in login_history
-  // yet — the attempt resolves at /2fa/verify, one way or the other.
-  if (user.totpEnabled) {
-    return res.json({ requires2fa: true, mfaToken: generateMfaToken(user.id) });
-  }
-
-  return issueSession(res, user, { identifier, ipAddress, userAgent, deviceLabel });
 });
 
 // --- Passkeys (WebAuthn) ---------------------------------------------------
