@@ -374,6 +374,8 @@ async function applySchema() {
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin boolean NOT NULL DEFAULT false");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions text[]");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS admin_earns_points boolean NOT NULL DEFAULT false");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS notifications_enabled boolean NOT NULL DEFAULT false");
+
 
   // Referral programme.
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code text");
