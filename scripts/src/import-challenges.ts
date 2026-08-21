@@ -67,6 +67,17 @@ async function main() {
     for (const c of challenges) {
       const exists = await pool.query("SELECT 1 FROM ctf_tasks WHERE name = $1 LIMIT 1", [c.name]);
       if (exists.rowCount) {
+        await pool.query(
+          `UPDATE ctf_tasks SET
+             name_uz = $2, name_ru = $3, description = $4, description_uz = $5, description_ru = $6,
+             category = $7, difficulty = $8, points = $9, hint = $10, flag = $11
+           WHERE name = $1`,
+          [
+            c.name, c.nameUz, c.nameRu,
+            c.description, c.descriptionUz, c.descriptionRu,
+            c.category, c.difficulty, c.points, c.hint, c.flagHash,
+          ],
+        );
         skipped++;
         continue;
       }
