@@ -201,17 +201,17 @@ export default function ChatPage() {
               const date = new Date(msg.createdAt);
               const timeStr = date.toLocaleTimeString(lang === 'uz' ? 'uz-UZ' : lang === 'ru' ? 'ru-RU' : 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
               
-              const roleColor = msg.user.role === 'admin' ? 'text-red-600 dark:text-red-500' : 'text-blue-600 dark:text-blue-400';
+              const roleColor = msg.user.role === 'admin' ? 'text-red-600 dark:text-red-400 font-bold' : 'text-emerald-600 dark:text-emerald-400 font-semibold';
               const promptSymbol = msg.user.role === 'admin' ? '#' : '$';
               
               return (
-                <div key={msg.id} className="group relative text-[13px] sm:text-[14px] leading-relaxed break-words hover:bg-green-100 dark:hover:bg-green-950/20 px-1 -mx-1 rounded transition-colors flex">
+                <div key={msg.id} className="group relative text-[13px] sm:text-[14px] leading-relaxed break-words hover:bg-green-500/10 px-2 py-1 -mx-2 rounded transition-colors flex items-start">
                   <div className="flex-1 min-w-0">
-                    <span className="text-green-600/80 dark:text-green-700/70 select-none shrink-0">[{timeStr}]</span>{" "}
-                    <span className={`${roleColor} font-bold`}>{msg.user.nickname}</span>
-                    <span className="text-green-700 dark:text-green-600 select-none">@{msg.user.points}pts</span>
-                    <span className="text-green-600 dark:text-green-500 select-none mr-2">{promptSymbol}</span>
-                    <span className="text-green-900 dark:text-green-300">{parseMessageContent(msg.content)}</span>
+                    <span className="text-green-600/70 dark:text-green-600/60 select-none mr-2">[{timeStr}]</span>
+                    <span className={`${roleColor}`}>{msg.user.nickname}</span>
+                    <span className="text-green-600/80 dark:text-green-500/80 select-none mx-1.5 font-normal">@{msg.user.points}pts</span>
+                    <span className="text-amber-500 dark:text-amber-400 font-bold select-none mr-2">{promptSymbol}</span>
+                    <span className="text-green-950 dark:text-green-100 font-sans">{parseMessageContent(msg.content)}</span>
                   </div>
                   
                   {isAdmin && (
@@ -222,7 +222,7 @@ export default function ChatPage() {
                         }
                       }}
                       disabled={deleteMessage.isPending}
-                      className="opacity-0 group-hover:opacity-100 shrink-0 p-1 text-red-500 hover:bg-red-500/20 rounded transition-all"
+                      className="opacity-0 group-hover:opacity-100 shrink-0 p-1 text-red-500 hover:bg-red-500/20 rounded transition-all ml-2"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

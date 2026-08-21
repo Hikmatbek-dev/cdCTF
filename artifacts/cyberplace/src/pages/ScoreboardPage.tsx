@@ -241,7 +241,7 @@ export default function ScoreboardPage() {
 
                 {/* 1ST PLACE (GOLD - CHAMPION) */}
                 {rank1 && (
-                  <div className="order-1 md:order-2 flex flex-col items-center -mt-4 md:-mt-8">
+                  <div className="order-1 md:order-2 flex flex-col items-center mt-0 md:-mt-8">
                     <Link href={`/profile/${rank1.userId}`} className="w-full group cursor-pointer">
                       <div className="glass-card p-8 sm:p-9 rounded-3xl border-yellow-500/70 bg-gradient-to-b from-yellow-500/20 via-card/95 to-card group-hover:border-yellow-400 transition-all text-center relative overflow-hidden flex flex-col items-center shadow-[0_0_50px_-10px_rgba(234,179,8,0.45)] group-hover:-translate-y-3 duration-300">
                         
@@ -363,7 +363,7 @@ export default function ScoreboardPage() {
                     <div key={entry.userId}>
                       <Link href={`/profile/${entry.userId}`}>
                         <div
-                          className={`group relative flex items-center gap-4 sm:gap-6 px-5 py-4 transition-all cursor-pointer rounded-2xl border overflow-hidden ${
+                          className={`group relative flex items-center gap-2.5 sm:gap-6 px-3 sm:px-5 py-3 sm:py-4 transition-all cursor-pointer rounded-2xl border overflow-hidden ${
                             isMe
                               ? "bg-primary/[0.14] border-primary/60 shadow-[0_0_25px_-5px_hsl(var(--primary)/.4)]"
                               : "border-transparent hover:border-primary/30 hover:bg-card/90"
@@ -372,7 +372,7 @@ export default function ScoreboardPage() {
                           {/* Rank indicator left margin bar */}
                           <span
                             aria-hidden="true"
-                            className={`absolute left-0 top-0 bottom-0 w-1.5 ${
+                            className={`absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 ${
                               isMe
                                 ? "bg-primary"
                                 : rank === 1
@@ -386,12 +386,12 @@ export default function ScoreboardPage() {
                           />
 
                           {/* Rank badge */}
-                          <div className={`w-11 h-11 shrink-0 rounded-2xl border flex items-center justify-center font-mono text-base font-black tabular-nums shadow-sm ${medal}`}>
+                          <div className={`w-8 h-8 sm:w-11 sm:h-11 shrink-0 rounded-xl sm:rounded-2xl border flex items-center justify-center font-mono text-xs sm:text-base font-black tabular-nums shadow-sm ${medal}`}>
                             {rank}
                           </div>
 
                           {/* Avatar */}
-                          <div className={`w-12 h-12 bg-muted border-2 rounded-2xl flex items-center justify-center text-lg font-black text-primary shrink-0 overflow-hidden shadow-inner ${isMe ? "border-primary" : "border-border/70 group-hover:border-primary/50"}`}>
+                          <div className={`w-9 h-9 sm:w-12 sm:h-12 bg-muted border-2 rounded-xl sm:rounded-2xl flex items-center justify-center text-sm sm:text-lg font-black text-primary shrink-0 overflow-hidden shadow-inner ${isMe ? "border-primary" : "border-border/70 group-hover:border-primary/50"}`}>
                             {entry.avatarUrl ? (
                               <img src={entry.avatarUrl} alt={entry.nickname} className="w-full h-full object-cover" />
                             ) : (

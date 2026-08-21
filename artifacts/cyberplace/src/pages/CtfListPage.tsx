@@ -123,8 +123,8 @@ export default function CtfListPage() {
               />
             </div>
             
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-1 bg-muted p-1 rounded-xl border border-border">
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+              <div className="flex items-center gap-1 bg-muted p-1 rounded-xl border border-border w-full sm:w-auto">
                 {(["all", "solved", "unsolved"] as const).map(v => (
                   <button
                     key={v}
@@ -133,7 +133,7 @@ export default function CtfListPage() {
                     // --primary is tuned to be legible *as text* on the page and
                     // is too light to carry white text as a *fill* (3.9:1).
                     aria-pressed={solved === v}
-                    className={`px-4 h-10 text-sm font-medium transition-colors rounded-lg ${
+                    className={`flex-1 sm:flex-none px-3 sm:px-4 h-10 text-xs sm:text-sm font-medium transition-colors rounded-lg ${
                       solved === v
                         ? "bg-card text-foreground shadow-sm border border-border"
                         : "text-muted-foreground hover:text-foreground"
@@ -149,7 +149,7 @@ export default function CtfListPage() {
               </div>
 
               <Select value={category} onValueChange={(v) => { setCategory(v); setPage(1); }}>
-                <SelectTrigger className="h-11 w-48 bg-card rounded-xl text-sm">
+                <SelectTrigger className="h-11 flex-1 sm:flex-none w-full sm:w-48 bg-card rounded-xl text-sm">
                   <SelectValue placeholder={t("Category", "Kategoriya", "Категория")} />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl p-1.5">
@@ -165,7 +165,7 @@ export default function CtfListPage() {
               </Select>
 
               <Select value={difficulty} onValueChange={(v) => { setDifficulty(v); setPage(1); }}>
-                <SelectTrigger className="h-11 w-44 bg-card rounded-xl text-sm">
+                <SelectTrigger className="h-11 flex-1 sm:flex-none w-full sm:w-44 bg-card rounded-xl text-sm">
                   <SelectValue placeholder={t("Difficulty", "Qiyinlik", "Сложность")} />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl p-1.5">

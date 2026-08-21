@@ -232,10 +232,10 @@ export default function CtfDetailPage() {
                   const isUrl = challenge.fileUrl.startsWith("http://") || challenge.fileUrl.startsWith("https://");
                   const Icon = isUrl ? ExternalLink : Download;
                   return (
-                    <div className="glass-card p-8 flex items-center justify-between group hover:border-primary/40 transition-all rounded-xl border-border">
-                      <div className="flex items-center gap-8">
-                        <div className="w-16 h-16 bg-muted border border-border rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500 shadow-xl">
-                          <Icon className="w-7 h-7" />
+                    <div className="glass-card p-5 sm:p-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 sm:gap-8 group hover:border-primary/40 transition-all rounded-xl border-border">
+                      <div className="flex items-center gap-4 sm:gap-8">
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 bg-muted border border-border rounded-xl sm:rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500 shadow-xl shrink-0">
+                          <Icon className="w-6 h-6 sm:w-7 sm:h-7" />
                         </div>
                         <div>
                           <h3 className="text-sm font-semibold text-foreground">
@@ -250,8 +250,8 @@ export default function CtfDetailPage() {
                           </p>
                         </div>
                       </div>
-                      <a href={challenge.fileUrl} target={isUrl ? "_blank" : undefined} rel={isUrl ? "noopener noreferrer" : undefined} download={!isUrl}>
-                        <button className="cyber-button h-14 px-10">
+                      <a href={challenge.fileUrl} target={isUrl ? "_blank" : undefined} rel={isUrl ? "noopener noreferrer" : undefined} download={!isUrl} className="w-full sm:w-auto">
+                        <button className="cyber-button h-12 sm:h-14 px-6 sm:px-10 w-full sm:w-auto">
                           {isUrl ? t("Open", "Ochish", "Открыть") : t("Download", "Yuklab olish", "Скачать")}
                         </button>
                       </a>
