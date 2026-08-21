@@ -457,56 +457,56 @@ export default function ChatPage() {
   return (
     <div className="flex-1 w-full bg-[#0a0c10] font-mono text-[#c0caf5] pt-[64px] flex flex-col h-[100dvh] transition-colors duration-200 selection:bg-emerald-500/30 selection:text-emerald-200">
       {/* btop Style Top HUD Header */}
-      <div className="px-3 sm:px-6 py-2.5 bg-[#0e1117] border-b border-[#1e2430] flex items-center justify-between gap-3 shrink-0 shadow-md">
-        <div className="flex items-center gap-3">
+      <div className="px-3 sm:px-4 py-1.5 bg-[#0e1117] border-b border-[#1e2430] flex items-center justify-between gap-2 shrink-0 shadow-md">
+        <div className="flex items-center gap-2.5">
           <div className="relative flex items-center justify-center">
-            <Terminal className="w-5 h-5 text-emerald-400" />
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 animate-ping opacity-75" />
+            <Terminal className="w-4 h-4 text-emerald-400" />
+            <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping opacity-75" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xs sm:text-sm font-bold tracking-widest uppercase text-emerald-400 font-mono">
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-xs font-bold tracking-widest uppercase text-emerald-400 font-mono">
                 CDCTF_GLOBAL_TERMINAL
               </h1>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                 v2.5
               </span>
             </div>
-            <p className="text-[11px] text-[#565f89] font-mono">
+            <p className="text-[10px] text-[#565f89] font-mono">
               {t("STATUS: SECURE_LINK // ACTIVE", "HOLAT: XAVFSIZ ALOQA // FAOL", "СТАТУС: СОЕДИНЕНИЕ // АКТИВНО")}
             </p>
           </div>
         </div>
 
         {/* Right side btop telemetry & sound toggle */}
-        <div className="hidden md:flex items-center gap-3 text-xs font-mono">
+        <div className="hidden md:flex items-center gap-2.5 text-[11px] font-mono">
           <button 
             onClick={() => {
               setSoundEnabled(s => !s);
               playCyberSound('command', !soundEnabled);
             }} 
-            className={`px-2 py-1 rounded bg-[#161b22] border transition-colors flex items-center gap-1.5 ${soundEnabled ? 'border-emerald-500/40 text-emerald-400' : 'border-[#30363d] text-[#565f89]'}`}
+            className={`px-2 py-0.5 rounded bg-[#161b22] border transition-colors flex items-center gap-1 ${soundEnabled ? 'border-emerald-500/40 text-emerald-400' : 'border-[#30363d] text-[#565f89]'}`}
             title="Toggle Sound Effects"
           >
-            {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+            {soundEnabled ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
             <span>{soundEnabled ? "SOUND: ON" : "SOUND: OFF"}</span>
           </button>
-          <div className="px-2.5 py-1 rounded bg-[#161b22] border border-[#21262d] flex items-center gap-2">
+          <div className="px-2 py-0.5 rounded bg-[#161b22] border border-[#21262d] flex items-center gap-1.5">
             <span className="text-[#565f89]">CPU</span>
             <span className="text-emerald-400 font-bold">12%</span>
-            <div className="w-12 h-1.5 bg-[#21262d] rounded-full overflow-hidden">
+            <div className="w-10 h-1 bg-[#21262d] rounded-full overflow-hidden">
               <div className="w-[12%] h-full bg-emerald-400" />
             </div>
           </div>
-          <div className="px-2.5 py-1 rounded bg-[#161b22] border border-[#21262d] flex items-center gap-2">
+          <div className="px-2 py-0.5 rounded bg-[#161b22] border border-[#21262d] flex items-center gap-1.5">
             <span className="text-[#565f89]">MEM</span>
             <span className="text-cyan-400 font-bold">3.8GB</span>
-            <div className="w-12 h-1.5 bg-[#21262d] rounded-full overflow-hidden">
+            <div className="w-10 h-1 bg-[#21262d] rounded-full overflow-hidden">
               <div className="w-[35%] h-full bg-cyan-400" />
             </div>
           </div>
           {isAuthenticated && user && (
-            <div className="px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold flex items-center gap-1.5">
+            <div className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold flex items-center gap-1">
               <span>PTS:</span>
               <span className="text-amber-300 tabular-nums">{user.points.toLocaleString()}</span>
             </div>
@@ -515,18 +515,18 @@ export default function ChatPage() {
       </div>
 
       {/* Main Terminal Window Frame */}
-      <div className="flex-1 overflow-hidden flex flex-col min-h-0 relative p-2 sm:p-4">
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0 relative p-1.5 sm:p-2.5">
         <div className="flex-1 bg-[#0d1117] border border-[#21262d] rounded-xl flex flex-col min-h-0 shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-hidden">
           {/* btop Box Header Bar */}
-          <div className="px-3 py-1.5 bg-[#161b22] border-b border-[#21262d] text-[11px] font-mono flex items-center justify-between text-[#8b949e] shrink-0 select-none">
-            <div className="flex items-center gap-3">
+          <div className="px-3 py-1 bg-[#161b22] border-b border-[#21262d] text-[10px] font-mono flex items-center justify-between text-[#8b949e] shrink-0 select-none">
+            <div className="flex items-center gap-2.5">
               <span className="text-emerald-400 font-bold">proc | filter</span>
               <span className="text-[#30363d]">│</span>
               <span>Sorting: <strong className="text-cyan-400">time lazy</strong></span>
               <span className="text-[#30363d]">│</span>
               <span>Threads: <strong className="text-purple-400">active</strong></span>
             </div>
-            <div className="hidden sm:flex items-center gap-3 text-[10px] text-[#484f58]">
+            <div className="hidden sm:flex items-center gap-2.5 text-[9px] text-[#484f58]">
               <span>[TAB] autocomplete</span>
               <span>[/help] commands</span>
             </div>
@@ -536,33 +536,29 @@ export default function ChatPage() {
           <div 
             ref={scrollContainerRef}
             onScroll={handleScroll}
-            className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-[#30363d] scrollbar-track-[#0d1117] font-mono text-xs sm:text-sm"
+            className="flex-1 p-2 sm:p-3 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-[#30363d] scrollbar-track-[#0d1117] font-mono text-xs"
           >
             {/* Notification Permission Request Banner */}
             {notifPermission === "default" && (
-              <div className="bg-[#121927] border border-amber-500/40 p-3 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.1)] mb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-1.5 rounded-md bg-amber-500/20 text-amber-400 shrink-0">
-                    <Bell className="w-4 h-4 animate-bounce" />
-                  </div>
-                  <div>
-                    <strong className="text-amber-400 block font-bold">
-                      {t("NOTIFICATION PERMISSION REQUIRED", "BILDIRISHNOMA RUXSATI TALAB ETILADI", "ТРЕБУЕТСЯ РАЗРЕШЕНИЕ НА УВЕДОМЛЕНИЯ")}
+              <div className="bg-[#121927] border border-amber-500/40 py-1.5 px-3 rounded-md flex items-center justify-between gap-2.5 text-[11px] font-mono text-amber-300 shadow-sm mb-2 shrink-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Bell className="w-3.5 h-3.5 text-amber-400 animate-bounce shrink-0" />
+                  <span className="truncate">
+                    <strong className="text-amber-400 mr-1.5">
+                      {t("[NOTIF_REQUIRED]", "[NOTIF_TALAB]", "[УВЕДОМЛЕНИЕ]")}:
                     </strong>
-                    <span className="text-[11px] text-amber-200/80">
-                      {t(
-                        "Enable notifications to get real-time alerts for chat mentions, competitions, and platform news.",
-                        "Chatdagi murojaatlar, musobaqalar va platforma yangiliklaridan xabardor bo'lish uchun ruxsat bering.",
-                        "Включите уведомления, чтобы получать сообщения чата, новости соревнований и платформы."
-                      )}
-                    </span>
-                  </div>
+                    {t(
+                      "Enable notifications for live chat, competition, & news updates.",
+                      "Chat, musobaqalar va yangiliklar bildirishnomalarini yoqing.",
+                      "Включите уведомления для чата, соревнований и новостей."
+                    )}
+                  </span>
                 </div>
                 <button
                   onClick={requestNotifPermission}
-                  className="w-full sm:w-auto px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 rounded font-bold uppercase tracking-wider transition-all shrink-0 text-center"
+                  className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 rounded text-[10px] font-bold uppercase tracking-wider transition-all shrink-0"
                 >
-                  {t("Enable Notifications", "Ruxsat Berish", "Разрешить")}
+                  {t("Enable", "Ruxsat Berish", "Разрешить")}
                 </button>
               </div>
             )}
