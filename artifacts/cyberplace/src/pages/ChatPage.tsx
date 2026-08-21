@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, UIEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
 import { useLang } from "@/lib/LanguageContext";
-import { Terminal, Trash2, ChevronUp } from "lucide-react";
+import { Terminal, Trash2, ChevronUp, Reply, X, CornerDownRight } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,28 +22,49 @@ interface ChatMessage {
 }
 
 function parseMessageContent(content: string) {
-  const parts = content.split(/(```[\s\S]*?```)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith('```') && part.endsWith('```')) {
-      const code = part.slice(3, -3).replace(/^\w+\n/, '');
-      return (
-        <pre key={i} className="bg-black/20 dark:bg-white/10 p-2 rounded my-1 overflow-x-auto text-xs font-mono border border-green-500/30">
-          <code>{code}</code>
-        </pre>
-      );
+  let quoteHeader = "";
+  let bodyText = content;
+
+  if (content.startsWith('> @')) {
+    const firstNL = content.indexOf('\n');
+    if (firstNL !== -1) {
+      quoteHeader = content.slice(3, firstNL).trim();
+      bodyText = content.slice(firstNL + 1);
     }
-    const inlineParts = part.split(/(`[^`]+`)/g);
-    return (
-      <span key={i}>
-        {inlineParts.map((ip, j) => {
-          if (ip.startsWith('`') && ip.endsWith('`')) {
-            return <code key={j} className="bg-black/20 dark:bg-white/10 px-1 rounded text-xs border border-green-500/30">{ip.slice(1, -1)}</code>;
-          }
-          return ip;
-        })}
-      </span>
-    );
-  });
+  }
+
+  const parts = bodyText.split(/(```[\s\S]*?```)/g);
+  return (
+    <div className="inline">
+      {quoteHeader && (
+        <div className="bg-[#161b22] border-l-2 border-emerald-400 px-2 py-1 my-1 text-[11px] text-[#8b949e] rounded-r font-mono flex items-center gap-1.5 w-fit max-w-full">
+          <CornerDownRight className="w-3 h-3 text-emerald-400 shrink-0" />
+          <span className="text-cyan-400 font-semibold truncate">@{quoteHeader}</span>
+        </div>
+      )}
+      {parts.map((part, i) => {
+        if (part.startsWith('```') && part.endsWith('```')) {
+          const code = part.slice(3, -3).replace(/^\w+\n/, '');
+          return (
+            <pre key={i} className="bg-[#090d13] p-2 rounded my-1 overflow-x-auto text-xs font-mono border border-emerald-500/30 text-emerald-300">
+              <code>{code}</code>
+            </pre>
+          );
+        }
+        const inlineParts = part.split(/(`[^`]+`)/g);
+        return (
+          <span key={i}>
+            {inlineParts.map((ip, j) => {
+              if (ip.startsWith('`') && ip.endsWith('`')) {
+                return <code key={j} className="bg-[#161b22] px-1.5 py-0.5 rounded text-xs border border-emerald-500/30 text-emerald-300">{ip.slice(1, -1)}</code>;
+              }
+              return ip;
+            })}
+          </span>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function ChatPage() {
@@ -51,8 +72,10 @@ export default function ChatPage() {
   const { t, lang } = useLang();
   const { toast } = useToast();
   const [newMessage, setNewMessage] = useState("");
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
   const [limit, setLimit] = useState(50);
@@ -131,11 +154,26 @@ export default function ChatPage() {
     }
   });
 
+  const handleReply = (msg: ChatMessage) => {
+    setReplyTo(msg);
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !isAuthenticated) return;
-    sendMessage.mutate(newMessage);
+    
+    let finalContent = newMessage.trim();
+    if (replyTo) {
+      const snippet = replyTo.content.replace(/\n/g, ' ').slice(0, 70);
+      finalContent = `> @${replyTo.user.nickname}: ${snippet}\n${finalContent}`;
+    }
+
+    sendMessage.mutate(finalContent);
     setNewMessage("");
+    setReplyTo(null);
     setIsScrolledUp(false);
   };
 
@@ -267,12 +305,14 @@ export default function ChatPage() {
                       {/* Timestamp */}
                       <span className="text-[#484f58] select-none shrink-0 font-mono text-[12px]">[{timeStr}]</span>
 
-                      {/* Nickname */}
-                      <span className={`${roleColor} hover:underline cursor-pointer`}>{msg.user.nickname}</span>
-
-                      {/* Points badge */}
-                      <span className="text-[11px] px-1.5 py-0.2 rounded bg-[#161b22] text-[#8b949e] border border-[#30363d] select-none font-mono">
-                        @{msg.user.points}pts
+                      {/* Nickname@cdctf format */}
+                      <span 
+                        onClick={() => handleReply(msg)}
+                        className={`${roleColor} hover:underline cursor-pointer flex items-center`}
+                        title="Click to reply"
+                      >
+                        {msg.user.nickname}
+                        <span className="text-[#565f89] font-normal">@cdctf</span>
                       </span>
 
                       {/* Prompt Symbol */}
@@ -282,20 +322,32 @@ export default function ChatPage() {
                       <span className="text-[#c0caf5] select-text">{parseMessageContent(msg.content)}</span>
                     </div>
                     
-                    {isAdmin && (
-                      <button 
-                        onClick={() => {
-                          if (confirm(t("Delete this message?", "Bu xabarni o'chirasizmi?", "Удалить это сообщение?"))) {
-                            deleteMessage.mutate(msg.id);
-                          }
-                        }}
-                        disabled={deleteMessage.isPending}
-                        className="opacity-0 group-hover:opacity-100 shrink-0 p-1 text-red-400 hover:bg-red-950/40 rounded border border-red-900/40 transition-all"
-                        title="Delete Message"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                    {/* Action buttons (Reply & Delete) */}
+                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-all">
+                      {isAuthenticated && (
+                        <button
+                          onClick={() => handleReply(msg)}
+                          className="p-1 text-[#8b949e] hover:text-emerald-400 hover:bg-[#21262d] rounded transition-colors"
+                          title={t("Reply", "Javob berish", "Ответить")}
+                        >
+                          <Reply className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {isAdmin && (
+                        <button 
+                          onClick={() => {
+                            if (confirm(t("Delete this message?", "Bu xabarni o'chirasizmi?", "Удалить это сообщение?"))) {
+                              deleteMessage.mutate(msg.id);
+                            }
+                          }}
+                          disabled={deleteMessage.isPending}
+                          className="p-1 text-red-400 hover:bg-red-950/40 hover:text-red-300 rounded border border-red-900/40 transition-all"
+                          title="Delete Message"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })
@@ -305,6 +357,25 @@ export default function ChatPage() {
 
           {/* btop Command Input Footer Bar */}
           <div className="p-2.5 sm:p-3 bg-[#161b22] border-t border-[#21262d] shrink-0">
+            {/* Active Reply Banner */}
+            {replyTo && (
+              <div className="flex items-center justify-between bg-[#0d1117] border-t border-x border-[#30363d] px-3 py-1.5 rounded-t-lg text-xs font-mono text-emerald-400 mb-2">
+                <div className="flex items-center gap-2 truncate">
+                  <CornerDownRight className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span className="text-[#8b949e]">{t("Replying to", "Javob berilmoqda", "Ответ для")}:</span>
+                  <span className="font-bold text-cyan-400">@{replyTo.user.nickname}</span>
+                  <span className="text-[#565f89] truncate max-w-[200px] sm:max-w-[400px]">"{replyTo.content.replace(/\n/g, ' ')}"</span>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => setReplyTo(null)}
+                  className="text-[#8b949e] hover:text-red-400 p-0.5 rounded transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
             {isAuthenticated ? (
               <form onSubmit={handleSend} className="flex gap-2 items-center">
                 <div className="flex items-center gap-1.5 text-xs font-mono shrink-0 select-none">
@@ -314,10 +385,15 @@ export default function ChatPage() {
                   <span className="text-amber-400 font-bold">:~$</span>
                 </div>
                 <input
+                  ref={inputRef}
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder={t("type a command or message...", "xabar yoki buyruq kiriting...", "введите команду или сообщение...")}
+                  placeholder={
+                    replyTo 
+                      ? t(`Replying to @${replyTo.user.nickname}...`, `@${replyTo.user.nickname}ga javob yozing...`, `Ответ для @${replyTo.user.nickname}...`)
+                      : t("type a command or message...", "xabar yoki buyruq kiriting...", "введите команду или сообщение...")
+                  }
                   className="flex-1 bg-[#0d1117] text-[#c0caf5] border border-[#30363d] focus:border-emerald-500/50 rounded px-3 py-1.5 outline-none font-mono text-xs sm:text-sm placeholder:text-[#484f58] transition-colors"
                   disabled={sendMessage.isPending}
                   maxLength={1000}
