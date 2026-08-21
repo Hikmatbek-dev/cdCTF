@@ -152,126 +152,196 @@ export default function ChatPage() {
   }, [messages, isScrolledUp]);
 
   return (
-    <div className="flex-1 w-full bg-gray-50 dark:bg-black font-mono text-green-700 dark:text-green-500 pt-[64px] flex flex-col h-[100dvh] transition-colors duration-200">
-      <div className="p-3 sm:p-4 border-b border-green-300 dark:border-green-900/50 flex items-center gap-3 shrink-0 bg-gray-50/80 dark:bg-black/80 backdrop-blur transition-colors">
-        <Terminal className="w-5 h-5 text-green-600 dark:text-green-400" />
-        <div>
-          <h1 className="text-lg font-bold tracking-wider uppercase text-green-700 dark:text-green-400">
-            cdCTF_Global_Terminal
-          </h1>
-          <p className="text-xs text-green-600 dark:text-green-600/80">
-            {t("Secure connection established...", "Xavfsiz aloqa o'rnatildi...", "Защищенное соединение установлено...")}
-          </p>
+    <div className="flex-1 w-full bg-[#0a0c10] font-mono text-[#c0caf5] pt-[64px] flex flex-col h-[100dvh] transition-colors duration-200 selection:bg-emerald-500/30 selection:text-emerald-200">
+      {/* btop Style Top HUD Header */}
+      <div className="px-3 sm:px-6 py-2.5 bg-[#0e1117] border-b border-[#1e2430] flex items-center justify-between gap-3 shrink-0 shadow-md">
+        <div className="flex items-center gap-3">
+          <div className="relative flex items-center justify-center">
+            <Terminal className="w-5 h-5 text-emerald-400" />
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 animate-ping opacity-75" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xs sm:text-sm font-bold tracking-widest uppercase text-emerald-400 font-mono">
+                CDCTF_GLOBAL_TERMINAL
+              </h1>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                v2.4
+              </span>
+            </div>
+            <p className="text-[11px] text-[#565f89] font-mono">
+              {t("STATUS: SECURE_LINK // ACTIVE", "HOLAT: XAVFSIZ ALOQA // FAOL", "СТАТУС: СОЕДИНЕНИЕ // АКТИВНО")}
+            </p>
+          </div>
+        </div>
+
+        {/* Right side btop telemetry gauges */}
+        <div className="hidden md:flex items-center gap-3 text-xs font-mono">
+          <div className="px-2.5 py-1 rounded bg-[#161b22] border border-[#21262d] flex items-center gap-2">
+            <span className="text-[#565f89]">CPU</span>
+            <span className="text-emerald-400 font-bold">12%</span>
+            <div className="w-12 h-1.5 bg-[#21262d] rounded-full overflow-hidden">
+              <div className="w-[12%] h-full bg-emerald-400" />
+            </div>
+          </div>
+          <div className="px-2.5 py-1 rounded bg-[#161b22] border border-[#21262d] flex items-center gap-2">
+            <span className="text-[#565f89]">MEM</span>
+            <span className="text-cyan-400 font-bold">3.8GB</span>
+            <div className="w-12 h-1.5 bg-[#21262d] rounded-full overflow-hidden">
+              <div className="w-[35%] h-full bg-cyan-400" />
+            </div>
+          </div>
+          {isAuthenticated && user && (
+            <div className="px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold flex items-center gap-1.5">
+              <span>PTS:</span>
+              <span className="text-amber-300 tabular-nums">{user.points.toLocaleString()}</span>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden flex flex-col min-h-0 relative px-2 sm:px-4">
-        {/* Messages Area */}
-        <div 
-          ref={scrollContainerRef}
-          onScroll={handleScroll}
-          className="flex-1 p-2 sm:p-4 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-green-400 dark:scrollbar-thumb-green-900 scrollbar-track-gray-100 dark:scrollbar-track-black"
-        >
-          {messages && messages.length >= limit && (
-            <div className="text-center pb-4">
-              <button 
-                onClick={() => setLimit(l => l + 50)}
-                className="text-xs text-green-600/70 hover:text-green-600 flex items-center justify-center w-full gap-1"
-              >
-                <ChevronUp className="w-4 h-4" />
-                {t("Load older logs...", "Eski loglarni yuklash...", "Загрузить старые логи...")}
-              </button>
+      {/* Main Terminal Window Frame */}
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0 relative p-2 sm:p-4">
+        <div className="flex-1 bg-[#0d1117] border border-[#21262d] rounded-xl flex flex-col min-h-0 shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-hidden">
+          {/* btop Box Header Bar */}
+          <div className="px-3 py-1.5 bg-[#161b22] border-b border-[#21262d] text-[11px] font-mono flex items-center justify-between text-[#8b949e] shrink-0 select-none">
+            <div className="flex items-center gap-3">
+              <span className="text-emerald-400 font-bold">proc | filter</span>
+              <span className="text-[#30363d]">│</span>
+              <span>Sorting: <strong className="text-cyan-400">time lazy</strong></span>
+              <span className="text-[#30363d]">│</span>
+              <span>Threads: <strong className="text-purple-400">active</strong></span>
             </div>
-          )}
+            <div className="hidden sm:flex items-center gap-2 text-[10px] text-[#484f58]">
+              <span>[ESC] menu</span>
+              <span>[↑/↓] scroll</span>
+            </div>
+          </div>
 
-          {isLoading ? (
-            <div className="text-green-600 dark:text-green-600/70 animate-pulse">
-              [INIT] Loading secure comms link...
-            </div>
-          ) : error ? (
-            <div className="text-red-600 dark:text-red-500">
-              [ERROR] Connection refused. Matrix glitch detected.
-            </div>
-          ) : messages?.length === 0 ? (
-            <div className="text-green-600/70 dark:text-green-600/50">
-              [SYSTEM] No prior logs found. Awaiting input.
-            </div>
-          ) : (
-            messages?.map((msg) => {
-              const date = new Date(msg.createdAt);
-              const timeStr = date.toLocaleTimeString(lang === 'uz' ? 'uz-UZ' : lang === 'ru' ? 'ru-RU' : 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-              
-              const roleColor = msg.user.role === 'admin' ? 'text-red-600 dark:text-red-400 font-bold' : 'text-emerald-600 dark:text-emerald-400 font-semibold';
-              const promptSymbol = msg.user.role === 'admin' ? '#' : '$';
-              
-              return (
-                <div key={msg.id} className="group relative text-[13px] sm:text-[14px] leading-relaxed break-words hover:bg-green-500/10 px-2 py-1 -mx-2 rounded transition-colors flex items-start">
-                  <div className="flex-1 min-w-0">
-                    <span className="text-green-600/70 dark:text-green-600/60 select-none mr-2">[{timeStr}]</span>
-                    <span className={`${roleColor}`}>{msg.user.nickname}</span>
-                    <span className="text-green-600/80 dark:text-green-500/80 select-none mx-1.5 font-normal">@{msg.user.points}pts</span>
-                    <span className="text-amber-500 dark:text-amber-400 font-bold select-none mr-2">{promptSymbol}</span>
-                    <span className="text-green-950 dark:text-green-100 font-sans">{parseMessageContent(msg.content)}</span>
+          {/* Messages Area */}
+          <div 
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-1 scrollbar-thin scrollbar-thumb-[#30363d] scrollbar-track-[#0d1117] font-mono text-xs sm:text-sm"
+          >
+            {messages && messages.length >= limit && (
+              <div className="text-center pb-3">
+                <button 
+                  onClick={() => setLimit(l => l + 50)}
+                  className="text-xs text-emerald-500/80 hover:text-emerald-400 flex items-center justify-center w-full gap-1 py-1 bg-[#161b22] rounded border border-[#21262d] transition-colors"
+                >
+                  <ChevronUp className="w-4 h-4" />
+                  {t("Load older logs...", "Eski loglarni yuklash...", "Загрузить старые логи...")}
+                </button>
+              </div>
+            )}
+
+            {isLoading ? (
+              <div className="text-emerald-400/80 animate-pulse flex items-center gap-2 py-4">
+                <span className="inline-block w-2 h-4 bg-emerald-400 animate-ping" />
+                [SYSTEM] Initializing secure telemetry feed...
+              </div>
+            ) : error ? (
+              <div className="text-red-400 bg-red-950/30 p-3 rounded border border-red-900/50">
+                [ERROR] Connection refused. Matrix glitch detected.
+              </div>
+            ) : messages?.length === 0 ? (
+              <div className="text-[#565f89] py-4">
+                [SYSTEM] No prior logs found. Awaiting user input.
+              </div>
+            ) : (
+              messages?.map((msg) => {
+                const date = new Date(msg.createdAt);
+                const timeStr = date.toLocaleTimeString(lang === 'uz' ? 'uz-UZ' : lang === 'ru' ? 'ru-RU' : 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                
+                const isAdminUser = msg.user.role === 'admin';
+                const roleColor = isAdminUser ? 'text-red-400 font-bold' : 'text-cyan-400 font-semibold';
+                const promptSymbol = isAdminUser ? '#' : '$';
+                
+                return (
+                  <div 
+                    key={msg.id} 
+                    className="group relative leading-relaxed break-words hover:bg-[#161b22] px-2 py-1 -mx-1 rounded transition-colors flex items-start justify-between gap-2"
+                  >
+                    <div className="flex-1 min-w-0 flex flex-wrap items-baseline gap-x-2">
+                      {/* Timestamp */}
+                      <span className="text-[#484f58] select-none shrink-0 font-mono text-[12px]">[{timeStr}]</span>
+
+                      {/* Nickname */}
+                      <span className={`${roleColor} hover:underline cursor-pointer`}>{msg.user.nickname}</span>
+
+                      {/* Points badge */}
+                      <span className="text-[11px] px-1.5 py-0.2 rounded bg-[#161b22] text-[#8b949e] border border-[#30363d] select-none font-mono">
+                        @{msg.user.points}pts
+                      </span>
+
+                      {/* Prompt Symbol */}
+                      <span className="text-amber-400 font-bold select-none">{promptSymbol}</span>
+
+                      {/* Message Content */}
+                      <span className="text-[#c0caf5] select-text">{parseMessageContent(msg.content)}</span>
+                    </div>
+                    
+                    {isAdmin && (
+                      <button 
+                        onClick={() => {
+                          if (confirm(t("Delete this message?", "Bu xabarni o'chirasizmi?", "Удалить это сообщение?"))) {
+                            deleteMessage.mutate(msg.id);
+                          }
+                        }}
+                        disabled={deleteMessage.isPending}
+                        className="opacity-0 group-hover:opacity-100 shrink-0 p-1 text-red-400 hover:bg-red-950/40 rounded border border-red-900/40 transition-all"
+                        title="Delete Message"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
-                  
-                  {isAdmin && (
-                    <button 
-                      onClick={() => {
-                        if (confirm(t("Delete this message?", "Bu xabarni o'chirasizmi?", "Удалить это сообщение?"))) {
-                          deleteMessage.mutate(msg.id);
-                        }
-                      }}
-                      disabled={deleteMessage.isPending}
-                      className="opacity-0 group-hover:opacity-100 shrink-0 p-1 text-red-500 hover:bg-red-500/20 rounded transition-all ml-2"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              );
-            })
-          )}
-          <div ref={messagesEndRef} className="h-1" />
-        </div>
+                );
+              })
+            )}
+            <div ref={messagesEndRef} className="h-1" />
+          </div>
 
-        {/* Input Area */}
-        <div className="p-2 sm:p-4 border-t border-green-300 dark:border-green-900/50 shrink-0 transition-colors">
-          {isAuthenticated ? (
-            <form onSubmit={handleSend} className="flex gap-2 items-center">
-              <span className="text-green-700 dark:text-green-500 font-bold hidden sm:inline select-none">
-                {user?.nickname}
-                <span className="text-green-500 dark:text-green-700">@</span>cdctf<span className="text-green-500 dark:text-green-700">:~$</span>
-              </span>
-              <span className="text-green-700 dark:text-green-500 font-bold sm:hidden select-none">
-                ~$
-              </span>
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder={t("type a command or message...", "xabar yoki buyruq kiriting...", "введите команду или сообщение...")}
-                className="flex-1 bg-transparent text-green-900 dark:text-green-400 border-none outline-none focus:ring-0 placeholder:text-green-400 dark:placeholder:text-green-800 font-mono text-[14px]"
-                disabled={sendMessage.isPending}
-                maxLength={1000}
-                autoFocus
-                autoComplete="off"
-              />
-              <button 
-                type="submit" 
-                disabled={!newMessage.trim() || sendMessage.isPending}
-                className="px-3 py-1 bg-green-200 dark:bg-green-900/40 text-green-800 dark:text-green-400 hover:bg-green-300 dark:hover:bg-green-800/60 rounded text-xs uppercase tracking-widest disabled:opacity-50 transition-colors border border-green-300 dark:border-green-800/50"
-              >
-                {sendMessage.isPending ? "EXEC..." : "EXEC"}
-              </button>
-            </form>
-          ) : (
-            <div className="text-sm text-green-700">
-              [SYSTEM] {t("Authentication required.", "Tizimga kirish talab etiladi.", "Требуется аутентификация.")}{" "}
-              <Link href="/login" className="text-green-600 dark:text-green-400 hover:underline font-bold">
-                ./login.sh
-              </Link>
-            </div>
-          )}
+          {/* btop Command Input Footer Bar */}
+          <div className="p-2.5 sm:p-3 bg-[#161b22] border-t border-[#21262d] shrink-0">
+            {isAuthenticated ? (
+              <form onSubmit={handleSend} className="flex gap-2 items-center">
+                <div className="flex items-center gap-1.5 text-xs font-mono shrink-0 select-none">
+                  <span className="text-emerald-400 font-bold hidden sm:inline">
+                    {user?.nickname}<span className="text-[#484f58]">@</span>cdctf
+                  </span>
+                  <span className="text-amber-400 font-bold">:~$</span>
+                </div>
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder={t("type a command or message...", "xabar yoki buyruq kiriting...", "введите команду или сообщение...")}
+                  className="flex-1 bg-[#0d1117] text-[#c0caf5] border border-[#30363d] focus:border-emerald-500/50 rounded px-3 py-1.5 outline-none font-mono text-xs sm:text-sm placeholder:text-[#484f58] transition-colors"
+                  disabled={sendMessage.isPending}
+                  maxLength={1000}
+                  autoFocus
+                  autoComplete="off"
+                />
+                <button 
+                  type="submit" 
+                  disabled={!newMessage.trim() || sendMessage.isPending}
+                  className="px-4 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded text-xs font-mono font-bold uppercase tracking-wider disabled:opacity-30 transition-all shadow-[0_0_12px_rgba(16,185,129,0.15)] shrink-0"
+                >
+                  {sendMessage.isPending ? "EXEC..." : "EXEC [↵]"}
+                </button>
+              </form>
+            ) : (
+              <div className="text-xs text-[#8b949e] font-mono flex items-center gap-2">
+                <span className="text-amber-400 font-bold">[SYSTEM]</span>
+                <span>{t("Authentication required.", "Tizimga kirish talab etiladi.", "Требуется аутентификация.")}</span>
+                <Link href="/login" className="text-emerald-400 hover:underline font-bold">
+                  ./login.sh
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
