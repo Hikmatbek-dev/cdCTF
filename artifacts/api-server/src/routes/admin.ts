@@ -160,6 +160,8 @@ router.get("/dashboard", requirePermission("admin.panel"), async (_req, res) => 
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
+  const notificationSubscribers = users.filter(u => u.notificationsEnabled).length;
+
   res.json({
     totalUsers: users.length,
     activeUsers,
@@ -168,6 +170,7 @@ router.get("/dashboard", requirePermission("admin.panel"), async (_req, res) => 
     totalCompetitions: competitions.length,
     averageTestResult: avgResult,
     blockedTasksCount: blockedCtf.length + blockedLessons.length,
+    notificationSubscribers,
     mostSolvedCtf,
     mostActiveUsers,
     registrationHistory,

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, UIEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
 import { useLang } from "@/lib/LanguageContext";
-import { Terminal, Trash2, ChevronUp, Reply, X, CornerDownRight, Volume2, VolumeX, Sparkles, ShieldAlert } from "lucide-react";
+import { Terminal, Trash2, ChevronUp, Reply, X, CornerDownRight, Volume2, VolumeX, Sparkles, ShieldAlert, Bell } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
@@ -156,14 +156,10 @@ export default function ChatPage() {
   const [newMessage, setNewMessage] = useState("");
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [localSystemLogs, setLocalSystemLogs] = useState<LocalSystemLog[]>([
-    {
-      id: "sys_init",
-      type: "system",
-      text: "[SYSTEM_NOTIF] 🩸 System active. 40 challenges live. Solve CTF challenges to earn First Blood!",
-      timestamp: new Date().toLocaleTimeString()
-    }
-  ]);
+  const [localSystemLogs, setLocalSystemLogs] = useState<LocalSystemLog[]>([]);
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>(
+    typeof window !== "undefined" && "Notification" in window ? Notification.permission : "granted"
+  );
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -173,6 +169,32 @@ export default function ChatPage() {
   const [limit, setLimit] = useState(50);
   const [isScrolledUp, setIsScrolledUp] = useState(false);
   const isAdmin = user?.role === "admin" || isSuperAdmin;
+
+  const requestNotifPermission = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    try {
+      const perm = await Notification.requestPermission();
+      setNotifPermission(perm);
+      if (perm === "granted") {
+        if (isAuthenticated) {
+          await fetch("/api/users/me/notifications", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ enabled: true }),
+          }).catch(() => {});
+        }
+        new Notification("cdCTF Terminal", {
+          body: t(
+            "Notifications enabled! You will receive updates for chat, competitions, and news.",
+            "Bildirishnomalar yoqildi! Chat, musobaqalar va yangiliklardan xabardor bo'lasiz.",
+            "Уведомления включены! Вы будете получать обновления по чату, соревнованиям и новостям."
+          ),
+        });
+      }
+    } catch (e) {
+      // Ignore
+    }
+  };
 
   const { data: messages, isLoading, error } = useQuery<ChatMessage[]>({
     queryKey: ["community_messages", limit],
@@ -184,13 +206,29 @@ export default function ChatPage() {
     refetchInterval: 3000,
   });
 
-  // Sound ping for new mentions
+  // Sound & Desktop Notification ping for new messages and mentions
   const prevMsgCountRef = useRef(0);
   useEffect(() => {
-    if (messages && messages.length > prevMsgCountRef.current) {
+    if (messages && messages.length > prevMsgCountRef.current && prevMsgCountRef.current > 0) {
       const latestMsg = messages[messages.length - 1];
-      if (user && latestMsg.user.id !== user.id && latestMsg.content.toLowerCase().includes(`@${user.nickname.toLowerCase()}`)) {
-        playCyberSound('mention', soundEnabled);
+      if (user && latestMsg.user.id !== user.id) {
+        const isMentioned = latestMsg.content.toLowerCase().includes(`@${user.nickname.toLowerCase()}`);
+        if (isMentioned) {
+          playCyberSound('mention', soundEnabled);
+        }
+        
+        // Trigger desktop browser Notification if granted
+        if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+          if (document.hidden || isMentioned) {
+            const notifTitle = isMentioned 
+              ? `🩸 Mention from @${latestMsg.user.nickname}` 
+              : `💬 cdCTF Terminal (@${latestMsg.user.nickname})`;
+            new Notification(notifTitle, {
+              body: latestMsg.content.replace(/^> @.*?\n/, ''),
+              tag: `chat_msg_${latestMsg.id}`
+            });
+          }
+        }
       }
     }
     if (messages) {
@@ -498,8 +536,36 @@ export default function ChatPage() {
           <div 
             ref={scrollContainerRef}
             onScroll={handleScroll}
-            className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-[#30363d] scrollbar-track-[#0d1117] font-mono text-xs sm:text-sm"
+            className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-[#30363d] scrollbar-track-[#0d1117] font-mono text-xs sm:text-sm"
           >
+            {/* Notification Permission Request Banner */}
+            {notifPermission === "default" && (
+              <div className="bg-[#121927] border border-amber-500/40 p-3 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.1)] mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-md bg-amber-500/20 text-amber-400 shrink-0">
+                    <Bell className="w-4 h-4 animate-bounce" />
+                  </div>
+                  <div>
+                    <strong className="text-amber-400 block font-bold">
+                      {t("NOTIFICATION PERMISSION REQUIRED", "BILDIRISHNOMA RUXSATI TALAB ETILADI", "ТРЕБУЕТСЯ РАЗРЕШЕНИЕ НА УВЕДОМЛЕНИЯ")}
+                    </strong>
+                    <span className="text-[11px] text-amber-200/80">
+                      {t(
+                        "Enable notifications to get real-time alerts for chat mentions, competitions, and platform news.",
+                        "Chatdagi murojaatlar, musobaqalar va platforma yangiliklaridan xabardor bo'lish uchun ruxsat bering.",
+                        "Включите уведомления, чтобы получать сообщения чата, новости соревнований и платформы."
+                      )}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={requestNotifPermission}
+                  className="w-full sm:w-auto px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 rounded font-bold uppercase tracking-wider transition-all shrink-0 text-center"
+                >
+                  {t("Enable Notifications", "Ruxsat Berish", "Разрешить")}
+                </button>
+              </div>
+            )}
             {messages && messages.length >= limit && (
               <div className="text-center pb-3">
                 <button 

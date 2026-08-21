@@ -1,4 +1,4 @@
-import { Users, Flag, BookOpen, Trophy, AlertTriangle, TrendingUp, ShieldCheck, Sparkles, Activity } from "lucide-react";
+import { Users, Flag, BookOpen, Trophy, AlertTriangle, TrendingUp, ShieldCheck, Sparkles, Activity, Bell } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { useLang } from "@/lib/LanguageContext";
@@ -20,10 +20,10 @@ export default function AdminDashboardPage() {
 
   const stats = data ? [
     { icon: Users, label: t("Total Users", "Jami Foydalanuvchilar", "Всего пользователей"), value: data.totalUsers, sub: `${data.activeUsers} ${t("active", "faol", "активных")}` },
+    { icon: Bell, label: t("Notification Subscribers", "Bildirishnoma A'zolari", "Подписчики Уведомлений"), value: (data as any).notificationSubscribers ?? 0 },
     { icon: Flag, label: t("CTF Challenges", "CTF Topshiriqlari", "CTF Заданий"), value: data.totalCtf },
     { icon: BookOpen, label: t("Lessons & Modules", "Dars va Modullar", "Уроки и Модули"), value: data.totalLessons },
     { icon: Trophy, label: t("Competitions", "Musobaqalar", "Соревнования"), value: data.totalCompetitions },
-    { icon: TrendingUp, label: t("Pass Completion Rate", "Muvaffaqiyat ko'rsatkichi", "Успешное прохождение"), value: `${Math.round((data.averageTestResult ?? 0) * 100)}%` },
     { icon: AlertTriangle, label: t("Blocked Tasks", "Bloklangan Topshiriqlar", "Заблокировано"), value: data.blockedTasksCount, danger: true },
   ] : [];
 

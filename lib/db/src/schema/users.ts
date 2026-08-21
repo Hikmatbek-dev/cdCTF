@@ -99,6 +99,7 @@ export const usersTable = pgTable("users", {
   referralCode: text("referral_code"),
   freeHintCredits: integer("free_hint_credits").notNull().default(0),
   subscriptionEndDate: timestamp("subscription_end_date", { withTimezone: true }),
+  notificationsEnabled: boolean("notifications_enabled").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, table => [
   // The scoreboard's exact filter and sort: non-blocked users, role 'user',

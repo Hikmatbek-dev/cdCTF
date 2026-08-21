@@ -543,6 +543,21 @@ router.patch("/:id", authenticateToken, requireSession, validateBody(UpdateUserP
   }
 });
 
+// POST /api/users/me/notifications - update notification permission status
+router.post("/me/notifications", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user!.userId;
+    const { enabled } = req.body;
+    await db.update(usersTable)
+      .set({ notificationsEnabled: Boolean(enabled) })
+      .where(eq(usersTable.id, userId));
+    res.json({ success: true, notificationsEnabled: Boolean(enabled) });
+  } catch (err) {
+    logger.error({ err }, "Error updating notification settings");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // POST /api/users/:id/avatar
 router.post("/:id/avatar", authenticateToken, requireSession, upload.single("avatar"), async (req, res) => {
   const id = Number(req.params.id);
