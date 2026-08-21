@@ -434,4 +434,86 @@ router.delete("/:id/writeups/:writeupId", authenticateToken, async (req, res) =>
   res.json({ success: true });
 });
 
+// GET /api/ctf/seed-40-stego
+router.get("/seed-40-stego", async (req, res) => {
+  const secretKey = req.query.key;
+  if (secretKey !== "Hikmatbek2026CyberPlace") {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+
+  try {
+    const stegoPayload = (await import("../stego_40_payload.json")).default;
+    const { pool } = await import("@workspace/db");
+
+    for (const alter of [
+      "ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS name_uz text",
+      "ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS name_ru text",
+      "ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS description_uz text",
+      "ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS description_ru text",
+      "ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS file_url text",
+      "ALTER TABLE ctf_tasks ADD COLUMN IF NOT EXISTS is_published boolean NOT NULL DEFAULT true",
+      "CREATE TABLE IF NOT EXISTS ctf_files (id SERIAL PRIMARY KEY, filename TEXT, content_type TEXT, content TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
+    ]) {
+      await pool.query(alter);
+    }
+
+    let added = 0;
+    let updated = 0;
+
+    for (const c of stegoPayload as any[]) {
+      let fileUrl = c.fileUrl || null;
+      if (c.b64_content) {
+        const fileRes = await pool.query(
+          "INSERT INTO ctf_files (filename, content_type, content) VALUES ($1, $2, $3) RETURNING id",
+          [c.filename, c.content_type, c.b64_content]
+        );
+        const fileId = fileRes.rows[0].id;
+        fileUrl = `/api/uploads/download/${fileId}/${c.filename}`;
+      }
+
+      const existing = await pool.query("SELECT id FROM ctf_tasks WHERE name = $1 LIMIT 1", [c.name]);
+      if (existing.rowCount && existing.rowCount > 0) {
+        await pool.query(
+          `UPDATE ctf_tasks SET
+            name_uz = $1, name_ru = $2,
+            description = $3, description_uz = $4, description_ru = $5,
+            category = $6, difficulty = $7, points = $8,
+            hint = $9, hint_uz = $10, hint_ru = $11,
+            flag = $12, file_url = $13, is_published = true
+           WHERE id = $14`,
+          [
+            c.nameUz, c.nameRu,
+            c.description, c.descriptionUz, c.descriptionRu,
+            c.category, c.difficulty, c.points,
+            c.hint, c.hintUz, c.hintRu,
+            c.flagHash, fileUrl, existing.rows[0].id
+          ]
+        );
+        updated++;
+      } else {
+        await pool.query(
+          `INSERT INTO ctf_tasks
+           (name, name_uz, name_ru, description, description_uz, description_ru,
+            category, difficulty, points, hint, hint_uz, hint_ru, flag, file_url, is_published)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,true)`,
+          [
+            c.name, c.nameUz, c.nameRu,
+            c.description, c.descriptionUz, c.descriptionRu,
+            c.category, c.difficulty, c.points,
+            c.hint, c.hintUz, c.hintRu,
+            c.flagHash, fileUrl
+          ]
+        );
+        added++;
+      }
+    }
+
+    res.json({ success: true, total: stegoPayload.length, added, updated });
+  } catch (error) {
+    logger.error({ err: error }, "Seed error");
+    res.status(500).json({ error: String(error) });
+  }
+});
+
 export default router;
+
